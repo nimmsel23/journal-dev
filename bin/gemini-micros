@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""
+gemini-micros — Micronutrient estimation via Gemini (thin wrapper around fuel_cli.gemini).
+
+Usage:
+  gemini-micros "Eierspeise mit 6 Eier, Salz, Pfeffer und Olivenöl"
+
+Output: JSON with micronutrients (or {} on error).
+
+Note: Uses fuel_cli.gemini.estimate_nutrition() under the hood. For full breakdown
+(macros + micros + components) use `gemini-nutrition`.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from fuel_cli.gemini import estimate_micros_only
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print(json.dumps({"error": "Usage: gemini-micros 'meal description'"}), file=sys.stderr)
+        return 1
+    description = sys.argv[1]
+    micros = estimate_micros_only(description)
+    print(json.dumps(micros, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

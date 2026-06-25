@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""
+gemini-nutrition — Unified macros + micros + component breakdown in ONE call.
+
+Usage:
+  gemini-nutrition "250g Basmati Reis, 500g Hubers Nuggets, bissl Tex-Mex Gemüse"
+
+Output: JSON {macros: {kcal, protein, carbs, fat}, micros: {…}, components: […]}
+
+Flags:
+  --macros-only   Print only macros (flat object) — backward compat with gemini-estimate
+  --micros-only   Print only micros (flat object) — backward compat with gemini-micros
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+# Make fuel_cli importable without install
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from fuel_cli.gemini import (
+    estimate_nutrition,
+    estimate_macros_only,
+    estimate_micros_only,
+)
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    if not args:
+        print(
+            json.dumps({"error": "Usage: gemini-nutrition [--macros-only|--micros-only] 'description'"}),
+            file=sys.stderr,
+        )
+        return 1
+
+    mode = "all"
+    if args[0] == "--macros-only":
+        mode = "macros"
+        args = args[1:]
+    elif args[0] == "--micros-only":
+        mode = "micros"
+        args = args[1:]
+
+    if not args:
+        print(json.dumps({"error": "missing description"}), file=sys.stderr)
+        return 1
+
+    description = " ".join(args)
+
+    if mode == "macros":
+        result = estimate_macros_only(description)
+    elif mode == "micros":
+        result = estimate_micros_only(description)
+    else:
+        result = estimate_nutrition(description)
+
+    print(json.dumps(result, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

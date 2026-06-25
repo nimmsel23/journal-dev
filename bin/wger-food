@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# food-log — Lebensmittel über wger API suchen (mit OFF Fallback), Makros skalieren,
+#            als Markdown-Zeile ins Ernährungsprotokoll schreiben.
+#
+# Dependencies: curl, jq, fzf, python3
+# Optional: wl-copy oder xclip fürs Clipboard
+#
+# Repo: ~/fuel
+# Log:  ~/fuel/logs/YYYY-MM-DD.md (default)
+# Priority: wger local (:8000) → Open Food Facts fallback
+
+WGER_URL="${WGER_API_URL:-http://localhost:8000/api/v2}"
+OFF_URL="https://world.openfoodfacts.org/cgi/search.pl"
+WGER_LOG="${WGER_LOG:-$HOME/Nutrition/logs/$(date +%Y-%m-%d).md}"
+LIMIT="${WGER_LIMIT:-30}"
+MEAL_DEFAULT="${MEAL_DEFAULT:-Vormittag}"
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || { echo "Fehlt: $1" >&2; exit 1; }
+}
+need curl; need jq; need fzf; need python3
+
+usage() {
+  cat <<'EOF'
+Usage:
+  wger-food [Suchbegriff]
+
+Beispiele:
+  wger-food haferflocken
+  wger-food banane
+  wger-food "magerquark"
+
+Environment:
+  WGER_LOG      Markdown-Datei (default: ~/Nutrition/logs/YYYY-MM-DD.md)
+  WGER_LIMIT    Anzahl Suchtreffer, default: 30
+  MEAL_DEFAULT  Standard-Mahlzeit, default: Vormittag
+
+Ausgabeformat (Obsidian-Tabelle):
+  | Mahlzeit | Uhrzeit | Lebensmittel | Menge | Einheit | Kcal | KH (g) | Fett (g) | Eiweiß (g) | Quelle |
+EOF
+}
+
+urlencode() {
+  python3 -c 'import sys, urllib.parse; print(urllib.parse.quote_plus(sys.argv[1]))' "$1"
+}
+
+round1() {
+  awk 'BEGIN { printf "%.1f", ARGV[1] }' "$1"
+}
+
+copy_clipboard() {
+  if command -v wl-copy >/dev/null 2>&1; then
+    printf '%s' "$1" | wl-copy && echo "In Zwischenablage (wl-copy)" >&2
+  elif command -v xclip >/dev/null 2>&1; then
+    printf '%s' "$1" | xclip -selection clipboard && echo "In Zwischenablage (xclip)" >&2
+  fi
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then usage; exit 0; fi
+
+query="${*:-}"
+if [[ -z "$query" ]]; then
+  read -r -p "Lebensmittel suchen: " query
+fi
+[[ -z "$query" ]] && { echo "Kein Suchbegriff." >&2; exit 1; }
+
+encoded="$(urlencode "$query")"
+url="${OFF_URL}?search_terms=${encoded}&search_simple=1&action=process&json=1&page_size=${LIMIT}"
+
+json="$(curl -fsSL --max-time 10 \
+  -H 'User-Agent: wger-food-logger/2.0 (nutrition log)' \
+  "$url")"
+
+count="$(jq -r '.count // 0' <<<"$json")"
+if [[ "$count" == "0" ]]; then
+  echo "Keine Treffer für: $query" >&2
+  exit 1
+fi
+
+selected="$(jq -r '
+  [.products[] |
+    select(
+      (.product_name // "" | length) > 0 and
+      (.nutriments["energy-kcal_100g"] // .nutriments.energy_100g // null) != null
+    ) |
+    {
+      name:    (.product_name // ""),
+      brand:   (.brands // ""),
+      kcal:    (.nutriments["energy-kcal_100g"] // (.nutriments.energy_100g // 0) / 4.184),
+      kh:      (.nutriments.carbohydrates_100g // 0),
+      fat:     (.nutriments.fat_100g // 0),
+      protein: (.nutriments.proteins_100g // 0)
+    }
+  ][] |
+  [.name, .brand, .kcal, .kh, .fat, .protein] | @tsv
+' <<<"$json" | awk -F'\t' 'BEGIN{OFS="\t"} {
+  brand=$2; if (brand == "") brand="-"
+  printf "%s\t%s\t%.1f kcal\t%.1f KH\t%.1f F\t%.1f EW\n", $1,brand,$3,$4,$5,$6
+}' | fzf \
+  --with-nth=1,2,3,4,5,6 \
+  --delimiter='\t' \
+  --prompt='Lebensmittel > ' \
+  --height=80% \
+  --layout=reverse \
+  --border \
+  --header='Enter = auswählen | Werte pro 100 g | Quelle: Open Food Facts'
+)"
+
+[[ -z "$selected" ]] && { echo "Abgebrochen." >&2; exit 1; }
+
+IFS=$'\t' read -r name brand kcal_s kh_s fat_s protein_s <<<"$selected"
+
+kcal100="${kcal_s%% *}"
+kh100="${kh_s%% *}"
+fat100="${fat_s%% *}"
+protein100="${protein_s%% *}"
+
+printf '\nPortionsgröße:\n'
+printf '  [s] Klein     ~100g\n'
+printf '  [m] Normal    ~200g\n'
+printf '  [l] Groß      ~300g\n'
+printf '  [x] Sehr groß ~450g\n'
+printf '  [g] Gramm eingeben\n'
+read -r -p "Wahl [m]: " portion_choice
+case "${portion_choice:-m}" in
+  s|S) grams=100 ;;
+  m|M) grams=200 ;;
+  l|L) grams=300 ;;
+  x|X) grams=450 ;;
+  g|G) read -r -p "Menge in g: " grams ;;
+  [0-9]*) grams="$portion_choice" ;;
+  *) grams=200 ;;
+esac
+[[ "$grams" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "Ungültige Menge: $grams" >&2; exit 1; }
+
+read -r -p "Mahlzeit [${MEAL_DEFAULT}]: " meal
+meal="${meal:-$MEAL_DEFAULT}"
+
+now="$(date +%H:%M)"
+factor="$(awk 'BEGIN { print ARGV[1] / 100 }' "$grams")"
+
+kcal="$(round1 "$(awk 'BEGIN { print ARGV[1] * ARGV[2] }' "$kcal100" "$factor")")"
+kh="$(round1 "$(awk 'BEGIN { print ARGV[1] * ARGV[2] }' "$kh100" "$factor")")"
+fat="$(round1 "$(awk 'BEGIN { print ARGV[1] * ARGV[2] }' "$fat100" "$factor")")"
+protein="$(round1 "$(awk 'BEGIN { print ARGV[1] * ARGV[2] }' "$protein100" "$factor")")"
+
+[[ "$brand" != "-" && -n "$brand" ]] && food="${name} (${brand})" || food="$name"
+
+line="| ${meal} | ${now} | ${food} | ${grams} | g | ${kcal} | ${kh} | ${fat} | ${protein} | Open Food Facts |"
+
+printf '\n%s\n\n' "$line"
+
+if [[ ! -f "$WGER_LOG" ]]; then
+  mkdir -p "$(dirname "$WGER_LOG")"
+  printf '| Mahlzeit | Uhrzeit | Lebensmittel / Getränk | Menge | Einheit | Kcal | KH (g) | Fett (g) | Eiweiß (g) | Quelle |\n' >> "$WGER_LOG"
+  printf '|----------|---------|------------------------|-------|---------|------|--------|----------|------------|--------|\n' >> "$WGER_LOG"
+fi
+
+printf '%s\n' "$line" >> "$WGER_LOG"
+echo "→ $WGER_LOG" >&2
+copy_clipboard "$line" >/dev/null 2>&1 || true

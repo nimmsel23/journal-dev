@@ -1,0 +1,13 @@
+{
+  "id": "kollagen_morgenroutine",
+  "kind": "meal",
+  "category": "breakfast",
+  "name": "Kaffee + Kollagen + Mandel Drink",
+  "meal_type": "breakfast",
+  "description": "Morgenkaffee mit 10g Naduria Kollagen und 250ml Mandel Drink",
+  "kcal": 62,
+  "protein": 9.8,
+  "carbs": 1.3,
+  "fat": 2.2,
+  "notes": "Mikros (Vit C 80mg, Zink 5mg) fließen via Supplement-Log (Kollagen-Eintrag)"
+}

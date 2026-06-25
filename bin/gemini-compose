@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""
+gemini-compose — Compose meal from wger ingredients via Gemini decompose.
+
+Usage:
+  gemini-compose "Wiener Schnitzel mit Kartoffeln und Salat"
+
+Output: JSON {kcal, protein, carbs, fat, sodium_mg, components: [...]}.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from fuel_cli.compose import compose_meal
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print(json.dumps({"error": "Usage: gemini-compose 'meal description'"}), file=sys.stderr)
+        return 1
+    description = sys.argv[1]
+    print(json.dumps(compose_meal(description), ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+/opt/
+.DS_Store
+*.log
+*.bak
+.claude/TICKETS/
+
+# Runtime data (daily logs, journals, user sessions)
+data/
+
+# Keep catalogs (versioniert)
+!catalogs/

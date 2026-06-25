@@ -1,0 +1,88 @@
+{
+  "id": "meal_eierspeise_freiland",
+  "kind": "recipe",
+  "category": "meal",
+  "name": "Eierspeise Freiland",
+  "meal_type": "meal",
+  "description": "Eierspeise mit Freiland-Eiern, Salz und Pfeffer",
+  "notes": "Base-Rezept mit Addons für verschiedene Portionsgrößen (2er, 3er, 5er, 6er, 10er)",
+  "source": "manual",
+  "yield_g": null,
+  "components": [],
+  "default_addon_ids": [
+    "freiland_2er"
+  ],
+  "addons": [
+    {
+      "id": "freiland_2er",
+      "label": "2 große Freiland-Eier",
+      "description": "2 große Freiland-Eier",
+      "brand": "Freiland",
+      "grams": 120,
+      "kcal": 168,
+      "protein": 15.1,
+      "carbs": 0.6,
+      "fat": 11.8,
+      "source": "wger",
+      "source_kind": "addon"
+    },
+    {
+      "id": "freiland_3er",
+      "label": "3 mittlere Freiland-Eier",
+      "description": "3 mittlere Freiland-Eier",
+      "brand": "Freiland",
+      "grams": 165,
+      "kcal": 231,
+      "protein": 20.8,
+      "carbs": 0.8,
+      "fat": 16.2,
+      "source": "wger",
+      "source_kind": "addon"
+    },
+    {
+      "id": "freiland_5er",
+      "label": "5 mittlere Freiland-Eier",
+      "description": "5 mittlere Freiland-Eier",
+      "brand": "Freiland",
+      "grams": 290,
+      "kcal": 406,
+      "protein": 36.8,
+      "carbs": 0.9,
+      "fat": 28.4,
+      "source": "wger",
+      "source_kind": "addon"
+    },
+    {
+      "id": "freiland_6er",
+      "label": "6 große Freiland-Eier",
+      "description": "6 große Freiland-Eier",
+      "brand": "Freiland",
+      "grams": 360,
+      "kcal": 504,
+      "protein": 45.4,
+      "carbs": 1.8,
+      "fat": 35.3,
+      "source": "wger",
+      "source_kind": "addon"
+    },
+    {
+      "id": "freiland_10er",
+      "label": "10 mittlere Freiland-Eier",
+      "description": "10 mittlere Freiland-Eier",
+      "brand": "Freiland",
+      "grams": 500,
+      "kcal": 700,
+      "protein": 63.5,
+      "carbs": 1.5,
+      "fat": 49,
+      "source": "wger",
+      "source_kind": "addon"
+    }
+  ],
+  "created_at": "2026-05-18T16:00:00.000Z",
+  "updated_at": "2026-05-18T16:00:00.000Z",
+  "kcal": 168,
+  "protein": 15.1,
+  "carbs": 0.6,
+  "fat": 11.8
+}

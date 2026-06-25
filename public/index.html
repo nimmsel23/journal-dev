@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nutrition Journal</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root {
+  --bg: #080b12; --bg2: #0c1019; --panel: #111827; --card: #151d2e;
+  --card-hover: #1a2439; --line: #1e2d44; --ink: #eef1f8; --muted: #7b8ba5;
+  --dim: #4a5874; --accent: #f97316; --accent-glow: rgba(249,115,22,0.12);
+  --accent-2: #f59e0b; --red: #ef4444; --green: #22c55e; --blue: #3b82f6;
+  --purple: #a78bfa; --orange: #f97316; --pink: #ec4899;
+  --glass: rgba(17,24,39,0.75); --glass-border: rgba(249,115,22,0.08);
+  --radius: 14px; --radius-sm: 10px; --radius-xs: 6px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.3); --shadow-glow: 0 0 40px rgba(249,115,22,0.06);
+  --font: "Inter", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", "Fira Code", monospace;
+  --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+[data-theme="latte"] {
+  --bg: #f5f0e8; --bg2: #ebe5db; --panel: #e2dbd0; --card: #f0ebe3;
+  --card-hover: #e8e2d8; --line: #cdc4b6; --ink: #1e1c19; --muted: #6b6356;
+  --dim: #9a9080; --accent: #ea580c; --accent-glow: rgba(234,88,12,0.08);
+  --glass: rgba(226,219,208,0.8); --glass-border: rgba(234,88,12,0.1);
+  --shadow: 0 8px 32px rgba(0,0,0,0.08); --shadow-glow: none;
+}
+html{background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-text-size-adjust:100%}
+body{min-height:100dvh;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);background:var(--bg)}
+a{color:var(--accent);text-decoration:none}
+
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+.topbar .back{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:var(--radius-xs);background:var(--card);color:var(--ink);font-size:18px;transition:background .15s}
+.topbar .back:hover{background:var(--card-hover)}
+.topbar h1{font-size:17px;font-weight:700;letter-spacing:-0.02em}
+
+/* Tabs */
+.tab-bar{display:flex;gap:4px;padding:12px 16px 0;background:var(--bg)}
+.tab-btn{flex:1;padding:10px 0;border:none;border-radius:var(--radius-sm);background:var(--card);color:var(--muted);font:600 14px var(--font);cursor:pointer;transition:all .2s}
+.tab-btn.active{background:var(--accent);color:#fff;box-shadow:0 0 20px var(--accent-glow)}
+.tab-btn:not(.active):hover{background:var(--card-hover);color:var(--ink)}
+
+/* Panels */
+.tab-panel{display:none;padding:16px}
+.tab-panel.active{display:block}
+
+/* Form elements */
+label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
+input[type="date"],input[type="number"],select,textarea{
+  width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:var(--radius-xs);
+  background:var(--card);color:var(--ink);font:14px var(--font);outline:none;transition:border .2s
+}
+input[type="date"]:focus,input[type="number"]:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:80px}
+textarea.mono{font-family:var(--mono);font-size:13px;min-height:200px}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237b8ba5'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+
+.form-group{margin-bottom:16px}
+.form-row{display:flex;gap:12px}
+.form-row>.form-group{flex:1}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border:none;border-radius:var(--radius-xs);font:600 14px var(--font);cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 12px var(--accent-glow)}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-sm{padding:6px 12px;font-size:13px;border-radius:var(--radius-xs)}
+.btn-ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.btn-ghost:hover{background:var(--card-hover)}
+
+/* Water tracker */
+.water-tracker{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border-radius:var(--radius-sm);border:1px solid var(--line)}
+.water-display{flex:1;text-align:center}
+.water-display .amount{font-size:28px;font-weight:800;color:var(--blue);letter-spacing:-0.02em}
+.water-display .unit{font-size:13px;color:var(--muted);margin-top:2px}
+.water-icon{font-size:32px;opacity:0.8}
+.water-btns{display:flex;flex-direction:column;gap:6px}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;transition:background .15s}
+.card:hover{background:var(--card-hover)}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.card-body{font-size:14px;color:var(--ink);line-height:1.5}
+.card-meta{font-size:12px;color:var(--dim);margin-top:6px}
+
+/* Meal type badges */
+.badge{display:inline-flex;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
+.badge-fruehstueck{background:rgba(249,115,22,0.15);color:var(--orange)}
+.badge-mittag{background:rgba(59,130,246,0.15);color:var(--blue)}
+.badge-abend{background:rgba(167,139,250,0.15);color:var(--purple)}
+.badge-snack{background:rgba(236,72,153,0.15);color:var(--pink)}
+
+/* Supplement badges */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;border:1px solid var(--line);background:rgba(255,255,255,0.02);color:var(--muted)}
+.pill-any{color:var(--muted)}
+.pill-morning{color:var(--orange);border-color:rgba(249,115,22,0.25);background:rgba(249,115,22,0.08)}
+.pill-day{color:var(--blue);border-color:rgba(59,130,246,0.25);background:rgba(59,130,246,0.08)}
+.pill-evening{color:var(--purple);border-color:rgba(167,139,250,0.25);background:rgba(167,139,250,0.08)}
+.pill-night{color:var(--pink);border-color:rgba(236,72,153,0.25);background:rgba(236,72,153,0.08)}
+
+/* Section headings */
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:10px 24px;border-radius:var(--radius-sm);font:600 14px var(--font);color:#fff;opacity:0;transition:all .3s ease;z-index:999;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast-success{background:var(--green)}
+.toast-error{background:var(--red)}
+
+/* Journal list */
+.journal-item{padding:10px 14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius-xs);margin-bottom:6px;cursor:pointer;font-size:14px;color:var(--muted);transition:all .15s}
+.journal-item:hover{background:var(--card-hover);color:var(--ink)}
+.journal-item.active{border-color:var(--accent);color:var(--ink)}
+
+/* Empty state */
+.empty{text-align:center;padding:32px 16px;color:var(--dim);font-size:14px}
+
+/* Theme toggle */
+.theme-toggle{margin-left:auto;width:36px;height:36px;border:none;border-radius:var(--radius-xs);background:var(--card);color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.theme-toggle:hover{background:var(--card-hover);color:var(--ink)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="../" class="back" aria-label="Zurueck">&larr;</a>
+  <h1>Nutrition Journal</h1>
+  <button class="theme-toggle" onclick="toggleTheme()" aria-label="Theme wechseln" id="themeBtn">&#9790;</button>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="mahlzeit">Mahlzeit</button>
+  <button class="tab-btn" data-tab="supplements">Supplements</button>
+  <button class="tab-btn" data-tab="journal">Journal</button>
+</div>
+
+<!-- MAHLZEIT TAB -->
+<div class="tab-panel active" id="tab-mahlzeit">
+  <div class="form-row">
+    <div class="form-group">
+      <label for="meal-date">Datum</label>
+      <input type="date" id="meal-date">
+    </div>
+    <div class="form-group">
+      <label for="meal-type">Mahlzeit</label>
+      <select id="meal-type">
+        <option value="fruehstueck">Fruehstueck</option>
+        <option value="mittag">Mittag</option>
+        <option value="abend">Abend</option>
+        <option value="snack">Snack</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="meal-desc">Beschreibung</label>
+    <textarea id="meal-desc" placeholder="Was wurde gegessen..."></textarea>
+  </div>
+
+  <div class="form-group">
+    <label>Wasser</label>
+    <div class="water-tracker">
+      <div class="water-icon">&#128167;</div>
+      <div class="water-display">
+        <div class="amount" id="water-amount">0</div>
+        <div class="unit">ml</div>
+      </div>
+      <div class="water-btns">
+        <button class="btn btn-sm btn-ghost" onclick="adjustWater(250)">+250</button>
+        <button class="btn btn-sm btn-ghost" onclick="adjustWater(-250)">-250</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="meal-notes">Notizen</label>
+    <textarea id="meal-notes" style="min-height:50px" placeholder="Optionale Notizen..."></textarea>
+  </div>
+
+  <button class="btn btn-primary" style="width:100%" onclick="saveMeal()">Speichern</button>
+
+  <div class="section-title">Heutige Mahlzeiten</div>
+  <div id="meals-list"><div class="empty">Keine Mahlzeiten erfasst</div></div>
+</div>
+
+<!-- SUPPLEMENTS TAB -->
+<div class="tab-panel" id="tab-supplements">
+  <div class="form-row">
+    <div class="form-group">
+      <label for="supp-date">Datum</label>
+      <input type="date" id="supp-date">
+    </div>
+    <div class="form-group">
+      <label for="supp-time">Tageszeit</label>
+      <select id="supp-time">
+        <option value="any">Any</option>
+        <option value="morning">Morning</option>
+        <option value="day">Day</option>
+        <option value="evening">Evening</option>
+        <option value="night">Night</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="supp-select">Supplement</label>
+    <select id="supp-select"></select>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label for="supp-dose">Dosis</label>
+      <input type="number" id="supp-dose" placeholder="z.B. 1" step="0.1">
+    </div>
+    <div class="form-group">
+      <label for="supp-unit">Einheit</label>
+      <input type="text" id="supp-unit" placeholder="mg" disabled>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="supp-notes">Notizen</label>
+    <textarea id="supp-notes" style="min-height:50px" placeholder="Optional..."></textarea>
+  </div>
+
+  <div class="form-row" style="align-items:end">
+    <div class="form-group" style="flex:2">
+      <button class="btn btn-primary" style="width:100%" onclick="saveSupplementIntake()">Einnahme loggen</button>
+    </div>
+    <div class="form-group" style="flex:1">
+      <button class="btn btn-ghost" style="width:100%" onclick="promptNewSupplement()">+ Neu</button>
+    </div>
+  </div>
+
+  <div class="section-title">Heute</div>
+  <div id="supp-list"><div class="empty">Keine Supplements geloggt</div></div>
+
+  <div class="section-title">Streaks (30 Tage)</div>
+  <div id="supp-stats"><div class="empty">Lade...</div></div>
+</div>
+
+<!-- JOURNAL TAB -->
+<div class="tab-panel" id="tab-journal">
+  <div class="form-group">
+    <label for="journal-date">Datum</label>
+    <input type="date" id="journal-date">
+  </div>
+
+  <div class="form-group">
+    <label for="journal-content">Inhalt</label>
+    <textarea id="journal-content" class="mono" placeholder="Ernaehrungs-Journal..."></textarea>
+  </div>
+
+  <button class="btn btn-primary" style="width:100%;margin-bottom:16px" onclick="saveJournal()">Speichern</button>
+
+  <div class="section-title">Eintraege</div>
+  <div id="journal-list"><div class="empty">Keine Eintraege</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* --- Theme --- */
+function getTheme(){return localStorage.getItem('ec-theme')||'dark'}
+function applyTheme(t){
+  if(t==='latte')document.documentElement.setAttribute('data-theme','latte');
+  else document.documentElement.removeAttribute('data-theme');
+  document.getElementById('themeBtn').textContent=t==='latte'?'\u2600':'\u263E';
+  localStorage.setItem('ec-theme',t);
+}
+function toggleTheme(){applyTheme(getTheme()==='latte'?'dark':'latte')}
+applyTheme(getTheme());
+
+/* --- Tabs --- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* --- Helpers --- */
+function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function toast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast toast-'+type+' show';
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+function resolveApiBase(){
+  const parts = location.pathname.split('/').filter(Boolean);
+  if (parts[0] === 'c' && parts[1]) return `/c/${parts[1]}`;
+  if (parts[0] && !parts[0].includes('.')) return `/${parts[0]}`;
+  return '';
+}
+const API_BASE = resolveApiBase();
+const apiPath = (path) => `${API_BASE}${path}`;
+
+async function api(path,opts){
+  const r=await fetch(apiPath(path),opts);
+  if(!r.ok)throw new Error(r.statusText);
+  return r.json();
+}
+
+/* --- Init dates --- */
+document.getElementById('meal-date').value=today();
+document.getElementById('journal-date').value=today();
+document.getElementById('supp-date').value=today();
+
+/* --- Water state --- */
+let waterMl=0;
+function setWater(ml){waterMl=Math.max(0,ml);document.getElementById('water-amount').textContent=waterMl}
+function adjustWater(d){setWater(waterMl+d)}
+
+/* --- Meal type display --- */
+const mealLabels={fruehstueck:'Fruehstueck',mittag:'Mittag',abend:'Abend',snack:'Snack'};
+
+function renderMeals(log){
+  const el=document.getElementById('meals-list');
+  if(!log||!log.meals||log.meals.length===0){el.innerHTML='<div class="empty">Keine Mahlzeiten erfasst</div>';return}
+  el.innerHTML=log.meals.map(m=>`
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-${m.type}">${mealLabels[m.type]||m.type}</span>
+        ${m.time?`<span style="font-size:12px;color:var(--dim)">${m.time.slice(11,16)||m.time}</span>`:''}
+      </div>
+      <div class="card-body">${esc(m.description||'')}</div>
+      ${m.notes?`<div class="card-meta">${esc(m.notes)}</div>`:''}
+    </div>`).join('');
+  if(log.water_ml!=null)setWater(log.water_ml);
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+/* --- Load today's log --- */
+async function loadLog(date){
+  try{
+    const res=await api('/nutrition/log?date='+(date||today()));
+    const log=res.data||res;
+    renderMeals(log);
+    if(log.water_ml!=null)setWater(log.water_ml);
+  }catch(e){renderMeals(null)}
+}
+
+/* --- Save meal --- */
+async function saveMeal(){
+  const date=document.getElementById('meal-date').value;
+  const type=document.getElementById('meal-type').value;
+  const description=document.getElementById('meal-desc').value.trim();
+  const notes=document.getElementById('meal-notes').value.trim();
+
+  if(!description){toast('Beschreibung fehlt','error');return}
+
+  const body={date};
+  body.meal={type,description};
+  if(notes)body.meal.notes=notes;
+  if(waterMl>0)body.water_ml=waterMl;
+
+  try{
+    await api('/nutrition/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    toast('Gespeichert!');
+    document.getElementById('meal-desc').value='';
+    document.getElementById('meal-notes').value='';
+    loadLog(date);
+  }catch(e){toast('Fehler: '+e.message,'error')}
+}
+
+/* --- Water save on change --- */
+let waterTimer;
+function saveWater(){
+  clearTimeout(waterTimer);
+  waterTimer=setTimeout(async()=>{
+    const date=document.getElementById('meal-date').value;
+    try{
+      await api('/nutrition/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,water_ml:waterMl})});
+    }catch(e){}
+  },800);
+}
+const origAdjust=adjustWater;
+adjustWater=function(d){setWater(waterMl+d);saveWater()};
+
+/* --- Reload on date change --- */
+document.getElementById('meal-date').addEventListener('change',e=>loadLog(e.target.value));
+
+/* --- Journal --- */
+async function loadJournal(date){
+  try{
+    const j=await api('/nutrition/journal?date='+(date||today()));
+    document.getElementById('journal-content').value=j.content||'';
+  }catch(e){document.getElementById('journal-content').value=''}
+}
+
+async function saveJournal(){
+  const date=document.getElementById('journal-date').value;
+  const content=document.getElementById('journal-content').value;
+  try{
+    await api('/nutrition/journal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,content})});
+    toast('Journal gespeichert!');
+    loadJournalList();
+  }catch(e){toast('Fehler: '+e.message,'error')}
+}
+
+async function loadJournalList(){
+  const el=document.getElementById('journal-list');
+  try{
+    const list=await api('/nutrition/journal/list');
+    const entries=list.entries||[];
+    if(!entries.length){el.innerHTML='<div class="empty">Keine Eintraege</div>';return}
+    el.innerHTML=entries.slice(0,30).map(f=>{
+      const d=f.date||f.name.replace('.md','');
+      return `<div class="journal-item" onclick="selectJournal('${d}')">${d}</div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty">Keine Eintraege</div>'}
+}
+
+function selectJournal(date){
+  document.getElementById('journal-date').value=date;
+  loadJournal(date);
+  document.querySelectorAll('.journal-item').forEach(i=>i.classList.toggle('active',i.textContent===date));
+}
+
+document.getElementById('journal-date').addEventListener('change',e=>loadJournal(e.target.value));
+
+/* --- Init --- */
+loadLog();
+loadJournalList();
+
+// ---- Supplements ----
+let SUPP_CATALOG = [];
+
+function setSuppEmpty(elId,msg){
+  document.getElementById(elId).innerHTML=`<div class="empty">${msg}</div>`;
+}
+
+function pillClass(t){
+  const x=(t||'any').toLowerCase();
+  if(['morning','day','evening','night'].includes(x))return 'pill pill-'+x;
+  return 'pill pill-any';
+}
+
+function fmtDose(intake){
+  if(intake.dose==null||intake.dose==='')return '';
+  const n=Number(intake.dose);
+  if(!Number.isFinite(n))return '';
+  const u=intake.unit||'';
+  return `${n}${u?` ${u}`:''}`;
+}
+
+function renderSuppCatalog(){
+  const sel=document.getElementById('supp-select');
+  if(!SUPP_CATALOG.length){
+    sel.innerHTML='<option value="">(keine)</option>';
+    return;
+  }
+  sel.innerHTML=SUPP_CATALOG
+    .slice()
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
+    .map(i=>`<option value="${esc(i.id)}">${esc(i.name||i.id)}</option>`)
+    .join('');
+  sel.value=SUPP_CATALOG[0].id;
+  applySuppDefaults();
+}
+
+function applySuppDefaults(){
+  const id=document.getElementById('supp-select').value;
+  const item=SUPP_CATALOG.find(x=>x.id===id);
+  if(!item)return;
+  document.getElementById('supp-unit').value=item.unit||'mg';
+  if(item.default_dose!=null && document.getElementById('supp-dose').value===''){
+    document.getElementById('supp-dose').value=item.default_dose;
+  }
+  if(item.default_time_of_day && document.getElementById('supp-time').value==='any'){
+    document.getElementById('supp-time').value=item.default_time_of_day;
+  }
+}
+
+document.getElementById('supp-select').addEventListener('change',()=>{
+  document.getElementById('supp-dose').value='';
+  document.getElementById('supp-notes').value='';
+  document.getElementById('supp-time').value='any';
+  applySuppDefaults();
+});
+
+async function loadSuppCatalog(){
+  try{
+    const r=await api('/supplements/catalog');
+    SUPP_CATALOG=r.items||[];
+    renderSuppCatalog();
+  }catch(e){
+    SUPP_CATALOG=[];
+    renderSuppCatalog();
+    toast('Supplements: Katalog konnte nicht geladen werden','error');
+  }
+}
+
+function renderSuppIntakes(day){
+  const el=document.getElementById('supp-list');
+  const intakes=(day&&day.intakes)||[];
+  if(!intakes.length){setSuppEmpty('supp-list','Keine Supplements geloggt');return}
+  el.innerHTML=intakes.slice().reverse().map(i=>`
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <strong style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.name||i.supplement_id||'')}</strong>
+          <span class="${pillClass(i.time_of_day)}">${esc(i.time_of_day||'any')}</span>
+        </div>
+        <button class="btn btn-sm btn-ghost" onclick="deleteSupplementIntake('${esc(i.id)}')" aria-label="Loeschen">✕</button>
+      </div>
+      <div class="card-body">
+        ${fmtDose(i)?`<div><span style="color:var(--muted)">Dosis:</span> ${esc(fmtDose(i))}</div>`:''}
+        ${i.notes?`<div class="card-meta">${esc(i.notes)}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+async function loadSuppLog(date){
+  try{
+    const r=await api('/supplements/log?date='+(date||today()));
+    renderSuppIntakes(r.data||r);
+  }catch(e){
+    renderSuppIntakes(null);
+  }
+}
+
+async function saveSupplementIntake(){
+  const date=document.getElementById('supp-date').value||today();
+  const supplement_id=document.getElementById('supp-select').value;
+  if(!supplement_id){toast('Supplement fehlt','error');return}
+
+  const item=SUPP_CATALOG.find(x=>x.id===supplement_id);
+  const unit=(item&&item.unit)||document.getElementById('supp-unit').value||'mg';
+  const doseRaw=document.getElementById('supp-dose').value;
+  const dose=doseRaw===''?null:Number(doseRaw);
+  const time_of_day=document.getElementById('supp-time').value||'any';
+  const notes=document.getElementById('supp-notes').value.trim();
+
+  try{
+    await api('/supplements/log',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({date,intake:{supplement_id,dose,unit,time_of_day,notes}})
+    });
+    toast('Einnahme gespeichert!');
+    document.getElementById('supp-dose').value='';
+    document.getElementById('supp-notes').value='';
+    document.getElementById('supp-time').value='any';
+    applySuppDefaults();
+    loadSuppLog(date);
+    loadSuppStats(date);
+  }catch(e){
+    toast('Fehler: '+e.message,'error');
+  }
+}
+
+async function deleteSupplementIntake(id){
+  const date=document.getElementById('supp-date').value||today();
+  try{
+    await api('/supplements/log',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({date,delete_id:id})
+    });
+    loadSuppLog(date);
+    loadSuppStats(date);
+  }catch(e){
+    toast('Fehler: '+e.message,'error');
+  }
+}
+
+async function loadSuppStats(anchorDate){
+  const el=document.getElementById('supp-stats');
+  el.innerHTML='<div class="empty">Lade...</div>';
+  try{
+    const r=await api('/supplements/stats?days=30&anchor='+(anchorDate||today()));
+    const stats=r.stats||[];
+    if(!stats.length){setSuppEmpty('supp-stats','Keine Daten');return}
+    el.innerHTML=stats.map(s=>{
+      const sup=s.supplement||{};
+      const days=s.days_taken||0;
+      const streak=s.current_streak||0;
+      return `
+        <div class="card">
+          <div class="card-header" style="justify-content:space-between">
+            <strong>${esc(sup.name||sup.id||'')}</strong>
+            <span class="pill pill-any">${days}d</span>
+          </div>
+          <div class="card-body" style="color:var(--muted)">
+            Current streak: <span style="color:var(--ink);font-weight:700">${streak}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }catch(e){
+    setSuppEmpty('supp-stats','Fehler beim Laden');
+  }
+}
+
+async function promptNewSupplement(){
+  const name=prompt('Name des Supplements (z.B. Ashwagandha)');
+  if(!name)return;
+  const unit=prompt('Einheit (z.B. mg, g, IU)', 'mg')||'mg';
+  const doseRaw=prompt('Default Dosis (optional)', '');
+  const default_dose=doseRaw===''?null:Number(doseRaw);
+  const default_time_of_day=prompt('Default Tageszeit (any/morning/day/evening/night)', 'any')||'any';
+  try{
+    await api('/supplements/catalog',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,unit,default_dose,default_time_of_day})
+    });
+    await loadSuppCatalog();
+    toast('Supplement angelegt!');
+  }catch(e){
+    toast('Fehler: '+e.message,'error');
+  }
+}
+
+document.getElementById('supp-date').addEventListener('change',e=>{
+  loadSuppLog(e.target.value);
+  loadSuppStats(e.target.value);
+});
+
+// initial load
+loadSuppCatalog().then(()=>{
+  loadSuppLog();
+  loadSuppStats();
+});
+
+// convenience: keep supplements date aligned with meal date
+document.getElementById('meal-date').addEventListener('change',e=>{
+  document.getElementById('supp-date').value=e.target.value;
+});
+
+/* --- PWA offline support --- */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

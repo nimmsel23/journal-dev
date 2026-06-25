@@ -1,0 +1,21 @@
+{
+  "id": "meal_500g_kseleberkse_billa_at_mit_4_kaisersemmeln",
+  "kind": "meal",
+  "category": "meal",
+  "name": "500g Käseleberkäse BILLA AT mit 4 Kaisersemmeln",
+  "alias": null,
+  "meal_type": "meal",
+  "description": "500g Käseleberkäse BILLA AT mit 4 Kaisersemmeln",
+  "notes": "",
+  "kcal": 2005,
+  "protein": 85,
+  "carbs": 122,
+  "fat": 124,
+  "yield_g": null,
+  "components": [],
+  "addons": [],
+  "default_addon_ids": [],
+  "source": "manual",
+  "created_at": "2026-05-18T20:10:48.626Z",
+  "updated_at": "2026-05-18T20:10:48.626Z"
+}

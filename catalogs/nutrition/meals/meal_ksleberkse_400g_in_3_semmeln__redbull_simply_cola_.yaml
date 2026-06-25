@@ -1,0 +1,19 @@
+id: meal_ksleberkse_400g_in_3_semmeln__redbull_simply_cola_
+kind: meal
+category: meal
+name: Käsleberkäse 400g in 3 Semmeln + RedBull Simply Cola 0,33l
+alias: null
+meal_type: meal
+description: Käsleberkäse 400g in 3 Semmeln + RedBull Simply Cola 0,33l
+notes: ''
+kcal: 1826
+protein: 75
+carbs: 130
+fat: 90
+yield_g: null
+components: []
+addons: []
+default_addon_ids: []
+source: manual
+created_at: '2026-05-20T16:18:10.775Z'
+updated_at: '2026-05-20T16:18:10.776Z'

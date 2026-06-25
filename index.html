@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#080b12" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <title>Journal VOS</title>
+    <script type="module" src="/src/main.jsx"></script>
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          window.__swRegistration = reg
+          const notify = () => window.dispatchEvent(new CustomEvent('sw-update-available'))
+          if (reg.waiting) notify()
+          reg.addEventListener('updatefound', () => {
+            const nw = reg.installing
+            if (!nw) return
+            nw.addEventListener('statechange', () => {
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) notify()
+            })
+          })
+        }).catch(() => {})
+        let reloading = false
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (reloading) return
+          reloading = true
+          window.location.reload()
+        })
+      }
+    </script>
+  </body>
+</html>

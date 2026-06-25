@@ -1,0 +1,314 @@
+#!/usr/bin/env zsh
+
+LOGDIR="${HOME}/ernaehrungsprotokoll"
+DB="${LOGDIR}/nutrition_db.yaml"
+mkdir -p "$LOGDIR"
+
+TODAY=$(date +%Y-%m-%d)
+FILE="${LOGDIR}/${TODAY}.yaml"
+
+# ── Konfiguration ───────────────────────────────────────────────
+WGER_API_URL="http://localhost:8000/api/v2"   # ← ÄNDERE HIER falls dein Port anders ist (z.B. :8080)
+
+# Farben
+RED=$'\e[31m'
+GREEN=$'\e[32m'
+YELLOW=$'\e[33m'
+BLUE=$'\e[34m'
+CYAN=$'\e[36m'
+BOLD=$'\e[1m'
+RESET=$'\e[0m'
+
+function has_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+function banner() {
+    if has_cmd figlet; then
+        figlet -f small "Ernährungs-Log" | sed 's/^/  /'
+    else
+        echo "${BOLD}╔══════════════════════════════════════╗${RESET}"
+        echo "${BOLD}║         Ernährungs-Log + wger        ║${RESET}"
+        echo "${BOLD}╚══════════════════════════════════════╝${RESET}"
+    fi
+}
+
+function progress_bar() {
+    local percent=$1 width=30
+    local filled=$(( percent * width / 100 ))
+    local bar=$(printf "%${filled}s" | tr ' ' '█')
+    local empty=$(printf "%$((width - filled))s" | tr ' ' '░')
+    echo "${bar}${empty} ${percent}%"
+}
+
+function usage() {
+    echo "${CYAN}=== Ernährungs-Freihand-Journal (YAML + wger API) ===${RESET}"
+    echo "  ern-log init                    → Vorlage für heute"
+    echo "  ern-log add \"<Sektion> <Menge> <Name>\""
+    echo "       Beispiele:"
+    echo "         ern-log add \"Vormittag 300g Nudeln\""
+    echo "         ern-log add \"Abend 150g Hähnchenbrust\""
+    echo "  ern-log today | show <YYYY-MM-DD>"
+    echo "  ern-log week"
+    echo "  ern-log dashboard"
+}
+
+# ── Tag initialisieren ───────────────────────────────────────────
+function init_day() {
+    [[ -f "$FILE" ]] && { echo "${GREEN}✅ Heutige Datei existiert bereits.${RESET}"; return; }
+    cat > "$FILE" <<EOF
+date: ${TODAY}
+sections:
+  Vormittag: []
+  Nachmittag: []
+  Abend: []
+summary:
+  total_kcal: 0
+  carbs_pct: 0
+  protein_pct: 0
+  fat_pct: 0
+EOF
+    echo "${GREEN}✅ Vorlage für heute (${TODAY}) erstellt.${RESET}"
+}
+
+# ── Freihand-Eingabe parsen ─────────────────────────────────────
+function parse_and_add() {
+    local input="$1"
+    local section=$(echo "$input" | grep -oE '^(Vormittag|Nachmittag|Abend)')
+    if [[ -z "$section" ]]; then
+        echo "${RED}❌ Bitte mit Sektion starten (Vormittag / Nachmittag / Abend)${RESET}"
+        return 1
+    fi
+
+    local item_str="${input#${section} }"
+    item_str="${item_str# }"
+
+    local amount=$(echo "$item_str" | grep -oE '^[0-9.,]+(\s*(g|ml|Stk|Scheibe|Stück|Stk\.))?')
+    amount="${amount// /}"
+    local name="${item_str#${amount}}"
+    name="${name# }"
+
+    [[ -z "$amount" || -z "$name" ]] && {
+        echo "${RED}❌ Menge oder Name nicht erkannt.${RESET}"
+        return 1
+    }
+
+    echo "${BLUE}→ ${section} | ${amount} | ${name}${RESET}"
+    calculate_nutrition "$name" "$amount" "$section"
+}
+
+# ── Nährwerte holen: zuerst lokale DB, dann wger API ─────────────
+function calculate_nutrition() {
+    local name="$1" amount="$2" section="$3"
+    local lower_name=$(echo "$name" | tr '[:upper:]' '[:lower:]')
+
+    # 1. Versuch: Lokale DB
+    local entry=$(yq -r '.items | keys_unsorted[] | select(test("'"${lower_name}"'"; "i"))' "$DB" 2>/dev/null | head -1)
+
+    if [[ -n "$entry" ]]; then
+        echo "${GREEN}✓ Aus lokaler DB: ${entry}${RESET}"
+        # ... (gleiche Berechnungslogik wie vorher)
+        local qty=${amount%%[a-zA-Z]*}
+        qty=${qty//,/.}
+        local factor=$(echo "$qty / 100" | bc -l 2>/dev/null || echo "1")
+        local kcal=$(echo "$(yq -r ".items.\"${entry}\".kcal_per_100g" "$DB") * $factor" | bc -l | xargs printf "%.0f")
+        local carbs_g=$(echo "$(yq -r ".items.\"${entry}\".carbs_g_per_100g" "$DB") * $factor" | bc -l | xargs printf "%.1f")
+        local protein_g=$(echo "$(yq -r ".items.\"${entry}\".protein_g_per_100g" "$DB") * $factor" | bc -l | xargs printf "%.1f")
+        local fat_g=$(echo "$(yq -r ".items.\"${entry}\".fat_g_per_100g" "$DB") * $factor" | bc -l | xargs printf "%.1f")
+    else
+        # 2. Versuch: wger API
+        echo "${YELLOW}→ Suche in wger API: ${name} ...${RESET}"
+        local search_url="${WGER_API_URL}/ingredient/?search=${name// /%20}&limit=5"
+        local response=$(curl -s --max-time 5 "$search_url")
+
+        if [[ -z "$response" || "$response" == *"detail"* ]]; then
+            echo "${RED}❌ wger API nicht erreichbar oder kein Treffer.${RESET}"
+            echo "Bitte manuell eingeben oder wger läuft nicht auf ${WGER_API_URL}"
+            # Fallback: manuelle Eingabe (wie vorher)
+            read -p "kcal (pro 100g/ml): " kcal
+            read -p "KH (g pro 100): " carbs
+            read -p "Protein (g pro 100): " protein
+            read -p "Fett (g pro 100): " fat
+        else
+            # Einfache Extraktion des ersten Treffers (wger liefert energy, carbohydrates, protein, fat)
+            local kcal100=$(echo "$response" | python3 -c '
+import sys, json
+data = json.load(sys.stdin)
+if data.get("results"):
+    item = data["results"][0]
+    print(item.get("energy", 0))
+else:
+    print(0)
+' 2>/dev/null || echo "0")
+
+            local carbs100=$(echo "$response" | python3 -c '
+import sys, json
+data = json.load(sys.stdin)
+if data.get("results"):
+    item = data["results"][0]
+    print(item.get("carbohydrates", 0))
+else:
+    print(0)
+' 2>/dev/null || echo "0")
+
+            local protein100=$(echo "$response" | python3 -c '
+import sys, json
+data = json.load(sys.stdin)
+if data.get("results"):
+    item = data["results"][0]
+    print(item.get("protein", 0))
+else:
+    print(0)
+' 2>/dev/null || echo "0")
+
+            local fat100=$(echo "$response" | python3 -c '
+import sys, json
+data = json.load(sys.stdin)
+if data.get("results"):
+    item = data["results"][0]
+    print(item.get("fat", 0))
+else:
+    print(0)
+' 2>/dev/null || echo "0")
+
+            if [[ "$kcal100" -eq 0 ]]; then
+                echo "${RED}Kein brauchbarer Treffer in wger.${RESET}"
+                # Manuelle Eingabe als Fallback
+                read -p "kcal (pro 100g): " kcal
+                read -p "KH (g pro 100): " carbs
+                read -p "Protein (g pro 100): " protein
+                read -p "Fett (g pro 100): " fat
+            else
+                local qty=${amount%%[a-zA-Z]*}
+                qty=${qty//,/.}
+                local factor=$(echo "$qty / 100" | bc -l 2>/dev/null || echo "1")
+                kcal=$(echo "$kcal100 * $factor" | bc -l | xargs printf "%.0f")
+                carbs=$(echo "$carbs100 * $factor" | bc -l | xargs printf "%.1f")
+                protein=$(echo "$protein100 * $factor" | bc -l | xargs printf "%.1f")
+                fat=$(echo "$fat100 * $factor" | bc -l | xargs printf "%.1f")
+                echo "${GREEN}✓ Aus wger: ${kcal} kcal, ${carbs}g KH, ${protein}g Protein, ${fat}g Fett${RESET}"
+            fi
+        fi
+    fi
+
+    # Eintrag speichern
+    yq -i ".sections.\"${section}\" += [{
+        name: \"${name}\",
+        amount: \"${amount}\",
+        kcal: ${kcal:-0},
+        carbs_g: ${carbs:-0},
+        protein_g: ${protein:-0},
+        fat_g: ${fat:-0}
+    }]" "$FILE"
+
+    echo "${GREEN}✅ Eingetragen: ${amount} ${name} (${kcal} kcal)${RESET}"
+    recalculate_summary
+}
+
+# ── Summary neu berechnen (unverändert) ─────────────────────────
+function recalculate_summary() {
+    python3 - <<EOF
+import yaml
+with open('$FILE', 'r', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+total_kcal = total_c = total_p = total_f = 0.0
+for sec in ['Vormittag', 'Nachmittag', 'Abend']:
+    for item in data.get('sections', {}).get(sec, []):
+        total_kcal += float(item.get('kcal', 0))
+        total_c += float(item.get('carbs_g', 0))
+        total_p += float(item.get('protein_g', 0))
+        total_f += float(item.get('fat_g', 0))
+if total_kcal > 0:
+    c_pct = round((total_c * 4 / total_kcal) * 100)
+    p_pct = round((total_p * 4 / total_kcal) * 100)
+    f_pct = round((total_f * 9 / total_kcal) * 100)
+else:
+    c_pct = p_pct = f_pct = 0
+data['summary'] = {
+    'total_kcal': round(total_kcal),
+    'carbs_pct': int(c_pct),
+    'protein_pct': int(p_pct),
+    'fat_pct': int(f_pct)
+}
+with open('$FILE', 'w', encoding='utf-8') as f:
+    yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+EOF
+}
+
+# ── Tag anzeigen ────────────────────────────────────────────────
+function show_day() {
+    local target="${LOGDIR}/$1.yaml"
+    [[ ! -f "$target" ]] && { echo "${RED}Keine Daten für $1${RESET}"; return 1; }
+
+    echo "\n${BLUE}=== Protokoll $(basename $target .yaml) ===${RESET}\n"
+
+    for sec in Vormittag Nachmittag Abend; do
+        echo "${CYAN}▶ ${sec}${RESET}"
+        yq -o=json ".sections.\"${sec}\"" "$target" 2>/dev/null | python3 -c '
+import sys, json
+items = json.load(sys.stdin)
+if not items:
+    print("  (leer)")
+    sys.exit()
+for i in items:
+    print(f"  {i.get("amount","")} {i.get("name","")} → {i.get("kcal",0)} kcal")
+' 2>/dev/null || echo "  (leer)"
+        echo
+    done
+
+    echo "${GREEN}Zusammenfassung:${RESET}"
+    yq -o=pretty '.summary' "$target"
+}
+
+# ── Woche ───────────────────────────────────────────────────────
+function week() {
+    echo "${BLUE}Wochenübersicht (letzte 7 Tage):${RESET}"
+    for i in {0..6}; do
+        d=$(date -v-${i}d +%Y-%m-%d 2>/dev/null || date -d "${i} days ago" +%Y-%m-%d)
+        f="${LOGDIR}/${d}.yaml"
+        if [[ -f "$f" ]]; then
+            kcal=$(yq '.summary.total_kcal // 0' "$f")
+            bar=$(printf "%$((kcal/40)).0s" | tr ' ' '█')
+            printf "${GREEN}%s${RESET} → %5d kcal  %s\n" "$d" "$kcal" "$bar"
+        fi
+    done
+}
+
+# ── Dashboard ───────────────────────────────────────────────────
+function dashboard() {
+    clear 2>/dev/null || true
+    banner
+
+    echo "${YELLOW}Heutiges Datum: ${TODAY}${RESET}\n"
+
+    if [[ -f "$FILE" ]]; then
+        total=$(yq '.summary.total_kcal // 0' "$FILE")
+        c=$(yq '.summary.carbs_pct // 0' "$FILE")
+        p=$(yq '.summary.protein_pct // 0' "$FILE")
+        f=$(yq '.summary.fat_pct // 0' "$FILE")
+
+        echo "${BOLD}Gesamt heute: ${GREEN}${total} kcal${RESET}\n"
+        echo "${CYAN}Makro-Verteilung:${RESET}"
+        echo "  KH      $(progress_bar $c)"
+        echo "  Protein $(progress_bar $p)"
+        echo "  Fett    $(progress_bar $f)"
+        echo
+    else
+        echo "${YELLOW}Noch keine Einträge heute – starte mit: ern-log init${RESET}\n"
+    fi
+
+    week
+
+    echo "\n${GREEN}Schnell-Eingabe-Beispiele:${RESET}"
+    echo "  ern-log add \"Vormittag 2 Eier + 1 Brötchen\""
+    echo "  ern-log add \"Nachmittag 150g Hähnchenbrust mit Reis\""
+    echo "  ern-log dashboard"
+}
+# ── Hauptprogramm ───────────────────────────────────────────────
+case "$1" in
+    init)      init_day ;;
+    add)       init_day; parse_and_add "$2" ;;
+    today)     show_day "$TODAY" ;;
+    show)      show_day "$2" ;;
+    week)      week ;;
+    dashboard) dashboard ;;
+    *)         usage ;;
+esac

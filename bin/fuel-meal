@@ -1,0 +1,543 @@
+#!/usr/bin/env python3
+"""
+fuel-meal — Meal logging CLI (interactive, manual, Gemini-powered)
+
+Usage:
+  fuel meal log "Nussschnecke" --kcal 250    # With manual macros
+  fuel meal log "Wiener Schnitzel"           # Auto-estimate via Gemini
+  fuel meal log "Name" --save-catalog        # Save to reusable catalog
+  fuel meal list                             # List meals in catalog
+  fuel meal today                            # Show today's meals
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+from datetime import date, datetime, timezone
+from pathlib import Path
+import urllib.request
+import urllib.error
+import urllib.parse
+
+import typer
+from wasabi import Printer
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from rich.console import Console
+from rich.table import Table
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from fuel_cli.dates import resolve_flags as _resolve_date
+from fuel_cli.narrative import parse as _parse_narrative, spread_times as _spread_times
+from fuel_cli.gemini import estimate_macros_only as _gemini_macros, discover_item as _gemini_discover
+
+
+def _clean_catalog_name(text: str, max_len: int = 80) -> str:
+    """Macht aus items_text einen sauberen Catalog-Namen ohne Gemini-Call."""
+    import re as _re
+    # Prefix-Müll: "Mahlzeit:", "Insgesamt:", etc.
+    cleaned = _re.sub(r"^\s*(mahlzeit|insgesamt|gericht|essen)\s*:?\s*", "", text, flags=_re.IGNORECASE).strip()
+    cleaned = _re.sub(r"\s+", " ", cleaned)
+    if len(cleaned) > max_len:
+        cleaned = cleaned[: max_len - 1].rsplit(",", 1)[0].rstrip() + "…"
+    return cleaned or text
+
+console = Console()
+msg = Printer()
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def gum_log(level: str, text: str):
+    """Wrapper for gum log."""
+    try:
+        subprocess.run(["gum", "log", f"--level={level}", text])
+    except:
+        if level == "info": msg.info(text)
+        elif level == "warn": msg.warn(text)
+        elif level == "error": msg.fail(text)
+
+# ── Config ────────────────────────────────────────────────────────────────────
+
+API_BASE = os.environ.get("FUEL_API_URL", "http://127.0.0.1:9000")
+
+def _load_env():
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if "=" in line and not line.startswith("#"):
+                k, v = line.split("=", 1)
+                os.environ[k.strip()] = v.strip()
+
+_load_env()
+UID = os.environ.get("FUEL_CLOUD_UID", "default")
+
+# ── Paths ──────────────────────────────────────────────────────────────────────
+
+DATA_DIR = Path(os.environ.get("AOS_FUEL_DATA_DIR", Path.home() / ".aos" / "fuel")).expanduser()
+NUTRITION_DIR = DATA_DIR / "nutrition"
+CATALOG_DIR = Path(__file__).resolve().parent.parent / "catalogs" / "nutrition"
+LOCAL_CATALOG_FILE = DATA_DIR / "nutrition" / "catalog.json"
+
+# ── Local I/O ──────────────────────────────────────────────────────────────────
+
+def _load_log_local(date_str: str) -> dict:
+    p = NUTRITION_DIR / f"{date_str}.json"
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except:
+            pass
+    return {"date": date_str, "meals": [], "water_ml": 0}
+
+def _save_log_local(log: dict) -> None:
+    NUTRITION_DIR.mkdir(parents=True, exist_ok=True)
+    p = NUTRITION_DIR / f"{log['date']}.json"
+    p.write_text(json.dumps(log, indent=2, ensure_ascii=False) + "\n")
+
+def _load_catalog_local() -> dict:
+    items = []
+    # 1. From individual meal files (support both .yaml and .json)
+    meals_dir = CATALOG_DIR / "meals"
+    if meals_dir.exists():
+        # Prefer YAML if both exist for same ID
+        seen_ids = set()
+        
+        # Collect YAML files first
+        for f in meals_dir.glob("*.yaml"):
+            try:
+                import yaml
+                data = yaml.safe_load(f.read_text())
+                items.append(data)
+                seen_ids.add(f.stem)
+            except:
+                pass
+        for f in meals_dir.glob("*.yml"):
+            try:
+                if f.stem in seen_ids: continue
+                import yaml
+                data = yaml.safe_load(f.read_text())
+                items.append(data)
+                seen_ids.add(f.stem)
+            except:
+                pass
+        # Then JSON files (only if YAML doesn't exist)
+        for f in meals_dir.glob("*.json"):
+            if f.stem in seen_ids: continue
+            try:
+                items.append(json.loads(f.read_text()))
+            except:
+                pass
+    
+    # 2. From central catalog.json
+    if LOCAL_CATALOG_FILE.exists():
+        try:
+            data = json.loads(LOCAL_CATALOG_FILE.read_text())
+            c_items = data.get("items", data)
+            if isinstance(c_items, list):
+                items.extend(c_items)
+        except:
+            pass
+    return {"ok": True, "items": items}
+
+# ── Validation ─────────────────────────────────────────────────────────────────
+
+class MealInput(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    description: str = Field(..., min_length=1)
+    kcal: float = Field(0, ge=0)
+    protein: float = Field(0, ge=0)
+    carbs: float = Field(0, ge=0)
+    fat: float = Field(0, ge=0)
+    notes: str = Field("")
+
+# ── API ────────────────────────────────────────────────────────────────────────
+
+def _api_call(method: str, endpoint: str, body: dict | None = None) -> dict:
+    url = f"{API_BASE}{endpoint}"
+    headers = {"Content-Type": "application/json", "X-Fuel-UID": UID}
+    try:
+        if method == "GET":
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                return json.loads(resp.read())
+        elif method == "POST":
+            data = json.dumps(body, ensure_ascii=False).encode('utf-8')
+            req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        msg.fail(f"API Error {e.code}: {e.reason}")
+        raise SystemExit(1)
+    except (urllib.error.URLError, TimeoutError) as e:
+        # Fallback to local mode
+        if endpoint == "/nutrition/catalog":
+            return _load_catalog_local()
+        if endpoint.startswith("/nutrition/log"):
+            # GET /nutrition/log?date=...
+            if method == "GET":
+                qs = urllib.parse.parse_qs(urllib.parse.urlparse(endpoint).query)
+                d = qs.get("date", [date.today().isoformat()])[0]
+                return {"ok": True, "data": _load_log_local(d), "_offline": True}
+            
+            # POST /nutrition/log
+            if method == "POST" and body:
+                d = body.get("date", date.today().isoformat())
+                log = _load_log_local(d)
+                if body.get("meal"):
+                    m = body["meal"]
+                    m["id"] = f"meal_off_{int(datetime.now().timestamp())}"
+                    m["time"] = datetime.now().isoformat()
+                    log["meals"].append(m)
+                if body.get("delete_meal_id"):
+                    log["meals"] = [m for m in log["meals"] if m["id"] != body["delete_meal_id"]]
+                if "water_ml" in body:
+                    log["water_ml"] = body["water_ml"]
+                _save_log_local(log)
+                return {"ok": True, "data": log, "_offline": True}
+        
+        msg.fail(f"API Fehler: {e}")
+        raise SystemExit(1)
+
+def _parse_macros_with_gemini(description: str) -> dict:
+    """Auto-estimate macros via standalone gemini-estimate script."""
+    try:
+        fuel_dir = Path(__file__).resolve().parent
+        script_path = fuel_dir / "gemini-estimate"
+        
+        result = subprocess.run(
+            [str(script_path), description],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if result.returncode == 0:
+            macros = json.loads(result.stdout.strip())
+            kcal = macros.get("kcal", 0)
+            if kcal > 0:
+                msg.info(f"Gemini: {kcal} kcal geschätzt")
+            return macros
+    except json.JSONDecodeError:
+        msg.warn("Gemini: JSON parse error")
+    except subprocess.TimeoutExpired:
+        msg.warn("Gemini: Timeout")
+    except Exception as e:
+        msg.warn(f"Gemini: {e}")
+    return {"kcal": 0, "protein": 0, "carbs": 0, "fat": 0}
+
+# ── Interactive Mode ───────────────────────────────────────────────────────────
+
+def do_meal_interactive() -> None:
+    """Interactive fzf catalog browser."""
+    try:
+        result = _api_call("GET", "/nutrition/catalog")
+        items = result.get("items", [])
+    except SystemExit:
+        raise SystemExit(1)
+
+    if not items:
+        msg.warn("Catalog ist leer")
+        raise SystemExit(1)
+
+    fzf_items = []
+    for item in items:
+        kcal = item.get("kcal", 0)
+        label = f"{item['name']:<40} {kcal:>4} kcal"
+        fzf_items.append((label, item))
+
+    fzf_input = "\n".join([label for label, _ in fzf_items])
+
+    try:
+        result = subprocess.run(
+            ["fzf", "--header", "MEAL AUSWÄHLEN", "--height=15", "--layout=reverse"],
+            input=fzf_input,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode != 0:
+            raise SystemExit(0)
+
+        selected_label = result.stdout.strip()
+        selected_item = None
+        for label, item in fzf_items:
+            if label == selected_label:
+                selected_item = item
+                break
+
+        if not selected_item:
+            msg.fail("Item nicht gefunden")
+            raise SystemExit(1)
+
+        do_meal_log(selected_item["name"], selected_item.get("kcal", 0),
+                    selected_item.get("protein", 0), selected_item.get("carbs", 0),
+                    selected_item.get("fat", 0), "", None, False)
+
+    except FileNotFoundError:
+        msg.fail("fzf nicht gefunden")
+        raise SystemExit(1)
+
+# ── Meal Logging ───────────────────────────────────────────────────────────────
+
+def do_meal_log(description: str, kcal: float, protein: float, carbs: float, fat: float, notes: str, day: str | None, save_catalog: bool, qty: int = 1, catalog_id: str | None = None) -> None:
+    today = day or date.today().isoformat()
+    qty = max(1, int(qty))
+
+    if kcal == 0 and protein == 0 and carbs == 0 and fat == 0:
+        msg.info(f"Gemini schätzt Makros für '{description}'...")
+        macros = _parse_macros_with_gemini(description)
+        kcal, protein, carbs, fat = macros.get("kcal", 0), macros.get("protein", 0), macros.get("carbs", 0), macros.get("fat", 0)
+
+    if qty > 1:
+        kcal, protein, carbs, fat = kcal * qty, protein * qty, carbs * qty, fat * qty
+
+    try:
+        MealInput(description=description, kcal=kcal, protein=protein, carbs=carbs, fat=fat, notes=notes)
+    except ValidationError as e:
+        msg.fail(f"Validation error: {e.error_count()} Fehler")
+        raise SystemExit(1)
+
+    meal_payload = {
+        "meal_type": "lunch",
+        "description": f"{qty}x {description}" if qty > 1 else description,
+        "kcal": kcal, "protein": protein, "carbs": carbs, "fat": fat, "notes": notes,
+    }
+    if catalog_id:
+        meal_payload["catalog_id"] = catalog_id
+
+    payload = {"date": today, "meal": meal_payload}
+
+    res = _api_call("POST", "/nutrition/log", payload)
+    
+    text = f"{description} ({kcal:.0f} kcal) geloggt — {today}"
+    if res.get("_offline"):
+        msg.info(f"Offline: {text}")
+    else:
+        msg.good(text)
+
+    if save_catalog:
+        catalog_item = {
+            "item": { "name": description, "kcal": kcal/qty, "protein": protein/qty, "carbs": carbs/qty, "fat": fat/qty }
+        }
+        _api_call("POST", "/nutrition/catalog", catalog_item)
+        msg.info(f"Zum Catalog hinzugefügt: {description}")
+
+def do_today(day: str | None) -> None:
+    today = day or date.today().isoformat()
+    try:
+        result = _api_call("GET", f"/nutrition/log?date={today}")
+        meals = result.get("data", {}).get("meals", [])
+    except SystemExit:
+        return
+
+    if not meals:
+        console.print(f"[yellow]Keine Mahlzeiten geloggt am {today}[/yellow]")
+        return
+
+    title = f"Mahlzeiten — {today}"
+    if result.get("_offline"):
+        title += " (OFFLINE)"
+
+    table = Table(title=title, show_header=True, header_style="bold green")
+    table.add_column("MAHLZEIT")
+    table.add_column("KCAL", justify="right")
+    table.add_column("P", justify="right")
+    table.add_column("K", justify="right")
+    table.add_column("F", justify="right")
+
+    for m in meals:
+        table.add_row(m["description"], f"{m['kcal']:.0f}", f"{m['protein']:.1f}g", f"{m['carbs']:.1f}g", f"{m['fat']:.1f}g")
+    
+    console.print(table)
+
+def do_unlog(day: str | None) -> None:
+    target_day = day or date.today().isoformat()
+    res = _api_call("GET", f"/nutrition/log?date={target_day}")
+    meals = res.get("data", {}).get("meals", [])
+
+    if not meals:
+        msg.warn(f"Keine Einträge am {target_day} zum Löschen.")
+        return
+
+    fzf_lines = []
+    for m in meals:
+        line = f"{m['id']} | {m['description']} ({m.get('kcal',0)} kcal)"
+        fzf_lines.append(line)
+
+    try:
+        result = subprocess.run(
+            ["fzf", "--header", f"MAHLZEIT LÖSCHEN ({target_day})", "--height=15", "--layout=reverse"],
+            input="\n".join(fzf_lines),
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return
+
+        selected_line = result.stdout.strip()
+        if not selected_line:
+            return
+
+        delete_id = selected_line.split("|")[0].strip()
+        
+        payload = {"date": target_day, "delete_meal_id": delete_id}
+        _api_call("POST", "/nutrition/log", payload)
+        msg.good(f"Mahlzeit {delete_id} gelöscht.")
+
+    except FileNotFoundError:
+        msg.fail("fzf nicht gefunden")
+        raise SystemExit(1)
+
+# ── Typer App ──────────────────────────────────────────────────────────────────
+
+app = typer.Typer(help="Meal Logging CLI")
+
+@app.command(name="unlog")
+def unlog_command(
+    tag:        str | None = typer.Option(None, "--tag", help="Datum: heute|gestern|vorgestern|-N|Mo|YYYY-MM-DD"),
+    gestern:    bool       = typer.Option(False, "--gestern", "-g"),
+    vorgestern: bool       = typer.Option(False, "--vorgestern"),
+    day:        str | None = typer.Option(None, "--day", "-d", help="(legacy) Datum YYYY-MM-DD"),
+) -> None:
+    """Entferne einen Mahlzeiten-Eintrag interaktiv."""
+    try:
+        target = _resolve_date(tag=tag, gestern=gestern, vorgestern=vorgestern, day_legacy=day)
+    except ValueError as e:
+        msg.fail(str(e)); raise typer.Exit(1)
+    do_unlog(target)
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context) -> None:
+    if ctx.invoked_subcommand is None:
+        do_meal_interactive()
+
+@app.command(name="log")
+def log_command(
+    description: str = typer.Argument(..., help="Beschreibung"),
+    kcal: float = typer.Option(0, "--kcal"),
+    protein: float = typer.Option(0, "--protein"),
+    carbs: float = typer.Option(0, "--carbs"),
+    fat: float = typer.Option(0, "--fat"),
+    notes: str = typer.Option("", "--notes", "-n"),
+    tag:        str | None = typer.Option(None, "--tag", help="Datum: heute|gestern|vorgestern|-N|Mo|YYYY-MM-DD"),
+    gestern:    bool       = typer.Option(False, "--gestern", "-g"),
+    vorgestern: bool       = typer.Option(False, "--vorgestern"),
+    day: str = typer.Option(None, "--day", "-d", help="(legacy) Datum YYYY-MM-DD"),
+    save_catalog: bool = typer.Option(False, "--save-catalog", "-s"),
+    qty: int = typer.Option(1, "--qty", "-q"),
+) -> None:
+    try:
+        target = _resolve_date(tag=tag, gestern=gestern, vorgestern=vorgestern, day_legacy=day)
+    except ValueError as e:
+        msg.fail(str(e)); raise typer.Exit(1)
+    do_meal_log(description, kcal, protein, carbs, fat, notes, target, save_catalog, qty)
+
+@app.command(name="narrative")
+def narrative_command(
+    text: str = typer.Argument(..., help="Erzählung, z.B. '4 Teller Nachmittag bis Abend: 250g Reis, …'"),
+    tag:        str | None = typer.Option(None, "--tag"),
+    gestern:    bool       = typer.Option(False, "--gestern", "-g"),
+    vorgestern: bool       = typer.Option(False, "--vorgestern"),
+    day:        str | None = typer.Option(None, "--day", "-d"),
+    save_catalog: bool     = typer.Option(False, "--save-catalog", "-s"),
+    dry_run:    bool       = typer.Option(False, "--dry-run", "-n", help="Nur anzeigen, nicht loggen"),
+) -> None:
+    """Parse Mahlzeit-Narrative, schätze Gesamt-Makros via Gemini, splitte in N Einträge."""
+    try:
+        target = _resolve_date(tag=tag, gestern=gestern, vorgestern=vorgestern, day_legacy=day)
+    except ValueError as e:
+        msg.fail(str(e)); raise typer.Exit(1)
+
+    parsed = _parse_narrative(text)
+    if not parsed.items_text:
+        msg.fail("Keine Items in der Beschreibung erkannt"); raise typer.Exit(1)
+
+    msg.info(f"Erkannt: {parsed.count} Teller · Fenster {parsed.time_window or 'kein'} · Items: {parsed.items_text}")
+
+    macros = _gemini_macros(parsed.items_text)
+    if macros.get("_error"):
+        msg.fail(f"Gemini-Fehler: {macros['_error']}"); raise typer.Exit(1)
+
+    per_kcal    = macros["kcal"]    / parsed.count
+    per_protein = macros["protein"] / parsed.count
+    per_carbs   = macros["carbs"]   / parsed.count
+    per_fat     = macros["fat"]     / parsed.count
+
+    times = _spread_times(parsed.count, parsed.time_window)
+    console.print(f"[bold]Gesamt:[/bold] {macros['kcal']:.0f} kcal · {macros['protein']:.1f}P · {macros['carbs']:.1f}C · {macros['fat']:.1f}F")
+    console.print(f"[bold]Pro Teller:[/bold] {per_kcal:.0f} kcal · {per_protein:.1f}P · {per_carbs:.1f}C · {per_fat:.1f}F")
+
+    # Catalog-Enhancement: 1× discover für kanonischen Namen, 1× POST → catalog_id, alle N Logs verlinken
+    catalog_name = _clean_catalog_name(parsed.items_text)
+    catalog_id: str | None = None
+    if save_catalog and not dry_run:
+        msg.info("Gemini: sauberer Catalog-Name...")
+        disc = _gemini_discover(parsed.items_text)
+        if disc.get("error"):
+            msg.warn(f"discover: {disc['error']} — fallback lokaler Name")
+        else:
+            entry = disc.get("catalog_entry") or {}
+            name = (entry.get("name") or "").strip()
+            if disc.get("type") == "meal" and name:
+                catalog_name = name
+        catalog_item = {
+            "item": {
+                "name": catalog_name,
+                "kcal": per_kcal, "protein": per_protein,
+                "carbs": per_carbs, "fat": per_fat,
+            }
+        }
+        cat_res = _api_call("POST", "/nutrition/catalog", catalog_item)
+        catalog_id = (cat_res.get("item") or {}).get("id") or cat_res.get("id")
+        if catalog_id:
+            msg.good(f"Catalog: '{catalog_name}' (id={catalog_id})")
+        else:
+            msg.warn(f"Catalog POST ohne id-Response: {cat_res}")
+
+    for i, t in enumerate(times, 1):
+        slot = f" ~{t}" if t else ""
+        # Saubere Description: Catalog-Name + Instance-Suffix (oder items_text wenn kein Catalog)
+        base = catalog_name if catalog_id else parsed.items_text
+        desc = f"{base} (Teller {i}/{parsed.count}{slot})"
+        note = f"Teller {i}/{parsed.count}{slot}"
+        if dry_run:
+            console.print(f"  [dim]would log:[/dim] {desc}  →  {per_kcal:.0f}kcal/{per_protein:.1f}P/{per_carbs:.1f}C/{per_fat:.1f}F")
+            continue
+        do_meal_log(
+            description=desc,
+            kcal=per_kcal, protein=per_protein, carbs=per_carbs, fat=per_fat,
+            notes=note, day=target,
+            save_catalog=False,  # Catalog wurde 1× oben angelegt
+            qty=1,
+            catalog_id=catalog_id,
+        )
+
+
+@app.command()
+def list() -> None:
+    result = _api_call("GET", "/nutrition/catalog")
+    items = result.get("items", [])
+    table = Table(title="Meal Catalog", show_header=True, header_style="bold magenta")
+    table.add_column("NAME")
+    table.add_column("KCAL", justify="right")
+    for i in items:
+        table.add_row(i["name"], f"{i.get('kcal',0):.0f}")
+    console.print(table)
+
+@app.command()
+def today(
+    tag:        str | None = typer.Option(None, "--tag", help="Datum: heute|gestern|vorgestern|-N|Mo|YYYY-MM-DD"),
+    gestern:    bool       = typer.Option(False, "--gestern", "-g"),
+    vorgestern: bool       = typer.Option(False, "--vorgestern"),
+    day: str = typer.Option(None, "--day", "-d", help="(legacy) Datum YYYY-MM-DD"),
+):
+    try:
+        target = _resolve_date(tag=tag, gestern=gestern, vorgestern=vorgestern, day_legacy=day)
+    except ValueError as e:
+        msg.fail(str(e)); raise typer.Exit(1)
+    do_today(target)
+
+if __name__ == "__main__":
+    app()

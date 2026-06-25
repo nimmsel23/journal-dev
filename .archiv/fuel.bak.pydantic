@@ -1,0 +1,244 @@
+#!/usr/bin/env python3
+"""
+fuel — Supplement-Tracker CLI
+
+Direktes Logging ohne Server:
+  fuel melatonin            mit Default-Dosis aus catalog.json
+  fuel melatonin 2          custom Dosis (gleiche Einheit wie catalog)
+  fuel kreatin --time night  Zeit-of-Day überschreiben
+
+Überblick:
+  fuel today                was heute geloggt wurde
+  fuel list                 alle Supplements mit Default-Dosis
+  fuel log [--date DATUM]   Log eines bestimmten Tages (Standard: heute)
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+from datetime import date, datetime, timezone
+from pathlib import Path
+
+import typer
+from loguru import logger
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+# ── Validation (Pydantic) ──────────────────────────────────────────────────────
+
+class SupplementInput(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+
+    name: str = Field(..., min_length=1, description="Supplement name")
+    dose: float | None = Field(None, ge=0, description="Dose amount")
+    unit: str | None = Field(None, description="Unit (mg, g, etc.)")
+    time_of_day: str | None = Field(None, description="morning, evening, night, any")
+    notes: str = Field("", description="Optional notes")
+
+# ── Pfade ──────────────────────────────────────────────────────────────────────
+
+FUEL_DIR    = Path(os.environ.get("AOS_FUEL_DIR", Path.home() / ".aos" / "fuel"))
+CATALOG     = FUEL_DIR / "supplements" / "catalog.json"
+LOGS_DIR    = FUEL_DIR / "supplements" / "logs"
+
+# ── gum ───────────────────────────────────────────────────────────────────────
+
+def _has_gum() -> bool:
+    return bool(shutil.which("gum"))
+
+def gum_log(level: str, msg: str) -> None:
+    if _has_gum():
+        subprocess.run(["gum", "log", f"--level={level}", msg])
+    else:
+        colors = {"info": "\033[1;32m", "warn": "\033[1;33m", "error": "\033[1;31m"}
+        dest = sys.stderr if level == "error" else sys.stdout
+        print(f"{colors.get(level, '')}{msg}\033[0m", file=dest)
+
+def gum_header(title: str) -> None:
+    if _has_gum():
+        subprocess.run(["gum", "style", "--foreground=212", "--bold", title])
+    else:
+        print(f"\n\033[1;35m{title}\033[0m")
+
+def gum_table(header: list[str], rows: list[list[str]], widths: list[int]) -> None:
+    lines = [",".join(header)] + [",".join(r) for r in rows]
+    if _has_gum():
+        subprocess.run(
+            ["gum", "table", "--print", "--separator=,", f"--widths={','.join(map(str, widths))}"],
+            input="\n".join(lines), text=True,
+        )
+    else:
+        fmt = "  " + "  ".join(f"{{:<{w}}}" for w in widths)
+        for line in lines:
+            print(fmt.format(*line.split(",", len(widths) - 1)))
+
+# ── Catalog ────────────────────────────────────────────────────────────────────
+
+def load_catalog() -> dict[str, dict]:
+    """Gibt {id: supplement_dict} zurück."""
+    if not CATALOG.exists():
+        gum_log("error", f"catalog.json nicht gefunden: {CATALOG}")
+        raise SystemExit(1)
+    data = json.loads(CATALOG.read_text())
+    return {item["id"]: item for item in data.get("items", [])}
+
+# ── Log I/O ────────────────────────────────────────────────────────────────────
+
+def log_path(day: str) -> Path:
+    return LOGS_DIR / f"{day}.json"
+
+def read_log(day: str) -> dict:
+    p = log_path(day)
+    if p.exists():
+        return json.loads(p.read_text())
+    return {"date": day, "intakes": []}
+
+def write_log(day: str, data: dict) -> None:
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    log_path(day).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+
+# ── Kern-Logik ─────────────────────────────────────────────────────────────────
+
+def _make_id() -> str:
+    import hashlib, time
+    return "supp_" + hashlib.sha1(str(time.time()).encode()).hexdigest()[:12]
+
+def do_log(supplement_id: str, dose: float | None, time_of_day: str | None, day: str | None) -> None:
+    catalog = load_catalog()
+    if supplement_id not in catalog:
+        gum_log("error", f"Unbekannt: {supplement_id}  (gültig: {', '.join(catalog)})")
+        raise SystemExit(1)
+
+    supp   = catalog[supplement_id]
+    today  = day or date.today().isoformat()
+    dose   = dose if dose is not None else supp["default_dose"]
+    tod    = time_of_day or supp.get("default_time_of_day", "any")
+    unit   = supp["unit"]
+
+    # Validate input
+    try:
+        SupplementInput(
+            name=supp["name"],
+            dose=dose,
+            unit=unit,
+            time_of_day=tod,
+        )
+    except ValidationError as e:
+        gum_log("error", f"Validation error: {e.error_count()} Fehler")
+        for err in e.errors():
+            gum_log("error", f"  {err['loc'][0]}: {err['msg']}")
+        raise SystemExit(1)
+
+    data   = read_log(today)
+    entry  = {
+        "id":             _make_id(),
+        "supplement_id":  supplement_id,
+        "name":           supp["name"],
+        "dose":           dose,
+        "unit":           unit,
+        "time_of_day":    tod,
+        "notes":          "",
+        "time":           datetime.now(timezone.utc).isoformat(),
+    }
+    data["intakes"].append(entry)
+    write_log(today, data)
+
+    total_today = len(data["intakes"])
+    gum_log("info", f"{supp['name']} {dose}{unit} ({tod}) geloggt — heute gesamt: {total_today} Intake(s)")
+
+def do_today(day: str | None) -> None:
+    today = day or date.today().isoformat()
+    data  = read_log(today)
+    intakes = data.get("intakes", [])
+
+    gum_header(f"Fuel Supplements — {today}")
+    if not intakes:
+        gum_log("warn", "Noch nichts geloggt heute")
+        return
+
+    rows = [[i["name"], str(i["dose"]) + i["unit"], i["time_of_day"]] for i in intakes]
+    gum_table(["SUPPLEMENT", "DOSIS", "ZEIT"], rows, [20, 10, 10])
+
+# ── Typer App ──────────────────────────────────────────────────────────────────
+
+app = typer.Typer(
+    name="fuel",
+    help=__doc__,
+    invoke_without_command=True,
+    no_args_is_help=True,
+    add_completion=False,
+)
+
+@app.command(help="Supplement loggen")
+def log(
+    supplement: str          = typer.Argument(..., help="Supplement-ID, z.B. melatonin"),
+    dose:       float | None = typer.Argument(None, help="Dosis (Standard: catalog default)"),
+    time:       str | None   = typer.Option(None, "--time", "-t", help="morning/evening/night/any"),
+    day:        str | None   = typer.Option(None, "--day", "-d", help="Datum YYYY-MM-DD (Standard: heute)"),
+) -> None:
+    do_log(supplement, dose, time, day)
+
+@app.command(help="Was heute geloggt wurde")
+def today(
+    day: str | None = typer.Option(None, "--day", "-d", help="Datum YYYY-MM-DD"),
+) -> None:
+    do_today(day)
+
+@app.command(name="list", help="Alle Supplements aus dem Catalog")
+def list_supplements() -> None:
+    catalog = load_catalog()
+    gum_header("Fuel — Supplement Catalog")
+    rows = [[sid, s["name"], f"{s['default_dose']}{s['unit']}", s.get("default_time_of_day", "any")]
+            for sid, s in catalog.items()]
+    gum_table(["ID", "NAME", "DEFAULT", "ZEIT"], rows, [14, 16, 10, 10])
+
+# ── Shortcut: `fuel melatonin` oder `fuel -melatonin -glycin -kollagen` ────────
+
+def _parse_day_arg() -> str | None:
+    """Parse --yesterday, --1d, --2d, etc. from sys.argv"""
+    from datetime import timedelta
+
+    for arg in sys.argv[1:]:
+        if arg == "--yesterday":
+            return (date.today() - timedelta(days=1)).isoformat()
+        if arg.startswith("--") and arg[2:].endswith("d"):
+            try:
+                days = int(arg[2:-1])
+                return (date.today() - timedelta(days=days)).isoformat()
+            except ValueError:
+                pass
+    return None
+
+def _main() -> None:
+    catalog = load_catalog()
+    day_arg = _parse_day_arg()
+
+    # Multi-supplement: `fuel -melatonin -glycin -kollagen` oder `fuel -melatonin -glycin --yesterday`
+    flag_supplements = [arg.lstrip("-") for arg in sys.argv[1:]
+                        if arg.startswith("-") and arg.lstrip("-") in catalog]
+    if flag_supplements:
+        for supp in flag_supplements:
+            do_log(supp, None, None, day_arg)
+        return
+
+    # Single supplement shortcut: `fuel melatonin` oder `fuel melatonin 2`
+    if len(sys.argv) >= 2 and sys.argv[1] in catalog:
+        supplement = sys.argv[1]
+        dose       = float(sys.argv[2]) if len(sys.argv) >= 3 and _is_number(sys.argv[2]) else None
+        do_log(supplement, dose, None, day_arg)
+        return
+
+    app()
+
+def _is_number(s: str) -> bool:
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+if __name__ == "__main__":
+    _main()

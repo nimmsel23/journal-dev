@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""
+fuel-sync — Python-powered bulk sync tool for Fuel Centre.
+Uses tqdm for progress and wasabi for styled output.
+"""
+
+import importlib.util
+import os
+import sys
+from pathlib import Path
+from typing import List
+
+import typer
+from tqdm import tqdm
+from wasabi import Printer
+
+# ── Setup Printer ─────────────────────────────────────────────────────────────
+msg = Printer()
+
+# ── Import Handler ────────────────────────────────────────────────────────────
+def load_sync_engine():
+    # Try v2 first, then root
+    root = Path(__file__).resolve().parent.parent
+    paths = [root / "v2" / "fuel-firestore.py", root / "fuel-firestore.py"]
+    
+    for p in paths:
+        if p.exists():
+            spec = importlib.util.spec_from_file_location("fuel_firestore", str(p))
+            if spec and spec.loader:
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                return module
+    return None
+
+sync_engine = load_sync_engine()
+if not sync_engine:
+    msg.fail("Konnte fuel-firestore.py nicht finden. Pfade prüfen!")
+    sys.exit(1)
+
+app = typer.Typer(help="Bulk Sync Local Data to Firestore", no_args_is_help=True)
+
+# ── Config ────────────────────────────────────────────────────────────────────
+FUEL_DATA_DIR = Path(os.getenv("AOS_FUEL_DATA_DIR", Path.home() / ".aos" / "fuel")).expanduser()
+
+def _load_env():
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if "=" in line and not line.startswith("#"):
+                k, v = line.split("=", 1)
+                os.environ[k.strip()] = v.strip()
+
+_load_env()
+DEFAULT_UID = os.environ.get("FUEL_CLOUD_UID", "default")
+
+# ── Logic ─────────────────────────────────────────────────────────────────────
+
+def get_files(directory: Path, pattern: str) -> List[Path]:
+    if not directory.exists():
+        return []
+    return sorted(list(directory.glob(pattern)))
+
+@app.command()
+def push(
+    uid: str = typer.Option(DEFAULT_UID, "--uid", "-u", help="Target Firestore UID"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force sync all files")
+):
+    """Push all local data (Nutrition, Supplements, Journal) to Firestore."""
+    msg.divider(f"Syncing to Firestore (UID: {uid})")
+
+    tasks = [
+        ("Nutrition", FUEL_DATA_DIR / "nutrition", "*.json"),
+        ("Supplements", FUEL_DATA_DIR / "supplements" / "logs", "*.json"),
+        ("Journal", FUEL_DATA_DIR / "nutrition_journal", "*.md"),
+    ]
+
+    for name, folder, pattern in tasks:
+        files = get_files(folder, pattern)
+        if not files:
+            msg.info(f"Keine Daten für {name} gefunden.")
+            continue
+
+        msg.info(f"Sende {len(files)} Einträge für {name}...")
+        
+        # tqdm progress bar
+        for f in tqdm(files, desc=f"{name:12}", unit="file", leave=False):
+            d = f.stem
+            try:
+                # direction="push" calls the underlying sync logic
+                sync_engine.do_sync(d, "push", uid)
+            except Exception as e:
+                msg.fail(f"Fehler bei {d}: {e}")
+
+    msg.good("Bulk Push abgeschlossen!")
+
+@app.command()
+def pull(
+    uid: str = typer.Option(DEFAULT_UID, "--uid", "-u", help="Source Firestore UID")
+):
+    """Not implemented: Pull would require fetching all IDs from Firestore first."""
+    msg.warn("Pull ist aktuell nur für einzelne Tage via API implementiert.")
+    msg.info("Nutze die Web-UI oder 'fuel today' für automatische Pulls.")
+
+if __name__ == "__main__":
+    app()

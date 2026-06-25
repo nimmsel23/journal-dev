@@ -1,0 +1,29 @@
+id: hauber_pizza_style_chicken_nuggets
+kind: recipe
+category: billa
+name: Hauber Pizza Style Chicken Nuggets
+meal_type: snack
+description: Pizza Style Chicken Nuggets
+notes: Template-Wert; bei Bedarf mit Packungsangaben/Produktseite feinjustieren.
+source: manual
+yield_g: null
+components:
+- id: pizza_style_chicken_nuggets
+  label: Pizza Style Chicken Nuggets
+  description: Pizza Style Chicken Nuggets
+  brand: Hauber
+  grams: null
+  kcal: 360
+  protein: 20
+  carbs: 24
+  fat: 20
+  source: hauber.at
+  source_kind: base
+addons: []
+default_addon_ids: []
+created_at: '2026-05-17T18:25:05.755Z'
+updated_at: '2026-05-17T18:25:05.755Z'
+kcal: 360
+protein: 20
+carbs: 24
+fat: 20

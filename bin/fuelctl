@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""
+fuelctl — Universal System Control for Fuel Centre (Python Edition)
+Central control for Dev, Sync, and Local Prod (channel: local).
+"""
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Optional
+
+import typer
+from wasabi import Printer
+
+msg = Printer()
+app = typer.Typer(help="Fuel Centre Universal Control", no_args_is_help=True)
+
+# ── Config ────────────────────────────────────────────────────────────────────
+
+PORT = os.getenv("PORT", "9000")
+LOCAL_PORT = os.getenv("LOCAL_PORT", os.getenv("V2_PORT", "7000"))
+CATALOG_PORT = "9050"
+
+HEALTH_URL = f"http://127.0.0.1:{PORT}/health"
+LOCAL_HEALTH_URL = f"http://127.0.0.1:{LOCAL_PORT}/health"
+
+WORKDIR = Path(__file__).resolve().parent.parent
+BIN_DEVCTL = WORKDIR / "bin" / "fuel-devctl"
+SYNC_SCRIPT = WORKDIR / "scripts" / "firestore-sync.mjs"
+CATALOG_SERVER_SCRIPT = WORKDIR / "fuel-catalog-server.py"
+DEPLOY_SCRIPT = WORKDIR / "deploy.sh"
+
+LOCAL_PROD_DIR = Path("/opt/fuel")
+LOCAL_SERVICE = "fuel-v2.service"  # systemd unit (legacy name, channel is "local")
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def gum_log(level: str, text: str):
+    try:
+        subprocess.run(["gum", "log", f"--level={level}", text])
+    except:
+        if level == "info": msg.info(text)
+        elif level == "warn": msg.warn(text)
+        elif level == "error": msg.fail(text)
+
+def check_url(url: str) -> bool:
+    import urllib.request
+    try:
+        with urllib.request.urlopen(url, timeout=1):
+            return True
+    except:
+        return False
+
+# ── Commands ──────────────────────────────────────────────────────────────────
+
+@app.command()
+def status():
+    """Check all systems (Dev, Local Prod, Sync)."""
+    # 1. Dev Stack
+    subprocess.run([str(BIN_DEVCTL), "status"])
+
+    # 2. Local Prod
+    msg.divider("Fuel Centre · local channel (Desktop Prod)")
+    if check_url(LOCAL_HEALTH_URL):
+        msg.good(f"Fuel local is running on :{LOCAL_PORT}")
+    else:
+        msg.warn(f"Fuel local is NOT responding on :{LOCAL_PORT}")
+
+    # 3. Catalog Server
+    msg.divider("Catalog Server")
+    if check_url(f"http://127.0.0.1:{CATALOG_PORT}/catalogs/nutrition"):
+        msg.good(f"Catalog Server is running on :{CATALOG_PORT}")
+    else:
+        msg.warn(f"Catalog Server is NOT responding on :{CATALOG_PORT}")
+
+    # 4. Firestore Sync
+    msg.divider("Firestore Sync")
+    # Check if watcher is running
+    res = subprocess.run(["pgrep", "-f", "firestore-sync.mjs watch"], capture_output=True)
+    if res.returncode == 0:
+        msg.good("Sync Watcher is active")
+    else:
+        msg.warn("Sync Watcher is idle")
+
+@app.command()
+def dev(action: str = typer.Argument("status", help="up, down, status, logs, build")):
+    """Manage the development stack."""
+    cmd_map = {
+        "up": "start",
+        "start": "start",
+        "down": "stop",
+        "stop": "stop",
+        "status": "status",
+        "logs": "logs",
+        "build": "build"
+    }
+    target = cmd_map.get(action)
+    if target:
+        subprocess.run([str(BIN_DEVCTL), target])
+    else:
+        msg.fail(f"Unknown dev action: {action}")
+
+@app.command()
+def local(action: str = typer.Argument("status", help="deploy, status, logs")):
+    """Manage the local channel (Desktop Prod, /opt/fuel)."""
+    if action == "status":
+        status()
+    elif action == "logs":
+        subprocess.run(["sudo", "journalctl", "-u", LOCAL_SERVICE, "-f"])
+    elif action == "deploy":
+        msg.divider("Local channel deployment → /opt/fuel")
+        if not DEPLOY_SCRIPT.exists():
+            msg.fail(f"deploy.sh not found at {DEPLOY_SCRIPT}")
+            return
+        subprocess.run(["bash", str(DEPLOY_SCRIPT)], cwd=WORKDIR)
+    else:
+        msg.fail(f"Unknown local action: {action}")
+
+
+# Backwards-compat alias: `fuelctl v2 …` → `fuelctl local …`
+@app.command(name="v2", hidden=True)
+def v2_alias(action: str = typer.Argument("status")):
+    """Deprecated: use `fuelctl local` instead."""
+    msg.warn("`fuelctl v2` is deprecated. Use `fuelctl local` instead.")
+    local(action)
+
+@app.command()
+def sync(action: Optional[str] = typer.Argument(None, help="push, pull, watch")):
+    """Manage Firestore synchronization."""
+    if action is None:
+        try:
+            choice = subprocess.run(
+                ["gum", "choose", "Push (Local -> Cloud)", "Pull (Cloud -> Local)", "Watch (Auto-Sync)"],
+                capture_output=True, text=True
+            ).stdout.strip()
+            
+            if "Push" in choice: action = "push"
+            elif "Pull" in choice: action = "pull"
+            elif "Watch" in choice: action = "watch"
+            else: return
+        except:
+            msg.info("Usage: fuelctl sync [push|pull|watch]")
+            return
+
+    if action == "push":
+        subprocess.run(["node", str(SYNC_SCRIPT), "push"])
+    elif action == "pull":
+        subprocess.run(["node", str(SYNC_SCRIPT), "pull"])
+    elif action == "watch":
+        subprocess.run(["node", str(SYNC_SCRIPT), "watch"])
+
+@app.command()
+def catalog(action: str = typer.Argument("status", help="start, stop, status")):
+    """Manage the catalog server."""
+    if action == "start":
+        msg.info(f"Starting Catalog Server on port {CATALOG_PORT}...")
+        subprocess.Popen([sys.executable, str(CATALOG_SERVER_SCRIPT)], 
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
+    elif action == "stop":
+        msg.info("Stopping Catalog Server...")
+        subprocess.run(["pkill", "-f", f"python3 {CATALOG_SERVER_SCRIPT}"])
+    elif action == "status":
+        if check_url(f"http://127.0.0.1:{CATALOG_PORT}/catalogs/nutrition"):
+            msg.good(f"Catalog Server is running on :{CATALOG_PORT}")
+        else:
+            msg.warn("Catalog Server is NOT running")
+
+if __name__ == "__main__":
+    app()

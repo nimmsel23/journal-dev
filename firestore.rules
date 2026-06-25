@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Nutrition & Supplements (Fuel Centre - Private)
+    match /nutrition/{uid}/meta/catalog {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /supplements/{uid}/meta/catalog {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    
+    // Shared Micronutrients Catalog (Read-only for all authenticated users)
+    match /nutrition/public/meta/micros {
+      allow read: if request.auth != null;
+      allow write: if false; // Admin only
+    }
+
+    // Logs (Private)
+    match /nutrition/{uid}/logs/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /supplements/{uid}/logs/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    
+    // Relax & Fitness (Private)
+    match /relax/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /fitness/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    
+    // Global Knowledge (optional, readable by all authenticated users)
+    match /knowledge/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only via Admin SDK / CLI
+    }
+    
+    // Knowledge Tasks (Trigger for local enrichment)
+    match /knowledge_tasks/{taskId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if false; // Only via Admin SDK / CLI
+    }
+  }
+}

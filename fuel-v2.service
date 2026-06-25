@@ -1,0 +1,19 @@
+[Unit]
+Description=Fuel Centre V2 (Desktop Prod)
+After=network.target
+
+[Service]
+Type=simple
+User=alpha
+Group=alpha
+WorkingDirectory=/opt/fuel
+Environment=PORT=7000
+Environment=HOST=0.0.0.0
+Environment=FUEL_STATIC_DIR=/opt/fuel
+# Using npm run prod to ensure all environment variables from package.json are applied
+ExecStart=/usr/bin/npm run prod
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

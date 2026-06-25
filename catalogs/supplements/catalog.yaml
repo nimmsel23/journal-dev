@@ -1,0 +1,80 @@
+version: 1
+updated_at: '2026-05-19T00:00:00.000Z'
+items:
+- id: melatonin
+  name: Melatonin
+  product: Kneipp Melatonin plus
+  unit: mg
+  default_dose: 2
+  default_time_of_day: night
+  micros:
+    zinc_mg: 10
+    vitamin_b6_mg: 1.4
+- id: glycin
+  name: Glycin
+  product: Sunday Natural Glycin pur
+  unit: g
+  default_dose: 3
+  default_time_of_day: night
+- id: kollagen
+  name: Kollagen
+  product: Naduria Kollagenhydrolysat mit Zink + C
+  unit: g
+  default_dose: 10
+  default_time_of_day: morning
+  micros:
+    vitamin_c_mg: 80
+    zinc_mg: 5
+- id: magnesium
+  name: Magnesium
+  unit: mg
+  default_dose: 200
+  default_time_of_day: evening
+  micros:
+    magnesium_mg: 200
+- id: dha
+  name: DHA
+  product: Sunday Natural DHA Kapseln
+  unit: mg
+  default_dose: 500
+  default_time_of_day: morning
+  notes: geplant — nächste Sunday Natural Bestellung
+  micros:
+    omega3_mg: 500
+- id: zink
+  name: Zink
+  unit: mg
+  default_dose: 25
+  default_time_of_day: any
+  notes: selten — nur bei bekanntem Mangel
+  micros:
+    zinc_mg: 25
+- id: kreatin
+  name: Kreatin
+  unit: g
+  default_dose: 5
+  default_time_of_day: any
+- id: brahmi
+  name: Brahmi
+  product: Sunday Natural Brahmi Extrakt (500mg, 20% Bacoside)
+  unit: mg
+  default_dose: 500
+  default_time_of_day: morning
+  notes: geplant — nächste Sunday Natural Bestellung
+- id: ashwagandha
+  name: Ashwagandha
+  product: Sunday Natural Ashwagandha KSM-66 Kapseln
+  unit: mg
+  default_dose: 600
+  default_time_of_day: morning
+  notes: geplant — nächste Sunday Natural Bestellung
+- id: tongkat_ali
+  name: Tongkat Ali Elixier
+  unit: ml
+  default_dose: 250
+  default_time_of_day: morning
+- id: mulungu
+  name: Mulungu Tee
+  unit: ml
+  default_dose: 250
+  default_time_of_day: evening

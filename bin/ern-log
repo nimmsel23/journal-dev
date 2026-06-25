@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""
+ern-log — Ernährungs-Freihand-Journal (Python Edition)
+Modernized version of the journal tool with wasabi and rich.
+"""
+
+import os
+import sys
+from datetime import date, timedelta
+from pathlib import Path
+from typing import List, Optional
+
+import typer
+import yaml
+from wasabi import Printer
+from rich.console import Console
+from rich.table import Table
+from rich.progress import Progress
+
+msg = Printer()
+console = Console()
+app = typer.Typer(help="Ernährungs-Freihand-Journal", no_args_is_help=True)
+
+# ── Config ────────────────────────────────────────────────────────────────────
+
+LOGDIR = Path.home() / "ernaehrungsprotokoll"
+DB_PATH = LOGDIR / "nutrition_db.yaml"
+WGER_API_URL = "http://localhost:8000/api/v2"
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _load_day(day: str) -> dict:
+    f = LOGDIR / f"{day}.yaml"
+    if f.exists():
+        return yaml.safe_load(f.read_text())
+    return {
+        "date": day,
+        "sections": {"Vormittag": [], "Nachmittag": [], "Abend": []},
+        "summary": {"total_kcal": 0, "carbs_pct": 0, "protein_pct": 0, "fat_pct": 0}
+    }
+
+def _save_day(data: dict):
+    day = data["date"]
+    f = LOGDIR / f"{day}.yaml"
+    LOGDIR.mkdir(parents=True, exist_ok=True)
+    f.write_text(yaml.dump(data, allow_unicode=True, sort_keys=False))
+
+def _recalculate_summary(data: dict):
+    total_kcal = total_c = total_p = total_f = 0.0
+    for sec in data.get("sections", {}).values():
+        for item in sec:
+            total_kcal += float(item.get("kcal", 0))
+            total_c += float(item.get("carbs_g", 0))
+            total_p += float(item.get("protein_g", 0))
+            total_f += float(item.get("fat_g", 0))
+            
+    if total_kcal > 0:
+        c_pct = round((total_c * 4 / total_kcal) * 100)
+        p_pct = round((total_p * 4 / total_kcal) * 100)
+        f_pct = round((total_f * 9 / total_kcal) * 100)
+    else:
+        c_pct = p_pct = f_pct = 0
+        
+    data["summary"] = {
+        "total_kcal": round(total_kcal),
+        "carbs_pct": int(c_pct),
+        "protein_pct": int(p_pct),
+        "fat_pct": int(f_pct)
+    }
+
+# ── Commands ──────────────────────────────────────────────────────────────────
+
+@app.command()
+def init():
+    """Initialize template for today."""
+    today = date.today().isoformat()
+    f = LOGDIR / f"{today}.yaml"
+    if f.exists():
+        msg.info(f"Heutige Datei existiert bereits: {f}")
+        return
+    _save_day(_load_day(today))
+    msg.good(f"Vorlage für heute ({today}) erstellt.")
+
+@app.command()
+def add(text: str = typer.Argument(..., help="Sektion Menge Name (z.B. 'Abend 150g Reis')")):
+    """Parse and add an entry to today's log."""
+    import re
+    
+    parts = text.split(" ", 2)
+    if len(parts) < 3:
+        msg.fail("Format: <Sektion> <Menge> <Name>")
+        return
+        
+    sec_name, amount, name = parts
+    valid_sections = ["Vormittag", "Nachmittag", "Abend"]
+    if sec_name not in valid_sections:
+        msg.fail(f"Ungültige Sektion. Erlaubt: {valid_sections}")
+        return
+
+    msg.info(f"Suche Nährwerte für: {name} ({amount})...")
+    
+    # 1. Local DB lookup
+    kcal = carbs = protein = fat = 0.0
+    found = False
+    
+    if DB_PATH.exists():
+        db = yaml.safe_load(DB_PATH.read_text())
+        items = db.get("items", {})
+        for k, v in items.items():
+            if name.lower() in k.lower():
+                msg.good(f"Gefunden in lokaler DB: {k}")
+                # Simple factor calc
+                qty_match = re.search(r'([0-9.,]+)', amount)
+                qty = float(qty_match.group(1).replace(",", ".")) if qty_match else 100.0
+                factor = qty / 100.0
+                kcal = float(v.get("kcal_per_100g", 0)) * factor
+                carbs = float(v.get("carbs_g_per_100g", 0)) * factor
+                protein = float(v.get("protein_g_per_100g", 0)) * factor
+                fat = float(v.get("fat_g_per_100g", 0)) * factor
+                found = True
+                break
+                
+    if not found:
+        msg.warn("Nicht in lokaler DB gefunden. Nutze Standardwerte (0 kcal) oder manuell ergänzen.")
+
+    data = _load_day(date.today().isoformat())
+    data["sections"][sec_name].append({
+        "name": name,
+        "amount": amount,
+        "kcal": round(kcal),
+        "carbs_g": round(carbs, 1),
+        "protein_g": round(protein, 1),
+        "fat_g": round(fat, 1)
+    })
+    
+    _recalculate_summary(data)
+    _save_day(data)
+    msg.good(f"Eingetragen: {amount} {name} in {sec_name} ({round(kcal)} kcal)")
+
+@app.command()
+def show(day: str = typer.Argument(None)):
+    """Show log for a specific day."""
+    day = day or date.today().isoformat()
+    data = _load_day(day)
+    
+    msg.divider(f"Protokoll {day}")
+    
+    for sec, items in data["sections"].items():
+        table = Table(title=sec, box=None, show_header=False)
+        table.add_column("Item", style="cyan")
+        table.add_column("Kcal", justify="right", style="green")
+        
+        if not items:
+            table.add_row("  (leer)", "")
+        else:
+            for i in items:
+                table.add_row(f"  {i['amount']} {i['name']}", f"{i['kcal']} kcal")
+        console.print(table)
+
+    msg.divider("Zusammenfassung")
+    s = data["summary"]
+    msg.info(f"Gesamt: {s['total_kcal']} kcal")
+    
+    with Progress() as progress:
+        p_task = progress.add_task("[magenta]Protein", total=100, completed=s["protein_pct"])
+        c_task = progress.add_task("[blue]Carbs  ", total=100, completed=s["carbs_pct"])
+        f_task = progress.add_task("[yellow]Fat    ", total=100, completed=s["fat_pct"])
+
+@app.command()
+def dashboard():
+    """Show a weekly dashboard."""
+    msg.divider("Wochenübersicht")
+    table = Table(box=None)
+    table.add_column("Datum", style="dim")
+    table.add_column("Kcal", justify="right")
+    table.add_column("Verlauf")
+    
+    for i in range(7):
+        d = (date.today() - timedelta(days=i)).isoformat()
+        f = LOGDIR / f"{d}.yaml"
+        if f.exists():
+            data = yaml.safe_load(f.read_text())
+            kcal = data.get("summary", {}).get("total_kcal", 0)
+            bar = "█" * (kcal // 100)
+            table.add_row(d, f"{kcal}", bar)
+            
+    console.print(table)
+
+if __name__ == "__main__":
+    app()

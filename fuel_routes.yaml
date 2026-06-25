@@ -1,0 +1,37 @@
+# fuel_routes.yaml
+# Fuel Centre API Manifest (Documentation for AOS Bridge)
+# 
+# This file is used by the bridge to document available endpoints.
+# The bridge performs "Smart Proxying" via a wildcard route to fuel-dev:9000.
+
+service: fuel
+version: 2.0
+
+endpoints:
+  - path: /nutrition/log
+    methods: [GET, POST, PATCH]
+    description: "Daily nutrition logs and meal entries"
+  
+  - path: /nutrition/catalog
+    methods: [GET, POST]
+    description: "Master catalog of meals and recipes"
+
+  - path: /nutrition/journal
+    methods: [GET, POST]
+    description: "Daily text-based nutrition journal"
+
+  - path: /supplements/log
+    methods: [GET, POST]
+    description: "Supplement intake tracking"
+
+  - path: /supplements/catalog
+    methods: [GET, POST]
+    description: "Supplement product master data"
+
+  - path: /supplements/catalog/estimate
+    methods: [POST]
+    description: "AI-assisted supplement estimation via Gemini"
+
+  - path: /health
+    methods: [GET]
+    description: "Service status check"

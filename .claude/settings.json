@@ -1,0 +1,181 @@
+{
+  "project": {
+    "name": "fuel-dev",
+    "description": "Fuel Centre — Nutrition Tracking PWA + Node Backend für Vitaltrainer-Ausbildung",
+    "type": "Tempel (Backend Service)",
+    "port": 9000,
+    "partOf": "Vitaltrainer Diplom Ökosystem"
+  },
+
+  "mainAgents": [
+    {
+      "name": "nutrition-agent",
+      "callable": "/nutrition-agent",
+      "type": "Main Agent",
+      "tempel": "fuel-dev",
+      "port": 9000,
+      "role": "Ernährungs-Koordinator",
+      "purpose": "Manage all nutrition projects for Vitaltrainer-Ausbildung: Ernährungstrainer B-Lizenz + Fitnesstrainer Pflichtaufgaben, daily logging, reporting, wger-API integration.",
+      "agentPath": "~/.claude/agents/nutrition-agent.md",
+      "triggerWords": [
+        "nutrition",
+        "Ernährung",
+        "Protokoll",
+        "tracking",
+        "Makros",
+        "7-Tage",
+        "14-Tage",
+        "Pflichtaufgabe",
+        "wger-food",
+        "fuel-log",
+        "Mahlzeit",
+        "logging"
+      ],
+      "responsibilities": [
+        "Pflichtaufgaben Management (7-Tage Ernährungstrainer, 14-Tage Fitnesstrainer)",
+        "Daily Nutrition Logging (wger-food hybrid, fuel-log quick CLI)",
+        "Data Integration (wger-Docker :8000, Open Food Facts)",
+        "Reporting & Analysis (weekly summaries, macro breakdowns, trends)",
+        "PDF Export für Assignment-Submission"
+      ],
+      "writesTicketsFor": "fuel-dev-coding-agent"
+    },
+    {
+      "name": "nutrition-protocol-agent",
+      "callable": "/nutrition-protocol-agent",
+      "type": "Main Agent (Specialized)",
+      "tempel": "fuel-dev",
+      "port": 9000,
+      "role": "Protokoll-Generator",
+      "purpose": "Generate 7-day (Ernährungstrainer B-Lizenz) and 14-day (Fitnesstrainer) nutrition protocols with auto-calculated macros via wger-API.",
+      "agentPath": "~/.claude/agents/nutrition-protocol-agent.md",
+      "triggerWords": [
+        "Generate protocol",
+        "nutrition protocol",
+        "Ernährungstrainer",
+        "Fitnesstrainer",
+        "Protokoll generieren"
+      ],
+      "responsibilities": [
+        "Generate 7-day protocols (Ernährungstrainer assignment)",
+        "Generate 14-day protocols (Fitnesstrainer assignment)",
+        "Auto-calculate macros from wger-API",
+        "Verify output format (Vormittag/Nachmittag/Abend structure)",
+        "Preview generation before saving"
+      ],
+      "writesTicketsFor": "fuel-dev-coding-agent"
+    }
+  ],
+
+  "templ": {
+    "name": "fuel-dev",
+    "description": "Fuel Centre — Nutrition Tracking Backend Service",
+    "type": "Node.js + file-based JSON storage",
+    "port": 9000,
+    "location": "/home/alpha/fuel-dev",
+    "purpose": "Central backend service for nutrition tracking, meal logging, supplement management, and journal entries",
+    "frontends": {
+      "v1": {
+        "name": "Fuel Classic",
+        "path": "public/index.html",
+        "type": "Vanilla HTML PWA",
+        "stability": "Stable, zero-dependency fallback"
+      },
+      "v2": {
+        "name": "Fuel Studio",
+        "path": "src/main.jsx",
+        "type": "React 18 + Vite + TailwindCSS",
+        "features": "Modern UI, Food Search, Calendar, Charts"
+      }
+    },
+    "dataStorage": "~/.aos/fuel/ (file-based JSON)",
+    "endpoints": [
+      "GET /health",
+      "GET/POST /nutrition/log (daily meals)",
+      "GET/POST /nutrition/catalog (saved dishes)",
+      "GET /nutrition/search (Open Food Facts proxy)",
+      "GET/POST /nutrition/journal",
+      "GET/POST /supplements/log (intakes)",
+      "GET/POST /supplements/catalog",
+      "GET /supplements/stats (trends)"
+    ]
+  },
+
+  "devAgents": [
+    {
+      "name": "fuel-dev-coding-agent",
+      "type": "Development Agent",
+      "readsTicketsFrom": [
+        "nutrition-agent",
+        "nutrition-protocol-agent"
+      ],
+      "responsibility": "Entwickelt fuel-dev Frontend + Backend basierend auf Tickets",
+      "ticketStorage": "~/.claude/agents/TICKETS/fuel-dev-tickets.md",
+      "ticketPrefix": "FD"
+    }
+  ],
+
+  "tools": [
+    {
+      "name": "nutrition-protocol-generator",
+      "path": "~/Nutrition/bin/nutrition-protocol-generator",
+      "purpose": "Generate 7 or 14-day nutrition protocols for assignments",
+      "usage": "nutrition-protocol-generator --days 7|14 [--output FILE] [--preview]",
+      "prerequisites": "wger-Docker :8000"
+    },
+    {
+      "name": "wger-food",
+      "path": "~/Nutrition/bin/wger-food",
+      "purpose": "Log meals with Open Food Facts + wger-API hybrid search",
+      "usage": "wger-food <food-item>",
+      "prerequisites": "wger-Docker :8000, fzf, curl"
+    },
+    {
+      "name": "fuel-log",
+      "path": "~/fuel-dev/fuel-log.zsh",
+      "purpose": "Quick CLI logging to fuel-dev API (:9000)",
+      "usage": "fuel-log",
+      "prerequisites": "fuel-dev running on :9000"
+    },
+    {
+      "name": "fuel",
+      "path": "~/fuel-dev/fuel",
+      "purpose": "Python CLI for supplement logging",
+      "usage": "fuel log <supplement> [--dose N] [--time TIME]",
+      "prerequisites": "Python, fuel-dev :9000, wger-Docker :8000"
+    }
+  ],
+
+  "integrations": {
+    "wger-docker": {
+      "purpose": "Local nutrition database (7000+ foods)",
+      "location": "http://localhost:8000",
+      "api": "/api/v2/",
+      "status": "Docker compose required"
+    },
+    "open-food-facts": {
+      "purpose": "Fallback nutrition search (no API key needed)",
+      "integration": "wger-food hybrid mode + server proxy"
+    },
+    "bridge": {
+      "purpose": "AlphaOS API Gateway",
+      "proxies": "/api/fuel/* → :9000",
+      "location": "http://localhost:9080"
+    },
+    "vital-hub": {
+      "purpose": "Client integration (future)",
+      "status": "Route normalization ready, auth TBD"
+    }
+  },
+
+  "ticketingWorkflow": {
+    "mainAgentsRole": "Write tickets when features/gaps are discovered during Ausbildung or business operations",
+    "devAgentsRole": "Read tickets, implement features, update ticket status, merge to production",
+    "ticketFormat": "See ~/.claude/agents/TICKETS/fuel-dev-tickets.md",
+    "ticketIDs": "FD-001, FD-002, etc.",
+    "priorityLevels": ["Critical", "High", "Medium", "Low"]
+  },
+
+  "language": "german",
+  "alwaysThinkingEnabled": true
+}

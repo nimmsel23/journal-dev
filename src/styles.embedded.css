@@ -1,8 +1,8 @@
-/* Fuel embedded in fitness-dev — kein @tailwind base (kommt vom Host) */
+/* Journal embedded in fitness-dev — kein @tailwind base (kommt vom Host) */
 @tailwind components;
 @tailwind utilities;
 
-[data-fuel-embedded] {
+[data-journal-embedded] {
   color-scheme: dark;
   font-family: Inter, system-ui, sans-serif;
   background:

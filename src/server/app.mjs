@@ -66,12 +66,12 @@ async function pullFromFirestoreOnStart() {
     });
     const body = await r.json();
     if (body.ok) {
-      console.log("[fuel-firestore] startup pull ok:", JSON.stringify(body));
+      console.log("[journal-firestore] startup pull ok:", JSON.stringify(body));
     } else {
-      console.warn("[fuel-firestore] startup pull warn:", body.error);
+      console.warn("[journal-firestore] startup pull warn:", body.error);
     }
   } catch (e) {
-    console.warn("[fuel-firestore] startup pull unreachable:", e.message);
+    console.warn("[journal-firestore] startup pull unreachable:", e.message);
   }
 }
 

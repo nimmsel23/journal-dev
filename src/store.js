@@ -19,6 +19,6 @@ export const useSettings = create(
       gender: "m",
       setSetting: (key, val) => set({ [key]: val }),
     }),
-    { name: "fuel-settings" }
+    { name: "journal-settings" }
   )
 );

@@ -5,20 +5,11 @@
   "type": "module",
   "description": "Journal VOS — Journal + Habit PWA auf fuel-dev Shell (Firestore via fitness-aos)",
   "scripts": {
-    "dev": "nodemon --watch server.mjs --watch src --watch index.html --watch vite.config.js --watch tailwind.config.cjs --watch postcss.config.cjs --ext js,jsx,mjs,cjs,html,css --signal SIGTERM --exec node scripts/dev-runner.mjs",
-    "start": "node server.mjs",
-    "ui:dev": "vite",
-    "build": "npm run build:local",
-    "build:local": "VITE_APP_MODE=coach vite build --config vite.config.cjs",
-    "build:cloud": "VITE_APP_MODE=client vite build --config vite.config.cjs",
-    "build:firebase": "npm run build:cloud",
-    "deploy:local": "./deploy.sh",
-    "deploy:cloud": "npm run build:cloud && firebase deploy --only hosting:journal-vos --project fitness-aos",
-    "prod": "PORT=9000 HOST=0.0.0.0 node server.mjs",
-    "sync:push": "node --env-file-if-exists=.env scripts/firestore-sync.mjs push",
-    "sync:pull": "node --env-file-if-exists=.env scripts/firestore-sync.mjs pull",
-    "sync:watch": "node --env-file-if-exists=.env scripts/firestore-sync.mjs watch",
-    "preview": "vite preview"
+    "dev": "VITE_APP_MODE=client vite --config vite.config.cjs",
+    "build": "VITE_APP_MODE=client vite build --config vite.config.cjs",
+    "preview": "vite preview --config vite.config.cjs",
+    "deploy": "npm run build && firebase deploy --only hosting:journal-vos --project fitness-aos",
+    "bump:sw": "node scripts/bump-sw.mjs"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",

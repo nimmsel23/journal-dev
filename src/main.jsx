@@ -11,7 +11,7 @@ import TabContent from "./components/TabContent.jsx";
 import NutritionHeatmap from "./components/NutritionHeatmap.jsx";
 import { useApp } from "./store.js";
 import { useAppData } from "./hooks/useAppData.js";
-import { sumMetric, formatMetric } from "../shared/utils/utils.js";
+import { sumMetric, formatMetric } from "./shared/utils/utils.js";
 import { watchAuth, signIn, signOut, getUid } from "./lib/firestore-db.js";
 
 import { useRegisterSW } from "virtual:pwa-register/react";
@@ -19,7 +19,7 @@ import { useRegisterSW } from "virtual:pwa-register/react";
 const qc = new QueryClient();
 
 if (typeof window !== "undefined") {
-  window.fuelDebug = {
+  window.journalDebug = {
     version: "3.0.0",
     getUid: () => getUid(),
     forceSync: () => qc.invalidateQueries(),
@@ -76,7 +76,7 @@ function App() {
   const isClientBuild = import.meta.env.VITE_APP_MODE === "client";
 
   React.useEffect(() => {
-    document.title = (isCloud || isClientBuild) ? "Fuel Centre V3 (Firebase PWA)" : "Fuel Centre V2 (Desktop Prod)";
+    document.title = (isCloud || isClientBuild) ? "Journal Centre V3 (Firebase PWA)" : "Journal Centre V2 (Desktop Prod)";
   }, [isCloud, isClientBuild]);
 
   const tabCtx = { nutrition, sup, suppCatalog, suppLog, journal, macroTrend, activeDate, setActiveDate, setActiveTab };
@@ -90,7 +90,7 @@ function App() {
               <div className="flex items-center gap-3 mb-2">
                 <p className="inline-flex items-center gap-2 rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-1 text-xs uppercase tracking-[0.25em] text-orange-200">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {(isCloud || isClientBuild) ? "Fuel Centre V3" : "Fuel Centre V2"}
+                  {(isCloud || isClientBuild) ? "Journal Centre V3" : "Journal Centre V2"}
                 </p>
                 {isCloud && (
                   user ? (
@@ -106,7 +106,7 @@ function App() {
               </div>
               <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Nutrition Journal Control Deck</h1>
               <p className="mt-3 max-w-2xl text-sm text-slate-300 md:text-base">
-                Fuel Studio schreibt jetzt direkt in die Nutrition- und Journal-Daten statt nur Mock-UI zu zeigen.
+                Journal Centre schreibt jetzt direkt in die Nutrition- und Journal-Daten statt nur Mock-UI zu zeigen.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-right">

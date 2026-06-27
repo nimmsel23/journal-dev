@@ -24,11 +24,11 @@ module.exports = defineConfig(({ mode }) => {
         registerType: "autoUpdate",
         injectRegister: "auto",
         manifest: {
-          name: appMode === "coach" ? "Fuel Coach" : "Fuel Centre",
-          short_name: appMode === "coach" ? "Coach" : "Fuel",
-          description: appMode === "coach" ? "Coach Control Deck" : "Nutrition Journal",
-          theme_color: "#080b12",
-          background_color: "#080b12",
+          name: "Vital-Journal",
+          short_name: "Vital-Journal",
+          description: "Journal + Habits auf VitalOS-Stack",
+          theme_color: "#f59e0b",
+          background_color: "#0f172a",
           display: "standalone",
           start_url: "/",
           scope: "/",
@@ -69,6 +69,13 @@ module.exports = defineConfig(({ mode }) => {
         },
       }),
     ],
+    resolve: {
+      alias: {
+        "@db":    require("path").resolve(__dirname, "./src/db.js"),
+        "@utils": require("path").resolve(__dirname, "./src/lib/db/core.js"),
+        "@fuel":  require("path").resolve("/home/alpha/fuel-dev/src/client"),
+      },
+    },
     build: {
       outDir,
       emptyOutDir: true,

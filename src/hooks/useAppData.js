@@ -1,5 +1,5 @@
-import { useNutritionData, useMacroTrend, useJournal } from "./useNutrition.js";
-import { useSuppStats, useSuppCatalog, useSuppLog } from "./useSupplements.js";
+import { useNutritionData, useMacroTrend, useJournal } from "@fuel/hooks/useNutrition.js";
+import { useSuppStats, useSuppCatalog, useSuppLog } from "@fuel/hooks/useSupplements.js";
 
 export function useAppData(activeDate) {
   const { data: nutrition }  = useNutritionData(activeDate);

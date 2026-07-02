@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import "./styles.css";
 import { TAB_CONFIG } from "./routes.js";
-import TabContent from "./components/TabContent.jsx";
-import NutritionHeatmap from "./components/NutritionHeatmap.jsx";
+import TabContent from "@fuel/components/TabContent.jsx";
+import NutritionHeatmap from "@fuel/components/NutritionHeatmap.jsx";
 import { useApp } from "./store.js";
 import { useAppData } from "./hooks/useAppData.js";
 import { sumMetric, formatMetric } from "./shared/utils/utils.js";

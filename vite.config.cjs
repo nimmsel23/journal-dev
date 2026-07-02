@@ -72,9 +72,10 @@ module.exports = defineConfig(({ mode }) => {
     resolve: {
       preserveSymlinks: true,
       alias: {
-        "@db":    require("path").resolve(__dirname, "./src/db.js"),
-        "@utils": require("path").resolve(__dirname, "./src/lib/db/core.js"),
-        "@fuel":  require("path").resolve("/home/alpha/fuel-dev/src/client"),
+        "@db":     require("path").resolve(__dirname, "./src/db.js"),
+        "@utils":  require("path").resolve(__dirname, "./src/lib/db/core.js"),
+        "@fuel":   require("path").resolve("/home/alpha/fuel-dev/src/client"),
+        "@habits": require("path").resolve("/home/alpha/habits-dev/src"),
       },
       dedupe: ["react", "react-dom", "@tanstack/react-query"],
     },

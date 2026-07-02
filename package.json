@@ -1,8 +1,19 @@
 {
-  "name": "journal-dev",
+  "name": "@aos/journal",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/db.js",
+    "./views": "./src/views/Journal/index.jsx",
+    "./views/habits": "./src/views/Habits/index.jsx",
+    "./lib/db": "./src/lib/db/journal.js",
+    "./lib/habits": "./src/lib/db/habits.js",
+    "./lib/nutrition": "./src/lib/db/nutrition.js",
+    "./lib/supplements": "./src/lib/db/supplements.js",
+    "./lib/user": "./src/lib/db/user.js",
+    "./lib/utils": "./src/lib/db/utils.js"
+  },
   "description": "Journal VOS — Journal + Habit PWA auf fuel-dev Shell (Firestore via fitness-aos)",
   "scripts": {
     "dev": "VITE_APP_MODE=client vite --config vite.config.cjs",

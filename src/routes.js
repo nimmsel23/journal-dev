@@ -5,6 +5,7 @@ export const TAB_CONFIG = [
   {
     key: "dashboard",
     label: "Dashboard",
+    title: "Journal Deck",
     Icon: Flame,
     View: lazy(() => import("@fuel/views/DashboardView.jsx")),
     getProps: (ctx) => ({ nutrition: ctx.nutrition, sup: ctx.sup, journal: ctx.journal, macroTrend: ctx.macroTrend }),
@@ -12,6 +13,7 @@ export const TAB_CONFIG = [
   {
     key: "journal",
     label: "Journal",
+    title: "Journal",
     Icon: NotebookPen,
     View: lazy(() => import("./views/JournalVosView.jsx")),
     getProps: (ctx) => ({ date: ctx.activeDate }),
@@ -19,6 +21,7 @@ export const TAB_CONFIG = [
   {
     key: "habits",
     label: "Habits",
+    title: "Habits",
     Icon: CheckSquare,
     View: lazy(() => import("./views/HabitVosView.jsx")),
     getProps: (ctx) => ({ date: ctx.activeDate }),
@@ -26,6 +29,7 @@ export const TAB_CONFIG = [
   {
     key: "food",
     label: "Food",
+    title: "Food Log",
     Icon: UtensilsCrossed,
     View: lazy(() => import("@fuel/views/FoodView.jsx")),
     getProps: (ctx) => ({ activeDate: ctx.activeDate, setActiveDate: ctx.setActiveDate, nutrition: ctx.nutrition }),
@@ -33,6 +37,7 @@ export const TAB_CONFIG = [
   {
     key: "log",
     label: "Log",
+    title: "Daily Log",
     Icon: FileText,
     View: lazy(() => import("@fuel/views/LogView.jsx")),
     getProps: (ctx) => ({ date: ctx.activeDate, nutrition: ctx.nutrition, journal: ctx.journal || "" }),
@@ -40,6 +45,7 @@ export const TAB_CONFIG = [
   {
     key: "calendar",
     label: "Big Calendar",
+    title: "Kalender",
     Icon: CalendarDays,
     View: lazy(() => import("@fuel/views/CalendarView.jsx")),
     getProps: (ctx) => ({ date: ctx.activeDate, nutrition: ctx.nutrition }),
@@ -47,6 +53,7 @@ export const TAB_CONFIG = [
   {
     key: "supplements",
     label: "Supplements",
+    title: "Supplements",
     Icon: Pill,
     View: lazy(() => import("@fuel/views/SupplementsView.jsx")),
     getProps: (ctx) => ({ date: ctx.activeDate, sup: ctx.sup, catalog: ctx.suppCatalog || [], suppLog: ctx.suppLog }),
@@ -54,6 +61,7 @@ export const TAB_CONFIG = [
   {
     key: "micros",
     label: "Mikros",
+    title: "Mikronährstoffe",
     Icon: Microscope,
     View: lazy(() => import("@fuel/views/MicrosView.jsx")),
     getProps: () => ({}),
@@ -61,6 +69,7 @@ export const TAB_CONFIG = [
   {
     key: "settings",
     label: "Setup",
+    title: "Einstellungen",
     Icon: Settings2,
     View: lazy(() => import("@fuel/views/SettingsView.jsx")),
     getProps: () => ({}),

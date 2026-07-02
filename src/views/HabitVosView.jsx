@@ -1,5 +1,5 @@
 import { CheckSquare } from "lucide-react";
-import Habits from "./Habits/index.jsx";
+import Habits from "@habits/views/Habits/index.jsx";
 
 export default function HabitVosView(props) {
   return (

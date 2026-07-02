@@ -3,12 +3,12 @@ import { saveJournal, updateJournal, getHabits, getJournalHistory, getAllHabitJo
 import { localToday } from "@utils";
 import { Book, PenLine } from "lucide-react";
 import JournalSettings from "./JournalSettings";
-import { ICON_COMPONENTS_MAP } from "../Habits/utils";
+import { ICON_COMPONENTS_MAP } from "@habits/src/views/Habits/utils";
 import JournalHeader from "./JournalHeader";
 import JournalForm from "./JournalForm";
 import JournalEntry from "./JournalEntry";
 import JournalModal from "./JournalModal";
-import HabitJournalModal from "../Habits/HabitJournalModal";
+import HabitJournalModal from "@habits/src/views/Habits/HabitJournalModal";
 
 const ACTIVITY_LABELS = {
   swimming: 'Schwimmen', running: 'Laufen', cycling: 'Radfahren',

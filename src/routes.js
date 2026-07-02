@@ -16,7 +16,7 @@ export const TAB_CONFIG = [
     title: "Journal",
     Icon: NotebookPen,
     View: lazy(() => import("./views/JournalVosView.jsx")),
-    getProps: (ctx) => ({ date: ctx.activeDate }),
+    getProps: (ctx) => ({ date: ctx.activeDate, user: ctx.user }),
   },
   {
     key: "habits",

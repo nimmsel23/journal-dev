@@ -1,6 +1,6 @@
 import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2 } from "lucide-react";
 import { EFFORT_LABELS, timeStr } from "./journalUtils";
-import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@constants/ActivityConstants";
+import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
 function ActivityHeader({ e, colorActivities }) {
   const Icon = ACTIVITY_ICONS[e.activityType] || Dumbbell;

@@ -3,12 +3,12 @@ import { saveJournal, updateJournal, getHabits, getJournalHistory, getAllHabitJo
 import { localToday } from "@utils";
 import { Book, PenLine } from "lucide-react";
 import JournalSettings from "./JournalSettings";
-import { ICON_COMPONENTS_MAP } from "../Habits/utils";
+import { ICON_COMPONENTS_MAP } from "@habits/views/Habits/utils";
 import JournalHeader from "./JournalHeader";
 import JournalForm from "./JournalForm";
 import JournalEntry from "./JournalEntry";
 import JournalModal from "./JournalModal";
-import HabitJournalModal from "../Habits/HabitJournalModal";
+import HabitJournalModal from "@habits/views/Habits/HabitJournalModal";
 
 const ACTIVITY_LABELS = {
   swimming: 'Schwimmen', running: 'Laufen', cycling: 'Radfahren',
@@ -37,7 +37,7 @@ function formatRelativeDate(dateStr) {
   });
 }
 
-export default function Journal({ onOpenSession }) {
+export default function Journal({ onOpenSession, user }) {
   const [date, setDate]     = useState(localToday());
   const [text, setText]     = useState("");
   const [timeline, setTimeline] = useState([]); // Array of grouped entries by date
@@ -191,7 +191,7 @@ export default function Journal({ onOpenSession }) {
       }
     }
     load().catch(() => setTimeline([]));
-  }, [limitCount, date]);
+  }, [limitCount, date, user?.uid]);
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(""), 2000); }
 

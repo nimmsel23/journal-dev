@@ -1,6 +1,6 @@
 import { X, Target, Dumbbell, Book, Brain, CheckCircle2 } from "lucide-react";
 import { EFFORT_LABELS } from "./journalUtils";
-import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@constants/ActivityConstants";
+import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
 export default function JournalModal({ selectedEntry, setSelectedEntry, habits, formatRelativeDate, colorActivities }) {
   if (!selectedEntry) return null;

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import "./styles.css";
 import { TAB_CONFIG } from "./routes.js";
-import TabContent from "@fuel/components/TabContent.jsx";
+import TabContent from "./components/TabContent.jsx";
 import NutritionHeatmap from "@fuel/components/NutritionHeatmap.jsx";
 import { useApp } from "./store.js";
 import { useAppData } from "./hooks/useAppData.js";
@@ -81,7 +81,7 @@ function App() {
     document.title = `${activeTitle} — VOS Journal`;
   }, [activeTitle]);
 
-  const tabCtx = { nutrition, sup, suppCatalog, suppLog, journal, macroTrend, activeDate, setActiveDate, setActiveTab };
+  const tabCtx = { nutrition, sup, suppCatalog, suppLog, journal, macroTrend, activeDate, setActiveDate, setActiveTab, user };
 
   return (
     <div className="min-h-screen text-slate-100">

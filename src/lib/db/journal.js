@@ -124,8 +124,3 @@ export async function getAllHabitJournalsHistory(limitCount = 50) {
   }
 }
 
-// Sessions stub — journal-dev has no workout sessions, but Journal/index.jsx
-// imports getSessionHistory. Return empty so the timeline still renders.
-export async function getSessionHistory(_limit) {
-  return [];
-}

@@ -1,0 +1,12 @@
+#!/bin/bash
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$CURRENT_BRANCH" != "master" ]; then exit 0; fi
+
+cd "$(git rev-parse --show-toplevel)"
+CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD | grep -Ev '\.(md|bak)$' || true)
+TRIGGER="^(src/|public/|index.html|vite.config|package.json|firebase.json)"
+
+if echo "$CHANGED" | grep -qE "$TRIGGER"; then
+  echo "🔍 journal-dev changes detected. Building + deploying..."
+  npm run deploy && echo "✅ Deploy successful." || echo "❌ Deploy failed."
+fi

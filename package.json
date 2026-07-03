@@ -6,11 +6,8 @@
   "exports": {
     ".": "./src/db.js",
     "./views": "./src/views/Journal/index.jsx",
-    "./views/habits": "./src/views/Habits/index.jsx",
     "./lib/db": "./src/lib/db/journal.js",
     "./lib/habits": "./src/lib/db/habits.js",
-    "./lib/nutrition": "./src/lib/db/nutrition.js",
-    "./lib/supplements": "./src/lib/db/supplements.js",
     "./lib/user": "./src/lib/db/user.js",
     "./lib/utils": "./src/lib/db/utils.js"
   },
@@ -19,7 +16,10 @@
     "dev": "VITE_APP_MODE=client vite --config vite.config.cjs",
     "build": "VITE_APP_MODE=client vite build --config vite.config.cjs",
     "preview": "vite preview --config vite.config.cjs",
-    "deploy": "npm run build && firebase deploy --only hosting:journal-vos --project fitness-aos",
+    "build:firebase": "VITE_APP_MODE=client vite build --mode firebase --config vite.config.cjs && npm run bump:sw",
+    "build:cloud": "VITE_APP_MODE=client vite build --mode firebase --config vite.config.cjs && npm run bump:sw",
+    "deploy": "npm run build:cloud && firebase deploy --only hosting --project fitness-aos",
+    "deploy:cloud": "npm run build:cloud && firebase deploy --only hosting --project fitness-aos",
     "bump:sw": "node scripts/bump-sw.mjs"
   },
   "dependencies": {

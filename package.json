@@ -22,7 +22,10 @@
     "deploy:cloud": "npm run build:cloud && firebase deploy --only hosting --project fitness-aos",
     "deploy:preview": "npm run build:cloud && firebase hosting:channel:deploy preview --expires 24h --project fitness-aos",
     "release": "npm version patch --no-git-tag-version && npm run deploy:cloud",
-    "bump:sw": "node scripts/bump-sw.mjs"
+    "bump:sw": "node scripts/bump-sw.mjs",
+    "deploy:prev": "npm run build:cloud && firebase hosting:channel:deploy preview --expires 24h",
+    "build:preview": "npm run build:cloud && firebase hosting:channel:deploy preview --expires 24h",
+    "build:prev": "npm run build:cloud && firebase hosting:channel:deploy preview --expires 24h"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",

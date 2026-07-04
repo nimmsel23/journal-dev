@@ -20,6 +20,7 @@
     "build:cloud": "VITE_APP_MODE=client vite build --mode firebase --config vite.config.cjs && npm run bump:sw",
     "deploy": "npm run build:cloud && firebase deploy --only hosting --project fitness-aos",
     "deploy:cloud": "npm run build:cloud && firebase deploy --only hosting --project fitness-aos",
+    "deploy:preview": "npm run build:cloud && firebase hosting:channel:deploy preview --expires 24h --project fitness-aos",
     "bump:sw": "node scripts/bump-sw.mjs"
   },
   "dependencies": {

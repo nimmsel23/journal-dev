@@ -34,12 +34,24 @@ Eine Inbox-Funktion für die schnelle Erfassung von Rohdaten zur späteren Katal
 
 ---
 
-## 3. Deployment-Prozess (V3)
+## 3. Git & Deployment-Workflow (Dev vs. Master)
 
-Das Deployment nach Firebase erfolgt automatisch bei Änderungen am Frontend (via Git-Hook).
+Um eine stabile PWA-Erfahrung zu garantieren, haben wir einen klaren Git-basierten Workflow für Deployments etabliert. Wir trennen dabei zwischen den Home-Verzeichnissen (Entwicklung) und den VitalOS-Verzeichnissen (Produktion).
 
-1.  **Manueller Build:** `fuelctl dev build v3`
-2.  **Manueller Deploy:** `firebase deploy --only hosting`
+### Architektur & Branches
+- **Home Repos (z. B. `~/journal-dev`)**: Hier läuft die Entwicklung auf dem **`dev`** Branch. Änderungen werden hier entwickelt und committet.
+- **VitalOS Shell Apps (z. B. in `~/vitalos/...`)**: Hier läuft der **`master`** Branch, aus dem das tatsächliche finale Produktions-Setup gespeist wird.
+
+### 24h Preview Workflow (Der Sicherheits-Check)
+Bevor Commits aus dem `dev` Branch in den `master` Branch fließen, wird ein temporärer Preview-Link generiert:
+1. **Entwickeln im `dev` Branch:** Änderungen werden in `~/journal-dev` gebaut (`npm run dev`).
+2. **Preview Deploy (24h):** Mit dem Befehl `npm run deploy:preview` wird ein Build für Firebase erstellt und ein Preview Channel gestartet. Man erhält einen Link, der 24 Stunden gültig ist.
+3. **Testen:** Der Preview-Link wird auf verschiedenen Geräten geprüft.
+4. **Merge & Live-Deploy:** Wenn alles passt, werden die Änderungen in den `master` Branch gemerged (ggf. in der VitalOS-Shell gezogen) und final mit `npm run deploy:cloud` live geschaltet.
+
+### Befehle für Firebase Hosting
+- **Live Deploy:** `npm run deploy` oder `npm run deploy:cloud`
+- **Preview Deploy:** `npm run deploy:preview` (Erstellt den zeitlich begrenzten 24h-Link)
 
 *Hinweis: Firebase ist so konfiguriert, dass es ausschließlich aus dem Verzeichnis `dist-firebase/` veröffentlicht.*
 

@@ -19,9 +19,11 @@ Fuel Centre is a multifunctional nutrition and supplement tracking project desig
 1. **Install:** `npm install`
 2. **Start Server:** `npm run dev` (Runs on `http://127.0.0.1:9000`)
 
-### Deployment
-1. **Build:** `npm run build`
-2. **Deploy:** `firebase deploy` (Uses Firebase Hosting and Firestore)
+### Deployment & Git Workflow
+1. **Home-Repo (dev branch):** Entwickle Features in `~/journal-dev` (Branch `dev`).
+2. **Preview:** Teste Änderungen in der Cloud mit `npm run deploy:preview` (erstellt einen 24h-gültigen Firebase Channel Link).
+3. **Merge zu Master:** Wenn die Preview stabil ist, wird der `dev` Branch in `master` überführt.
+4. **Live Deploy:** `npm run deploy:cloud` pusht den Master live. (Die Produktions-Shell Apps liegen typischerweise unter `~/vitalos/...`).
 
 ### Synchronization
 - **Push Local to Cloud:** `npm run sync:push`

@@ -5,7 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/db.js",
-    "./views": "./src/views/Journal/index.jsx",
+    "./views": "./src/views/JournalVosView.jsx",
     "./lib/db": "./src/lib/db/journal.js",
     "./lib/habits": "./src/lib/db/habits.js",
     "./lib/user": "./src/lib/db/user.js",

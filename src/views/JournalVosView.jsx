@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { saveJournal, updateJournal, getHabits, getJournalHistory, getAllHabitJournalsHistory, getSessionHistory, getHabitJournal, saveHabitJournal } from "@db";
+import { saveJournal, updateJournal, getHabits, getJournalHistory, getAllHabitJournalsHistory, getSessionHistory, getHabitJournal, saveHabitJournal, getSettings, saveSettings } from "@db";
 import { localToday } from "@utils";
 import { Book, PenLine, NotebookPen } from "lucide-react";
 import JournalSettings from "../components/Journal/JournalSettings";
@@ -49,14 +49,30 @@ function Journal({ onOpenSession, user }) {
   const [editingEntry, setEditingEntry] = useState(null);
   const [limitCount, setLimitCount] = useState(30);
   const [showSettings, setShowSettings] = useState(false);
-  const [journalSettings, setJournalSettings] = useState(() => ({
+  const [journalSettings, setJournalSettings] = useState({
     colorActivities: localStorage.getItem('journal_colorActivities') === 'true',
-  }));
+    telegramEnabled: false,
+    telegramChatId: ''
+  });
   const colorActivities = journalSettings.colorActivities;
+
+  useEffect(() => {
+    getSettings().then(s => {
+      if (s) {
+        setJournalSettings(prev => ({
+          ...prev,
+          colorActivities: s.journal_colorActivities ?? prev.colorActivities,
+          telegramEnabled: s.telegramEnabled ?? false,
+          telegramChatId: s.telegramChatId ?? ''
+        }));
+      }
+    });
+  }, [user?.uid]);
 
   function handleSettingChange(key, value) {
     setJournalSettings(prev => ({ ...prev, [key]: value }));
-    localStorage.setItem(`journal_${key}`, value);
+    if (key === 'colorActivities') localStorage.setItem(`journal_colorActivities`, value);
+    saveSettings({ [key === 'colorActivities' ? 'journal_colorActivities' : key]: value });
   }
 
   const [journalModalOpen, setJournalModalOpen] = useState(false);

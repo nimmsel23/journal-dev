@@ -45,8 +45,15 @@ Um eine stabile PWA-Erfahrung zu garantieren, haben wir einen klaren Git-basiert
 ### 24h Preview Workflow (Der Sicherheits-Check)
 Bevor Commits aus dem `dev` Branch in den `master` Branch fließen, wird ein temporärer Preview-Link generiert:
 1. **Entwickeln im `dev` Branch:** Änderungen werden in `~/journal-dev` gebaut (`npm run dev`).
-2. **Preview Deploy (24h):** Mit dem Befehl `npm run deploy:preview` wird ein Build für Firebase erstellt und ein Preview Channel gestartet. Man erhält einen Link, der 24 Stunden gültig ist.
+2. **Preview Deploy (24h):** Mit dem Befehl `npm run deploy:preview` wird ein Build für Firebase erstellt und ein Preview Channel gestartet. Man erhält einen Link, der 24 Stunden gültig ist — er wird zusätzlich per Telegram verschickt (`scripts/deploy-preview.mjs`, Creds aus `~/.env/fitness.env`).
 3. **Testen:** Der Preview-Link wird auf verschiedenen Geräten geprüft.
+
+> **Warum lokal und nicht als GitHub Action?** Die Crossover-Aliase in `vite.config.cjs`
+> (`@fuel`, `@habits`, `@fitness/*`, `@db`) zeigen absolut auf die Nachbar-Repos unter
+> `/home/alpha/` — journal importiert Komponenten direkt aus fuel-dev, habits-dev und
+> fitness-dev. Auf einem GitHub-Runner existieren diese Repos nicht (und ihre `dev`-Stände
+> sind lokal oft weiter als auf GitHub), deshalb kann CI diesen Build nicht bauen.
+> Die ursprünglichen Actions liegen deaktiviert in `.github/workflows.disabled/`.
 4. **Merge & Live-Deploy:** Wenn alles passt, werden die Änderungen in den `master` Branch gemerged (ggf. in der VitalOS-Shell gezogen) und final mit `npm run deploy:cloud` live geschaltet.
 
 ### Befehle für Firebase Hosting

@@ -50,7 +50,8 @@ Bevor Commits aus dem `dev` Branch in den `master` Branch fließen, wird ein tem
 4. **Merge & Live-Deploy:** Wenn alles passt, werden die Änderungen in den `master` Branch gemerged (ggf. in der VitalOS-Shell gezogen) und final mit `npm run deploy:cloud` live geschaltet.
 
 ### Befehle für Firebase Hosting
-- **Live Deploy:** `npm run deploy` oder `npm run deploy:cloud`
+- **Live Deploy (mit Versions-Bump):** `npm run release` (Erhöht die Version in `package.json` und pusht live)
+- **Live Deploy (ohne Bump):** `npm run deploy` oder `npm run deploy:cloud`
 - **Preview Deploy:** `npm run deploy:preview` (Erstellt den zeitlich begrenzten 24h-Link)
 
 *Hinweis: Firebase ist so konfiguriert, dass es ausschließlich aus dem Verzeichnis `dist-firebase/` veröffentlicht.*

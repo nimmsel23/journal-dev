@@ -1,0 +1,20 @@
+name: Deploy 24h Preview on Dev Push
+'on':
+  push:
+    branches:
+      - dev
+jobs:
+  build_and_preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build:cloud
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_FITNESS_AOS }}'
+          projectId: fitness-aos
+          expires: 24h

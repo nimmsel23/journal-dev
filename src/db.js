@@ -9,3 +9,6 @@ export * from "./lib/db/utils.js";
 
 // Stub — journal-dev has no workout sessions; fitness-dev provides the real impl via @db
 export async function getSessionHistory(_limit) { return []; }
+
+// Stub — journal-dev has no nutrition logs; cloud/db.firestore.js provides the real impl
+export async function getMealsHistory(_limit) { return []; }

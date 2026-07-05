@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { saveJournal, updateJournal, getHabits, getJournalHistory, getAllHabitJournalsHistory, getSessionHistory, getHabitJournal, saveHabitJournal } from "@db";
+import { saveJournal, updateJournal, getHabits, getJournalHistory, getAllHabitJournalsHistory, getSessionHistory, getMealsHistory, getHabitJournal, saveHabitJournal } from "@db";
 import { localToday } from "@utils";
 import { Book, PenLine, NotebookPen } from "lucide-react";
 import JournalSettings from "../components/Journal/JournalSettings";
@@ -103,10 +103,11 @@ function Journal({ onOpenSession, user }) {
 
   useEffect(() => {
     async function load() {
-      const [regularHistory, habitHistory, sessions, allHabits] = await Promise.all([
+      const [regularHistory, habitHistory, sessions, mealLogs, allHabits] = await Promise.all([
         getJournalHistory(limitCount),
         getAllHabitJournalsHistory(limitCount),
         getSessionHistory(limitCount),
+        getMealsHistory(limitCount),
         getHabits()
       ]);
       
@@ -133,6 +134,19 @@ function Journal({ onOpenSession, user }) {
           effort: session.effort,
           mood: session.mood,
           time: savedAt
+        });
+      });
+
+      mealLogs.forEach(log => {
+        const totalKcal = (log.meals || []).reduce((sum, m) => sum + (Number(m.kcal) || 0), 0);
+        combined.push({
+          id: 'meals-' + log.date,
+          date: log.date,
+          type: 'meal',
+          text: '',
+          meals: log.meals || [],
+          totalKcal,
+          time: `${log.date}T12:30:00`
         });
       });
 

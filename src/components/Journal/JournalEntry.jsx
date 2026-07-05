@@ -1,4 +1,4 @@
-import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2 } from "lucide-react";
+import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed } from "lucide-react";
 import { EFFORT_LABELS, timeStr } from "./journalUtils";
 import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
@@ -27,6 +27,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
   const isWorkout = e.type === 'workout';
   const isActivity = e.type === 'activity';
   const isHabitCompletion = e.type === 'habit-completion';
+  const isMeal = e.type === 'meal';
   const habit = isHabit ? habits.find(h => h.uuid === e.habitId) : null;
 
   const activityColor = colorActivities && BLOCK_COLORS[e.activityType]
@@ -34,6 +35,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
     : '#fb923c';
 
   const bulletBg = isWorkout ? '#3b82f6'
+    : isMeal ? '#22c55e'
     : isActivity ? activityColor
     : '#fb923c';
 
@@ -69,6 +71,18 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
             </div>
           ) : isActivity ? (
             <ActivityHeader e={e} colorActivities={colorActivities} />
+          ) : isMeal ? (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <UtensilsCrossed size={16} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">Fuel</span>
+                <div className="text-[8px] font-bold opacity-30 uppercase tracking-tighter -mt-0.5">
+                  {e.meals?.length || 0} Mahlzeit{e.meals?.length === 1 ? '' : 'en'}
+                </div>
+              </div>
+            </div>
           ) : isHabitCompletion ? (
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-orange-400/10 flex items-center justify-center text-orange-400">
@@ -122,6 +136,22 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
                 {ex.name}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Fuel: Mahlzeiten + kcal-Summe */}
+        {isMeal && e.meals?.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-1.5 items-center">
+            {e.meals.map((m, idx) => (
+              <span key={idx} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/8 text-emerald-400 border border-emerald-500/15">
+                {m.description}
+              </span>
+            ))}
+            {e.totalKcal > 0 && (
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-md border text-emerald-300 bg-emerald-500/8 border-emerald-500/15">
+                {Math.round(e.totalKcal)} kcal
+              </span>
+            )}
           </div>
         )}
 

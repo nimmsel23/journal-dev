@@ -11,7 +11,9 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-function uid() {
+async function uid() {
+  // Wait for auth state to be ready before giving up
+  await auth?.authStateReady?.();
   const u = auth?.currentUser?.uid;
   if (!u) throw new Error("not authenticated");
   return u;
@@ -23,7 +25,7 @@ function journalCol(userId) {
 
 export async function getJournal(date = localToday()) {
   try {
-    const userId = uid();
+    const userId = await uid();
     const snap = await getDoc(doc(journalCol(userId), date));
     if (!snap.exists()) return [];
     const data = snap.data();
@@ -36,7 +38,8 @@ export async function getJournal(date = localToday()) {
 
 export async function getJournalHistory(limitCount = 50) {
   try {
-    const userId = uid();
+    const userId = await uid();
+    // order by the stored `date` field; falls back to doc-ID order if field missing
     const q = query(journalCol(userId), orderBy("date", "desc"), fbLimit(limitCount));
     const snaps = await getDocs(q);
     return snaps.docs.map((s) => {
@@ -55,9 +58,10 @@ export async function getJournalHistory(limitCount = 50) {
 
 export async function saveJournal(date = localToday(), text) {
   const content = String(text || "").trim();
-  const userId = uid();
+  const userId = await uid();
   await setDoc(doc(journalCol(userId), date), {
     content,
+    date,                          // ← needed for orderBy("date") queries
     updated_at: serverTimestamp(),
   }, { merge: true });
   return { id: date, date, text: content, time: new Date().toISOString() };
@@ -77,7 +81,7 @@ export async function deleteJournal(id) {
 
 export async function getAllHabitJournalsForDate(date) {
   try {
-    const userId = uid();
+    const userId = await uid();
     const habitsSnap = await getDocs(collection(db, "fitness", userId, "habits"));
     const out = [];
     for (const h of habitsSnap.docs) {
@@ -94,7 +98,7 @@ export async function getAllHabitJournalsForDate(date) {
 
 export async function getAllHabitJournalsHistory(limitCount = 50) {
   try {
-    const userId = uid();
+    const userId = await uid();
     const habitsSnap = await getDocs(collection(db, "fitness", userId, "habits"));
     const out = [];
     for (const h of habitsSnap.docs) {

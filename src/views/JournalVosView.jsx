@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { saveJournal, updateJournal, getHabits, getJournalHistory, getAllHabitJournalsHistory, getSessionHistory, getMealsHistory, getHabitJournal, saveHabitJournal, getSettings, saveSettings } from "@db";
+import { saveJournal, updateJournal, getHabits, getJournalHistory, getAllHabitJournalsHistory, getSessionHistory, getMealsHistory, getHabitJournal, saveHabitJournal, getSettings, saveSettings, getNutritionJournalHistory } from "@db";
 import { localToday } from "@utils";
 import { Book, PenLine, NotebookPen } from "lucide-react";
 import JournalSettings from "../components/Journal/JournalSettings";
@@ -119,19 +119,21 @@ function Journal({ onOpenSession, user }) {
 
   useEffect(() => {
     async function load() {
-      const [regularHistory, habitHistory, sessions, mealLogs, allHabits] = await Promise.all([
+      const [regularHistory, habitHistory, sessions, mealLogs, allHabits, nutritionJournalHistory] = await Promise.all([
         getJournalHistory(limitCount),
         getAllHabitJournalsHistory(limitCount),
         getSessionHistory(limitCount),
         getMealsHistory(limitCount),
-        getHabits()
+        getHabits(),
+        getNutritionJournalHistory(limitCount).catch(() => [])
       ]);
       
       setHabits(allHabits);
       
       const combined = [
         ...regularHistory.map(e => ({ ...e, type: 'regular' })),
-        ...habitHistory
+        ...habitHistory,
+        ...nutritionJournalHistory.map(e => ({ ...e, type: 'nutrition-journal' }))
       ];
 
       sessions.forEach(session => {

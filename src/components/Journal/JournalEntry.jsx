@@ -1,4 +1,4 @@
-import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed } from "lucide-react";
+import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed, NotebookPen } from "lucide-react";
 import { EFFORT_LABELS, timeStr } from "./journalUtils";
 import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
@@ -28,6 +28,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
   const isActivity = e.type === 'activity';
   const isHabitCompletion = e.type === 'habit-completion';
   const isMeal = e.type === 'meal';
+  const isNutritionJournal = e.type === 'nutrition-journal';
   const habit = isHabit ? habits.find(h => h.uuid === e.habitId) : null;
 
   const activityColor = colorActivities && BLOCK_COLORS[e.activityType]
@@ -36,6 +37,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
 
   const bulletBg = isWorkout ? '#3b82f6'
     : isMeal ? '#22c55e'
+    : isNutritionJournal ? '#38bdf8'
     : isActivity ? activityColor
     : '#fb923c';
 
@@ -52,6 +54,8 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
         style={{
           borderColor: isWorkout
             ? 'rgba(59,130,246,0.15)'
+            : isNutritionJournal
+            ? 'rgba(56,189,248,0.15)'
             : isActivity && colorActivities
             ? `${activityColor}30`
             : 'rgba(255,255,255,0.1)',
@@ -101,6 +105,16 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
               <div>
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400">{habit?.name}</span>
                 <div className="text-[8px] font-bold opacity-30 uppercase tracking-tighter -mt-0.5">Habit Journal</div>
+              </div>
+            </div>
+          ) : isNutritionJournal ? (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-500">
+                <NotebookPen size={16} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-500">Ernährungsjournal</span>
+                <div className="text-[8px] font-bold opacity-30 uppercase tracking-tighter -mt-0.5">Notizen geloggt</div>
               </div>
             </div>
           ) : (

@@ -1,4 +1,4 @@
-import { X, Target, Dumbbell, Book, Brain, CheckCircle2 } from "lucide-react";
+import { X, Target, Dumbbell, Book, Brain, CheckCircle2, NotebookPen } from "lucide-react";
 import { EFFORT_LABELS } from "./journalUtils";
 import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
@@ -9,6 +9,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
   const isWorkout = selectedEntry.type === 'workout';
   const isActivity = selectedEntry.type === 'activity';
   const isHabitCompletion = selectedEntry.type === 'habit-completion';
+  const isNutritionJournal = selectedEntry.type === 'nutrition-journal';
   const habit = isHabit ? habits.find(h => h.uuid === selectedEntry.habitId) : null;
 
   const ActivityIcon = isActivity && ACTIVITY_ICONS[selectedEntry.activityType]
@@ -27,6 +28,8 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
 
   const iconColor = isWorkout
     ? 'text-blue-500 bg-blue-500/10'
+    : isNutritionJournal
+    ? 'text-sky-500 bg-sky-500/10'
     : isActivity
     ? ''
     : 'text-orange-400 bg-orange-400/10';
@@ -39,6 +42,8 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
     ? (ACTIVITY_LABELS[selectedEntry.activityType] || selectedEntry.block || 'Ausdauer')
     : isHabitCompletion
     ? selectedEntry.habitName
+    : isNutritionJournal
+    ? 'Ernährungsjournal'
     : 'Journal Eintrag';
 
   const subtitle = isWorkout
@@ -49,6 +54,8 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
     ? 'Habit abgeschlossen'
     : isHabit
     ? 'Habit Journal'
+    : isNutritionJournal
+    ? 'Ernährungsnotiz'
     : 'Notiz';
 
   return (
@@ -67,6 +74,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
                 : isWorkout ? <Dumbbell size={20} />
                 : isActivity ? <ActivityIcon size={20} />
                 : isHabitCompletion ? <CheckCircle2 size={20} />
+                : isNutritionJournal ? <NotebookPen size={20} />
                 : <Book size={20} />}
             </div>
             <div>

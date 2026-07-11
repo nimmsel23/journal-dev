@@ -35,4 +35,5 @@ export {
 export {
   getJournal as getNutritionJournal,
   saveJournal as saveNutritionJournal,
+  getNutritionJournalHistory,
 } from "@fuel/lib/db/firestore/journal.js";

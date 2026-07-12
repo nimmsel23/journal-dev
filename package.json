@@ -6,10 +6,7 @@
   "exports": {
     ".": "./src/db.js",
     "./views": "./src/views/JournalVosView.jsx",
-    "./lib/db": "./src/lib/db/journal.js",
-    "./lib/habits": "./src/lib/db/habits.js",
-    "./lib/user": "./src/lib/db/user.js",
-    "./lib/utils": "./src/lib/db/utils.js"
+    "./lib/db": "./src/lib/db/journal.js"
   },
   "description": "Journal VOS — Journal + Habit PWA auf fuel-dev Shell (Firestore via fitness-aos)",
   "scripts": {

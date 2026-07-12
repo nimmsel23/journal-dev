@@ -1,14 +1,21 @@
-// journal.js — fitness-style journal (free-text per day, plus history).
-// Reads/writes through Firestore via the existing firestore-db.js layer,
-// so it works both in dev (Vite + cloud detection) and in firebase build.
+// journal.js — Journal + HabitJournal DB-Layer (Firestore).
+// journal-dev besitzt dieses Modul; fitness-dev re-exportiert es als
+// src/lib/db/local/journal.js (via @journal-Alias).
 //
-// Routes data to: fitness/{uid}/journal/{date} (parity with fitness-dev).
+// Schema ist kanonisch identisch mit fitness-dev src/lib/db/firestore/journal.js:
+//   fitness/{uid}/journal           ein Doc PRO EINTRAG (addDoc, auto-ID)
+//                                   { date, text, tags, time, created_at }
+//   fitness/{uid}/habitJournals     Doc-ID `${habitId}_${date}`
+//                                   { habitId, date, text, updated_at }
+//
+// Lese-Kompat: Docs des früheren 1-Doc-pro-Tag-Formats (Doc-ID = Datum,
+// Feld `content`) werden beim Lesen auf { text, date, time } gemappt.
 
-import { api, localToday } from "./core.js";
+import { localToday } from "./core.js";
 import { db, auth } from "../firebase.js";
 import {
-  collection, doc, getDoc, getDocs, setDoc, query, orderBy, limit as fbLimit,
-  serverTimestamp,
+  collection, doc, addDoc, setDoc, getDocs,
+  query, where, orderBy, limit as fbLimit, serverTimestamp,
 } from "firebase/firestore";
 
 async function uid() {
@@ -19,18 +26,34 @@ async function uid() {
   return u;
 }
 
+const DATE_ID = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizeEntry(snap) {
+  const d = snap.data() || {};
+  return {
+    id: snap.id,
+    ...d,
+    text: d.text ?? d.content ?? "",
+    date: d.date || (DATE_ID.test(snap.id) ? snap.id : localToday()),
+    time: d.time || d.updated_at?.toDate?.()?.toISOString?.() || d.date || snap.id,
+  };
+}
+
 function journalCol(userId) {
   return collection(db, "fitness", userId, "journal");
 }
 
+// ── Journal ───────────────────────────────────────────────────────────────────
+
 export async function getJournal(date = localToday()) {
   try {
     const userId = await uid();
-    const snap = await getDoc(doc(journalCol(userId), date));
-    if (!snap.exists()) return [];
-    const data = snap.data();
-    if (!data?.content) return [];
-    return [{ id: date, date, text: data.content, time: data.updated_at?.toDate?.()?.toISOString?.() || date }];
+    const q = query(journalCol(userId), where("date", "==", date));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(normalizeEntry)
+      .filter((e) => e.text)
+      .sort((a, b) => (b.time || "").localeCompare(a.time || ""));
   } catch {
     return [];
   }
@@ -39,90 +62,68 @@ export async function getJournal(date = localToday()) {
 export async function getJournalHistory(limitCount = 50) {
   try {
     const userId = await uid();
-    // order by the stored `date` field; falls back to doc-ID order if field missing
     const q = query(journalCol(userId), orderBy("date", "desc"), fbLimit(limitCount));
-    const snaps = await getDocs(q);
-    return snaps.docs.map((s) => {
-      const d = s.data();
-      return {
-        id: s.id,
-        date: s.id,
-        text: d.content || "",
-        time: d.updated_at?.toDate?.()?.toISOString?.() || s.id,
-      };
-    });
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(normalizeEntry)
+      .filter((e) => e.text)
+      .sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.time || "").localeCompare(a.time || ""));
   } catch {
     return [];
   }
 }
 
-export async function saveJournal(date = localToday(), text) {
-  const content = String(text || "").trim();
+export async function saveJournal(date = localToday(), text, tags = []) {
   const userId = await uid();
-  await setDoc(doc(journalCol(userId), date), {
-    content,
-    date,                          // ← needed for orderBy("date") queries
-    updated_at: serverTimestamp(),
-  }, { merge: true });
-  return { id: date, date, text: content, time: new Date().toISOString() };
+  const content = String(text || "").trim();
+  const time = new Date().toISOString();
+  const ref = await addDoc(journalCol(userId), {
+    date,
+    text: content,
+    tags,
+    time,
+    created_at: serverTimestamp(),
+  });
+  return { id: ref.id, date, text: content, time };
 }
 
 export async function updateJournal(id, text) {
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(id) ? id : localToday();
-  return saveJournal(date, text);
+  const userId = await uid();
+  const content = String(text || "").trim();
+  const patch = { text: content, updated_at: serverTimestamp() };
+  // Alt-Doc (Doc-ID = Datum): date-Feld nachziehen, damit where("date")-Queries es finden
+  if (DATE_ID.test(id)) patch.date = id;
+  await setDoc(doc(journalCol(userId), id), patch, { merge: true });
+  return { ok: true, id, text: content };
 }
 
-export async function deleteJournal(id) {
-  // Soft-delete by writing empty content.
-  return saveJournal(id, "");
-}
+// ── HabitJournal Timeline-Reads ───────────────────────────────────────────────
+// Nur Aggregat-Reads für die Journal-Timeline. Das HabitJournal-CRUD
+// (getHabitJournal/saveHabitJournal/getHabitJournalHistory) besitzt die
+// Habit-Domain: habits-dev (local) bzw. fitness-dev firestore/journal.js —
+// hier NICHT exportieren, sonst kollidiert `export *` im fitness-Barrel.
 
-// ── Habit-journal cross-views (used by Journal/index.jsx) ────────────────────
-
-export async function getAllHabitJournalsForDate(date) {
-  try {
-    const userId = await uid();
-    const habitsSnap = await getDocs(collection(db, "fitness", userId, "habits"));
-    const out = [];
-    for (const h of habitsSnap.docs) {
-      const j = await getDoc(doc(db, "fitness", userId, "habits", h.id, "journal", date));
-      if (j.exists() && j.data()?.text) {
-        out.push({ id: `${h.id}_${date}`, habitId: h.id, date, text: j.data().text, type: "habit" });
-      }
-    }
-    return out;
-  } catch {
-    return [];
-  }
+function habitJournalCol(userId) {
+  return collection(db, "fitness", userId, "habitJournals");
 }
 
 export async function getAllHabitJournalsHistory(limitCount = 50) {
   try {
     const userId = await uid();
-    const habitsSnap = await getDocs(collection(db, "fitness", userId, "habits"));
-    const out = [];
-    for (const h of habitsSnap.docs) {
-      const jSnaps = await getDocs(
-        query(collection(db, "fitness", userId, "habits", h.id, "journal"),
-          orderBy("date", "desc"), fbLimit(limitCount))
-      );
-      jSnaps.docs.forEach((s) => {
-        const d = s.data();
-        if (d?.text) {
-          out.push({
-            id: `${h.id}_${s.id}`,
-            habitId: h.id,
-            date: s.id,
-            text: d.text,
-            type: "habit",
-            time: d.updated_at?.toDate?.()?.toISOString?.() || s.id,
-          });
-        }
-      });
-    }
-    return out
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, limitCount);
+    const q = query(habitJournalCol(userId), orderBy("date", "desc"), fbLimit(limitCount));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data(), type: "habit" }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getAllHabitJournalsForDate(date) {
+  try {
+    const userId = await uid();
+    const q = query(habitJournalCol(userId), where("date", "==", date));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data(), type: "habit" }));
   } catch {
     return [];
   }

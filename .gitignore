@@ -13,3 +13,6 @@ data/
 
 # Keep catalogs (versioniert)
 !catalogs/
+
+# Lokales Archiv (mv statt rm), nie tracken
+.archiv/

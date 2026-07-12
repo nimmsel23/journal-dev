@@ -112,26 +112,40 @@ module.exports = defineConfig(({ mode }) => {
         "@fitness/components": path.resolve(FITNESS, "src/components"),
         "@api": path.resolve(FUEL, appMode === "client" ? "src/client/lib/api.cloud.js" : "src/client/lib/api.local.js"),
       },
-      // fullcalendar in dedupe: fuel-Views werden aus ~/vitalos/fuel-dev
-      // importiert und würden sonst in vitalos/node_modules auflösen, wo
-      // @fullcalendar/core fehlt.
+      // dedupe: fuel-Views werden aus ~/vitalos/fuel-dev importiert und
+      // würden sonst in vitalos/node_modules auflösen — dort fehlt
+      // @fullcalendar/core und recharts liegt als 3.x (Major-Bruch zu
+      // journal/fuel 2.15.4). dedupe zwingt alles auf journal-devs Kopie.
       dedupe: [
         "react", "react-dom", "@tanstack/react-query",
         "@fullcalendar/core", "@fullcalendar/react", "@fullcalendar/daygrid",
         "@fullcalendar/timegrid", "@fullcalendar/interaction",
+        "recharts", "lucide-react", "framer-motion",
       ],
     },
     build: {
       outDir,
       emptyOutDir: true,
+      // 500er-Default schlägt nur noch bei vendor-firebase an (Firestore-SDK
+      // mit persistentLocalCache ist als Ganzes so groß, s. manualChunks).
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
-          manualChunks: {
-            "vendor-react": ["react", "react-dom"],
-            "vendor-query": ["@tanstack/react-query"],
-            "vendor-firebase": ["firebase/app", "firebase/firestore", "firebase/auth"],
-            "vendor-calendar": ["@fullcalendar/react", "@fullcalendar/daygrid", "@fullcalendar/timegrid", "@fullcalendar/interaction"],
-            "vendor-charts": ["recharts"],
+          // Funktion statt Objekt-Keys: die fuel-Views lösen ihre Dependencies
+          // in fremden node_modules auf (vitalos/fuel-dev) — Objekt-Keys matchen
+          // nur journal-devs eigene Auflösung und ließen vendor-react/-charts
+          // als leere Stubs zurück (recharts steckte im DashboardView-Chunk).
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return undefined;
+            if (id.includes("@fullcalendar/")) return "vendor-calendar";
+            if (/node_modules\/(recharts|recharts-scale|victory-vendor|d3-[^/]+|decimal\.js-light|fast-equals)\//.test(id)) return "vendor-charts";
+            // Firestore NICHT separat splitten: @firebase/firestore ↔ @firebase/app
+            // importieren sich wechselseitig → "Circular chunk"-Warnung + riskante
+            // Init-Reihenfolge. Ein Chunk (~960 kB, gzip ~230) ist SDK-Realität.
+            if (/node_modules\/(firebase|@firebase|idb)\//.test(id)) return "vendor-firebase";
+            if (id.includes("node_modules/@tanstack/")) return "vendor-query";
+            if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return "vendor-react";
+            return undefined;
           },
         },
       },

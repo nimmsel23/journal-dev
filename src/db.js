@@ -1,11 +1,10 @@
-// db.js — @db barrel for the local/dev build.
-// Vite alias '@db' resolves to either this file (default) or
-// ./db.firestore.js (firebase mode).
+// db.js — Package-Barrel (@vos/journal, exports ".").
+// Der Vite-Alias @db des journal-Standalone-Builds zeigt NICHT hierher,
+// sondern auf src/db/index.js (Doppelwrapper über die modularen
+// Firestore-Layer der Nachbar-Repos). Dieses Barrel ist die Export-Surface
+// für Consumer, die journal-dev als Package einbinden.
 export * from "./lib/db/core.js";
 export * from "./lib/db/journal.js";
-export * from "./lib/db/habits.js";
-export * from "./lib/db/user.js";
-export * from "./lib/db/utils.js";
 
 // Stub — journal-dev has no workout sessions; fitness-dev provides the real impl via @db
 export async function getSessionHistory(_limit) { return []; }

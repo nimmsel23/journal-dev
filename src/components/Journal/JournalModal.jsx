@@ -1,6 +1,6 @@
 import { X, Target, Dumbbell, Book, Brain, CheckCircle2, UtensilsCrossed, NotebookPen } from "lucide-react";
 import { EFFORT_LABELS, TYPE_COLORS } from "./journalUtils";
-import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "../../constants/ActivityConstants";
+import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
 const ACCENT = "var(--j-accent)";
 

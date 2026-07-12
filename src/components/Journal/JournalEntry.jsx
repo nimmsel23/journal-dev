@@ -1,8 +1,10 @@
 import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed, NotebookPen } from "lucide-react";
 import { EFFORT_LABELS, timeStr, TYPE_COLORS } from "./journalUtils";
-// Relativ statt @fitness-Alias: löst über den src/constants-Symlink auf
-// und funktioniert damit in fitness-, fuel- und Standalone-Builds.
-import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "../../constants/ActivityConstants";
+// Via Alias, NICHT relativ über den src/constants-Symlink: dessen Ziel ist
+// ein absoluter /home/alpha-Pfad und im CI-Runner tot. @fitness/constants
+// definieren alle Konsumenten (journal, fitness, fuel .cjs, vitalos)
+// checkout-relativ.
+import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
 const ACCENT = "var(--j-accent)";
 

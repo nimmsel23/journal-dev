@@ -21,8 +21,10 @@ import JournalForm from "./JournalForm";
 import JournalEntry from "./JournalEntry";
 import JournalModal from "./JournalModal";
 import CrossoverButtons from "../../import-crossover/CrossoverButtons";
-import { ICON_COMPONENTS_MAP } from "../../views/Habits/utils";
-import HabitJournalModal from "../../views/Habits/HabitJournalModal";
+// Via @habits-Alias, NICHT relativ über den views/Habits-Symlink: dessen
+// Ziel ist ein absoluter /home/alpha-Pfad und im CI-Runner tot.
+import { ICON_COMPONENTS_MAP } from "@habits/views/Habits/utils";
+import HabitJournalModal from "@habits/views/Habits/HabitJournalModal";
 
 // Theme-Kontrakt: Im fitness-Kontext liefern dessen Themes die --*-Tokens,
 // standalone/fuel greifen die ruhigen DayOne-artigen Fallbacks.

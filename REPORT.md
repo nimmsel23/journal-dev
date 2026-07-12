@@ -136,3 +136,65 @@ Dokumentiert in Memory: `project_journal_dev_state.md`.
 5. **fitness local-Mode-Frage:** `local/journal.js` re-exportiert eine
    Firestore-Implementierung — „local" ist dort effektiv cloud-only. Bewusste
    Entscheidung dokumentieren oder echten Local-Store bauen.
+
+---
+
+# NACHTRAG 2026-07-13 — View-Konsolidierung Richtung DayOne (Schritt 1)
+
+**Offener Punkt 1 aus dem Audit umgesetzt:** Die zwei parallelen
+Journal-View-Linien sind zu EINEM Kern zusammengeführt.
+
+## Neue Struktur
+
+```
+src/components/Journal/
+├── JournalTimeline.jsx   ⭐ DER gemeinsame Kern (Logik-Superset beider Linien)
+├── JournalEntry.jsx      tokenisiert, alle Entry-Typen (workout/activity/meal/
+│                         nutrition-journal/habit/habit-completion/regular)
+├── JournalForm.jsx       Composer, tokenisiert
+├── JournalHeader.jsx     Datum + Navigation, tokenisiert
+├── JournalModal.jsx      Detail-Ansicht, tokenisiert (+ Meal-Detail neu)
+├── JournalSettings.jsx   Superset (Darstellung + optional Integrationen)
+└── journalUtils.js       localToday/formatRelativeDate/sessionInfo/TYPE_COLORS
+                          (ersetzt @utils-Abhängigkeit — fuel hat kein @utils)
+
+src/views/JournalVosView.jsx   dünner Wrapper (journal standalone + fuel)
+src/views/Journal/index.jsx    dünner Re-Export (fitness-Symlink-Einstieg)
+```
+
+Alte views/Journal-Komponenten: `.archiv/2026-07-13-view-konsolidierung/`.
+
+## Kern-Mechaniken
+
+1. **`import * as db from "@db"` + Feature-Detection** — nicht jeder Kontext
+   exportiert alle Quellen (fitness local: keine Nutrition/Meals). Namespace-
+   Zugriff `db.getNutritionJournalHistory?.()` bricht nicht beim Build.
+2. **Theme-Token-Kontrakt:** Kern-Root mappt einmalig
+   `--j-* = var(--fitness-token, DayOne-Fallback)`. Im fitness-Kontext greifen
+   dessen Themes (--accent/--card/--line/--ink/--bg/--dim), standalone/fuel
+   bekommen ruhige Defaults (Akzent #4a9eff statt fuel-Orange #fb923c).
+   Typ-Farben (workout=blau, meal=emerald, nutrition=sky) sind semantisch fix.
+3. **⚠️ Verzeichnis-Symlink-Semantik gelernt:** Der Importer-Pfad bleibt
+   symbolisch — relative Imports, die den symlinked Ordner VERLASSEN, lösen im
+   HOST-Repo auf (deshalb brach `../../components/...` im fitness-Build).
+   Fix: Re-Export via `@journal`-Alias (alle Konsumenten definieren ihn) —
+   zwingt in den journal-Realpath.
+4. **CrossoverButtons** nur im VOS-Wrapper (`showCrossover`), fitness sieht
+   sie nicht. fuel-Orange dort ist Pillar-Semantik (Fitness/Fuel/Relax).
+
+## Verifikation
+
+| Build | Status |
+|---|---|
+| journal-dev standalone | ✅ 11.8 s |
+| fitness-dev local | ✅ 9.6 s |
+| fitness-dev firebase | ✅ 7.2 s |
+| fuel-dev | ✅ 14.5 s |
+
+## DayOne-Roadmap (nächste Schritte)
+
+- [ ] Composer-UX: „Neuer Eintrag"-Karte mit Prompt des Tages statt Dauer-Textarea
+- [ ] Foto-/Medien-Einträge (DayOne-Kernfeature)
+- [ ] Kalender-/Heatmap-Navigation über der Timeline
+- [ ] Tags + Suche über alle Einträge
+- [ ] Wrapper-Header in journal-standalone weiter beruhigen (main.jsx Shell hat noch fuel-Gradient/Orange in styles.css)

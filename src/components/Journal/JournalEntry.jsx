@@ -1,22 +1,20 @@
 import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed, NotebookPen } from "lucide-react";
-import { EFFORT_LABELS, timeStr } from "./journalUtils";
-import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
+import { EFFORT_LABELS, timeStr, TYPE_COLORS } from "./journalUtils";
+// Relativ statt @fitness-Alias: löst über den src/constants-Symlink auf
+// und funktioniert damit in fitness-, fuel- und Standalone-Builds.
+import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "../../constants/ActivityConstants";
 
-function ActivityHeader({ e, colorActivities }) {
-  const Icon = ACTIVITY_ICONS[e.activityType] || Dumbbell;
-  const label = ACTIVITY_LABELS[e.activityType] || e.block || 'Ausdauer';
-  const color = colorActivities && BLOCK_COLORS[e.activityType]
-    ? BLOCK_COLORS[e.activityType]
-    : '#fb923c';
+const ACCENT = "var(--j-accent)";
 
+function TypeBadge({ icon: Icon, color, label, sub }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${color}1a`, color }}>
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`, color }}>
         <Icon size={16} />
       </div>
       <div>
-        <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color }}>{label}</span>
-        <div className="text-[8px] font-bold opacity-30 uppercase tracking-tighter -mt-0.5">Ausdauer geloggt</div>
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color }}>{label}</span>
+        <div className="text-[8px] font-bold uppercase tracking-tighter -mt-0.5 text-[var(--j-dim)]">{sub}</div>
       </div>
     </div>
   );
@@ -33,94 +31,59 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
 
   const activityColor = colorActivities && BLOCK_COLORS[e.activityType]
     ? BLOCK_COLORS[e.activityType]
-    : '#fb923c';
+    : ACCENT;
 
-  const bulletBg = isWorkout ? '#3b82f6'
-    : isMeal ? '#22c55e'
-    : isNutritionJournal ? '#38bdf8'
-    : isActivity ? activityColor
-    : '#fb923c';
+  const bulletBg = TYPE_COLORS[e.type]
+    || (isActivity ? activityColor : ACCENT);
+
+  const borderColor = isWorkout
+    ? 'rgba(59,130,246,0.15)'
+    : isNutritionJournal
+    ? 'rgba(56,189,248,0.15)'
+    : isActivity && colorActivities
+    ? `${activityColor}30`
+    : 'var(--j-line)';
 
   return (
     <div className="relative group">
       <div
-        className="absolute -left-[37px] top-6 w-4 h-4 rounded-full border-4 border-slate-950 shadow-sm z-10 transition-transform group-hover:scale-125"
+        className="absolute -left-[37px] top-6 w-4 h-4 rounded-full border-4 border-[var(--j-bg)] z-10 transition-transform group-hover:scale-125"
         style={{ backgroundColor: bulletBg }}
       />
 
       <div
         onClick={() => setSelectedEntry(e)}
-        className="p-6 rounded-[24px] border bg-slate-900 shadow-md transition-all hover:shadow-2xl hover:-translate-y-0.5 cursor-pointer"
-        style={{
-          borderColor: isWorkout
-            ? 'rgba(59,130,246,0.15)'
-            : isNutritionJournal
-            ? 'rgba(56,189,248,0.15)'
-            : isActivity && colorActivities
-            ? `${activityColor}30`
-            : 'rgba(255,255,255,0.1)',
-        }}
+        className="p-6 rounded-2xl border bg-[var(--j-card)] transition-colors hover:border-[var(--j-accent)]/40 cursor-pointer"
+        style={{ borderColor }}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           {isWorkout ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
-                <Dumbbell size={16} />
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">{e.block}</span>
-                <div className="text-[8px] font-bold opacity-30 uppercase tracking-tighter -mt-0.5">Workout geloggt</div>
-              </div>
-            </div>
+            <TypeBadge icon={Dumbbell} color={TYPE_COLORS.workout} label={e.block} sub="Workout geloggt" />
           ) : isActivity ? (
-            <ActivityHeader e={e} colorActivities={colorActivities} />
+            <TypeBadge
+              icon={ACTIVITY_ICONS[e.activityType] || Dumbbell}
+              color={activityColor}
+              label={ACTIVITY_LABELS[e.activityType] || e.block || 'Ausdauer'}
+              sub="Ausdauer geloggt"
+            />
           ) : isMeal ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                <UtensilsCrossed size={16} />
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">Fuel</span>
-                <div className="text-[8px] font-bold opacity-30 uppercase tracking-tighter -mt-0.5">
-                  {e.meals?.length || 0} Mahlzeit{e.meals?.length === 1 ? '' : 'en'}
-                </div>
-              </div>
-            </div>
+            <TypeBadge
+              icon={UtensilsCrossed}
+              color={TYPE_COLORS.meal}
+              label="Fuel"
+              sub={`${e.meals?.length || 0} Mahlzeit${e.meals?.length === 1 ? '' : 'en'}`}
+            />
           ) : isHabitCompletion ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-orange-400/10 flex items-center justify-center text-orange-400">
-                <CheckCircle2 size={16} />
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400">{e.habitName}</span>
-                <div className="text-[8px] font-bold opacity-30 uppercase tracking-tighter -mt-0.5">Habit abgeschlossen</div>
-              </div>
-            </div>
+            <TypeBadge icon={CheckCircle2} color={ACCENT} label={e.habitName} sub="Habit abgeschlossen" />
           ) : isHabit ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-orange-400/10 flex items-center justify-center text-orange-400">
-                <Target size={16} />
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400">{habit?.name}</span>
-                <div className="text-[8px] font-bold opacity-30 uppercase tracking-tighter -mt-0.5">Habit Journal</div>
-              </div>
-            </div>
+            <TypeBadge icon={Target} color={ACCENT} label={habit?.name} sub="Habit Journal" />
           ) : isNutritionJournal ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-500">
-                <NotebookPen size={16} />
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-500">Ernährungsjournal</span>
-                <div className="text-[8px] font-bold opacity-30 uppercase tracking-tighter -mt-0.5">Notizen geloggt</div>
-              </div>
-            </div>
+            <TypeBadge icon={NotebookPen} color={TYPE_COLORS['nutrition-journal']} label="Ernährungsjournal" sub="Notizen geloggt" />
           ) : (
-            <div className="flex items-center gap-2 text-slate-400">
-              <Clock size={14} className="opacity-30" />
-              <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Journal Eintrag</span>
+            <div className="flex items-center gap-2 text-[var(--j-dim)]">
+              <Clock size={14} className="opacity-50" />
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">Journal Eintrag</span>
             </div>
           )}
 
@@ -128,14 +91,14 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
             {e.type === 'regular' && (
               <button
                 onClick={(ev) => { ev.stopPropagation(); onEdit(e); }}
-                className="p-1.5 rounded-lg hover:bg-slate-900 text-slate-400 hover:text-orange-400 transition-all"
+                className="p-1.5 rounded-lg text-[var(--j-dim)] hover:text-[var(--j-accent)] hover:bg-[var(--j-bg2)] transition-all"
                 title="Eintrag bearbeiten"
               >
                 <Edit size={12} />
               </button>
             )}
             {timeStr(e) && (
-              <span className="text-[10px] font-black font-mono opacity-20 bg-slate-900 px-2 py-1 rounded-md">
+              <span className="text-[10px] font-mono text-[var(--j-dim)] opacity-60 bg-[var(--j-bg2)] px-2 py-1 rounded-md">
                 {timeStr(e)}
               </span>
             )}
@@ -172,7 +135,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
         {/* Effort-Badge */}
         {(isWorkout || isActivity) && e.effort > 0 && (
           <div className="mb-3 flex items-center gap-2">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-30">Anstrengung</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--j-dim)]">Anstrengung</span>
             <span
               className="text-[10px] font-black px-2 py-0.5 rounded-md border"
               style={isActivity && colorActivities ? {
@@ -192,18 +155,18 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
 
         {/* Text */}
         {e.text && (
-          <p className="text-sm leading-relaxed text-slate-100/90 font-medium whitespace-pre-wrap selection:bg-orange-400/30 line-clamp-3">
+          <p className="text-[15px] leading-relaxed text-[var(--j-ink)] whitespace-pre-wrap line-clamp-3">
             {e.text}
           </p>
         )}
 
         {isHabit && e.coachFeedback && (
-          <div className="mt-6 p-4 rounded-2xl bg-orange-400/5 border-l-4 border-orange-400">
+          <div className="mt-6 p-4 rounded-xl bg-[var(--j-accent)]/5 border-l-4 border-[var(--j-accent)]">
             <div className="flex items-center gap-2 mb-2">
-              <Brain size={14} className="text-orange-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">Coach Feedback</span>
+              <Brain size={14} className="text-[var(--j-accent)]" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--j-accent)]">Coach Feedback</span>
             </div>
-            <p className="text-xs font-bold italic text-slate-100/80 leading-relaxed truncate">"{e.coachFeedback}"</p>
+            <p className="text-xs italic text-[var(--j-ink)] opacity-80 leading-relaxed truncate">"{e.coachFeedback}"</p>
           </div>
         )}
       </div>

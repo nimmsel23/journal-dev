@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { format } from "date-fns";
 
 export const useApp = create((set) => ({
-  activeTab: "dashboard",
+  activeTab: "journal",
   activeDate: format(new Date(), "yyyy-MM-dd"),
   setActiveTab: (activeTab) => set({ activeTab }),
   setActiveDate: (activeDate) => set({ activeDate }),

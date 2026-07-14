@@ -72,27 +72,7 @@ module.exports = defineConfig(({ mode }) => {
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
           navigateFallback: "/index.html",
-          navigateFallbackDenylist: [/^\/api/, /^\/nutrition/, /^\/supplements/, /^\/fuel/, /^\/health/],
-          runtimeCaching: [
-            {
-              urlPattern: /^\/nutrition\//,
-              handler: "NetworkFirst",
-              options: {
-                cacheName: "nutrition-api",
-                expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 },
-                networkTimeoutSeconds: 5,
-              },
-            },
-            {
-              urlPattern: /^\/supplements\//,
-              handler: "NetworkFirst",
-              options: {
-                cacheName: "supplements-api",
-                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 },
-                networkTimeoutSeconds: 5,
-              },
-            },
-          ],
+          navigateFallbackDenylist: [/^\/api/],
         },
         devOptions: {
           enabled: false,
@@ -110,16 +90,13 @@ module.exports = defineConfig(({ mode }) => {
         "@habits":  path.resolve("/home/alpha/habits-dev/src"),
         "@fitness/constants": path.resolve(FITNESS, "src/constants"),
         "@fitness/components": path.resolve(FITNESS, "src/components"),
-        "@api": path.resolve(FUEL, appMode === "client" ? "src/client/lib/api.cloud.js" : "src/client/lib/api.local.js"),
       },
-      // dedupe: fuel-Views werden aus ~/vitalos/fuel-dev importiert und
-      // würden sonst in vitalos/node_modules auflösen — dort fehlt
-      // @fullcalendar/core und recharts liegt als 3.x (Major-Bruch zu
-      // journal/fuel 2.15.4). dedupe zwingt alles auf journal-devs Kopie.
+      // dedupe: der @fuel-DB-Layer (und @fitness/@habits-Module) wird aus
+      // Nachbar-Repos importiert und würde sonst in deren node_modules
+      // auflösen (z.B. recharts 3.x in vitalos = Major-Bruch zu journals
+      // 2.15.4). dedupe zwingt alles auf journal-devs Kopie.
       dedupe: [
         "react", "react-dom", "@tanstack/react-query",
-        "@fullcalendar/core", "@fullcalendar/react", "@fullcalendar/daygrid",
-        "@fullcalendar/timegrid", "@fullcalendar/interaction",
         "recharts", "lucide-react", "framer-motion",
       ],
     },
@@ -137,7 +114,6 @@ module.exports = defineConfig(({ mode }) => {
           // als leere Stubs zurück (recharts steckte im DashboardView-Chunk).
           manualChunks(id) {
             if (!id.includes("node_modules")) return undefined;
-            if (id.includes("@fullcalendar/")) return "vendor-calendar";
             if (/node_modules\/(recharts|recharts-scale|victory-vendor|d3-[^/]+|decimal\.js-light|fast-equals)\//.test(id)) return "vendor-charts";
             // Firestore NICHT separat splitten: @firebase/firestore ↔ @firebase/app
             // importieren sich wechselseitig → "Circular chunk"-Warnung + riskante

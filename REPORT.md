@@ -198,3 +198,53 @@ Alte views/Journal-Komponenten: `.archiv/2026-07-13-view-konsolidierung/`.
 - [ ] Kalender-/Heatmap-Navigation über der Timeline
 - [ ] Tags + Suche über alle Einträge
 - [ ] Wrapper-Header in journal-standalone weiter beruhigen (main.jsx Shell hat noch fuel-Gradient/Orange in styles.css)
+
+---
+
+# NACHTRAG 2026-07-13 (2) — DayOne-Features + fuel-Views-Entkopplung
+
+## Composer-UX (DayOne-Muster)
+- Eingeklappt: Einladungs-Karte mit **Prompt des Tages** (14 rotierende Fragen,
+  deterministisch pro Datum via `getDailyPrompt`), „Entwurf fortsetzen"-Hinweis.
+- Klick öffnet den Editor (Prompt als Kicker + Placeholder), nach dem Sichern
+  klappt er zu; Bearbeitungs-Modus öffnet automatisch.
+
+## Kalender-Navigation
+- `JournalCalendar.jsx`: eigener Monats-Grid ohne Kalender-Library
+  (FullCalendar existiert nicht in allen Konsumenten-Builds). Typ-Punkte pro
+  Tag (max 3, TYPE_COLORS), Heute-Ring, Zukunft gesperrt, „Heute"-Shortcut.
+- Toggle via CalendarDays-Button im JournalHeader; Tagesklick setzt das Datum
+  und scrollt smooth zur Timeline-Gruppe (`#journal-day-{date}`).
+
+## Medien-Einträge (Subagent)
+- `journalMedia.js`: Upload nach Firebase Storage
+  (`journal/{uid}/{date}/{ts}_{name}`), `attachToEntry`/`removeAttachment` via
+  updateDoc + arrayUnion/arrayRemove auf `fitness/{uid}/journal/{id}`.
+  Bewusst NICHT über @db (dessen saveJournal-Implementierungen kennen keine
+  attachments) — eigenes Modul über journals guarded firebase.js.
+- Dual-Mode-bewusst: `mediaAvailable()` (Firebase-Auth-User) blendet die
+  Medien-UI ein/aus — der local-Modus bleibt unberührt.
+- Form: ImagePlus-Button + lokale Previews (ObjectURL, sauber revoked),
+  Entry: Thumbnail-Reihe (max 4, „+N"), Modal: Grid mit Klick → Original.
+- **⚠️ OFFEN: Storage-Rules im Firebase-Projekt fitness-aos setzen** (kein
+  storage.rules im Repo, firebase.json hat nur hosting+firestore):
+  `match /journal/{uid}/{allPaths=**} { allow read, write: if request.auth != null && request.auth.uid == uid; }`
+  Ohne das schlagen Uploads mit permission-denied fehl.
+
+## fuel-Views raus aus der Standalone-App (Subagent)
+- Tabs nur noch **Journal** (Default) + **Habits**; alle 7 @fuel/views-Tabs raus.
+- main.jsx entkoppelt (NutritionHeatmap, useAppData → .archiv, kcal-Panel raus),
+  store.js Default-Tab journal, @api-Alias + FullCalendar-dedupe +
+  vendor-calendar-Chunk + nutrition/supplements-runtimeCaching entfernt.
+- **@fuel-DB-Layer bleibt** (src/db/index.js) — Nutrition-/Meal-Einträge
+  erscheinen weiterhin als Journal-Einträge in der Timeline.
+
+## Dual-Mode-Klarstellung (User-Info)
+journal, fuel, habits haben wie fitness local + firebase. journals vite.config
+schaltet @db derzeit nicht um (immer Firestore-Doppelwrapper) — das
+Soll-Muster nach fitness-Vorbild (`@db` → src/db.js im coach-Build) ist als
+offener Punkt notiert.
+
+## Verifikation
+journal ✅ 9.3s · fitness local ✅ 11.3s · fitness firebase ✅ 9.2s · fuel ✅ 16.7s
+vitalos-Shell: nach Commit + Submodule-Pointer (CI).

@@ -51,3 +51,29 @@ export function sessionInfo(session) {
   }
   return { label: session.block || 'Krafttraining', activityType: null };
 }
+
+// Tages-Prompts für den Composer (DayOne-Muster: eine Einladung statt
+// leerem Textfeld). Deterministisch pro Datum, damit der Prompt über den
+// Tag stabil bleibt.
+export const DAILY_PROMPTS = [
+  "Was beschäftigt dich heute?",
+  "Wofür bist du heute dankbar?",
+  "Welcher Moment bleibt von heute?",
+  "Was hat dich heute weitergebracht?",
+  "Was hast du heute über dich gelernt?",
+  "Worauf bist du gerade stolz?",
+  "Was kostet dich gerade Energie?",
+  "Was gibt dir gerade Kraft?",
+  "Was würdest du deinem zukünftigen Ich mitgeben?",
+  "Was war heute anders als geplant?",
+  "Wem bist du heute begegnet — und wie war das?",
+  "Was willst du morgen anders machen?",
+  "Was hat dich heute zum Lachen gebracht?",
+  "Welche Entscheidung steht gerade an?",
+];
+
+export function getDailyPrompt(dateStr = localToday()) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dayOfYear = Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86400000);
+  return DAILY_PROMPTS[dayOfYear % DAILY_PROMPTS.length];
+}

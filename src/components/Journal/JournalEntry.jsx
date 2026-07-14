@@ -22,7 +22,7 @@ function TypeBadge({ icon: Icon, color, label, sub }) {
   );
 }
 
-export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colorActivities }) {
+export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colorActivities, mediaEnabled }) {
   const isHabit = e.type === 'habit';
   const isWorkout = e.type === 'workout';
   const isActivity = e.type === 'activity';
@@ -160,6 +160,22 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
           <p className="text-[15px] leading-relaxed text-[var(--j-ink)] whitespace-pre-wrap line-clamp-3">
             {e.text}
           </p>
+        )}
+
+        {/* Foto-Anhänge: max 4 Thumbnails, Rest als +N auf dem letzten */}
+        {mediaEnabled && e.attachments?.length > 0 && (
+          <div className="mt-3 flex gap-2 overflow-hidden">
+            {e.attachments.slice(0, 4).map((a, idx) => (
+              <div key={a.path || idx} className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border border-[var(--j-line)] bg-[var(--j-bg2)]">
+                <img src={a.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                {idx === 3 && e.attachments.length > 4 && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-xs font-bold text-[var(--j-ink)]">
+                    +{e.attachments.length - 3}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         )}
 
         {isHabit && e.coachFeedback && (

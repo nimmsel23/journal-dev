@@ -1,6 +1,6 @@
-import { ChevronLeft, ChevronRight, Book, Settings2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Book, Settings2, CalendarDays } from "lucide-react";
 
-export default function JournalHeader({ date, setDate, localToday, formatRelativeDate, onOpenSettings }) {
+export default function JournalHeader({ date, setDate, localToday, formatRelativeDate, onOpenSettings, onToggleCalendar, calendarOpen }) {
   return (
     <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
@@ -14,6 +14,18 @@ export default function JournalHeader({ date, setDate, localToday, formatRelativ
       </div>
 
       <div className="flex items-center gap-2">
+        {onToggleCalendar && (
+          <button
+            onClick={onToggleCalendar}
+            className="w-10 h-10 rounded-2xl border flex items-center justify-center transition-all"
+            style={calendarOpen
+              ? { backgroundColor: 'var(--j-accent)', borderColor: 'var(--j-accent)', color: 'var(--j-bg)' }
+              : { backgroundColor: 'var(--j-card)', borderColor: 'var(--j-line)', color: 'var(--j-dim)' }}
+            title="Kalender"
+          >
+            <CalendarDays size={16} />
+          </button>
+        )}
         {onOpenSettings && (
           <button
             onClick={onOpenSettings}

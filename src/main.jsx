@@ -8,10 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import "./styles.css";
 import { TAB_CONFIG } from "./routes.js";
 import TabContent from "./components/TabContent.jsx";
-import NutritionHeatmap from "@fuel/components/NutritionHeatmap.jsx";
 import { useApp } from "./store.js";
-import { useAppData } from "./hooks/useAppData.js";
-import { sumMetric, formatMetric } from "./shared/utils/utils.js";
 import { watchAuth, signIn, signOut, getUid } from "@db";
 
 import { useRegisterSW } from "virtual:pwa-register/react";
@@ -64,24 +61,16 @@ function App() {
     }
   }, [activeTab]);
 
-  const { nutrition, sup, suppCatalog, suppLog, journal, macroTrend } = useAppData(activeDate);
-
-  const meals = nutrition?.meals || [];
-  const totalKcal = sumMetric(meals, "kcal");
-  const totalProtein = sumMetric(meals, "protein");
-  const totalCarbs = sumMetric(meals, "carbs");
-  const totalFat = sumMetric(meals, "fat");
-
   const isCloud = window.location.hostname.includes("web.app") || window.location.hostname.includes("firebaseapp.com");
 
   const activeTabConfig = TAB_CONFIG.find((t) => t.key === activeTab);
-  const activeTitle = activeTabConfig?.title ?? "Journal Deck";
+  const activeTitle = activeTabConfig?.title ?? "Journal";
 
   React.useEffect(() => {
     document.title = `${activeTitle} — VOS Journal`;
   }, [activeTitle]);
 
-  const tabCtx = { nutrition, sup, suppCatalog, suppLog, journal, macroTrend, activeDate, setActiveDate, setActiveTab, user };
+  const tabCtx = { activeDate, setActiveDate, setActiveTab, user };
 
   return (
     <div className="min-h-screen text-slate-100">
@@ -108,18 +97,7 @@ function App() {
               </div>
               <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">{activeTitle}</h1>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-right">
-              <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Tagessumme</div>
-              <div className="mt-2 text-3xl font-semibold text-orange-300">{formatMetric(totalKcal)} kcal</div>
-              <div className="mt-1 flex justify-end gap-3 text-sm text-slate-400">
-                <span><span className="text-emerald-300">{formatMetric(totalProtein)}</span> P</span>
-                <span><span className="text-sky-300">{formatMetric(totalCarbs)}</span> K</span>
-                <span><span className="text-violet-300">{formatMetric(totalFat)}</span> F</span>
-              </div>
-            </div>
           </div>
-
-          <NutritionHeatmap selectedDate={activeDate} onSelectDate={setActiveDate} />
 
           <nav className="flex flex-wrap gap-2">
             {TAB_CONFIG.map(({ key, label, Icon }) => (

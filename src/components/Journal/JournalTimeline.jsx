@@ -14,9 +14,11 @@
 import { useState, useEffect, useMemo } from "react";
 import * as db from "@db";
 import { Book, PenLine } from "lucide-react";
-import { localToday, formatRelativeDate, sessionInfo } from "./journalUtils";
+import { localToday, formatRelativeDate, sessionInfo, getDailyPrompt } from "./journalUtils";
+import { mediaAvailable, uploadJournalMedia, attachToEntry, removeAttachment } from "./journalMedia";
 import JournalSettings from "./JournalSettings";
 import JournalHeader from "./JournalHeader";
+import JournalCalendar from "./JournalCalendar";
 import JournalForm from "./JournalForm";
 import JournalEntry from "./JournalEntry";
 import JournalModal from "./JournalModal";
@@ -49,6 +51,18 @@ export default function JournalTimeline({ onOpenSession, user, showCrossover = f
   const [editingEntry, setEditingEntry] = useState(null);
   const [limitCount, setLimitCount] = useState(30);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  // Medien (Fotos) nur mit Firebase-Auth-User — fitness/journal haben auch
+  // einen local-Modus ohne Auth, dort bleibt die Medien-UI versteckt.
+  const [mediaEnabled, setMediaEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    mediaAvailable()
+      .then(ok => { if (!cancelled) setMediaEnabled(ok); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user?.uid]);
   const [journalSettings, setJournalSettings] = useState(() => ({
     colorActivities: localStorage.getItem('journal_colorActivities') === 'true',
     telegramEnabled: false,
@@ -223,28 +237,71 @@ export default function JournalTimeline({ onOpenSession, user, showCrossover = f
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(""), 2000); }
 
-  async function submit() {
+  // files: File[] aus JournalForm (Bild-Anhänge). Upload passiert NACH dem
+  // Speichern des Eintrags — schlägt er fehl, bleibt der Eintrag bestehen.
+  async function submit(files = []) {
     if (!text.trim()) return;
     setSaving(true);
     try {
+      let uploadFailed = false;
+
+      async function uploadAndAttach(entryId, entryDate) {
+        if (!mediaEnabled || !entryId || !files.length) return [];
+        try {
+          const uploaded = [];
+          for (const file of files) {
+            uploaded.push(await uploadJournalMedia(file, entryDate));
+          }
+          await attachToEntry(entryId, uploaded);
+          return uploaded;
+        } catch {
+          uploadFailed = true;
+          return [];
+        }
+      }
+
       if (editingEntry) {
         await db.updateJournal(editingEntry.id, text);
+        const uploaded = await uploadAndAttach(editingEntry.id, editingEntry.date);
         setTimeline(prev => prev.map(group => {
           if (group.date === editingEntry.date) {
-            return { ...group, entries: group.entries.map(e => e.id === editingEntry.id ? { ...e, text: text.trim() } : e) };
+            return { ...group, entries: group.entries.map(e => e.id === editingEntry.id
+              ? { ...e, text: text.trim(), attachments: [...(e.attachments || []), ...uploaded] }
+              : e) };
           }
           return group;
         }));
         setEditingEntry(null);
-        showToast("Aktualisiert ✓");
+        showToast(uploadFailed ? "Upload fehlgeschlagen" : "Aktualisiert ✓");
       } else {
-        await db.saveJournal(date, text);
+        const saved = await db.saveJournal(date, text);
+        await uploadAndAttach(saved?.id, date);
         setLimitCount(p => p + 1);
-        showToast("Gespeichert ✓");
+        showToast(uploadFailed ? "Upload fehlgeschlagen" : "Gespeichert ✓");
       }
       setText("");
     } catch { showToast("Fehler beim Speichern"); }
     finally { setSaving(false); }
+  }
+
+  // Bestehendes Attachment im Bearbeitungs-Modus entfernen: Storage +
+  // Firestore via journalMedia, dann Timeline- und Editing-State nachziehen.
+  async function handleRemoveAttachment(attachment) {
+    if (!editingEntry) return;
+    try {
+      await removeAttachment(editingEntry.id, attachment);
+      const strip = (e) => ({
+        ...e,
+        attachments: (e.attachments || []).filter(a => a.path !== attachment.path),
+      });
+      setEditingEntry(prev => (prev ? strip(prev) : prev));
+      setTimeline(prev => prev.map(group => group.date === editingEntry.date
+        ? { ...group, entries: group.entries.map(e => e.id === editingEntry.id ? strip(e) : e) }
+        : group));
+      showToast("Anhang entfernt");
+    } catch {
+      showToast("Entfernen fehlgeschlagen");
+    }
   }
 
   const handleEdit = (entry) => {
@@ -262,9 +319,24 @@ export default function JournalTimeline({ onOpenSession, user, showCrossover = f
         localToday={localToday()}
         formatRelativeDate={formatRelativeDate}
         onOpenSettings={() => setShowSettings(true)}
+        onToggleCalendar={() => setShowCalendar(v => !v)}
+        calendarOpen={showCalendar}
       />
 
       <div className="space-y-10">
+        {showCalendar && (
+          <JournalCalendar
+            date={date}
+            timeline={timeline}
+            onSelectDate={(d) => {
+              setDate(d);
+              requestAnimationFrame(() => {
+                document.getElementById(`journal-day-${d}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+              });
+            }}
+          />
+        )}
+
         <JournalForm
           text={text}
           setText={setText}
@@ -272,6 +344,9 @@ export default function JournalTimeline({ onOpenSession, user, showCrossover = f
           saving={saving}
           editingEntry={editingEntry}
           onCancelEdit={() => { setEditingEntry(null); setText(""); setDate(localToday()); }}
+          prompt={getDailyPrompt(date)}
+          mediaEnabled={mediaEnabled}
+          onRemoveAttachment={handleRemoveAttachment}
         />
 
         {showCrossover && (
@@ -326,7 +401,7 @@ export default function JournalTimeline({ onOpenSession, user, showCrossover = f
               const standaloneCompletions = group.entries.filter(e => e.type === 'habit-completion' && !habitJournalIds.has(e.habitId));
               const mainEntries = group.entries.filter(e => e.type !== 'habit-completion');
               return (
-                <div key={group.date} className="relative">
+                <div key={group.date} id={`journal-day-${group.date}`} className="relative scroll-mt-4">
                   <div className="sticky top-0 z-10 py-2 bg-[var(--j-bg)]/90 backdrop-blur-md -mx-2 px-2 border-b border-[var(--j-line)]">
                     <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--j-accent)]">
                       {formatRelativeDate(group.date)}
@@ -358,6 +433,7 @@ export default function JournalTimeline({ onOpenSession, user, showCrossover = f
                         onEdit={handleEdit}
                         onOpenSession={onOpenSession}
                         colorActivities={colorActivities}
+                        mediaEnabled={mediaEnabled}
                       />
                     ))}
                   </div>
@@ -396,6 +472,7 @@ export default function JournalTimeline({ onOpenSession, user, showCrossover = f
         habits={habits}
         formatRelativeDate={formatRelativeDate}
         colorActivities={colorActivities}
+        mediaEnabled={mediaEnabled}
       />
 
       {journalModalOpen && (

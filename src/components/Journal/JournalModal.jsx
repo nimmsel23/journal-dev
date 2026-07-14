@@ -4,7 +4,7 @@ import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constant
 
 const ACCENT = "var(--j-accent)";
 
-export default function JournalModal({ selectedEntry, setSelectedEntry, habits, formatRelativeDate, colorActivities }) {
+export default function JournalModal({ selectedEntry, setSelectedEntry, habits, formatRelativeDate, colorActivities, mediaEnabled }) {
   if (!selectedEntry) return null;
 
   const isHabit = selectedEntry.type === 'habit';
@@ -156,6 +156,28 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
             <p className="text-lg sm:text-xl leading-relaxed text-[var(--j-ink)] whitespace-pre-wrap">
               {selectedEntry.text}
             </p>
+          )}
+
+          {/* Foto-Anhänge: großes Grid, Klick öffnet Original im neuen Tab */}
+          {mediaEnabled && selectedEntry.attachments?.length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--j-dim)] mb-3">
+                Anhänge ({selectedEntry.attachments.length})
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {selectedEntry.attachments.map((a, idx) => (
+                  <button
+                    key={a.path || idx}
+                    type="button"
+                    onClick={() => window.open(a.url, "_blank", "noopener")}
+                    title="In voller Größe öffnen"
+                    className="aspect-square rounded-2xl overflow-hidden border border-[var(--j-line)] bg-[var(--j-bg2)] hover:border-[var(--j-accent)]/40 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--j-accent)]/40"
+                  >
+                    <img src={a.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Habit-Completion: leerer State */}

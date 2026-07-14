@@ -29,12 +29,19 @@ function App() {
 
   const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW({
     onRegistered(r) {
-      if (r) setInterval(() => r.update(), 60 * 60 * 1000);
+      if (!r) return;
+      // Check for updates every 10 minutes
+      setInterval(() => r.update(), 10 * 60 * 1000);
+      // Also check when app regains focus
+      window.addEventListener('focus', () => r.update());
     },
   });
 
+  // Auto-update immediately when new version available
   React.useEffect(() => {
-    if (needRefresh) updateServiceWorker(true);
+    if (needRefresh) {
+      setTimeout(() => updateServiceWorker(true), 500);
+    }
   }, [needRefresh, updateServiceWorker]);
 
   React.useEffect(() => watchAuth((u) => setUser(u)), []);

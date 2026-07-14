@@ -55,6 +55,10 @@ export function sessionInfo(session) {
 // Tages-Prompts für den Composer (DayOne-Muster: eine Einladung statt
 // leerem Textfeld). Deterministisch pro Datum, damit der Prompt über den
 // Tag stabil bleibt.
+//
+// Standard-Prompts (Journal-Fallback). Repos können eigene DAILY_PROMPTS
+// definieren und exportieren (z.B. fuel-dev mit Nutrition-Fokus, relax-dev
+// mit Wellness-Fokus). Journal importiert dynamisch, fallback auf diese Liste.
 export const DAILY_PROMPTS = [
   "Was beschäftigt dich heute?",
   "Wofür bist du heute dankbar?",
@@ -72,8 +76,27 @@ export const DAILY_PROMPTS = [
   "Welche Entscheidung steht gerade an?",
 ];
 
+// Dynamischer Import von Kontext-spezifischen Prompts
+// (z.B. @fuel/prompts, @relax/prompts). Fallback auf DAILY_PROMPTS.
+let contextPrompts = null;
+async function loadContextPrompts() {
+  if (contextPrompts) return contextPrompts;
+  try {
+    // Versuche, Prompts vom importierenden Repo zu laden (z.B. fuel-dev, relax-dev)
+    // über @prompts-Alias oder implizit via globalScope
+    if (window.__journalPrompts) {
+      contextPrompts = window.__journalPrompts;
+      return contextPrompts;
+    }
+  } catch (e) {
+    // Kein Problem — Fallback auf Standard-Prompts
+  }
+  return DAILY_PROMPTS;
+}
+
 export function getDailyPrompt(dateStr = localToday()) {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dayOfYear = Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86400000);
-  return DAILY_PROMPTS[dayOfYear % DAILY_PROMPTS.length];
+  const prompts = window.__journalPrompts || DAILY_PROMPTS;
+  return prompts[dayOfYear % prompts.length];
 }

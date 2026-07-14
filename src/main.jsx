@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Sparkles } from "lucide-react";
+import { Sparkles, RotateCcw } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -83,6 +83,15 @@ function App() {
                   <Sparkles className="h-3.5 w-3.5" />
                   VOS Journal
                 </p>
+                {needRefresh && (
+                  <button
+                    onClick={() => updateServiceWorker(true)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-amber-200 hover:border-amber-400/60 hover:bg-amber-400/20 transition"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 animate-spin" />
+                    Update
+                  </button>
+                )}
                 {isCloud && (
                   user ? (
                     <button onClick={signOut} className="text-[10px] text-slate-500 hover:text-white uppercase tracking-widest">

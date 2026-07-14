@@ -46,12 +46,10 @@ export function isLocalMode() { return !isCloudMode(); }
 
 export function getUid() {
   if (isLocalMode()) return "local";
-  try {
-    const { auth: fbAuth } = require("../firebase.js");
-    return fbAuth?.currentUser?.uid || null;
-  } catch {
-    return null;
+  if (typeof window !== 'undefined' && window.__firebaseAuth) {
+    return window.__firebaseAuth.currentUser?.uid || null;
   }
+  return null;
 }
 
 export function watchAuth(callback) {
@@ -63,23 +61,23 @@ export function watchAuth(callback) {
   }
 
   // Cloud: use Firebase Auth
-  try {
-    const { auth: fbAuth } = require("../firebase.js");
-    return fbAuth.onAuthStateChanged((user) => {
+  if (typeof window !== 'undefined' && window.__firebaseAuth) {
+    return window.__firebaseAuth.onAuthStateChanged((user) => {
       if (callback) callback(user);
     });
-  } catch (e) {
-    console.warn("Firebase Auth not available:", e);
-    return () => {};
   }
+  console.warn("Firebase Auth not available");
+  return () => {};
 }
 
 export async function signIn() {
   if (isLocalMode()) return { ok: true };
   try {
-    const { auth: fbAuth, googleProvider } = require("../firebase.js");
+    if (!window.__firebaseAuth || !window.__googleProvider) {
+      throw new Error("Firebase not initialized");
+    }
     const { signInWithPopup } = await import("firebase/auth");
-    const result = await signInWithPopup(fbAuth, googleProvider);
+    const result = await signInWithPopup(window.__firebaseAuth, window.__googleProvider);
     return { ok: true, user: result.user };
   } catch (e) {
     console.error("Sign in failed:", e);
@@ -90,9 +88,11 @@ export async function signIn() {
 export async function signOut() {
   if (isLocalMode()) return { ok: true };
   try {
-    const { auth: fbAuth } = require("../firebase.js");
+    if (!window.__firebaseAuth) {
+      throw new Error("Firebase not initialized");
+    }
     const { signOut: fbSignOut } = await import("firebase/auth");
-    await fbSignOut(fbAuth);
+    await fbSignOut(window.__firebaseAuth);
     return { ok: true };
   } catch (e) {
     console.error("Sign out failed:", e);
@@ -104,22 +104,12 @@ export async function signInEmail(email, pw)    { if (isLocalMode()) return { ok
 export async function signUpEmail(email, pw, n) { if (isLocalMode()) return { ok: true }; throw new Error("Email auth not implemented"); }
 
 // Real Firebase exports for cloud mode; stubs for local
-let _fbAuth = null;
-let _fbDb = null;
+export const auth = isLocalMode()
+  ? {
+      currentUser: { displayName: "Local Host", email: "localhost", photoURL: null, uid: "local" },
+      onAuthStateChanged: (cb) => { cb({ displayName: "Local Host", email: "localhost", photoURL: null, uid: "local" }); return () => {}; },
+      authStateReady: async () => {},
+    }
+  : (typeof window !== 'undefined' && window.__firebaseAuth) ? window.__firebaseAuth : null;
 
-if (!isLocalMode()) {
-  try {
-    const fb = require("../firebase.js");
-    _fbAuth = fb.auth;
-    _fbDb = fb.db;
-  } catch (e) {
-    console.warn("Firebase not available:", e);
-  }
-}
-
-export const auth = _fbAuth || {
-  currentUser: { displayName: "Local Host", email: "localhost", photoURL: null, uid: "local" },
-  onAuthStateChanged: (cb) => { cb({ displayName: "Local Host", email: "localhost", photoURL: null, uid: "local" }); return () => {}; },
-};
-
-export const db = _fbDb || null;
+export const db = isLocalMode() ? null : (typeof window !== 'undefined' && window.__firebaseDb) ? window.__firebaseDb : null;

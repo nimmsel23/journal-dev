@@ -62,11 +62,26 @@ export function watchAuth(callback) {
 }
 
 export async function signIn() {
-  await signInWithPopup(auth, googleProvider);
+  console.log("[signIn] Starting...", { auth: !!auth, googleProvider: !!googleProvider });
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log("[signIn] Success:", result.user.email);
+    return result;
+  } catch (error) {
+    console.error("[signIn] Failed:", error.code, error.message);
+    throw error;
+  }
 }
 
 export async function signOut() {
-  await fbSignOut(auth);
+  console.log("[signOut] Starting...");
+  try {
+    await fbSignOut(auth);
+    console.log("[signOut] Success");
+  } catch (error) {
+    console.error("[signOut] Failed:", error.message);
+    throw error;
+  }
 }
 
 export async function signInEmail(email, pw) {

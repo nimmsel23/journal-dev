@@ -79,6 +79,24 @@ function App() {
     document.title = `${activeTitle} — VOS Journal`;
   }, [activeTitle]);
 
+  const handleSignIn = async () => {
+    try {
+      await signIn();
+    } catch (error) {
+      console.error("Sign in error:", error);
+      alert(`Cloud Login failed: ${error.message}`);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Sign out error:", error);
+      alert(`Logout failed: ${error.message}`);
+    }
+  };
+
   const tabCtx = { activeDate, setActiveDate, setActiveTab, user };
 
   return (
@@ -103,11 +121,11 @@ function App() {
                 )}
                 {isCloud && (
                   user ? (
-                    <button onClick={signOut} className="text-[10px] text-slate-500 hover:text-white uppercase tracking-widest">
+                    <button onClick={handleSignOut} className="text-[10px] text-slate-500 hover:text-white uppercase tracking-widest">
                       Logout ({user.displayName?.split(" ")[0]})
                     </button>
                   ) : (
-                    <button onClick={signIn} className="text-[10px] text-orange-400 hover:text-orange-300 font-bold uppercase tracking-widest">
+                    <button onClick={handleSignIn} className="text-[10px] text-orange-400 hover:text-orange-300 font-bold uppercase tracking-widest">
                       Cloud Login
                     </button>
                   )

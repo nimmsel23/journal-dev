@@ -6,4 +6,4 @@ export * from "../../../fitness-dev/src/lib/db/index.firestore.js";
 export {
   getMealsHistory,
   getNutritionLog,
-} from "./firestore/nutrition.js";
+} from "../lib/db/firestore/nutrition.js";

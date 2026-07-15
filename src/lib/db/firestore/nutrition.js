@@ -8,7 +8,7 @@ import {
   collection, query, orderBy, limit, getDocs, getDoc, doc
 } from "firebase/firestore";
 import { db } from "../../firebase.js";
-import { getUid } from "./core.js";
+import { getUid } from "../core.js";
 
 export async function getMealsHistory(limitCount = 30) {
   try {

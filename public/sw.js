@@ -1,4 +1,4 @@
-const CACHE = "journal-v21";
+const CACHE = "journal-v22";
 const BASE_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, "");
 const withBase = (path) => `${BASE_PATH}${path}`;
 const STATIC_ASSETS = [withBase("/"), withBase("/index.html"), withBase("/manifest.json")];

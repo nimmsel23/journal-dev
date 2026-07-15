@@ -36,3 +36,9 @@ export async function getNutritionLog(date) {
   const snap = await getDoc(doc(db, "nutrition", getUid(), "logs", date));
   return snap.exists() ? snap.data() : { date, meals: [], water_ml: 0 };
 }
+
+// Nutrition Journal (Freitext-Notizen neben Meal-Logs)
+// Optional feature — Fallback auf [] in JournalTimeline wenn nicht verfügbar
+export async function getNutritionJournalHistory(limitCount = 30) {
+  return [];
+}

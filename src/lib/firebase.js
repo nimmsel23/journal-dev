@@ -16,10 +16,3 @@ export const db = alreadyInit
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-
-// Expose globally for db/core.js to access
-if (typeof window !== 'undefined') {
-  window.__firebaseAuth = auth;
-  window.__firebaseDb = db;
-  window.__googleProvider = googleProvider;
-}

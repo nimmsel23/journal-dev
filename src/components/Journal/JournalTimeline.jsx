@@ -133,6 +133,9 @@ export default function JournalTimeline({ onOpenSession, user, showCrossover = f
 
   useEffect(() => {
     async function load() {
+      // Guard: nur laden wenn User authentifiziert ist (sonst Firestore-Error)
+      if (!user?.uid) return;
+
       // Feature-Detection: nicht jeder @db-Kontext hat alle Quellen
       // (fitness local: keine Nutrition/Meals; package-Barrel: Stubs).
       const [regularHistory, habitHistory, sessions, mealLogs, allHabits, nutritionJournalHistory] = await Promise.all([

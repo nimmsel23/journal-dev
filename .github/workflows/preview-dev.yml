@@ -47,6 +47,16 @@ jobs:
       - name: Install (Workspaces)
         run: npm ci
 
+      - name: Firebase config bereitstellen (fitness-dev/firebase.config.js ist gitignored)
+        run: |
+          if [ -n "$FIREBASE_CONFIG" ]; then
+            echo "$FIREBASE_CONFIG" > fitness-dev/firebase.config.js
+          elif [ ! -f fitness-dev/firebase.config.js ]; then
+            cp firebase.config.js fitness-dev/firebase.config.js
+          fi
+        env:
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+
       - name: Build Journal
         run: npm run build:firebase --workspace=journal-dev
 

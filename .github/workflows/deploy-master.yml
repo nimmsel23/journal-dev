@@ -1,0 +1,80 @@
+# Live-Deploy für Journal: Push auf master
+# 
+# Baut die App und lädt sie direkt live auf Firebase hoch.
+# Analog zur Preview-Action wird das vitalos Meta-Repo ausgecheckt,
+# damit alle Nachbar-Repos (cross-repo imports) vorhanden sind.
+
+name: Live Deploy (Journal master)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+
+jobs:
+  deploy_live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout vitalos (Meta-Repo, liefert Nachbar-Repos)
+        uses: actions/checkout@v4
+        with:
+          repository: nimmsel23/vitalos
+          ref: master
+
+      - name: Submodules via HTTPS + Token
+        run: |
+          git config --global url."https://x-access-token:${{ github.token }}@github.com/".insteadOf "git@github.com:"
+          git submodule sync
+          git submodule update --init --recursive
+
+      - name: journal-dev auf den ausgelösten Commit setzen
+        run: |
+          cd journal-dev
+          SHA="${{ github.sha }}"
+          git fetch origin "$SHA"
+          git checkout "$SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (Workspaces)
+        run: npm ci
+
+      - name: Firebase config bereitstellen
+        run: |
+          if [ -n "$FIREBASE_CONFIG" ]; then
+            echo "$FIREBASE_CONFIG" > fitness-dev/firebase.config.js
+          elif [ ! -f fitness-dev/firebase.config.js ]; then
+            cp firebase.config.js fitness-dev/firebase.config.js
+          fi
+        env:
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+
+      - name: Build Journal (Live)
+        run: npm run build:cloud --workspace=journal-dev
+
+      - name: Deploy Live
+        id: firebase_deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FITNESS_AOS || secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: fitness-aos
+          entryPoint: journal-dev
+          channelId: live
+
+      - name: Telegram-Benachrichtigung senden
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            🚀 Journal ist LIVE deployed (master)!
+
+            🔗 Live-URL: https://fitness-aos.web.app
+            (oder eine verknüpfte Domain)
+
+            Commit: ${{ github.event.head_commit.message }}

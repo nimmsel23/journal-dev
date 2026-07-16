@@ -40,7 +40,14 @@ const TOKENS = {
   "--j-accent": "var(--accent, #4a9eff)",
 };
 
-export default function JournalTimeline({ onOpenSession, user, showCrossover = false }) {
+export default function JournalTimeline({ onOpenSession, user: userProp, showCrossover = false }) {
+  // Host-Apps (vitalos JournalApp/RelaxApp, fuel) übergeben kein user-Prop —
+  // dann selbst auf Auth subscriben, sonst bleibt die Timeline hinter dem
+  // user?.uid-Guard dauerhaft leer. Prop gewinnt, Fallback nur ohne Prop.
+  const [authUser, setAuthUser] = useState(null);
+  useEffect(() => db.watchAuth?.(u => setAuthUser(u)), []);
+  const user = userProp ?? authUser;
+
   const [date, setDate] = useState(localToday());
   const [text, setText] = useState("");
   const [timeline, setTimeline] = useState([]);

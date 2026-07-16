@@ -10,12 +10,4 @@ export const TAB_CONFIG = [
     View: lazy(() => import("./views/JournalVosView.jsx")),
     getProps: (ctx) => ({ date: ctx.activeDate, user: ctx.user }),
   },
-  {
-    key: "habits",
-    label: "Habits",
-    title: "Habits",
-    Icon: CheckSquare,
-    View: lazy(() => import("./views/HabitVosView.jsx")),
-    getProps: (ctx) => ({ date: ctx.activeDate }),
-  },
 ];

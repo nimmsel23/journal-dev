@@ -47,6 +47,9 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
   const [authUser, setAuthUser] = useState(null);
   useEffect(() => db.watchAuth?.(u => setAuthUser(u)), []);
   const user = userProp ?? authUser;
+  // Quellen, deren Laden fehlschlug (Auth abgelaufen, Rules, offline) —
+  // sichtbar machen statt still leere Abschnitte zu rendern.
+  const [loadWarnings, setLoadWarnings] = useState([]);
 
   const [date, setDate] = useState(localToday());
   const [text, setText] = useState("");
@@ -145,14 +148,19 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
 
       // Feature-Detection: nicht jeder @db-Kontext hat alle Quellen
       // (fitness local: keine Nutrition/Meals; package-Barrel: Stubs).
+      // Fehlende Funktion = kein Feature (ok); Rejection = Warnung anzeigen.
+      const failed = [];
+      const grab = (label, promise) =>
+        Promise.resolve(promise ?? []).catch(() => { failed.push(label); return []; });
       const [regularHistory, habitHistory, sessions, mealLogs, allHabits, nutritionJournalHistory] = await Promise.all([
-        db.getJournalHistory(limitCount),
-        db.getAllHabitJournalsHistory?.(limitCount) ?? [],
-        db.getSessionHistory?.(limitCount) ?? [],
-        db.getMealsHistory?.(limitCount).catch(() => []) ?? [],
-        db.getHabits?.() ?? [],
-        db.getNutritionJournalHistory?.(limitCount).catch(() => []) ?? [],
+        grab("Journal", db.getJournalHistory(limitCount)),
+        grab("Habit-Journale", db.getAllHabitJournalsHistory?.(limitCount)),
+        grab("Workouts", db.getSessionHistory?.(limitCount)),
+        grab("Fuel-Meals", db.getMealsHistory?.(limitCount)),
+        grab("Habits", db.getHabits?.()),
+        grab("Ernährungsjournal", db.getNutritionJournalHistory?.(limitCount)),
       ]);
+      setLoadWarnings([...new Set(failed)]);
 
       setHabits(allHabits);
 
@@ -332,6 +340,38 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
         onToggleCalendar={() => setShowCalendar(v => !v)}
         calendarOpen={showCalendar}
       />
+
+      {/* Auth-Status — kein stiller Zustand: eingeloggt (wer) oder Login-Aufforderung */}
+      <div className="mb-6">
+        {user ? (
+          <div className="flex items-center justify-between text-[11px] text-[var(--j-dim)] px-1">
+            <span>{user.email || user.displayName}</span>
+            {db.signOut && (
+              <button onClick={() => db.signOut()} className="underline hover:text-[var(--j-accent)]">
+                Abmelden
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-[var(--j-line)] bg-[var(--j-card)] p-4 flex items-center justify-between gap-3">
+            <span className="text-sm text-[var(--j-dim)]">Nicht angemeldet — Journal-Daten sind erst nach Login sichtbar.</span>
+            {db.signIn && (
+              <button
+                onClick={() => db.signIn().catch(() => {})}
+                className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold"
+                style={{ backgroundColor: 'var(--j-accent)', color: 'var(--j-bg)' }}
+              >
+                Anmelden
+              </button>
+            )}
+          </div>
+        )}
+        {loadWarnings.length > 0 && (
+          <div className="mt-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-[12px] text-amber-400">
+            Konnte nicht geladen werden: {loadWarnings.join(", ")} — Sitzung prüfen / neu anmelden.
+          </div>
+        )}
+      </div>
 
       <div className="space-y-10">
         {showCalendar && (

@@ -1,0 +1,76 @@
+# Preview-Deploy für Journal: dev-Push → 24h-Channel "dev", PR → eigener PR-Channel.
+#
+# Warum vitalos-Checkout: Die Vite-Configs aliassen Nachbar-Repos
+# (Cross-Repo-Imports) — ein nackter Checkout dieses Repos kann nie bauen
+# (deshalb waren die alten Workflows in workflows.disabled/). Das Meta-Repo
+# vitalos liefert per Submodules alle Nachbarn, danach wird DIESES Submodule
+# auf den gerade gepushten Commit gesetzt und nur dieser Workspace gebaut.
+# Telegram-Link kommt wie bei der lokalen Pipeline (scripts/deploy-preview.mjs).
+
+name: Preview (Journal dev)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [master, dev]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout vitalos (Meta-Repo, liefert Nachbar-Repos)
+        uses: actions/checkout@v4
+        with:
+          repository: nimmsel23/vitalos
+          ref: master
+
+      - name: Submodules via HTTPS + Token
+        run: |
+          git config --global url."https://x-access-token:${{ github.token }}@github.com/".insteadOf "git@github.com:"
+          git submodule sync
+          git submodule update --init --recursive
+
+      - name: journal-dev auf den ausgelösten Commit setzen
+        run: |
+          cd journal-dev
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          git fetch origin "$SHA"
+          git checkout "$SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (Workspaces)
+        run: npm ci
+
+      - name: Build Journal
+        run: npm run build:firebase --workspace=journal-dev
+
+      - name: Deploy Preview Channel
+        id: firebase_deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FITNESS_AOS || secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: fitness-aos
+          entryPoint: journal-dev
+          channelId: ${{ github.event_name != 'pull_request' && 'dev' || '' }}
+          expires: 24h
+
+      - name: Telegram-Link senden
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            🚀 Preview für Journal (${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || 'dev' }}) gebaut!
+
+            🔗 ${{ steps.firebase_deploy.outputs.details_url }}
+            ⏱️ Gültig 24h.
+
+            Commit: ${{ github.event.pull_request.title || github.event.head_commit.message }}

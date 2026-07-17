@@ -28,7 +28,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
   const isActivity = e.type === 'activity';
   const isHabitCompletion = e.type === 'habit-completion';
   const isMeal = e.type === 'meal';
-  const isNutritionJournal = e.type === 'nutrition-journal';
+  const isNutritionJournal = e.type === 'nutrition-notes';
   const habit = isHabit ? habits.find(h => h.uuid === e.habitId) : null;
 
   const activityColor = colorActivities && BLOCK_COLORS[e.activityType]
@@ -81,7 +81,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
           ) : isHabit ? (
             <TypeBadge icon={Target} color={ACCENT} label={habit?.name} sub="Habit Journal" />
           ) : isNutritionJournal ? (
-            <TypeBadge icon={NotebookPen} color={TYPE_COLORS['nutrition-journal']} label="Ernährungsjournal" sub="Notizen geloggt" />
+            <TypeBadge icon={NotebookPen} color={TYPE_COLORS['nutrition-notes']} label="Ernährungs-Notizen" sub="Notizen geloggt" />
           ) : (
             <div className="flex items-center gap-2 text-[var(--j-dim)]">
               <Clock size={14} className="opacity-50" />

@@ -12,7 +12,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
   const isActivity = selectedEntry.type === 'activity';
   const isHabitCompletion = selectedEntry.type === 'habit-completion';
   const isMeal = selectedEntry.type === 'meal';
-  const isNutritionJournal = selectedEntry.type === 'nutrition-journal';
+  const isNutritionJournal = selectedEntry.type === 'nutrition-notes';
   const habit = isHabit ? habits.find(h => h.uuid === selectedEntry.habitId) : null;
 
   const ActivityIcon = isActivity && ACTIVITY_ICONS[selectedEntry.activityType]
@@ -42,7 +42,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
     : isMeal
     ? 'Fuel'
     : isNutritionJournal
-    ? 'Ernährungsjournal'
+    ? 'Ernährungs-Notizen'
     : 'Journal Eintrag';
 
   const subtitle = isWorkout

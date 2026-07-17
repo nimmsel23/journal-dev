@@ -158,7 +158,7 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
         grab("Workouts", db.getSessionHistory?.(limitCount)),
         grab("Fuel-Meals", db.getMealsHistory?.(limitCount)),
         grab("Habits", db.getHabits?.()),
-        grab("Ernährungsjournal", db.getNutritionJournalHistory?.(limitCount)),
+        grab("Ernährungs-Notizen", db.getNutritionJournalHistory?.(limitCount)),
       ]);
       setLoadWarnings([...new Set(failed)]);
 
@@ -167,7 +167,7 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
       const combined = [
         ...regularHistory.map(e => ({ ...e, type: 'regular' })),
         ...habitHistory,
-        ...nutritionJournalHistory.map(e => ({ ...e, type: 'nutrition-journal' })),
+        ...nutritionJournalHistory.map(e => ({ ...e, type: 'nutrition-notes' })),
       ];
 
       sessions.forEach(session => {

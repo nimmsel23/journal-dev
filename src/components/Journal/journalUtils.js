@@ -18,7 +18,7 @@ export const ACTIVITY_FALLBACK_LABELS = {
 export const TYPE_COLORS = {
   workout: '#3b82f6',
   meal: '#22c55e',
-  'nutrition-journal': '#38bdf8',
+  'nutrition-notes': '#38bdf8',
 };
 
 export function timeStr(e) {

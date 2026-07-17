@@ -158,7 +158,7 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
         grab("Workouts", db.getSessionHistory?.(limitCount)),
         grab("Fuel-Meals", db.getMealsHistory?.(limitCount)),
         grab("Habits", db.getHabits?.()),
-        grab("Ernährungsjournal", db.getNutritionJournalHistory?.(limitCount)),
+        grab("Ernährungsjournal", db.getNutritionNotesHistory?.(limitCount)),
       ]);
       setLoadWarnings([...new Set(failed)]);
 

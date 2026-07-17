@@ -39,6 +39,6 @@ export async function getNutritionLog(date) {
 
 // Nutrition Journal (Freitext-Notizen neben Meal-Logs)
 // Optional feature — Fallback auf [] in JournalTimeline wenn nicht verfügbar
-export async function getNutritionJournalHistory(limitCount = 30) {
+export async function getNutritionNotesHistory(limitCount = 30) {
   return [];
 }

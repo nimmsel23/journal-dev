@@ -39,13 +39,7 @@ function App() {
     },
   });
 
-  // Auto-update immediately when new version available
-  React.useEffect(() => {
-    if (needRefresh) {
-      setTimeout(() => updateServiceWorker(true), 500);
-    }
-  }, [needRefresh, updateServiceWorker]);
-
+  // The update button is rendered above in the header when needRefresh is true.
   React.useEffect(() => watchAuth((u) => setUser(u)), []);
 
   // URL Hashing for Tabs

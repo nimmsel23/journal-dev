@@ -19,6 +19,7 @@ export const TYPE_COLORS = {
   workout: '#3b82f6',
   meal: '#22c55e',
   'nutrition-notes': '#38bdf8',
+  supplement: '#a855f7',
 };
 
 export function timeStr(e) {

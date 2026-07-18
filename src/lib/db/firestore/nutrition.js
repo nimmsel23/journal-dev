@@ -39,7 +39,7 @@ export async function getNutritionLog(date) {
 
 // Nutrition Journal (Freitext-Notizen neben Meal-Logs)
 // Optional feature — Fallback auf [] in JournalTimeline wenn nicht verfügbar
-export async function getNutritionJournalHistory(limitCount = 30) {
+export async function getNutritionNotesHistory(limitCount = 30) {
   try {
     const q = query(
       collection(db, "nutrition", getUid(), "journal"),
@@ -55,7 +55,7 @@ export async function getNutritionJournalHistory(limitCount = 30) {
       time: `${d.id}T12:00:00`,
     }));
   } catch (error) {
-    console.error("[getNutritionJournalHistory] Failed:", error);
+    console.error("[getNutritionNotesHistory] Failed:", error);
     return [];
   }
 }

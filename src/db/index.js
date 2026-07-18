@@ -8,3 +8,6 @@ export {
   getNutritionLog,
   getNutritionNotesHistory,
 } from "../lib/db/firestore/nutrition.js";
+
+// Supplements — kein eigenes journal-dev-Modul dafür, direkt aus fuel-dev
+export { getSupplementsHistory } from "@fuel/lib/db/firestore/supplements.js";

@@ -152,13 +152,14 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
       const failed = [];
       const grab = (label, promise) =>
         Promise.resolve(promise ?? []).catch(() => { failed.push(label); return []; });
-      const [regularHistory, habitHistory, sessions, mealLogs, allHabits, nutritionJournalHistory] = await Promise.all([
+      const [regularHistory, habitHistory, sessions, mealLogs, allHabits, nutritionJournalHistory, supplementLogs] = await Promise.all([
         grab("Journal", db.getJournalHistory(limitCount)),
         grab("Habit-Journale", db.getAllHabitJournalsHistory?.(limitCount)),
         grab("Workouts", db.getSessionHistory?.(limitCount)),
         grab("Fuel-Meals", db.getMealsHistory?.(limitCount)),
         grab("Habits", db.getHabits?.()),
         grab("Ernährungsjournal", db.getNutritionNotesHistory?.(limitCount)),
+        grab("Supplements", db.getSupplementsHistory?.(limitCount)),
       ]);
       setLoadWarnings([...new Set(failed)]);
 
@@ -199,6 +200,19 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
           meals: log.meals || [],
           totalKcal,
           time: `${log.date}T12:30:00`,
+        });
+      });
+
+      supplementLogs.forEach(log => {
+        const intakes = log.intakes || [];
+        if (!intakes.length) return;
+        combined.push({
+          id: 'supplements-' + log.date,
+          date: log.date,
+          type: 'supplement',
+          text: '',
+          intakes,
+          time: `${log.date}T09:00:00`,
         });
       });
 

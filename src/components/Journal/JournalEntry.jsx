@@ -1,4 +1,4 @@
-import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed, NotebookPen } from "lucide-react";
+import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed, NotebookPen, Pill } from "lucide-react";
 import { EFFORT_LABELS, timeStr, TYPE_COLORS } from "./journalUtils";
 // Via Alias, NICHT relativ über den src/constants-Symlink: dessen Ziel ist
 // ein absoluter /home/alpha-Pfad und im CI-Runner tot. @fitness/constants
@@ -29,6 +29,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
   const isHabitCompletion = e.type === 'habit-completion';
   const isMeal = e.type === 'meal';
   const isNutritionJournal = e.type === 'nutrition-journal';
+  const isSupplement = e.type === 'supplement';
   const habit = isHabit ? habits.find(h => h.uuid === e.habitId) : null;
 
   const activityColor = colorActivities && BLOCK_COLORS[e.activityType]
@@ -75,6 +76,13 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
               color={TYPE_COLORS.meal}
               label="Fuel"
               sub={`${e.meals?.length || 0} Mahlzeit${e.meals?.length === 1 ? '' : 'en'}`}
+            />
+          ) : isSupplement ? (
+            <TypeBadge
+              icon={Pill}
+              color={TYPE_COLORS.supplement}
+              label="Supplements"
+              sub={`${e.intakes?.length || 0} Intake${e.intakes?.length === 1 ? '' : 's'}`}
             />
           ) : isHabitCompletion ? (
             <TypeBadge icon={CheckCircle2} color={ACCENT} label={e.habitName} sub="Habit abgeschlossen" />
@@ -131,6 +139,17 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
                 {Math.round(e.totalKcal)} kcal
               </span>
             )}
+          </div>
+        )}
+
+        {/* Supplements: Intake-Liste */}
+        {isSupplement && e.intakes?.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {e.intakes.map((intake, idx) => (
+              <span key={idx} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-purple-500/8 text-purple-400 border border-purple-500/15">
+                {intake.supplement_id}{intake.dose ? ` · ${intake.dose}` : ''}
+              </span>
+            ))}
           </div>
         )}
 

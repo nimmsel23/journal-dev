@@ -23,6 +23,19 @@ import JournalForm from "./JournalForm";
 import JournalEntry from "./JournalEntry";
 import JournalModal from "./JournalModal";
 import CrossoverButtons from "../../import-crossover/CrossoverButtons";
+
+// Timeline-Cache pro User: zeigt beim (Neu-)Laden sofort den letzten bekannten
+// Stand an, während Firestore im Hintergrund neu lädt (optimistic paint).
+const TIMELINE_CACHE_PREFIX = "journal:timeline:";
+function readTimelineCache(uid) {
+  try {
+    const raw = localStorage.getItem(TIMELINE_CACHE_PREFIX + uid);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function writeTimelineCache(uid, timeline) {
+  try { localStorage.setItem(TIMELINE_CACHE_PREFIX + uid, JSON.stringify(timeline)); } catch {}
+}
 // Via @habits-Alias, NICHT relativ über den views/Habits-Symlink: dessen
 // Ziel ist ein absoluter /home/alpha-Pfad und im CI-Runner tot.
 import { ICON_COMPONENTS_MAP } from "@habits/views/Habits/utils";
@@ -146,6 +159,12 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
       // Guard: nur laden wenn User authentifiziert ist (sonst Firestore-Error)
       if (!user?.uid) return;
 
+      // Cold-Start: letzten bekannten Stand sofort zeigen, während Firestore lädt.
+      if (timeline.length === 0) {
+        const cached = readTimelineCache(user.uid);
+        if (cached?.length) setTimeline(cached);
+      }
+
       // Feature-Detection: nicht jeder @db-Kontext hat alle Quellen
       // (fitness local: keine Nutrition/Meals; package-Barrel: Stubs).
       // Fehlende Funktion = kein Feature (ok); Rejection = Warnung anzeigen.
@@ -255,6 +274,7 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
       }));
 
       setTimeline(finalTimeline);
+      writeTimelineCache(user.uid, finalTimeline);
 
       if (date === localToday() && grouped[date]?.filter(e => e.type === 'regular').length === 1 && !text) {
         const todayRegular = grouped[date].find(e => e.type === 'regular');
@@ -293,25 +313,67 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
       }
 
       if (editingEntry) {
-        await db.updateJournal(editingEntry.id, text);
-        const uploaded = await uploadAndAttach(editingEntry.id, editingEntry.date);
-        setTimeline(prev => prev.map(group => {
-          if (group.date === editingEntry.date) {
-            return { ...group, entries: group.entries.map(e => e.id === editingEntry.id
-              ? { ...e, text: text.trim(), attachments: [...(e.attachments || []), ...uploaded] }
-              : e) };
-          }
-          return group;
-        }));
+        const { id: entryId, date: entryDate } = editingEntry;
+        const trimmed = text.trim();
+        // Optimistic: Text sofort in der Timeline zeigen, statt auf Firestore zu warten.
+        setTimeline(prev => prev.map(group => group.date === entryDate
+          ? { ...group, entries: group.entries.map(e => e.id === entryId ? { ...e, text: trimmed } : e) }
+          : group));
         setEditingEntry(null);
+        setText("");
+
+        await db.updateJournal(entryId, trimmed);
+        const uploaded = await uploadAndAttach(entryId, entryDate);
+        if (uploaded.length) {
+          setTimeline(prev => prev.map(group => group.date === entryDate
+            ? { ...group, entries: group.entries.map(e => e.id === entryId
+                ? { ...e, attachments: [...(e.attachments || []), ...uploaded] }
+                : e) }
+            : group));
+        }
         showToast(uploadFailed ? "Upload fehlgeschlagen" : "Aktualisiert ✓");
       } else {
-        const saved = await db.saveJournal(date, text);
-        await uploadAndAttach(saved?.id, date);
-        setLimitCount(p => p + 1);
-        showToast(uploadFailed ? "Upload fehlgeschlagen" : "Gespeichert ✓");
+        const trimmed = text.trim();
+        const tempId = `temp-${Date.now()}`;
+        const optimisticEntry = { id: tempId, date, text: trimmed, type: "regular", time: new Date().toISOString() };
+
+        // Optimistic: Eintrag sofort einfügen, statt auf Firestore zu warten.
+        setTimeline(prev => {
+          const idx = prev.findIndex(g => g.date === date);
+          if (idx === -1) {
+            return [{ date, entries: [optimisticEntry] }, ...prev].sort((a, b) => b.date.localeCompare(a.date));
+          }
+          const copy = [...prev];
+          copy[idx] = { ...copy[idx], entries: [optimisticEntry, ...copy[idx].entries] };
+          return copy;
+        });
+        setText("");
+
+        try {
+          const saved = await db.saveJournal(date, trimmed);
+          const realId = saved?.id || tempId;
+          setTimeline(prev => prev.map(group => group.date === date
+            ? { ...group, entries: group.entries.map(e => e.id === tempId ? { ...e, id: realId } : e) }
+            : group));
+          const uploaded = await uploadAndAttach(realId, date);
+          if (uploaded.length) {
+            setTimeline(prev => prev.map(group => group.date === date
+              ? { ...group, entries: group.entries.map(e => e.id === realId ? { ...e, attachments: uploaded } : e) }
+              : group));
+          }
+          setLimitCount(p => p + 1);
+          showToast(uploadFailed ? "Upload fehlgeschlagen" : "Gespeichert ✓");
+        } catch (err) {
+          // Rollback: optimistischen Eintrag wieder entfernen, Text zurückgeben.
+          setTimeline(prev => prev
+            .map(group => group.date === date
+              ? { ...group, entries: group.entries.filter(e => e.id !== tempId) }
+              : group)
+            .filter(group => group.entries.length > 0));
+          setText(trimmed);
+          throw err;
+        }
       }
-      setText("");
     } catch { showToast("Fehler beim Speichern"); }
     finally { setSaving(false); }
   }

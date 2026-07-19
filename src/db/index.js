@@ -11,3 +11,6 @@ export {
 
 // Supplements — kein eigenes journal-dev-Modul dafür, direkt aus fuel-dev
 export { getSupplementsHistory } from "@fuel/lib/db/firestore/supplements.js";
+
+// Relax — kein eigenes journal-dev-Modul dafür, direkt aus relax-dev
+export { getRelaxSessionHistory } from "@relax/lib/db/firestore/sessions.js";

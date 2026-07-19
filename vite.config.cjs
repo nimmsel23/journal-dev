@@ -8,6 +8,7 @@ const path = require("path");
 // sind dev-Playgrounds — fuel-dev dev hat den modularen Layer (noch) nicht.
 const FITNESS = path.resolve(__dirname, "../fitness-dev");
 const FUEL = path.resolve(__dirname, "../fuel-dev");
+const RELAX = path.resolve(__dirname, "../relax-dev");
 
 module.exports = defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -21,6 +22,7 @@ module.exports = defineConfig(({ mode }) => {
   const SUBREPO_FIREBASE = new Set([
     path.resolve(FITNESS, "src/firebase.js"),
     path.resolve(FUEL, "src/client/lib/firebase.js"),
+    path.resolve(RELAX, "src/firebase.js"),
   ]);
   const firebaseRedirect = {
     name: "journal:subrepo-firebase-redirect",
@@ -87,6 +89,7 @@ module.exports = defineConfig(({ mode }) => {
         "@utils":   path.resolve(__dirname, "./src/lib/db/core.js"),
         "@journal": path.resolve(__dirname, "./src"),
         "@fuel":    path.resolve(FUEL, "src/client"),
+        "@relax":   path.resolve(RELAX, "src"),
         "@habits":  path.resolve(__dirname, "../habits-dev/src"),
         "@fitness/constants": path.resolve(FITNESS, "src/constants"),
         "@fitness/components": path.resolve(FITNESS, "src/components"),
@@ -95,9 +98,16 @@ module.exports = defineConfig(({ mode }) => {
       // Nachbar-Repos importiert und würde sonst in deren node_modules
       // auflösen (z.B. recharts 3.x in vitalos = Major-Bruch zu journals
       // 2.15.4). dedupe zwingt alles auf journal-devs Kopie.
+      // "firebase" fehlte hier: @fuel/lib/db/firestore/supplements.js (und
+      // jetzt @relax/lib/db/firestore/sessions.js) importieren "firebase/firestore"
+      // aus ihrem eigenen node_modules (fuel-dev/relax-dev laufen auch standalone) —
+      // ohne dedupe entsteht eine zweite Firestore-SDK-Instanz neben journals
+      // eigener (aus firebaseRedirect), und Firestore wirft beim Übergeben von
+      // journals `db`-Objekt an die fremde SDK-Kopie einen Typfehler.
       dedupe: [
         "react", "react-dom", "@tanstack/react-query",
         "recharts", "lucide-react", "framer-motion",
+        "firebase", "firebase/app", "firebase/firestore", "firebase/auth",
       ],
     },
     build: {

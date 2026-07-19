@@ -170,7 +170,11 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
       // Fehlende Funktion = kein Feature (ok); Rejection = Warnung anzeigen.
       const failed = [];
       const grab = (label, promise) =>
-        Promise.resolve(promise ?? []).catch(() => { failed.push(label); return []; });
+        Promise.resolve(promise ?? []).catch(err => {
+          console.error(`[JournalTimeline] ${label} laden fehlgeschlagen:`, err);
+          failed.push(label);
+          return [];
+        });
       const [regularHistory, habitHistory, sessions, mealLogs, allHabits, nutritionJournalHistory, supplementLogs, relaxSessions] = await Promise.all([
         grab("Journal", db.getJournalHistory(limitCount)),
         grab("Habit-Journale", db.getAllHabitJournalsHistory?.(limitCount)),

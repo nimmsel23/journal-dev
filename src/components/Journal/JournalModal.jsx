@@ -1,4 +1,4 @@
-import { X, Target, Dumbbell, Book, Brain, CheckCircle2, UtensilsCrossed, NotebookPen } from "lucide-react";
+import { X, Target, Dumbbell, Book, Brain, CheckCircle2, UtensilsCrossed, NotebookPen, MoonStar } from "lucide-react";
 import { EFFORT_LABELS, TYPE_COLORS } from "./journalUtils";
 import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
@@ -13,6 +13,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
   const isHabitCompletion = selectedEntry.type === 'habit-completion';
   const isMeal = selectedEntry.type === 'meal';
   const isNutritionJournal = selectedEntry.type === 'nutrition-notes';
+  const isRelax = selectedEntry.type === 'relax';
   const habit = isHabit ? habits.find(h => h.uuid === selectedEntry.habitId) : null;
 
   const ActivityIcon = isActivity && ACTIVITY_ICONS[selectedEntry.activityType]
@@ -43,6 +44,8 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
     ? 'Fuel'
     : isNutritionJournal
     ? 'Ernährungs-Notizen'
+    : isRelax
+    ? 'Relax'
     : 'Journal Eintrag';
 
   const subtitle = isWorkout
@@ -57,6 +60,8 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
     ? 'Mahlzeiten geloggt'
     : isNutritionJournal
     ? 'Ernährungsnotiz'
+    : isRelax
+    ? `${selectedEntry.totalMinutes || 0} min Entspannung`
     : 'Notiz';
 
   return (
@@ -77,6 +82,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
                 : isHabitCompletion ? <CheckCircle2 size={20} />
                 : isMeal ? <UtensilsCrossed size={20} />
                 : isNutritionJournal ? <NotebookPen size={20} />
+                : isRelax ? <MoonStar size={20} />
                 : <Book size={20} />}
             </div>
             <div>
@@ -124,6 +130,23 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
                 {selectedEntry.meals.map((m, idx) => (
                   <span key={idx} className="text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-500/8 text-emerald-400 border border-emerald-500/15">
                     {m.description}{m.kcal ? ` · ${Math.round(m.kcal)} kcal` : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Relax: Techniken */}
+          {isRelax && selectedEntry.techniques?.length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-400 mb-3">
+                Techniken{selectedEntry.totalMinutes > 0 ? ` · ${selectedEntry.totalMinutes} min` : ''}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selectedEntry.techniques.map((it, idx) => (
+                  <span key={idx} className="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-500/8 text-indigo-400 border border-indigo-500/15">
+                    {it.technique || '—'}{it.minutes ? ` · ${it.minutes} min` : ''}
+                    {Number.isFinite(Number(it.mood_before)) && Number.isFinite(Number(it.mood_after)) ? ` · Mood ${it.mood_before}→${it.mood_after}` : ''}
                   </span>
                 ))}
               </div>

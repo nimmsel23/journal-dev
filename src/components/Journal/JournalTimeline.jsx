@@ -152,7 +152,7 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
       const failed = [];
       const grab = (label, promise) =>
         Promise.resolve(promise ?? []).catch(() => { failed.push(label); return []; });
-      const [regularHistory, habitHistory, sessions, mealLogs, allHabits, nutritionJournalHistory, supplementLogs] = await Promise.all([
+      const [regularHistory, habitHistory, sessions, mealLogs, allHabits, nutritionJournalHistory, supplementLogs, relaxSessions] = await Promise.all([
         grab("Journal", db.getJournalHistory(limitCount)),
         grab("Habit-Journale", db.getAllHabitJournalsHistory?.(limitCount)),
         grab("Workouts", db.getSessionHistory?.(limitCount)),
@@ -160,6 +160,7 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
         grab("Habits", db.getHabits?.()),
         grab("Ernährungs-Notizen", db.getNutritionNotesHistory?.(limitCount)),
         grab("Supplements", db.getSupplementsHistory?.(limitCount)),
+        grab("Relax", db.getRelaxSessionHistory?.(limitCount)),
       ]);
       setLoadWarnings([...new Set(failed)]);
 
@@ -200,6 +201,24 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
           meals: log.meals || [],
           totalKcal,
           time: `${log.date}T12:30:00`,
+        });
+      });
+
+      relaxSessions.forEach(session => {
+        const items = session.items || [];
+        if (!items.length) return;
+        const savedAt = session.saved_at?.seconds
+          ? new Date(session.saved_at.seconds * 1000).toISOString()
+          : (typeof session.saved_at === 'string' ? session.saved_at : `${session.date}T20:00:00`);
+        const totalMinutes = items.reduce((sum, it) => sum + (Number(it.minutes) || 0), 0);
+        combined.push({
+          id: 'relax-' + session.date,
+          date: session.date,
+          type: 'relax',
+          text: '',
+          techniques: items,
+          totalMinutes,
+          time: savedAt,
         });
       });
 

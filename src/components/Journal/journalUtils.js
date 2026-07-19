@@ -13,13 +13,14 @@ export const ACTIVITY_FALLBACK_LABELS = {
 };
 
 // Semantische Typ-Farben der Timeline (Pillar-Kennung, kein Theme):
-// Workout = Blau, Fuel/Meal = Emerald, Ernährungsjournal = Sky.
+// Workout = Blau, Fuel/Meal = Emerald, Ernährungsjournal = Sky, Relax = Violett.
 // Habit/Regular folgen dem Theme-Akzent (var(--j-accent)).
 export const TYPE_COLORS = {
   workout: '#3b82f6',
   meal: '#22c55e',
   'nutrition-notes': '#38bdf8',
   supplement: '#a855f7',
+  relax: '#6366f1',
 };
 
 export function timeStr(e) {

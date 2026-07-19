@@ -1,4 +1,4 @@
-import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed, NotebookPen, Pill } from "lucide-react";
+import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed, NotebookPen, Pill, MoonStar } from "lucide-react";
 import { EFFORT_LABELS, timeStr, TYPE_COLORS } from "./journalUtils";
 // Via Alias, NICHT relativ über den src/constants-Symlink: dessen Ziel ist
 // ein absoluter /home/alpha-Pfad und im CI-Runner tot. @fitness/constants
@@ -30,6 +30,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
   const isMeal = e.type === 'meal';
   const isNutritionJournal = e.type === 'nutrition-notes';
   const isSupplement = e.type === 'supplement';
+  const isRelax = e.type === 'relax';
   const habit = isHabit ? habits.find(h => h.uuid === e.habitId) : null;
 
   const activityColor = colorActivities && BLOCK_COLORS[e.activityType]
@@ -43,6 +44,8 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
     ? 'rgba(59,130,246,0.15)'
     : isNutritionJournal
     ? 'rgba(56,189,248,0.15)'
+    : isRelax
+    ? 'rgba(99,102,241,0.15)'
     : isActivity && colorActivities
     ? `${activityColor}30`
     : 'var(--j-line)';
@@ -90,6 +93,13 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
             <TypeBadge icon={Target} color={ACCENT} label={habit?.name} sub="Habit Journal" />
           ) : isNutritionJournal ? (
             <TypeBadge icon={NotebookPen} color={TYPE_COLORS['nutrition-notes']} label="Ernährungs-Notizen" sub="Notizen geloggt" />
+          ) : isRelax ? (
+            <TypeBadge
+              icon={MoonStar}
+              color={TYPE_COLORS.relax}
+              label="Relax"
+              sub={`${e.totalMinutes || 0} min · ${e.techniques?.length || 0} Technik${e.techniques?.length === 1 ? '' : 'en'}`}
+            />
           ) : (
             <div className="flex items-center gap-2 text-[var(--j-dim)]">
               <Clock size={14} className="opacity-50" />
@@ -150,6 +160,22 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
                 {intake.supplement_id}{intake.dose ? ` · ${intake.dose}` : ''}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Relax: Techniken-Liste + Mood-Delta */}
+        {isRelax && e.techniques?.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-1.5 items-center">
+            {e.techniques.map((it, idx) => (
+              <span key={idx} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-indigo-500/8 text-indigo-400 border border-indigo-500/15">
+                {it.technique || '—'}{it.minutes ? ` · ${it.minutes}min` : ''}
+              </span>
+            ))}
+            {e.techniques.some(it => Number.isFinite(Number(it.mood_before)) && Number.isFinite(Number(it.mood_after))) && (
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-md border text-indigo-300 bg-indigo-500/8 border-indigo-500/15">
+                Mood {e.techniques[0].mood_before} → {e.techniques[0].mood_after}
+              </span>
+            )}
           </div>
         )}
 

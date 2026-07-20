@@ -2,10 +2,18 @@ node_modules/
 dist/
 dist-firebase/
 .firebase/
+.firebase/hosting.*.cache
 /opt/
-.DS_Store
 *.log
+.env
+.env.*.local
+.DS_Store
 *.bak
+*.bak*
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
 .claude/TICKETS/
 
 # Runtime data (daily logs, journals, user sessions)
@@ -16,4 +24,3 @@ data/
 
 # Lokales Archiv (mv statt rm), nie tracken
 .archiv/
-*.bak*

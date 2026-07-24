@@ -29,6 +29,42 @@ Fuel Centre is a multifunctional nutrition and supplement tracking project desig
 - **Push Local to Cloud:** `npm run sync:push`
 - **Pull Cloud to Local:** `npm run sync:pull`
 
+## Repo & Path Conventions (CRITICAL)
+
+### Zwei-Welt-Modell: `-dev` Home vs. `vitalos/` Produktion
+
+Das Projekt existiert in zwei Welten:
+
+| Welt | Pfad | Branch | Zweck |
+|------|------|--------|-------|
+| Dev Playground | `~/journal-dev` | `dev` | Lokale Entwicklung, **nicht deploybar** |
+| Produktion | `~/vitalos/journal-app` | `master` | Firebase Hosting, deploybar |
+
+Analog für alle Submodule: `~/fitness-dev` ↔ `~/vitalos/fitness-app`, `~/fuel-dev` ↔ `~/vitalos/fuel-app`, `~/relax-dev` ↔ `~/vitalos/relax-app`, etc.
+
+### `-app`-Pfade überall – keine Ausnahme
+
+**Alle Sibling-Repo-Referenzen** (in `vite.config.cjs`, `src/db/index.js` etc.) verwenden **immer** `-app`-Namen:
+
+```js
+// ✅ KORREKT – überall, auch in journal-dev
+const FITNESS = path.resolve(__dirname, "../fitness-app");
+const FUEL    = path.resolve(__dirname, "../fuel-app");
+const RELAX   = path.resolve(__dirname, "../relax-app");
+
+// ❌ FALSCH – niemals committen
+const FITNESS = path.resolve(__dirname, "../fitness-dev");
+```
+
+**Warum:** Die `-dev` Home-Repos haben keine `-app`-Sibling-Repos → Build bricht absichtlich → klares Signal: nicht deploybar.  
+**Niemals** `-dev`-Pfade committen, auch nicht in `~/journal-dev`.
+
+### Merge-Workflow (Agent-Regel)
+
+Beim Merge `dev → master` in `~/vitalos/journal-app`:
+- Prüfen, dass **keine `-dev`-Pfade** in den Diff-Dateien landen.
+- Falls doch: Merge abbrechen, Pfade korrigieren, dann erneut mergen.
+
 ## Development Conventions
 
 - **Frontend:** Maintain separation between `v1` (legacy) and `v2` (React/Tailwind). New UI components should go into `src/components/`.

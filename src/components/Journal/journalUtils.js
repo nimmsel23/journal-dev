@@ -46,7 +46,8 @@ export function formatRelativeDate(dateStr) {
 }
 
 export function sessionInfo(session) {
-  const isCardio = session.sessionMode === 'cardio' || !!session.activity;
+  const hasExercises = Array.isArray(session.exercises) && session.exercises.length > 0;
+  const isCardio = !hasExercises && (session.sessionMode === 'cardio' || !!session.activity);
   if (isCardio) {
     const type = typeof session.activity === 'string' ? session.activity : session.activity?.type;
     return { label: ACTIVITY_FALLBACK_LABELS[type] || 'Ausdauer', activityType: type || 'cardio' };

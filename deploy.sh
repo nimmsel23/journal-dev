@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# deploy.sh — Versioned deployment for Fuel (local channel → Desktop Prod)
+# deploy.sh — Versioned deployment for Journal (local channel → Desktop Prod)
 set -euo pipefail
 
-DEST="/opt/fuel"
-BACKUP_DIR="/opt/fuel_backups"
-SERVICE="fuel-v2.service"
+DEST="/opt/journal"
+BACKUP_DIR="/opt/journal_backups"
+SERVICE="journal.service"
 SOURCE="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)"
 
 msg() { printf '\033[1;32m%s\033[0m\n' "$*"; }
 warn() { printf '\033[1;33m%s\033[0m\n' "$*" >&2; }
 die() { printf '\033[1;31m%s\033[0m\n' "$*" >&2; exit 1; }
 
-msg "🚀 Starting Fuel Deployment (local channel)"
+msg "🚀 Starting Journal Deployment (local channel)"
 
 # 1. Versioned Backup
 timestamp=$(date +%Y%m%d_%H%M%S)
-backup_path="$BACKUP_DIR/fuel_$timestamp"
+backup_path="$BACKUP_DIR/journal_$timestamp"
 
 if [[ -d "$DEST" ]]; then
   msg "📦 Creating versioned backup: $backup_path"
@@ -63,4 +63,4 @@ else
   warn "⚠️ $SERVICE not found. Skipping restart."
 fi
 
-msg "✅ Deployment to $DEST complete."
+msg "✅ Journal deployed to $DEST complete."

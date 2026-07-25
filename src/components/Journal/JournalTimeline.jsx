@@ -12,7 +12,7 @@
 // kontextabhängiger Aliases, Theming über CSS-Tokens mit Fallbacks.
 
 import { useState, useEffect, useMemo } from "react";
-import * as db from "@db";
+import * as db from "@journal-db";
 import { Book, PenLine } from "lucide-react";
 import { localToday, formatRelativeDate, sessionInfo, getDailyPrompt } from "./journalUtils";
 import { mediaAvailable, uploadJournalMedia, attachToEntry, removeAttachment } from "./journalMedia";

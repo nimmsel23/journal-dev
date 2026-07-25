@@ -84,6 +84,7 @@ module.exports = defineConfig(({ mode }) => {
     resolve: {
       preserveSymlinks: true,
       alias: {
+        "@journal-db": path.resolve(__dirname, "./src/db/index.js"),
         "@db":      path.resolve(__dirname, "./src/db/index.js"),
         "@fitness-db": path.resolve(FITNESS, "src/lib/db"),
         "@utils":   path.resolve(__dirname, "./src/lib/db/core.js"),

@@ -9,7 +9,7 @@ import "./styles.css";
 import { TAB_CONFIG } from "./routes.js";
 import TabContent from "./components/TabContent.jsx";
 import { useApp } from "./store.js";
-import { watchAuth, signIn, signOut, getUid } from "@db";
+import { watchAuth, signIn, signOut, getUid } from "@journal-db";
 // Initialize Firebase (sets window.__firebaseAuth, window.__firebaseDb, etc.)
 import "./lib/firebase.js";
 

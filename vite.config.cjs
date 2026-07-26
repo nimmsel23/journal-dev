@@ -9,10 +9,32 @@ const path = require("path");
 const FITNESS = path.resolve(__dirname, "../fitness-app");
 const FUEL = path.resolve(__dirname, "../fuel-app");
 const RELAX = path.resolve(__dirname, "../relax-app");
+const HABITS = path.resolve(__dirname, "../habit-app");
 
-module.exports = defineConfig(({ mode }) => {
+// SSOT für Cross-App-Aliase ist @vos/cross-app-aliases (~/vitalos/packages/
+// cross-app-aliases) — dynamic import() geht auch aus einer .cjs-Datei
+// (das Package ist ESM). Fällt zurück auf die alten hartcodierten
+// vitalos-relativen Pfade, falls das Package (noch) nicht installiert ist.
+async function resolveCrossAppAliases() {
+  try {
+    const { crossAppAliases } = await import("@vos/cross-app-aliases");
+    return crossAppAliases();
+  } catch {
+    return {
+      "@fuel":    path.resolve(FUEL, "src/client"),
+      "@relax":   path.resolve(RELAX, "src"),
+      "@habits":  path.resolve(HABITS, "src"),
+      "@fitness/constants":  path.resolve(FITNESS, "src/constants"),
+      "@fitness/components": path.resolve(FITNESS, "src/components"),
+      "@fitness-db": path.resolve(FITNESS, "src/lib/db"),
+    };
+  }
+}
+
+module.exports = defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const appMode = process.env.VITE_APP_MODE || env.VITE_APP_MODE || "coach";
+  const crossAppAliases = await resolveCrossAppAliases();
 
   // Firebase-Init der Nachbar-Repos auf journals eigene lib/firebase.js
   // umleiten — genau eine initializeApp im Bundle (Muster: vitalos
@@ -84,16 +106,12 @@ module.exports = defineConfig(({ mode }) => {
     resolve: {
       preserveSymlinks: true,
       alias: {
+        ...crossAppAliases,
+
         "@journal-db": path.resolve(__dirname, "./src/db/index.js"),
         "@db":      path.resolve(__dirname, "./src/db/index.js"),
-        "@fitness-db": path.resolve(FITNESS, "src/lib/db"),
         "@utils":   path.resolve(__dirname, "./src/lib/db/core.js"),
         "@journal": path.resolve(__dirname, "./src"),
-        "@fuel":    path.resolve(FUEL, "src/client"),
-        "@relax":   path.resolve(RELAX, "src"),
-        "@habits":  path.resolve(__dirname, "../habit-app/src"),
-        "@fitness/constants": path.resolve(FITNESS, "src/constants"),
-        "@fitness/components": path.resolve(FITNESS, "src/components"),
       },
       // dedupe: der @fuel-DB-Layer (und @fitness/@habits-Module) wird aus
       // Nachbar-Repos importiert und würde sonst in deren node_modules

@@ -9,6 +9,7 @@ import "./styles.css";
 import { TAB_CONFIG } from "./routes.js";
 import TabContent from "./components/TabContent.jsx";
 import { IosInstallHint } from "./components/IosInstallHint.jsx";
+import { InstallPromptHandler } from "./components/InstallPromptHandler.jsx";
 import { useApp } from "./store.js";
 import { watchAuth, signIn, signOut, getUid } from "@journal-db";
 // Initialize Firebase (sets window.__firebaseAuth, window.__firebaseDb, etc.)
@@ -96,6 +97,7 @@ function App() {
 
   return (
     <>
+      <InstallPromptHandler />
       <IosInstallHint />
       <div className="min-h-screen text-slate-100">
         <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">

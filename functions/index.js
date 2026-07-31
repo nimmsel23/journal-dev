@@ -70,7 +70,7 @@ async function sendReminder(uid, tokens, title, body, link) {
 }
 
 exports.scheduledPushReminders = functions
-  .region("us-central1")
+  .region("europe-west1")
   .pubsub.schedule("every 5 minutes")
   .timeZone(TIME_ZONE)
   .onRun(async (context) => {

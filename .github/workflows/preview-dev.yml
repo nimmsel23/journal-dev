@@ -13,8 +13,12 @@ on:
   workflow_dispatch:
   push:
     branches: [dev]
+    paths:
+      - 'src/**'
   pull_request:
     branches: [master, dev]
+    paths:
+      - 'src/**'
 
 jobs:
   preview:

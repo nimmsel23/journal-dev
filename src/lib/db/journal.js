@@ -59,6 +59,26 @@ export async function getJournal(date = localToday()) {
   }
 }
 
+// Range-Query: get journal entries within date range (for UI display)
+export async function getJournalRange(startDate, endDate) {
+  try {
+    const userId = await uid();
+    const q = query(
+      journalCol(userId),
+      where("date", ">=", startDate),
+      where("date", "<=", endDate),
+      orderBy("date", "desc")
+    );
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(normalizeEntry)
+      .filter((e) => e.text);
+  } catch (error) {
+    console.error("Error fetching journal range:", error);
+    return [];
+  }
+}
+
 export async function getJournalHistory(limitCount = 50) {
   try {
     const userId = await uid();
@@ -73,28 +93,35 @@ export async function getJournalHistory(limitCount = 50) {
   }
 }
 
-export async function saveJournal(date = localToday(), text, tags = []) {
+export async function saveJournal(date = localToday(), text, opts = {}) {
   const userId = await uid();
   const content = String(text || "").trim();
   const time = new Date().toISOString();
-  const ref = await addDoc(journalCol(userId), {
+  const { tags = [], startDate, endDate } = opts;
+  const docData = {
     date,
     text: content,
     tags,
     time,
     created_at: serverTimestamp(),
-  });
-  return { id: ref.id, date, text: content, time };
+  };
+  if (startDate) docData.startDate = startDate;
+  if (endDate) docData.endDate = endDate;
+  const ref = await addDoc(journalCol(userId), docData);
+  return { id: ref.id, date, text: content, time, startDate, endDate };
 }
 
-export async function updateJournal(id, text) {
+export async function updateJournal(id, text, opts = {}) {
   const userId = await uid();
   const content = String(text || "").trim();
+  const { startDate, endDate } = opts;
   const patch = { text: content, updated_at: serverTimestamp() };
   // Alt-Doc (Doc-ID = Datum): date-Feld nachziehen, damit where("date")-Queries es finden
   if (DATE_ID.test(id)) patch.date = id;
+  if (startDate) patch.startDate = startDate;
+  if (endDate) patch.endDate = endDate;
   await setDoc(doc(journalCol(userId), id), patch, { merge: true });
-  return { ok: true, id, text: content };
+  return { ok: true, id, text: content, startDate, endDate };
 }
 
 // ── HabitJournal Timeline-Reads ───────────────────────────────────────────────

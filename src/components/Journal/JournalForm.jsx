@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { PenLine, X, ImagePlus } from "lucide-react";
+import { PenLine, X, ImagePlus, Calendar } from "lucide-react";
 
 // DayOne-Muster: eingeklappt ist der Composer eine Einladungs-Karte mit
 // dem Prompt des Tages, erst Klick (oder Bearbeitungs-Modus) öffnet den
@@ -9,8 +9,12 @@ import { PenLine, X, ImagePlus } from "lucide-react";
 // Bild-Button ein. Ausgewählte Dateien bleiben als lokale Vorschau
 // (URL.createObjectURL) im Form-State und gehen beim Submit als File[]
 // an onSubmit(files) — Upload macht JournalTimeline nach dem Speichern.
-export default function JournalForm({ text, setText, onSubmit, saving, editingEntry, onCancelEdit, prompt, mediaEnabled = false, onRemoveAttachment }) {
+//
+// Date Range: optionale Zeitspanne für UI-Display (z.B. "Reise nach Florenz: 15.7–22.7").
+// Gespeichert als startDate/endDate im Journal-Eintrag.
+export default function JournalForm({ text, setText, onSubmit, saving, editingEntry, onCancelEdit, prompt, mediaEnabled = false, onRemoveAttachment, startDate = "", setStartDate, endDate = "", setEndDate }) {
   const [expanded, setExpanded] = useState(false);
+  const [showDateRange, setShowDateRange] = useState(!!editingEntry && (editingEntry.startDate || editingEntry.endDate));
   // [{ file, url, key }] — url ist eine ObjectURL, wird beim Entfernen /
   // nach dem Sichern / beim Unmount wieder freigegeben.
   const [pendingMedia, setPendingMedia] = useState([]);
@@ -117,6 +121,41 @@ export default function JournalForm({ text, setText, onSubmit, saving, editingEn
         placeholder={prompt || "Gedanken, Erkenntnisse, Fokus..."}
         className="w-full bg-transparent border-none outline-none text-[15px] leading-relaxed resize-none text-[var(--j-ink)] placeholder:text-[var(--j-dim)] placeholder:opacity-50"
       />
+
+      {/* Date Range Toggle + Inputs — optional für Ereignisse mit Zeitspanne */}
+      <div className="mt-4 border-t border-[var(--j-line)] pt-4">
+        <button
+          type="button"
+          onClick={() => setShowDateRange(!showDateRange)}
+          className="text-xs font-bold uppercase tracking-widest text-[var(--j-dim)] hover:text-[var(--j-accent)] transition-all flex items-center gap-2 mb-3"
+        >
+          <Calendar size={14} />
+          {showDateRange ? "Zeitspanne einklappen" : "Zeitspanne hinzufügen (z.B. Reise)"}
+        </button>
+
+        {showDateRange && (
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-[var(--j-bg2)]/50 border border-[var(--j-line)]/50">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-[var(--j-dim)]">Von</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate?.(e.target.value)}
+                className="px-2 py-1.5 bg-[var(--j-bg)] border border-[var(--j-line)] rounded text-[13px] text-[var(--j-ink)] outline-none focus:border-[var(--j-accent)]"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-[var(--j-dim)]">Bis</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate?.(e.target.value)}
+                className="px-2 py-1.5 bg-[var(--j-bg)] border border-[var(--j-line)] rounded text-[13px] text-[var(--j-ink)] outline-none focus:border-[var(--j-accent)]"
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Bestehende Anhänge (nur Bearbeitungs-Modus): X → Storage + Firestore */}
       {existingAttachments.length > 0 && (

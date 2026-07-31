@@ -66,6 +66,8 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
 
   const [date, setDate] = useState(localToday());
   const [text, setText] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [timeline, setTimeline] = useState([]);
   const [habits, setHabits] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -344,8 +346,10 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
           : group));
         setEditingEntry(null);
         setText("");
+        setStartDate("");
+        setEndDate("");
 
-        await db.updateJournal(entryId, trimmed);
+        await db.updateJournal(entryId, trimmed, { startDate, endDate });
         const uploaded = await uploadAndAttach(entryId, entryDate);
         if (uploaded.length) {
           setTimeline(prev => prev.map(group => group.date === entryDate
@@ -373,7 +377,7 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
         setText("");
 
         try {
-          const saved = await db.saveJournal(date, trimmed);
+          const saved = await db.saveJournal(date, trimmed, { startDate, endDate });
           const realId = saved?.id || tempId;
           setTimeline(prev => prev.map(group => group.date === date
             ? { ...group, entries: group.entries.map(e => e.id === tempId ? { ...e, id: realId } : e) }
@@ -385,6 +389,8 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
               : group));
           }
           setLimitCount(p => p + 1);
+          setStartDate("");
+          setEndDate("");
           showToast(uploadFailed ? "Upload fehlgeschlagen" : "Gespeichert ✓");
         } catch (err) {
           // Rollback: optimistischen Eintrag wieder entfernen, Text zurückgeben.
@@ -492,10 +498,14 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
           onSubmit={submit}
           saving={saving}
           editingEntry={editingEntry}
-          onCancelEdit={() => { setEditingEntry(null); setText(""); setDate(localToday()); }}
+          onCancelEdit={() => { setEditingEntry(null); setText(""); setDate(localToday()); setStartDate(""); setEndDate(""); }}
           prompt={getDailyPrompt(date)}
           mediaEnabled={mediaEnabled}
           onRemoveAttachment={handleRemoveAttachment}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
         />
 
         {showCrossover && (

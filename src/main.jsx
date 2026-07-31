@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import "./styles.css";
 import { TAB_CONFIG } from "./routes.js";
 import TabContent from "./components/TabContent.jsx";
+import { IosInstallHint } from "./components/IosInstallHint.jsx";
 import { useApp } from "./store.js";
 import { watchAuth, signIn, signOut, getUid } from "@journal-db";
 // Initialize Firebase (sets window.__firebaseAuth, window.__firebaseDb, etc.)
@@ -94,8 +95,10 @@ function App() {
   const tabCtx = { activeDate, setActiveDate, setActiveTab, user };
 
   return (
-    <div className="min-h-screen text-slate-100">
-      <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
+    <>
+      <IosInstallHint />
+      <div className="min-h-screen text-slate-100">
+        <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
         <header className="mb-6 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-glow backdrop-blur">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -162,8 +165,9 @@ function App() {
             </motion.div>
           </AnimatePresence>
         </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

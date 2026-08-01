@@ -29,9 +29,27 @@ jobs:
           git submodule sync
           git submodule update --init --recursive
 
-      - name: journal-dev auf den ausgelösten Commit setzen
+      - name: Submodule-Pfad auflösen (journal-app bevorzugt, journal-dev als Fallback)
+        # Gleiche appDir()-Logik wie packages/cross-app-aliases/index.mjs: erster
+        # existierender Kandidat gewinnt. Sub-Repos heißen als vitalos-Submodule
+        # "*-app", als eigenständiger Checkout "*-dev" — beide Namen sind in
+        # Gebrauch, hardcoded auf einen von beiden bricht bei der nächsten
+        # Umbenennung wieder.
         run: |
-          cd journal-dev
+          if [ -d "journal-app" ]; then
+            SUBMODULE_PATH="journal-app"
+          elif [ -d "journal-dev" ]; then
+            SUBMODULE_PATH="journal-dev"
+          else
+            echo "::error::Weder journal-app noch journal-dev im Checkout gefunden"
+            exit 1
+          fi
+          echo "SUBMODULE_PATH=$SUBMODULE_PATH" >> "$GITHUB_ENV"
+          echo "Aufgelöst: $SUBMODULE_PATH"
+
+      - name: Submodule auf den ausgelösten Commit setzen
+        run: |
+          cd "$SUBMODULE_PATH"
           SHA="${{ github.sha }}"
           git fetch origin "$SHA"
           git checkout "$SHA"
@@ -47,15 +65,15 @@ jobs:
       - name: Firebase config bereitstellen
         run: |
           if [ -n "$FIREBASE_CONFIG" ]; then
-            echo "$FIREBASE_CONFIG" > fitness-dev/firebase.config.js
-          elif [ ! -f fitness-dev/firebase.config.js ]; then
-            cp firebase.config.js fitness-dev/firebase.config.js
+            echo "$FIREBASE_CONFIG" > "$SUBMODULE_PATH/firebase.config.js"
+          elif [ ! -f "$SUBMODULE_PATH/firebase.config.js" ]; then
+            cp firebase.config.js "$SUBMODULE_PATH/firebase.config.js"
           fi
         env:
           FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
 
       - name: Build Journal (Live)
-        run: npm run build:cloud --workspace=journal-dev
+        run: npm run build:cloud --workspace="$SUBMODULE_PATH"
 
       - name: Deploy Live
         id: firebase_deploy
@@ -64,7 +82,7 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FITNESS_AOS || secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: fitness-aos
-          entryPoint: journal-dev
+          entryPoint: ${{ env.SUBMODULE_PATH }}
           channelId: live
 
       - name: Telegram-Benachrichtigung senden

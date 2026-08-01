@@ -2,34 +2,52 @@ const { defineConfig, loadEnv } = require("vite");
 const react = require("@vitejs/plugin-react");
 const { VitePWA } = require("vite-plugin-pwa");
 const path = require("path");
+const { existsSync } = require("fs");
 
-// Nachbar-Repos: die vitalos-Submodule-Checkouts (master = firebase-first,
-// modulare Firestore-Layer). Die Home-Worktrees (~/fitness-dev, ~/fuel-dev)
-// sind dev-Playgrounds — fuel-dev dev hat den modularen Layer (noch) nicht.
-const FITNESS = path.resolve(__dirname, "../fitness-app");
-const FUEL = path.resolve(__dirname, "../fuel-app");
-const RELAX = path.resolve(__dirname, "../relax-app");
-const HABITS = path.resolve(__dirname, "../habit-app");
+// Sibling-Repos existieren unter zwei Namensschemata, je nach Checkout:
+// ~/journal-dev (dev-Branch, Home-Root)     → Siblings heißen *-dev (fitness-dev, fuel-dev, relax-dev, habits-dev)
+// ~/vitalos/journal-app (master, Submodule) → Siblings heißen *-app (fitness-app, fuel-app, relax-app, habit-app)
+// Übernommen 1:1 aus fuel-dev/vite.config.js (dort seit dem ersten Auftreten
+// dieses Problems die SSOT-Lösung) — journal-dev hatte vorher gar keinen
+// Fallback und brach in jedem Checkout, der nicht zufällig *-app hieß.
+function resolveSibling(candidates, label) {
+  for (const rel of candidates) {
+    const abs = path.resolve(__dirname, rel);
+    if (existsSync(abs)) return abs;
+  }
+  throw new Error(`[vite.config.cjs] Kein Sibling-Pfad gefunden für ${label}: ${candidates.join(", ")}`);
+}
 
 // SSOT für Cross-App-Aliase ist @vos/cross-app-aliases (~/vitalos/packages/
-// cross-app-aliases) — dynamic import() geht auch aus einer .cjs-Datei
-// (das Package ist ESM). Fällt zurück auf die alten hartcodierten
-// vitalos-relativen Pfade, falls das Package (noch) nicht installiert ist.
+// cross-app-aliases) — nur erreichbar, wenn dieses Repo als vitalos-Submodule
+// genestet ist (npm Workspace-Symlink). Standalone-Checkout (~/journal-dev
+// ohne vitalos-Parent) fällt auf resolveSibling() zurück.
+//
+// WARNUNG (2026-08-01, nach echtem Vorfall): der catch-Zweig MUSS über
+// resolveSibling() mit BEIDEN Kandidaten (-app UND -dev) auflösen. Ein
+// früherer Refactor (d4dd2f3) hat hier nur das Try/Catch-Gerüst kopiert,
+// im catch-Zweig aber die alten hartcodierten -app-only-Pfade
+// wiederverwendet — der Fallback sah aus wie eine Lösung, war aber
+// funktionslos, sobald das Repo nicht zufällig neben *-app-Ordnern lag.
 async function resolveCrossAppAliases() {
   try {
     const { crossAppAliases } = await import("@vos/cross-app-aliases");
     return crossAppAliases();
   } catch {
     return {
-      "@fuel":    path.resolve(FUEL, "src/client"),
-      "@relax":   path.resolve(RELAX, "src"),
-      "@habits":  path.resolve(HABITS, "src"),
-      "@fitness/constants":  path.resolve(FITNESS, "src/constants"),
-      "@fitness/components": path.resolve(FITNESS, "src/components"),
-      "@fitness-db": path.resolve(FITNESS, "src/lib/db"),
+      "@fitness-db": resolveSibling(["../fitness-app/src/lib/db", "../fitness-dev/src/lib/db"], "@fitness-db"),
+      "@fitness/constants": resolveSibling(["../fitness-app/src/constants", "../fitness-dev/src/constants"], "@fitness/constants"),
+      "@fitness/components": resolveSibling(["../fitness-app/src/components", "../fitness-dev/src/components"], "@fitness/components"),
+      "@fuel": resolveSibling(["../fuel-app/src/client", "../fuel-dev/src/client"], "@fuel"),
+      "@relax": resolveSibling(["../relax-app/src", "../relax-dev/src"], "@relax"),
+      "@habits": resolveSibling(["../habit-app/src", "../habits-dev/src"], "@habits"),
     };
   }
 }
+
+const FITNESS = resolveSibling(["../fitness-app", "../fitness-dev"], "FITNESS");
+const FUEL = resolveSibling(["../fuel-app", "../fuel-dev"], "FUEL");
+const RELAX = resolveSibling(["../relax-app", "../relax-dev"], "RELAX");
 
 module.exports = defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -107,7 +125,10 @@ module.exports = defineConfig(async ({ mode }) => {
       preserveSymlinks: true,
       alias: {
         ...crossAppAliases,
-
+        // Lokale Selbstreferenzen zuletzt — überschreiben bewusst etwaige
+        // @journal/@journal-db-Einträge aus @vos/cross-app-aliases (die
+        // wären für journal-dev selbst sowieso identisch, aber explizit
+        // ist sicherer als sich auf Zufallsgleichheit zu verlassen).
         "@journal-db": path.resolve(__dirname, "./src/db/index.js"),
         "@db":      path.resolve(__dirname, "./src/db/index.js"),
         "@utils":   path.resolve(__dirname, "./src/lib/db/core.js"),

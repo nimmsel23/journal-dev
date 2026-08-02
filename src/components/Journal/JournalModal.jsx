@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { X, Target, Dumbbell, Book, Brain, CheckCircle2, UtensilsCrossed, NotebookPen, MoonStar } from "lucide-react";
 import { EFFORT_LABELS, TYPE_COLORS } from "./journalUtils";
 import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
@@ -64,7 +65,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
     ? `${selectedEntry.totalMinutes || 0} min Entspannung`
     : 'Notiz';
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedEntry(null)} />
 
@@ -235,6 +236,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

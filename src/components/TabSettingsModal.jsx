@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 
 // Eigene Fallback-Kette: das Modal kann außerhalb des JournalTimeline-Scopes
 // gerendert werden, wo die --j-*-Tokens (noch) nicht gesetzt sind.
@@ -12,7 +13,7 @@ const TOKENS = {
 }
 
 export default function TabSettingsModal({ title, onClose, children }) {
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 animate-in fade-in duration-200" style={TOKENS}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative w-full max-w-sm bg-[var(--j-card)] border border-[var(--j-line)] rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200">
@@ -29,6 +30,7 @@ export default function TabSettingsModal({ title, onClose, children }) {
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

@@ -6,6 +6,10 @@ import { NotebookPen } from "lucide-react";
 import JournalTimeline from "../components/Journal/JournalTimeline.jsx";
 
 export default function JournalVosView(props) {
+  if (props.embedded) {
+    return <JournalTimeline {...props} showCrossover />;
+  }
+
   return (
     <section className="space-y-6">
       <header className="flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/5 px-6 py-4">

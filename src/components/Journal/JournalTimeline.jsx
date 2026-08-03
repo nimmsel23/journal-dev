@@ -53,7 +53,7 @@ const TOKENS = {
   "--j-accent": "var(--accent, #4a9eff)",
 };
 
-export default function JournalTimeline({ onOpenSession, user: userProp, showCrossover = false }) {
+export default function JournalTimeline({ onOpenSession, user: userProp, showCrossover = false, date: controlledDate = null, onDateChange = null }) {
   // Host-Apps (vitalos JournalApp/RelaxApp, fuel) übergeben kein user-Prop —
   // dann selbst auf Auth subscriben, sonst bleibt die Timeline hinter dem
   // user?.uid-Guard dauerhaft leer. Prop gewinnt, Fallback nur ohne Prop.
@@ -64,7 +64,7 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
   // sichtbar machen statt still leere Abschnitte zu rendern.
   const [loadWarnings, setLoadWarnings] = useState([]);
 
-  const [date, setDate] = useState(localToday());
+  const [date, setDateState] = useState(controlledDate || localToday());
   const [text, setText] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -88,6 +88,15 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
       .catch(() => {});
     return () => { cancelled = true; };
   }, [user?.uid]);
+
+  useEffect(() => {
+    if (controlledDate && controlledDate !== date) setDateState(controlledDate);
+  }, [controlledDate, date]);
+
+  function setDate(nextDate) {
+    setDateState(nextDate);
+    onDateChange?.(nextDate);
+  }
   const [journalSettings, setJournalSettings] = useState(() => ({
     colorActivities: localStorage.getItem('journal_colorActivities') === 'true',
     telegramEnabled: false,

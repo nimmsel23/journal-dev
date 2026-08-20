@@ -2,6 +2,12 @@
 // Imports the entire fitness-dev database layer (auth, habits, general journal, sessions)
 export * from "@fitness-db/index.firestore.js";
 
+// Der modulare fitness-app Firestore-Barrel exportiert aktuell keine
+// Habit-CRUD-Helpers mehr. journal-dev nutzt getHabits weiterhin fuer die
+// Timeline-Anreicherung und zieht den kompatiblen Export daher aus dem
+// VitalOS-SSOT nach.
+export { getHabits } from "../../../src/cloud/db.firestore.js";
+
 // Local nutrition layer (Firestore access to Fuel's nutrition logs)
 export {
   getMealsHistory,

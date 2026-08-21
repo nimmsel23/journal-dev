@@ -5,7 +5,7 @@
  */
 
 import {
-  collection, query, orderBy, limit, getDocs, getDoc, doc
+  collection, query, orderBy, limit, getDocs, getDoc, doc, setDoc, serverTimestamp
 } from "firebase/firestore";
 import { db } from "../../firebase.js";
 import { getUid } from "../core.js";
@@ -35,6 +35,14 @@ export async function getMealsHistory(limitCount = 30) {
 export async function getNutritionLog(date) {
   const snap = await getDoc(doc(db, "nutrition", getUid(), "logs", date));
   return snap.exists() ? snap.data() : { date, meals: [], water_ml: 0 };
+}
+
+export async function saveNutritionLog(date, data) {
+  await setDoc(
+    doc(db, "nutrition", getUid(), "logs", date),
+    { ...data, updated_at: serverTimestamp() },
+    { merge: true },
+  );
 }
 
 // Nutrition Journal (Freitext-Notizen neben Meal-Logs)

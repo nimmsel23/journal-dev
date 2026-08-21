@@ -41,6 +41,12 @@ function writeTimelineCache(uid, timeline) {
 import { ICON_COMPONENTS_MAP } from "@habits/views/Habits/utils";
 import HabitJournalModal from "@habits/views/Habits/HabitJournalModal";
 
+const CROSSOVER_URLS = {
+  fitness: "https://fitness-aos.web.app",
+  fuel: "https://fuel-vos.web.app",
+  relax: "https://vitalos.web.app",
+};
+
 // Theme-Kontrakt: Im fitness-Kontext liefern dessen Themes die --*-Tokens,
 // standalone/fuel greifen die ruhigen DayOne-artigen Fallbacks.
 const TOKENS = {
@@ -96,6 +102,19 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
   function setDate(nextDate) {
     setDateState(nextDate);
     onDateChange?.(nextDate);
+  }
+
+  function navigateCrossover(target, subTab = null) {
+    if (target === "fitness" && onOpenSession) {
+      onOpenSession(date);
+      return;
+    }
+    if (onNavigateShell) {
+      onNavigateShell(target, subTab);
+      return;
+    }
+    const url = CROSSOVER_URLS[target];
+    if (url && typeof window !== "undefined") window.location.href = url;
   }
   const [journalSettings, setJournalSettings] = useState(() => ({
     colorActivities: localStorage.getItem('journal_colorActivities') === 'true',
@@ -519,15 +538,9 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
 
         {showCrossover && (
           <CrossoverButtons
-            onLogFitness={() => {
-              if (onOpenSession) {
-                onOpenSession(date)
-                return
-              }
-              onNavigateShell?.('fitness', 'session')
-            }}
-            onLogFuel={() => onNavigateShell?.('fuel', 'log')}
-            onLogRelax={() => onNavigateShell?.('relax', 'session')}
+            onLogFitness={() => navigateCrossover('fitness', 'session')}
+            onLogFuel={() => navigateCrossover('fuel', 'log')}
+            onLogRelax={() => navigateCrossover('relax', 'session')}
           />
         )}
 

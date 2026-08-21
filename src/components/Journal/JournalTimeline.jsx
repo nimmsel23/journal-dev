@@ -53,7 +53,7 @@ const TOKENS = {
   "--j-accent": "var(--accent, #4a9eff)",
 };
 
-export default function JournalTimeline({ onOpenSession, user: userProp, showCrossover = false, date: controlledDate = null, onDateChange = null }) {
+export default function JournalTimeline({ onOpenSession, onNavigateShell, user: userProp, showCrossover = false, date: controlledDate = null, onDateChange = null }) {
   // Host-Apps (vitalos JournalApp/RelaxApp, fuel) übergeben kein user-Prop —
   // dann selbst auf Auth subscriben, sonst bleibt die Timeline hinter dem
   // user?.uid-Guard dauerhaft leer. Prop gewinnt, Fallback nur ohne Prop.
@@ -519,9 +519,15 @@ export default function JournalTimeline({ onOpenSession, user: userProp, showCro
 
         {showCrossover && (
           <CrossoverButtons
-            onLogFitness={() => showToast("Fitness Loggen")}
-            onLogFuel={() => showToast("Fuel Loggen")}
-            onLogRelax={() => showToast("Relax Loggen")}
+            onLogFitness={() => {
+              if (onOpenSession) {
+                onOpenSession(date)
+                return
+              }
+              onNavigateShell?.('fitness', 'session')
+            }}
+            onLogFuel={() => onNavigateShell?.('fuel', 'log')}
+            onLogRelax={() => onNavigateShell?.('relax', 'session')}
           />
         )}
 

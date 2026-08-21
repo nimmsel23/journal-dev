@@ -38,11 +38,46 @@ export async function getHabits(days = 28) {
   });
 }
 
+export async function getHabitRecordsForDate(date = localToday()) {
+  const recordsQuery = query(
+    collection(db, "fitness", getUid(), "habitRecords"),
+    where("date", "==", date),
+    where("completion", "==", "DONE"),
+  );
+  const recordsSnap = await getDocs(recordsQuery);
+  return recordsSnap.docs.map((docSnap) => docSnap.data().habitId);
+}
+
+export async function recordHabit(uuid, date = localToday()) {
+  const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
+  const ref = doc(db, "fitness", getUid(), "habitRecords", `${uuid}_${date}`);
+  await setDoc(ref, {
+    habitId: uuid,
+    date,
+    completion: "DONE",
+    recorded_at: serverTimestamp(),
+  });
+  return { ok: true };
+}
+
+export async function unrecordHabit(uuid, date = localToday()) {
+  const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
+  const ref = doc(db, "fitness", getUid(), "habitRecords", `${uuid}_${date}`);
+  await setDoc(ref, {
+    habitId: uuid,
+    date,
+    completion: "MISSED",
+    recorded_at: serverTimestamp(),
+  }, { merge: true });
+  return { ok: true };
+}
+
 // Local nutrition layer (Firestore access to Fuel's nutrition logs)
 export {
   getMealsHistory,
   getNutritionLog,
   getNutritionNotesHistory,
+  saveNutritionLog,
 } from "../lib/db/firestore/nutrition.js";
 
 // Supplements — kein eigenes journal-dev-Modul dafür, direkt aus fuel-dev

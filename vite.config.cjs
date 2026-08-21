@@ -125,6 +125,7 @@ module.exports = defineConfig(async ({ mode }) => {
       preserveSymlinks: true,
       alias: {
         ...crossAppAliases,
+        "@firebase-config": path.resolve(__dirname, "../firebase.config.js"),
         // Lokale Selbstreferenzen zuletzt — überschreiben bewusst etwaige
         // @journal/@journal-db-Einträge aus @vos/cross-app-aliases (die
         // wären für journal-dev selbst sowieso identisch, aber explizit

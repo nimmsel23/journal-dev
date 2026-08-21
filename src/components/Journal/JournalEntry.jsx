@@ -85,7 +85,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
               icon={Pill}
               color={TYPE_COLORS.supplement}
               label="Supplements"
-              sub={`${e.intakes?.length || 0} Intake${e.intakes?.length === 1 ? '' : 's'}`}
+              sub={`${e.intakes?.length || 0} Eintrag${e.intakes?.length === 1 ? '' : 'e'}`}
             />
           ) : isHabitCompletion ? (
             <TypeBadge icon={CheckCircle2} color={ACCENT} label={e.habitName} sub="Habit abgeschlossen" />
@@ -154,12 +154,17 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
 
         {/* Supplements: Intake-Liste */}
         {isSupplement && e.intakes?.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {e.intakes.map((intake, idx) => (
-              <span key={idx} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-purple-500/8 text-purple-400 border border-purple-500/15">
+          <div className="mb-2.5 flex flex-wrap gap-1.5">
+            {e.intakes.slice(0, 4).map((intake, idx) => (
+              <span key={idx} className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-purple-500/6 text-purple-300 border border-purple-500/10">
                 {intake.supplement_id}{intake.dose ? ` · ${intake.dose}` : ''}
               </span>
             ))}
+            {e.intakes.length > 4 && (
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-[var(--j-bg2)] text-[var(--j-dim)] border border-[var(--j-line)]">
+                +{e.intakes.length - 4} weitere
+              </span>
+            )}
           </div>
         )}
 

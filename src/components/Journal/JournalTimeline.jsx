@@ -27,6 +27,8 @@ import CrossoverButtons from "../../import-crossover/CrossoverButtons";
 // Timeline-Cache pro User: zeigt beim (Neu-)Laden sofort den letzten bekannten
 // Stand an, während Firestore im Hintergrund neu lädt (optimistic paint).
 const TIMELINE_CACHE_PREFIX = "journal:timeline:";
+const INITIAL_DAY_WINDOW = 10;
+const LOAD_MORE_STEP = 10;
 function readTimelineCache(uid) {
   try {
     const raw = localStorage.getItem(TIMELINE_CACHE_PREFIX + uid);
@@ -35,6 +37,14 @@ function readTimelineCache(uid) {
 }
 function writeTimelineCache(uid, timeline) {
   try { localStorage.setItem(TIMELINE_CACHE_PREFIX + uid, JSON.stringify(timeline)); } catch {}
+}
+function mergeTimelineGroups(primary = [], secondary = []) {
+  const grouped = new Map();
+  [...secondary, ...primary].forEach((group) => {
+    if (!group?.date) return;
+    grouped.set(group.date, group);
+  });
+  return [...grouped.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
 // Via @habits-Alias, NICHT relativ über den views/Habits-Symlink: dessen
 // Ziel ist ein absoluter /home/alpha-Pfad und im CI-Runner tot.
@@ -80,7 +90,7 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
   const [toast, setToast] = useState("");
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
-  const [limitCount, setLimitCount] = useState(30);
+  const [dayWindow, setDayWindow] = useState(INITIAL_DAY_WINDOW);
   const [showSettings, setShowSettings] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   // Medien (Fotos) nur mit Firebase-Auth-User — fitness/journal haben auch
@@ -178,7 +188,7 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
     setIsJournalSaving(true);
     try {
       await db.saveHabitJournal?.(selectedHabitForJournal.uuid, date, textToSave);
-      setLimitCount(p => p + 1);
+      setDayWindow(p => p + 1);
     } finally {
       setIsJournalSaving(false);
     }
@@ -206,14 +216,14 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
           return [];
         });
       const [regularHistory, habitHistory, sessions, mealLogs, allHabits, nutritionJournalHistory, supplementLogs, relaxSessions] = await Promise.all([
-        grab("Journal", db.getJournalHistory(limitCount)),
-        grab("Habit-Journale", db.getAllHabitJournalsHistory?.(limitCount)),
-        grab("Workouts", db.getSessionHistory?.(limitCount)),
-        grab("Fuel-Meals", db.getMealsHistory?.(limitCount)),
+        grab("Journal", db.getJournalHistory(dayWindow)),
+        grab("Habit-Journale", db.getAllHabitJournalsHistory?.(dayWindow)),
+        grab("Workouts", db.getSessionHistory?.(dayWindow)),
+        grab("Fuel-Meals", db.getMealsHistory?.(dayWindow)),
         grab("Habits", db.getHabits?.()),
-        grab("Ernährungs-Notizen", db.getNutritionNotesHistory?.(limitCount)),
-        grab("Supplements", db.getSupplementsHistory?.(limitCount)),
-        grab("Relax", db.getRelaxSessionHistory?.(limitCount)),
+        grab("Ernährungs-Notizen", db.getNutritionNotesHistory?.(dayWindow)),
+        grab("Supplements", db.getSupplementsHistory?.(dayWindow)),
+        grab("Relax", db.getRelaxSessionHistory?.(dayWindow)),
       ]);
       setLoadWarnings([...new Set(failed)]);
 
@@ -289,7 +299,7 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
       });
 
       const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - limitCount);
+      cutoff.setDate(cutoff.getDate() - dayWindow);
       const cutoffStr = cutoff.toISOString().slice(0, 10);
       allHabits.forEach(habit => {
         (habit.records || []).forEach(record => {
@@ -317,7 +327,7 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
 
       const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
-      const finalTimeline = sortedDates.map(d => ({
+      const freshTimeline = sortedDates.map(d => ({
         date: d,
         entries: grouped[d].sort((a, b) => {
           const timeA = a.time || "";
@@ -326,8 +336,9 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
         }),
       }));
 
+      const cached = readTimelineCache(user.uid) || [];
+      const finalTimeline = mergeTimelineGroups(freshTimeline, cached);
       setTimeline(finalTimeline);
-      writeTimelineCache(user.uid, finalTimeline);
 
       if (date === localToday() && grouped[date]?.filter(e => e.type === 'regular').length === 1 && !text) {
         const todayRegular = grouped[date].find(e => e.type === 'regular');
@@ -338,7 +349,11 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
       }
     }
     load().catch(() => setTimeline([]));
-  }, [limitCount, date, user?.uid]);
+  }, [dayWindow, date, user?.uid]);
+
+  useEffect(() => {
+    if (user?.uid && timeline.length > 0) writeTimelineCache(user.uid, timeline);
+  }, [timeline, user?.uid]);
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(""), 2000); }
 
@@ -416,7 +431,7 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
               ? { ...group, entries: group.entries.map(e => e.id === realId ? { ...e, attachments: uploaded } : e) }
               : group));
           }
-          setLimitCount(p => p + 1);
+          setDayWindow(p => p + 1);
           setStartDate("");
           setEndDate("");
           showToast(uploadFailed ? "Upload fehlgeschlagen" : "Gespeichert ✓");
@@ -627,10 +642,10 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
           {timeline.length > 0 && (
             <div className="pt-8 flex justify-center">
               <button
-                onClick={() => setLimitCount(p => p + 30)}
+                onClick={() => setDayWindow(p => p + LOAD_MORE_STEP)}
                 className="px-8 py-3 rounded-2xl bg-[var(--j-bg2)] border border-[var(--j-line)] text-[10px] font-black uppercase tracking-widest text-[var(--j-dim)] hover:text-[var(--j-ink)] hover:border-[var(--j-accent)]/30 transition-all"
               >
-                Ältere Einträge laden ↓
+                Ältere laden ↓
               </button>
             </div>
           )}

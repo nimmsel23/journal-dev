@@ -38,6 +38,30 @@ export async function getHabits(days = 28) {
   });
 }
 
+export async function getSessionHistory(days = 28) {
+  const today = localToday();
+  const startDate = new Date(`${today}T12:00:00`);
+  startDate.setDate(startDate.getDate() - (days - 1));
+  const start = startDate.toISOString().slice(0, 10);
+
+  const sessionsQuery = query(
+    collection(db, "fitness", getUid(), "sessions"),
+    where("date", ">=", start),
+    where("date", "<=", today),
+    orderBy("date", "desc"),
+  );
+  const sessionsSnap = await getDocs(sessionsQuery);
+  return sessionsSnap.docs.map((docSnap) => {
+    const data = docSnap.data() || {};
+    const suffix = docSnap.id.includes("__") ? docSnap.id.split("__")[1] : null;
+    return {
+      id: suffix,
+      ...data,
+      exercises: Array.isArray(data.exercises) ? data.exercises : [],
+    };
+  });
+}
+
 export async function getHabitRecordsForDate(date = localToday()) {
   const recordsQuery = query(
     collection(db, "fitness", getUid(), "habitRecords"),

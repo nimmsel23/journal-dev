@@ -14,7 +14,7 @@
 import { useState, useEffect, useMemo } from "react";
 import * as db from "@journal-db";
 import { Book, PenLine } from "lucide-react";
-import { localToday, formatRelativeDate, sessionInfo, getDailyPrompt } from "./journalUtils";
+import { localToday, formatRelativeDate, sessionInfo, getDailyPrompt, getCalendarMeta } from "./journalUtils";
 import { mediaAvailable, uploadJournalMedia, attachToEntry, removeAttachment } from "./journalMedia";
 import JournalSettings from "./JournalSettings";
 import JournalHeader from "./JournalHeader";
@@ -616,17 +616,41 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
 
         <div className="space-y-12 mt-12">
           {timeline.length > 0 ? (
-            timeline.map((group) => {
+            timeline.map((group, index) => {
               const habitJournalIds = new Set(group.entries.filter(e => e.type === 'habit').map(e => e.habitId));
               const standaloneCompletions = group.entries.filter(e => e.type === 'habit-completion' && !habitJournalIds.has(e.habitId));
               const mainEntries = group.entries.filter(e => e.type !== 'habit-completion');
               const supplements = group.supplements || [];
+              const meta = getCalendarMeta(group.date);
+              const prevMeta = index > 0 ? getCalendarMeta(timeline[index - 1].date) : null;
+              const showMonthBreak = !prevMeta || prevMeta.monthKey !== meta.monthKey;
               return (
                 <div key={group.date} id={`journal-day-${group.date}`} className="relative scroll-mt-4">
+                  {showMonthBreak && (
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="h-px flex-1 bg-[var(--j-line)]" />
+                      <div className="px-3 py-1 rounded-full border border-[var(--j-line)] bg-[var(--j-bg2)] text-[10px] font-black uppercase tracking-[0.22em] text-[var(--j-dim)]">
+                        {meta.monthLabel}
+                      </div>
+                      <div className="h-px flex-1 bg-[var(--j-line)]" />
+                    </div>
+                  )}
                   <div className="sticky top-0 z-10 py-2 bg-[var(--j-bg)]/90 backdrop-blur-md -mx-2 px-2 border-b border-[var(--j-line)]">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--j-accent)]">
-                      {formatRelativeDate(group.date)}
-                    </h3>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-baseline gap-3 min-w-0">
+                        <div className="text-2xl font-black tabular-nums text-[var(--j-ink)] leading-none">
+                          {meta.dayNumber}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--j-accent)]">
+                            {formatRelativeDate(group.date)}
+                          </h3>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--j-dim)]">
+                            {meta.weekdayShort} · {group.date} · KW {meta.isoWeek}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     {supplements.length > 0 && (
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-[var(--j-dim)]">
                         <span className="uppercase tracking-[0.18em] opacity-70">Supplements</span>

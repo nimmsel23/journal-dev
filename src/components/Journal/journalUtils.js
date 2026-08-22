@@ -45,6 +45,26 @@ export function formatRelativeDate(dateStr) {
   });
 }
 
+export function getCalendarMeta(dateStr) {
+  const date = new Date(`${dateStr}T12:00:00`);
+  const weekdayShort = date.toLocaleDateString("de-DE", { weekday: "short" });
+  const dayNumber = date.toLocaleDateString("de-DE", { day: "2-digit" });
+  const year = date.getFullYear();
+
+  const weekDate = new Date(date);
+  weekDate.setDate(date.getDate() + 4 - ((date.getDay() + 6) % 7));
+  const yearStart = new Date(weekDate.getFullYear(), 0, 1);
+  const weekNumber = Math.ceil((((weekDate - yearStart) / 86400000) + 1) / 7);
+
+  return {
+    weekdayShort,
+    dayNumber,
+    isoWeek: weekNumber,
+    monthKey: `${year}-${String(date.getMonth() + 1).padStart(2, "0")}`,
+    monthLabel: date.toLocaleDateString("de-DE", { month: "long", year: "numeric" }),
+  };
+}
+
 export function sessionInfo(session) {
   const hasExercises = Array.isArray(session.exercises) && session.exercises.length > 0;
   const isCardio = !hasExercises && (session.sessionMode === 'cardio' || !!session.activity);

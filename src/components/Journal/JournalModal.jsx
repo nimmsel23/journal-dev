@@ -1,11 +1,11 @@
 import { createPortal } from "react-dom";
-import { X, Target, Dumbbell, Book, Brain, CheckCircle2, UtensilsCrossed, NotebookPen, MoonStar, Pill } from "lucide-react";
+import { X, Target, Dumbbell, Book, Brain, CheckCircle2, UtensilsCrossed, NotebookPen, MoonStar, Pill, Pencil, Trash2, CalendarRange } from "lucide-react";
 import { EFFORT_LABELS, TYPE_COLORS } from "./journalUtils";
 import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
 const ACCENT = "var(--j-accent)";
 
-export default function JournalModal({ selectedEntry, setSelectedEntry, habits, formatRelativeDate, colorActivities, mediaEnabled }) {
+export default function JournalModal({ selectedEntry, setSelectedEntry, habits, formatRelativeDate, colorActivities, mediaEnabled, onEditEntry, onDeleteEntry }) {
   if (!selectedEntry) return null;
 
   const isHabit = selectedEntry.type === 'habit';
@@ -69,6 +69,9 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
     : isRelax
     ? `${selectedEntry.totalMinutes || 0} min Entspannung`
     : 'Notiz';
+
+  const isEditableJournal = selectedEntry.type === "regular";
+  const hasDateRange = selectedEntry.startDate || selectedEntry.endDate;
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
@@ -203,6 +206,17 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
             </p>
           )}
 
+          {hasDateRange && (
+            <div className="flex items-center gap-2 text-[11px] text-[var(--j-dim)] uppercase tracking-[0.18em]">
+              <CalendarRange size={14} />
+              <span>
+                {selectedEntry.startDate || "?"}
+                {" → "}
+                {selectedEntry.endDate || selectedEntry.startDate || "?"}
+              </span>
+            </div>
+          )}
+
           {/* Foto-Anhänge: großes Grid, Klick öffnet Original im neuen Tab */}
           {mediaEnabled && selectedEntry.attachments?.length > 0 && (
             <div>
@@ -251,7 +265,29 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-[var(--j-line)] bg-[var(--j-bg2)]/50 flex justify-end">
+        <div className="p-6 border-t border-[var(--j-line)] bg-[var(--j-bg2)]/50 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            {isEditableJournal && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onEditEntry?.(selectedEntry)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[var(--j-line)] text-[var(--j-ink)] text-[10px] font-black uppercase tracking-widest hover:border-[var(--j-accent)] hover:text-[var(--j-accent)] transition-all"
+                >
+                  <Pencil size={14} />
+                  Bearbeiten
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteEntry?.(selectedEntry)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-red-500/20 text-red-300 text-[10px] font-black uppercase tracking-widest hover:border-red-400/40 hover:text-red-200 transition-all"
+                >
+                  <Trash2 size={14} />
+                  Löschen
+                </button>
+              </>
+            )}
+          </div>
           <button onClick={() => setSelectedEntry(null)} className="px-8 py-2.5 rounded-full bg-[var(--j-bg2)] border border-[var(--j-line)] text-[var(--j-ink)] text-[10px] font-black uppercase tracking-widest hover:border-[var(--j-accent)] transition-all">
             Schließen
           </button>

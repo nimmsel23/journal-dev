@@ -475,11 +475,35 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
   }
 
   const handleEdit = (entry) => {
+    setSelectedEntry(null);
     setDate(entry.date);
     setEditingEntry(entry);
     setText(entry.text);
+    setStartDate(entry.startDate || "");
+    setEndDate(entry.endDate || "");
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  async function handleDeleteEntry(entry) {
+    if (!entry?.id || entry.type !== "regular") return;
+    if (typeof window !== "undefined" && !window.confirm("Diesen Journal-Eintrag wirklich löschen?")) return;
+    try {
+      await db.deleteJournal?.(entry.id);
+      setSelectedEntry(null);
+      setEditingEntry(prev => (prev?.id === entry.id ? null : prev));
+      setTimeline(prev => prev
+        .map(group => group.date === entry.date
+          ? { ...group, entries: group.entries.filter(e => e.id !== entry.id) }
+          : group)
+        .filter(group => group.entries.length > 0 || (group.supplements || []).length > 0));
+      setText(prev => (editingEntry?.id === entry.id ? "" : prev));
+      setStartDate(prev => (editingEntry?.id === entry.id ? "" : prev));
+      setEndDate(prev => (editingEntry?.id === entry.id ? "" : prev));
+      showToast("Gelöscht ✓");
+    } catch {
+      showToast("Löschen fehlgeschlagen");
+    }
+  }
 
   return (
     <div className="pb-32 max-w-3xl mx-auto px-2" style={TOKENS}>
@@ -691,6 +715,8 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
         formatRelativeDate={formatRelativeDate}
         colorActivities={colorActivities}
         mediaEnabled={mediaEnabled}
+        onEditEntry={handleEdit}
+        onDeleteEntry={handleDeleteEntry}
       />
 
       {journalModalOpen && (

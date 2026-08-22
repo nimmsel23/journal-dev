@@ -14,7 +14,7 @@
 import { localToday } from "./core.js";
 import { db, auth } from "../firebase.js";
 import {
-  collection, doc, addDoc, setDoc, getDocs,
+  collection, doc, addDoc, setDoc, getDocs, deleteDoc,
   query, where, orderBy, limit as fbLimit, serverTimestamp,
 } from "firebase/firestore";
 
@@ -118,10 +118,16 @@ export async function updateJournal(id, text, opts = {}) {
   const patch = { text: content, updated_at: serverTimestamp() };
   // Alt-Doc (Doc-ID = Datum): date-Feld nachziehen, damit where("date")-Queries es finden
   if (DATE_ID.test(id)) patch.date = id;
-  if (startDate) patch.startDate = startDate;
-  if (endDate) patch.endDate = endDate;
+  patch.startDate = startDate || null;
+  patch.endDate = endDate || null;
   await setDoc(doc(journalCol(userId), id), patch, { merge: true });
   return { ok: true, id, text: content, startDate, endDate };
+}
+
+export async function deleteJournal(id) {
+  const userId = await uid();
+  await deleteDoc(doc(journalCol(userId), id));
+  return { ok: true, id };
 }
 
 // ── HabitJournal Timeline-Reads ───────────────────────────────────────────────
@@ -155,4 +161,3 @@ export async function getAllHabitJournalsForDate(date) {
     return [];
   }
 }
-

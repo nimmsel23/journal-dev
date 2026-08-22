@@ -29,6 +29,12 @@ export default function JournalForm({ text, setText, onSubmit, saving, editingEn
   }, [editingEntry]);
 
   useEffect(() => {
+    setShowDateRange(!!editingEntry && !!(editingEntry.startDate || editingEntry.endDate));
+    setStartDate?.(editingEntry?.startDate || "");
+    setEndDate?.(editingEntry?.endDate || "");
+  }, [editingEntry, setStartDate, setEndDate]);
+
+  useEffect(() => {
     if (wasSaving.current && !saving && !text) {
       setExpanded(false);
       clearPendingMedia();
@@ -126,7 +132,14 @@ export default function JournalForm({ text, setText, onSubmit, saving, editingEn
       <div className="mt-4 border-t border-[var(--j-line)] pt-4">
         <button
           type="button"
-          onClick={() => setShowDateRange(!showDateRange)}
+          onClick={() => {
+            const next = !showDateRange;
+            setShowDateRange(next);
+            if (!next) {
+              setStartDate?.("");
+              setEndDate?.("");
+            }
+          }}
           className="text-xs font-bold uppercase tracking-widest text-[var(--j-dim)] hover:text-[var(--j-accent)] transition-all flex items-center gap-2 mb-3"
         >
           <Calendar size={14} />

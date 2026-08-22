@@ -4,6 +4,7 @@ import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 
 import { db } from "../lib/firebase.js";
 import { getUid, localToday } from "../lib/db/core.js";
+export { deleteJournal } from "../lib/db/journal.js";
 
 export * from "@fitness-db/index.firestore.js";
 

@@ -474,18 +474,8 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
         calendarOpen={showCalendar}
       />
 
-      {/* Auth-Status — kein stiller Zustand: eingeloggt (wer) oder Login-Aufforderung */}
       <div className="mb-6">
-        {user ? (
-          <div className="flex items-center justify-between text-[11px] text-[var(--j-dim)] px-1">
-            <span>{user.email || user.displayName}</span>
-            {db.signOut && (
-              <button onClick={() => db.signOut()} className="underline hover:text-[var(--j-accent)]">
-                Abmelden
-              </button>
-            )}
-          </div>
-        ) : (
+        {!user && (
           <div className="rounded-2xl border border-[var(--j-line)] bg-[var(--j-card)] p-4 flex items-center justify-between gap-3">
             <span className="text-sm text-[var(--j-dim)]">Nicht angemeldet — Journal-Daten sind erst nach Login sichtbar.</span>
             {db.signIn && (

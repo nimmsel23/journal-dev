@@ -42,7 +42,13 @@ function mergeTimelineGroups(primary = [], secondary = []) {
   const grouped = new Map();
   [...secondary, ...primary].forEach((group) => {
     if (!group?.date) return;
-    grouped.set(group.date, group);
+    const previous = grouped.get(group.date);
+    grouped.set(group.date, {
+      ...previous,
+      ...group,
+      entries: (group.entries || []).filter((entry) => entry.type !== "supplement"),
+      supplements: group.supplements || previous?.supplements || [],
+    });
   });
   return [...grouped.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
@@ -285,17 +291,11 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
         });
       });
 
+      const supplementsByDate = {};
       supplementLogs.forEach(log => {
         const intakes = log.intakes || [];
         if (!intakes.length) return;
-        combined.push({
-          id: 'supplements-' + log.date,
-          date: log.date,
-          type: 'supplement',
-          text: '',
-          intakes,
-          time: `${log.date}T09:00:00`,
-        });
+        supplementsByDate[log.date] = intakes;
       });
 
       const cutoff = new Date();
@@ -325,15 +325,19 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
         grouped[d].push(entry);
       });
 
-      const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+      const sortedDates = [...new Set([
+        ...Object.keys(grouped),
+        ...Object.keys(supplementsByDate),
+      ])].sort((a, b) => b.localeCompare(a));
 
       const freshTimeline = sortedDates.map(d => ({
         date: d,
-        entries: grouped[d].sort((a, b) => {
+        entries: (grouped[d] || []).sort((a, b) => {
           const timeA = a.time || "";
           const timeB = b.time || "";
           return timeB.localeCompare(timeA);
         }),
+        supplements: supplementsByDate[d] || [],
       }));
 
       const cached = readTimelineCache(user.uid) || [];
@@ -592,12 +596,29 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
               const habitJournalIds = new Set(group.entries.filter(e => e.type === 'habit').map(e => e.habitId));
               const standaloneCompletions = group.entries.filter(e => e.type === 'habit-completion' && !habitJournalIds.has(e.habitId));
               const mainEntries = group.entries.filter(e => e.type !== 'habit-completion');
+              const supplements = group.supplements || [];
               return (
                 <div key={group.date} id={`journal-day-${group.date}`} className="relative scroll-mt-4">
                   <div className="sticky top-0 z-10 py-2 bg-[var(--j-bg)]/90 backdrop-blur-md -mx-2 px-2 border-b border-[var(--j-line)]">
                     <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--j-accent)]">
                       {formatRelativeDate(group.date)}
                     </h3>
+                    {supplements.length > 0 && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-[var(--j-dim)]">
+                        <span className="uppercase tracking-[0.18em] opacity-70">Supplements</span>
+                        {supplements.slice(0, 3).map((intake, idx) => (
+                          <span
+                            key={`${group.date}-supplement-${idx}`}
+                            className="px-2 py-0.5 rounded-md border border-[var(--j-line)] bg-[var(--j-bg2)]"
+                          >
+                            {intake.supplement_id}{intake.dose ? ` · ${intake.dose}` : ""}
+                          </span>
+                        ))}
+                        {supplements.length > 3 && (
+                          <span className="opacity-70">+{supplements.length - 3}</span>
+                        )}
+                      </div>
+                    )}
                     {standaloneCompletions.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-1.5">
                         {standaloneCompletions.map(e => {

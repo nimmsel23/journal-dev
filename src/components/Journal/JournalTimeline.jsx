@@ -614,74 +614,69 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
           </div>
         )}
 
-        <div className="relative mt-12">
+        <div className="space-y-12 mt-12">
           {timeline.length > 0 ? (
-            <>
-              <div className="absolute left-6 sm:left-8 top-0 bottom-0 w-px bg-[var(--j-line)]" aria-hidden="true" />
-              <div className="space-y-12">
-                {timeline.map((group) => {
-                  const habitJournalIds = new Set(group.entries.filter(e => e.type === 'habit').map(e => e.habitId));
-                  const standaloneCompletions = group.entries.filter(e => e.type === 'habit-completion' && !habitJournalIds.has(e.habitId));
-                  const mainEntries = group.entries.filter(e => e.type !== 'habit-completion');
-                  const supplements = group.supplements || [];
-                  return (
-                    <div key={group.date} id={`journal-day-${group.date}`} className="relative scroll-mt-4">
-                      <div className="sticky top-0 z-10 py-2 bg-[var(--j-bg)]/90 backdrop-blur-md -mx-2 px-2 border-b border-[var(--j-line)]">
-                        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--j-accent)]">
-                          {formatRelativeDate(group.date)}
-                        </h3>
-                        {supplements.length > 0 && (
-                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-[var(--j-dim)]">
-                            <span className="uppercase tracking-[0.18em] opacity-70">Supplements</span>
-                            {supplements.slice(0, 3).map((intake, idx) => (
-                              <span
-                                key={`${group.date}-supplement-${idx}`}
-                                className="px-2 py-0.5 rounded-md border border-[var(--j-line)] bg-[var(--j-bg2)]"
-                              >
-                                {intake.supplement_id}
-                              </span>
-                            ))}
-                            {supplements.length > 3 && (
-                              <span className="opacity-70">+{supplements.length - 3}</span>
-                            )}
-                          </div>
-                        )}
-                        {standaloneCompletions.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-1.5">
-                            {standaloneCompletions.map(e => {
-                              const Icon = ICON_COMPONENTS_MAP[e.habitIcon] || ICON_COMPONENTS_MAP['Activity'];
-                              return (
-                                <span
-                                  key={e.id}
-                                  title={e.habitName}
-                                  className="w-6 h-6 rounded-full bg-[var(--j-accent)]/10 border border-[var(--j-accent)]/20 flex items-center justify-center text-[var(--j-accent)] cursor-default"
-                                >
-                                  <Icon size={12} />
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                      <div className="relative pl-6 sm:pl-8 space-y-6 mt-4">
-                        {mainEntries.map((e, i) => (
-                          <JournalEntry
-                            key={e.id || i}
-                            e={e}
-                            habits={habits}
-                            setSelectedEntry={setSelectedEntry}
-                            onEdit={handleEdit}
-                            onOpenSession={onOpenSession}
-                            colorActivities={colorActivities}
-                            mediaEnabled={mediaEnabled}
-                          />
+            timeline.map((group) => {
+              const habitJournalIds = new Set(group.entries.filter(e => e.type === 'habit').map(e => e.habitId));
+              const standaloneCompletions = group.entries.filter(e => e.type === 'habit-completion' && !habitJournalIds.has(e.habitId));
+              const mainEntries = group.entries.filter(e => e.type !== 'habit-completion');
+              const supplements = group.supplements || [];
+              return (
+                <div key={group.date} id={`journal-day-${group.date}`} className="relative scroll-mt-4">
+                  <div className="sticky top-0 z-10 py-2 bg-[var(--j-bg)]/90 backdrop-blur-md -mx-2 px-2 border-b border-[var(--j-line)]">
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--j-accent)]">
+                      {formatRelativeDate(group.date)}
+                    </h3>
+                    {supplements.length > 0 && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-[var(--j-dim)]">
+                        <span className="uppercase tracking-[0.18em] opacity-70">Supplements</span>
+                        {supplements.slice(0, 3).map((intake, idx) => (
+                          <span
+                            key={`${group.date}-supplement-${idx}`}
+                            className="px-2 py-0.5 rounded-md border border-[var(--j-line)] bg-[var(--j-bg2)]"
+                          >
+                            {intake.supplement_id}
+                          </span>
                         ))}
+                        {supplements.length > 3 && (
+                          <span className="opacity-70">+{supplements.length - 3}</span>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
+                    )}
+                    {standaloneCompletions.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {standaloneCompletions.map(e => {
+                          const Icon = ICON_COMPONENTS_MAP[e.habitIcon] || ICON_COMPONENTS_MAP['Activity'];
+                          return (
+                            <span
+                              key={e.id}
+                              title={e.habitName}
+                              className="w-6 h-6 rounded-full bg-[var(--j-accent)]/10 border border-[var(--j-accent)]/20 flex items-center justify-center text-[var(--j-accent)] cursor-default"
+                            >
+                              <Icon size={12} />
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative pl-6 sm:pl-8 border-l border-[var(--j-line)] space-y-6 mt-4">
+                    {mainEntries.map((e, i) => (
+                      <JournalEntry
+                        key={e.id || i}
+                        e={e}
+                        habits={habits}
+                        setSelectedEntry={setSelectedEntry}
+                        onEdit={handleEdit}
+                        onOpenSession={onOpenSession}
+                        colorActivities={colorActivities}
+                        mediaEnabled={mediaEnabled}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })
           ) : (
             <div className="p-20 text-center rounded-3xl border border-dashed border-[var(--j-line)] text-[var(--j-dim)]">
               <Book size={48} className="mx-auto mb-4 opacity-40" />

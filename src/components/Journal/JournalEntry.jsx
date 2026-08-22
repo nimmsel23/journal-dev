@@ -85,7 +85,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
               icon={Pill}
               color={TYPE_COLORS.supplement}
               label="Supplements"
-              sub={`${e.intakes?.length || 0} Eintrag${e.intakes?.length === 1 ? '' : 'e'}`}
+              sub="Supplement Journal"
             />
           ) : isHabitCompletion ? (
             <TypeBadge icon={CheckCircle2} color={ACCENT} label={e.habitName} sub="Habit abgeschlossen" />
@@ -152,17 +152,20 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
           </div>
         )}
 
-        {/* Supplements: Intake-Liste */}
+        {/* Supplements: kompakt wie Habit-/Workout-Chips */}
         {isSupplement && e.intakes?.length > 0 && (
-          <div className="mb-2.5 flex flex-wrap gap-1.5">
-            {e.intakes.slice(0, 4).map((intake, idx) => (
-              <span key={idx} className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-purple-500/6 text-purple-300 border border-purple-500/10">
+          <div className="mb-2 flex flex-wrap gap-1.5 items-center">
+            {e.intakes.slice(0, 3).map((intake, idx) => (
+              <span key={idx} className="text-[9px] px-2 py-0.5 rounded-md bg-[var(--j-bg2)] text-[var(--j-dim)] border border-[var(--j-line)]">
                 {intake.supplement_id}{intake.dose ? ` · ${intake.dose}` : ''}
               </span>
             ))}
-            {e.intakes.length > 4 && (
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-[var(--j-bg2)] text-[var(--j-dim)] border border-[var(--j-line)]">
-                +{e.intakes.length - 4} weitere
+            <span className="text-[9px] uppercase tracking-wide text-[var(--j-dim)] opacity-75">
+              {e.intakes.length} Eintrag{e.intakes.length === 1 ? '' : 'e'}
+            </span>
+            {e.intakes.length > 3 && (
+              <span className="text-[9px] px-2 py-0.5 rounded-md bg-[var(--j-bg2)] text-[var(--j-dim)] border border-[var(--j-line)]">
+                +{e.intakes.length - 3}
               </span>
             )}
           </div>

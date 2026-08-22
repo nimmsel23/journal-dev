@@ -145,12 +145,12 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
 
           {isSupplement && selectedEntry.intakes?.length > 0 && (
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-300 mb-3">
-                Supplements
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--j-dim)] mb-3">
+                Supplements · {selectedEntry.intakes.length} Eintrag{selectedEntry.intakes.length === 1 ? '' : 'e'}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {selectedEntry.intakes.map((intake, idx) => (
-                  <span key={idx} className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-purple-500/6 text-purple-300 border border-purple-500/10">
+                  <span key={idx} className="text-[10px] px-2 py-0.5 rounded-md bg-[var(--j-bg2)] text-[var(--j-dim)] border border-[var(--j-line)]">
                     {intake.supplement_id}{intake.dose ? ` · ${intake.dose}` : ''}
                   </span>
                 ))}

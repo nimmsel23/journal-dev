@@ -157,7 +157,7 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
           <div className="mb-2 flex flex-wrap gap-1.5 items-center">
             {e.intakes.slice(0, 3).map((intake, idx) => (
               <span key={idx} className="text-[9px] px-2 py-0.5 rounded-md bg-[var(--j-bg2)] text-[var(--j-dim)] border border-[var(--j-line)]">
-                {intake.supplement_id}{intake.dose ? ` · ${intake.dose}` : ''}
+                {intake.supplement_id}
               </span>
             ))}
             <span className="text-[9px] uppercase tracking-wide text-[var(--j-dim)] opacity-75">

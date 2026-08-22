@@ -638,7 +638,7 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
                                 key={`${group.date}-supplement-${idx}`}
                                 className="px-2 py-0.5 rounded-md border border-[var(--j-line)] bg-[var(--j-bg2)]"
                               >
-                                {intake.supplement_id}{intake.dose ? ` · ${intake.dose}` : ""}
+                                {intake.supplement_id}
                               </span>
                             ))}
                             {supplements.length > 3 && (

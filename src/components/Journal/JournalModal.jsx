@@ -154,7 +154,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
               <div className="flex flex-wrap gap-1.5">
                 {selectedEntry.intakes.map((intake, idx) => (
                   <span key={idx} className="text-[10px] px-2 py-0.5 rounded-md bg-[var(--j-bg2)] text-[var(--j-dim)] border border-[var(--j-line)]">
-                    {intake.supplement_id}{intake.dose ? ` · ${intake.dose}` : ''}
+                    {intake.supplement_id}
                   </span>
                 ))}
               </div>

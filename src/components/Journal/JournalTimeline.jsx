@@ -105,12 +105,12 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
   }
 
   function navigateCrossover(target, subTab = null) {
-    if (target === "fitness" && onOpenSession) {
-      onOpenSession(date);
+    if (onNavigateShell) {
+      onNavigateShell(target, target === "fitness" ? null : subTab);
       return;
     }
-    if (onNavigateShell) {
-      onNavigateShell(target, subTab);
+    if (target === "fitness" && onOpenSession) {
+      onOpenSession(date);
       return;
     }
     const url = CROSSOVER_URLS[target];

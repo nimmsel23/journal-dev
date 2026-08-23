@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#f59e0b" />
+    <!-- KEIN manuelles <link rel="manifest"> hier — anders als fuel-dev
+         nutzt journal-dev vite-plugin-pwa (siehe vite.config.cjs), das
+         Manifest + <link rel="manifest" href="/manifest.webmanifest">
+         automatisch beim Build injiziert (injectRegister: "auto"). Ein
+         zusätzlicher manueller Tag hier würde auf die alte, ungenutzte
+         public/manifest.json zeigen und mit dem injizierten Tag kollidieren
+         (zwei <link rel="manifest">-Tags, Browser nimmt den ersten). Die
+         apple-mobile-web-app-*-Tags injiziert der Plugin NICHT automatisch,
+         die bleiben hier zu Recht manuell. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Journal" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />

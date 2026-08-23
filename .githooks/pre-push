@@ -1,0 +1,19 @@
+#!/bin/bash
+# pre-push hook: Reminder-only. Der volle Release-Flow (journal-dev dev ->
+# vitalos/journal-app master -> vitalos-Pointer-Bump) läuft bereits
+# automatisiert über `journal-release` (~/vitalos/bin, in PATH). Der
+# kritische Moment ist der Push von dev — direkt danach folgt sonst von
+# Hand: Merge in vitalos/journal-app master, Push, Submodule-Pointer in
+# vitalos bumpen. Deshalb hier auf "dev" triggern.
+#
+# Runs once per push (not per ref), reads pushed refs from stdin.
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_ref" ] && continue
+  if [ "${local_ref#refs/heads/}" = "dev" ]; then
+    echo "💡 Tipp: für den kompletten dev->master->vitalos-Flow gibt es 'journal-release' (~/vitalos/bin, journal-release --help)." >&2
+    break
+  fi
+done
+
+exit 0

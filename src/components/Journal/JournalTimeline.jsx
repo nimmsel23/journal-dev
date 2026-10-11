@@ -14,7 +14,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import * as db from "@journal-db";
 import { Book, PenLine } from "lucide-react";
-import { localToday, formatRelativeDate, sessionInfo, getDailyPrompt, getCalendarMeta } from "./journalUtils";
+import { localToday, formatRelativeDate, sessionInfo, getDailyPrompt, getCalendarMeta, extractTags } from "./journalUtils";
 import { mediaAvailable, uploadJournalMedia, attachToEntry, removeAttachment } from "./journalMedia";
 import JournalSettings from "./JournalSettings";
 import JournalHeader from "./JournalHeader";
@@ -393,17 +393,17 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
 
       if (editingEntry) {
         const { id: entryId, date: entryDate } = editingEntry;
-        const trimmed = text.trim();
+        const { text: trimmed, tags } = extractTags(text.trim());
         // Optimistic: Text sofort in der Timeline zeigen, statt auf Firestore zu warten.
         setTimeline(prev => prev.map(group => group.date === entryDate
-          ? { ...group, entries: group.entries.map(e => e.id === entryId ? { ...e, text: trimmed } : e) }
+          ? { ...group, entries: group.entries.map(e => e.id === entryId ? { ...e, text: trimmed, tags } : e) }
           : group));
         setEditingEntry(null);
         setText("");
         setStartDate("");
         setEndDate("");
 
-        await db.updateJournal(entryId, trimmed, { startDate, endDate });
+        await db.updateJournal(entryId, trimmed, { startDate, endDate, tags });
         const uploaded = await uploadAndAttach(entryId, entryDate);
         if (uploaded.length) {
           setTimeline(prev => prev.map(group => group.date === entryDate
@@ -414,9 +414,10 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
         }
         showToast(uploadFailed ? "Upload fehlgeschlagen" : "Aktualisiert ✓");
       } else {
-        const trimmed = text.trim();
+        const rawText = text.trim();
+        const { text: trimmed, tags } = extractTags(rawText);
         const tempId = `temp-${Date.now()}`;
-        const optimisticEntry = { id: tempId, date, text: trimmed, type: "regular", time: new Date().toISOString() };
+        const optimisticEntry = { id: tempId, date, text: trimmed, tags, type: "regular", time: new Date().toISOString() };
 
         // Optimistic: Eintrag sofort einfügen, statt auf Firestore zu warten.
         setTimeline(prev => {
@@ -431,7 +432,7 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
         setText("");
 
         try {
-          const saved = await db.saveJournal(date, trimmed, { startDate, endDate });
+          const saved = await db.saveJournal(date, trimmed, { startDate, endDate, tags });
           const realId = saved?.id || tempId;
           setTimeline(prev => prev.map(group => group.date === date
             ? { ...group, entries: group.entries.map(e => e.id === tempId ? { ...e, id: realId } : e) }
@@ -453,7 +454,7 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
               ? { ...group, entries: group.entries.filter(e => e.id !== tempId) }
               : group)
             .filter(group => group.entries.length > 0));
-          setText(trimmed);
+          setText(rawText);
           throw err;
         }
       }
@@ -485,7 +486,8 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
     setSelectedEntry(null);
     setDate(entry.date);
     setEditingEntry(entry);
-    setText(entry.text);
+    const tagSuffix = (entry.tags || []).map(t => `+${t}`).join(' ');
+    setText(tagSuffix ? `${entry.text} ${tagSuffix}` : entry.text);
     setStartDate(entry.startDate || "");
     setEndDate(entry.endDate || "");
     window.scrollTo({ top: 0, behavior: 'smooth' });

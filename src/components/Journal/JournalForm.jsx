@@ -127,6 +127,9 @@ export default function JournalForm({ text, setText, onSubmit, saving, editingEn
         placeholder={prompt || "Gedanken, Erkenntnisse, Fokus..."}
         className="w-full bg-transparent border-none outline-none text-[15px] leading-relaxed resize-none text-[var(--j-ink)] placeholder:text-[var(--j-dim)] placeholder:opacity-50"
       />
+      <div className="mt-1 text-[9px] font-bold uppercase tracking-widest text-[var(--j-dim)] opacity-50">
+        Tipp: +fitness, +fuel, +relax … taggt den Eintrag
+      </div>
 
       {/* Date Range Toggle + Inputs — optional für Ereignisse mit Zeitspanne */}
       <div className="mt-4 border-t border-[var(--j-line)] pt-4">

@@ -114,14 +114,15 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
 export async function updateJournal(id, text, opts = {}) {
   const userId = await uid();
   const content = String(text || "").trim();
-  const { startDate, endDate } = opts;
+  const { startDate, endDate, tags } = opts;
   const patch = { text: content, updated_at: serverTimestamp() };
   // Alt-Doc (Doc-ID = Datum): date-Feld nachziehen, damit where("date")-Queries es finden
   if (DATE_ID.test(id)) patch.date = id;
   patch.startDate = startDate || null;
   patch.endDate = endDate || null;
+  if (tags) patch.tags = tags;
   await setDoc(doc(journalCol(userId), id), patch, { merge: true });
-  return { ok: true, id, text: content, startDate, endDate };
+  return { ok: true, id, text: content, startDate, endDate, tags };
 }
 
 export async function deleteJournal(id) {

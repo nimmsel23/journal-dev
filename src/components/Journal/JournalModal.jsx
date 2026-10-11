@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import { X, Target, Dumbbell, Book, Brain, CheckCircle2, UtensilsCrossed, NotebookPen, MoonStar, Pill, Pencil, Trash2, CalendarRange } from "lucide-react";
-import { EFFORT_LABELS, TYPE_COLORS } from "./journalUtils";
+import { EFFORT_LABELS, TYPE_COLORS, TAG_COLORS } from "./journalUtils";
 import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
 
 const ACCENT = "var(--j-accent)";
@@ -214,6 +214,24 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
                 {" → "}
                 {selectedEntry.endDate || selectedEntry.startDate || "?"}
               </span>
+            </div>
+          )}
+
+          {/* Pillar-Tags (z.B. "+fitness") */}
+          {selectedEntry.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedEntry.tags.map((tag) => {
+                const color = TAG_COLORS[tag] || 'var(--j-dim)';
+                return (
+                  <span
+                    key={tag}
+                    className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-lg border"
+                    style={{ color, backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`, borderColor: `color-mix(in srgb, ${color} 25%, transparent)` }}
+                  >
+                    +{tag}
+                  </span>
+                );
+              })}
             </div>
           )}
 

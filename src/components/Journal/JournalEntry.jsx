@@ -1,5 +1,5 @@
 import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed, NotebookPen, Pill, MoonStar } from "lucide-react";
-import { EFFORT_LABELS, timeStr, TYPE_COLORS } from "./journalUtils";
+import { EFFORT_LABELS, timeStr, TYPE_COLORS, TAG_COLORS } from "./journalUtils";
 // Via Alias, NICHT relativ über den src/constants-Symlink: dessen Ziel ist
 // ein absoluter /home/alpha-Pfad und im CI-Runner tot. @fitness/constants
 // definieren alle Konsumenten (journal, fitness, fuel .cjs, vitalos)
@@ -222,6 +222,24 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
           <p className="text-[15px] leading-relaxed text-[var(--j-ink)] whitespace-pre-wrap line-clamp-3">
             {e.text}
           </p>
+        )}
+
+        {/* Pillar-Tags (z.B. "+fitness") */}
+        {e.tags?.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {e.tags.map((tag) => {
+              const color = TAG_COLORS[tag] || 'var(--j-dim)';
+              return (
+                <span
+                  key={tag}
+                  className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border"
+                  style={{ color, backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`, borderColor: `color-mix(in srgb, ${color} 25%, transparent)` }}
+                >
+                  +{tag}
+                </span>
+              );
+            })}
+          </div>
         )}
 
         {/* Foto-Anhänge: max 4 Thumbnails, Rest als +N auf dem letzten */}

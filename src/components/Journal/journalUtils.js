@@ -23,6 +23,38 @@ export const TYPE_COLORS = {
   relax: '#6366f1',
 };
 
+// Bekannte Pillar-Tags fürs Farb-Styling der Chips — ein "+irgendwas" wird
+// trotzdem als Tag übernommen, nur eben neutral eingefärbt (frei erweiterbar,
+// z.B. "+wiesenmarkt" für einen Job-Kontext).
+export const TAG_COLORS = {
+  fitness: '#3b82f6',
+  fuel: '#22c55e',
+  relax: '#6366f1',
+  vitalos: '#f97316',
+  core4: '#eab308',
+  door: '#ec4899',
+};
+
+// Extrahiert "+tag"-Tokens aus dem Freitext (z.B. "Beine trainiert +fitness"),
+// entfernt sie aus dem sichtbaren Text und liefert sie separat zurück —
+// gespeichert wird nur noch der bereinigte Text + tags[].
+const TAG_RE = /(?:^|\s)\+([a-z0-9][a-z0-9_-]*)\b/gi;
+
+export function extractTags(rawText) {
+  const tags = [];
+  const seen = new Set();
+  const text = String(rawText || "")
+    .replace(TAG_RE, (_, tag) => {
+      const norm = tag.toLowerCase();
+      if (!seen.has(norm)) { seen.add(norm); tags.push(norm); }
+      return "";
+    })
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return { text, tags };
+}
+
 export function timeStr(e) {
   if (e.time) return e.time.slice(11, 16);
   if (e.updated_at?.seconds) return new Date(e.updated_at.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

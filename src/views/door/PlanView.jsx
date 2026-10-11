@@ -12,12 +12,62 @@ import {
   isPlanCloudMode,
 } from "../../lib/door/plan.js";
 
-const QUADRANTS = [
-  { key: 1, label: "Q1 · Dringend + Wichtig", hint: "sofort" },
-  { key: 2, label: "Q2 · Wichtig, nicht dringend", hint: "Door der Woche" },
-  { key: 3, label: "Q3 · Dringend, nicht wichtig", hint: "delegieren" },
-  { key: 4, label: "Q4 · Weder noch", hint: "später/weg" },
-];
+// Alle Lenses teilen sich dieselbe Datenbasis (Quadrant 1-4 im Door War,
+// identisch zu Eisenhower gespeichert) — nur Labels/Hints/Gruppierung pro
+// Lens unterscheiden sich. Die Quadrant-Zuordnung selbst bleibt immer 1-4,
+// "Door der Woche" bleibt an Quadrant 2 gebunden (Backend-Vorgabe).
+const LENSES = {
+  eisenhower: {
+    label: "Eisenhower",
+    perQuadrant: {
+      1: { label: "Q1 · Dringend + Wichtig", hint: "sofort" },
+      2: { label: "Q2 · Wichtig, nicht dringend", hint: "Door der Woche" },
+      3: { label: "Q3 · Dringend, nicht wichtig", hint: "delegieren" },
+      4: { label: "Q4 · Weder noch", hint: "später/weg" },
+    },
+    columns: [{ keys: [1] }, { keys: [2] }, { keys: [3] }, { keys: [4] }],
+  },
+  moscow: {
+    label: "MoSCoW",
+    perQuadrant: {
+      1: { label: "Must", hint: "nicht verhandelbar" },
+      2: { label: "Should", hint: "wichtig, kein Blocker" },
+      3: { label: "Could", hint: "nice to have" },
+      4: { label: "Won't", hint: "diesmal nicht" },
+    },
+    columns: [{ keys: [1] }, { keys: [2] }, { keys: [3] }, { keys: [4] }],
+  },
+  impact_effort: {
+    label: "Impact / Effort",
+    perQuadrant: {
+      1: { label: "Quick Wins", hint: "hoher Impact, wenig Aufwand" },
+      2: { label: "Major Projects", hint: "hoher Impact, viel Aufwand" },
+      3: { label: "Fill-Ins", hint: "wenig Impact, wenig Aufwand" },
+      4: { label: "Thankless Tasks", hint: "wenig Impact, viel Aufwand" },
+    },
+    columns: [{ keys: [1] }, { keys: [2] }, { keys: [3] }, { keys: [4] }],
+  },
+  now_next_later: {
+    label: "Now / Next / Later",
+    perQuadrant: {
+      1: { label: "Now", hint: "diese Woche" },
+      2: { label: "Next", hint: "Door der Woche" },
+      3: { label: "Later", hint: "zurückgestellt" },
+      4: { label: "Later", hint: "zurückgestellt" },
+    },
+    columns: [{ keys: [1] }, { keys: [2] }, { keys: [3, 4] }],
+  },
+};
+const LENS_KEYS = Object.keys(LENSES);
+
+function loadStoredLens() {
+  try {
+    const stored = localStorage.getItem("door.plan.lens");
+    return stored && LENSES[stored] ? stored : "eisenhower";
+  } catch {
+    return "eisenhower";
+  }
+}
 
 function keyFor(item) {
   return item.war_uuid || item.id || item.task_uuid || "";
@@ -29,6 +79,13 @@ export default function PlanView() {
   const [wizard, setWizard] = useState(null); // { sessionId, step, question, hits }
   const [answer, setAnswer] = useState("");
   const [hitDrafts, setHitDrafts] = useState(null);
+  const [lensKey, setLensKey] = useState(loadStoredLens);
+  const lens = LENSES[lensKey];
+
+  function changeLens(nextKey) {
+    setLensKey(nextKey);
+    try { localStorage.setItem("door.plan.lens", nextKey); } catch { /* ignore */ }
+  }
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["door-plan"],
@@ -114,9 +171,25 @@ export default function PlanView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/40 px-5 py-3 text-xs text-slate-400">
-        <span className="inline-flex items-center gap-2"><LayoutGrid className="h-3.5 w-3.5" /> Eisenhower-Board</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/40 px-5 py-3 text-xs text-slate-400">
+        <span className="inline-flex items-center gap-2"><LayoutGrid className="h-3.5 w-3.5" /> Priorisierungs-Board</span>
         <span>{isPlanCloudMode() ? "Cloud-Modus (Firestore)" : "Lokal über Door-Server (:6400)"}</span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {LENS_KEYS.map((key) => (
+          <button
+            key={key}
+            onClick={() => changeLens(key)}
+            className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition ${
+              lensKey === key
+                ? "border-amber-400/40 bg-amber-400 text-slate-950"
+                : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+          >
+            {LENSES[key].label}
+          </button>
+        ))}
       </div>
 
       {error ? (
@@ -132,62 +205,68 @@ export default function PlanView() {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-2">
-            {QUADRANTS.map(({ key, label, hint }) => (
-              <div key={key} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-slate-100">{label}</h3>
-                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">{hint}</span>
+          <div className={`grid gap-4 ${lens.columns.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+            {lens.columns.map(({ keys }) => {
+              const colKey = keys.join("-");
+              const meta = lens.perQuadrant[keys[0]];
+              const rows = keys.flatMap((k) => board[k] || []);
+              return (
+                <div key={colKey} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-100">{meta.label}</h3>
+                    <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">{meta.hint}</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {rows.map((k) => {
+                      const item = byKey.get(k);
+                      if (!item) return null;
+                      const isSelectedDoor = selected === k;
+                      return (
+                        <li key={k} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-sm text-slate-200">{item.title}</span>
+                            {isSelectedDoor ? <Check className="h-4 w-4 flex-shrink-0 text-amber-400" /> : null}
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {[1, 2, 3, 4].map((q) => (
+                              <button
+                                key={q}
+                                onClick={() => assignMutation.mutate({ selector: k, quadrant: q })}
+                                title={lens.perQuadrant[q].label}
+                                className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                  keys.includes(q) ? "border-amber-400/40 bg-amber-400/20 text-amber-300" : "border-white/10 text-slate-400 hover:bg-white/10"
+                                }`}
+                              >
+                                {lens.perQuadrant[q].label}
+                              </button>
+                            ))}
+                            {item.quadrant === 2 && !isSelectedDoor ? (
+                              <button
+                                onClick={() => { setError(""); selectMutation.mutate(k); }}
+                                className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/20"
+                              >
+                                Door der Woche
+                              </button>
+                            ) : null}
+                            {isSelectedDoor ? (
+                              <button
+                                onClick={() => { setError(""); startMutation.mutate({ title: item.title, selector: k }); }}
+                                className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/20"
+                              >
+                                <Swords className="h-3 w-3" /> War Stack starten
+                              </button>
+                            ) : null}
+                          </div>
+                        </li>
+                      );
+                    })}
+                    {rows.length === 0 ? (
+                      <li className="rounded-xl border border-dashed border-white/10 p-3 text-center text-xs text-slate-600">leer</li>
+                    ) : null}
+                  </ul>
                 </div>
-                <ul className="space-y-2">
-                  {(board[key] || []).map((k) => {
-                    const item = byKey.get(k);
-                    if (!item) return null;
-                    const isSelectedDoor = selected === k;
-                    return (
-                      <li key={k} className="rounded-xl border border-white/10 bg-white/5 p-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="text-sm text-slate-200">{item.title}</span>
-                          {isSelectedDoor ? <Check className="h-4 w-4 flex-shrink-0 text-amber-400" /> : null}
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {QUADRANTS.map((q) => (
-                            <button
-                              key={q.key}
-                              onClick={() => assignMutation.mutate({ selector: k, quadrant: q.key })}
-                              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                                q.key === key ? "border-amber-400/40 bg-amber-400/20 text-amber-300" : "border-white/10 text-slate-400 hover:bg-white/10"
-                              }`}
-                            >
-                              Q{q.key}
-                            </button>
-                          ))}
-                          {key === 2 && !isSelectedDoor ? (
-                            <button
-                              onClick={() => { setError(""); selectMutation.mutate(k); }}
-                              className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/20"
-                            >
-                              Door der Woche
-                            </button>
-                          ) : null}
-                          {isSelectedDoor ? (
-                            <button
-                              onClick={() => { setError(""); startMutation.mutate({ title: item.title, selector: k }); }}
-                              className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/20"
-                            >
-                              <Swords className="h-3 w-3" /> War Stack starten
-                            </button>
-                          ) : null}
-                        </div>
-                      </li>
-                    );
-                  })}
-                  {(board[key] || []).length === 0 ? (
-                    <li className="rounded-xl border border-dashed border-white/10 p-3 text-center text-xs text-slate-600">leer</li>
-                  ) : null}
-                </ul>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
@@ -200,13 +279,14 @@ export default function PlanView() {
                   <li key={k} className="group relative rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300">
                     {item.title}
                     <span className="ml-2 inline-flex gap-1">
-                      {QUADRANTS.map((q) => (
+                      {[1, 2, 3, 4].map((q) => (
                         <button
-                          key={q.key}
-                          onClick={() => assignMutation.mutate({ selector: k, quadrant: q.key })}
+                          key={q}
+                          onClick={() => assignMutation.mutate({ selector: k, quadrant: q })}
+                          title={lens.perQuadrant[q].label}
                           className="rounded-full border border-white/10 px-1.5 text-[10px] text-slate-500 hover:bg-white/10"
                         >
-                          Q{q.key}
+                          {lens.perQuadrant[q].label}
                         </button>
                       ))}
                     </span>

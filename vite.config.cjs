@@ -189,6 +189,10 @@ module.exports = defineConfig(async ({ mode }) => {
         "/supplements": "http://127.0.0.1:9000",
         "/fuel": "http://127.0.0.1:9000",
         "/health": "http://127.0.0.1:9000",
+        // Hot List (aos/door) — Taskwarrior-SOT via aos server, nicht :9080.
+        // Muss vor dem generischen "/api"-Eintrag stehen (Prefix-Match).
+        "/api/hotlist": "http://127.0.0.1:7001",
+        "/api/hot": "http://127.0.0.1:7001",
         "/api": "http://127.0.0.1:9080",
       },
     },

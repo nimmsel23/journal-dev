@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { NotebookPen, Sparkles } from "lucide-react";
+import { NotebookPen, Sparkles, Flame } from "lucide-react";
 
 export const TAB_CONFIG = [
   {
@@ -17,5 +17,13 @@ export const TAB_CONFIG = [
     Icon: Sparkles,
     View: lazy(() => import("./views/AiLogVosView.jsx")),
     getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user }),
+  },
+  {
+    key: "hotlist",
+    label: "Hot List",
+    title: "Hot List",
+    Icon: Flame,
+    View: lazy(() => import("./views/HotlistVosView.jsx")),
+    getProps: () => ({}),
   },
 ];

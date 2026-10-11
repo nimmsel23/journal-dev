@@ -199,15 +199,6 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
             </div>
           )}
 
-          {/* Zeitspanne (z.B. Reise/Event-Dauer) */}
-          {(selectedEntry.startDate || selectedEntry.endDate) && (
-            <div>
-              <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-[var(--j-accent)]/8 text-[var(--j-accent)] border border-[var(--j-accent)]/15">
-                {selectedEntry.startDate || '?'} – {selectedEntry.endDate || '?'}
-              </span>
-            </div>
-          )}
-
           {/* Text / Notes */}
           {selectedEntry.text && (
             <p className="text-lg sm:text-xl leading-relaxed text-[var(--j-ink)] whitespace-pre-wrap">

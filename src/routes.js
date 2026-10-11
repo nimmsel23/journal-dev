@@ -8,7 +8,7 @@ export const TAB_CONFIG = [
     title: "Journal",
     Icon: NotebookPen,
     View: lazy(() => import("./views/JournalVosView.jsx")),
-    getProps: (ctx) => ({ date: ctx.activeDate, user: ctx.user }),
+    getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user }),
   },
   {
     key: "ai-log",
@@ -16,6 +16,6 @@ export const TAB_CONFIG = [
     title: "AI Freihand Logging",
     Icon: Sparkles,
     View: lazy(() => import("./views/AiLogVosView.jsx")),
-    getProps: (ctx) => ({ date: ctx.activeDate, user: ctx.user }),
+    getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user }),
   },
 ];

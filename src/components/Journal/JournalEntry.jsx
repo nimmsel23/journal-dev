@@ -208,6 +208,15 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
           </div>
         )}
 
+        {/* Zeitspanne (z.B. Reise/Event-Dauer) */}
+        {(e.startDate || e.endDate) && (
+          <div className="mb-2 flex items-center gap-1.5">
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-[var(--j-accent)]/8 text-[var(--j-accent)] border border-[var(--j-accent)]/15">
+              {e.startDate || '?'} – {e.endDate || '?'}
+            </span>
+          </div>
+        )}
+
         {/* Text */}
         {e.text && (
           <p className="text-[15px] leading-relaxed text-[var(--j-ink)] whitespace-pre-wrap line-clamp-3">

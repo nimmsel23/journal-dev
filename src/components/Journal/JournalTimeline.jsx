@@ -11,7 +11,7 @@
 // Kontext exportiert Nutrition/Meals/Settings), relative Imports statt
 // kontextabhängiger Aliases, Theming über CSS-Tokens mit Fallbacks.
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import * as db from "@journal-db";
 import { Book, PenLine } from "lucide-react";
 import { localToday, formatRelativeDate, sessionInfo, getDailyPrompt } from "./journalUtils";
@@ -95,9 +95,16 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
     return () => { cancelled = true; };
   }, [user?.uid]);
 
+  // Nur reagieren wenn sich controlledDate selbst ändert (Host wechselt Tag) —
+  // NICHT wenn der User intern via setDate navigiert, sonst snappt jede
+  // Datumsänderung sofort wieder auf die (meist statische) Prop zurück.
+  const lastControlledDate = useRef(controlledDate);
   useEffect(() => {
-    if (controlledDate && controlledDate !== date) setDateState(controlledDate);
-  }, [controlledDate, date]);
+    if (controlledDate && controlledDate !== lastControlledDate.current) {
+      lastControlledDate.current = controlledDate;
+      setDateState(controlledDate);
+    }
+  }, [controlledDate]);
 
   function setDate(nextDate) {
     setDateState(nextDate);

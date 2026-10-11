@@ -1,20 +1,10 @@
-// Hot List (aos/door Potential) — spricht den aos server (:7001) über den
-// kanonischen Bridge-Endpoint /api/hotlist an (server/routers/hotlist.py).
+// Door > Potential (aos/door Hot List) — spricht den aos server (:7001) über
+// den kanonischen Bridge-Endpoint /api/hotlist an (server/routers/hotlist.py).
 // Taskwarrior ist dort die einzige Quelle — kein eigener Datenspeicher hier.
-const BASE = import.meta.env.VITE_HOTLIST_API_BASE || "";
+import { restRequest } from "./core.js";
 
-async function request(method, path, body) {
-  const res = await fetch(BASE + path, {
-    method,
-    headers: body != null ? { "Content-Type": "application/json" } : undefined,
-    body: body != null ? JSON.stringify(body) : undefined,
-  });
-  const payload = await res.json().catch(() => ({}));
-  if (!res.ok || payload?.ok === false) {
-    throw new Error(payload?.error || `${method} ${path} → ${res.status}`);
-  }
-  return payload;
-}
+const BASE = import.meta.env.VITE_HOTLIST_API_BASE || "";
+const request = (method, path, body) => restRequest(BASE, method, path, body);
 
 export async function fetchHotlist(mode = "active") {
   const payload = await request("GET", `/api/hotlist?mode=${encodeURIComponent(mode)}`);

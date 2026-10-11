@@ -10,8 +10,8 @@ import {
   deleteHotlistItem,
   fetchHotlistNote,
   saveHotlistNote,
-  isHotlistCloudMode,
-} from "../lib/hotlist.js";
+  isPotentialCloudMode,
+} from "../../lib/door/potential.js";
 
 const MODES = [
   { key: "active", label: "Aktiv" },
@@ -33,7 +33,7 @@ function formatCreatedAt(value) {
   return `${d}.${m}.${y} ${hh}:${mm}`;
 }
 
-export default function HotlistVosView() {
+export default function PotentialView() {
   const qc = useQueryClient();
   const [mode, setMode] = useState("active");
   const [newText, setNewText] = useState("");
@@ -151,12 +151,12 @@ export default function HotlistVosView() {
             <Flame className="h-5 w-5" />
           </div>
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-rose-400">Hot List · Door</div>
-            <h2 className="text-lg font-semibold text-slate-100">Was gerade brennt</h2>
+            <div className="text-xs uppercase tracking-[0.2em] text-rose-400">Door · Potential</div>
+            <h2 className="text-lg font-semibold text-slate-100">Was gerade brennt (Hot List)</h2>
           </div>
         </div>
         <p className="text-sm text-rose-300/80 md:max-w-md md:text-right">
-          {isHotlistCloudMode()
+          {isPotentialCloudMode()
             ? "Cloud-Modus: eigenständige Firestore Hot List (kein lokaler aos server erreichbar)."
             : "Taskwarrior-basierte Hot List aus aos/door — gelesen und geschrieben über den aos server (:7001)."}
         </p>

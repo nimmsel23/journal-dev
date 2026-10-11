@@ -189,10 +189,18 @@ module.exports = defineConfig(async ({ mode }) => {
         "/supplements": "http://127.0.0.1:9000",
         "/fuel": "http://127.0.0.1:9000",
         "/health": "http://127.0.0.1:9000",
-        // Hot List (aos/door) — Taskwarrior-SOT via aos server, nicht :9080.
-        // Muss vor dem generischen "/api"-Eintrag stehen (Prefix-Match).
+        // Door Framework (aos/door):
+        // - Potential/Hot List → aos server :7001, kanonischer Bridge-Endpoint
+        //   /api/hotlist (server/routers/hotlist.py), Taskwarrior-SOT.
+        // - Plan/Production/Profit → Door-Node-Server :6400 (prod; :9400 dev,
+        //   aktuell nicht laufend), kanonischer Prefix /api/door laut
+        //   ~/aos/lib/door_routes.yaml. Muss vor dem generischen "/api"-Eintrag
+        //   stehen (Prefix-Match), ebenso /api/door vor /api/hotlist würde
+        //   nicht überlappen, aber Reihenfolge trotzdem von spezifisch zu
+        //   generisch halten.
         "/api/hotlist": "http://127.0.0.1:7001",
         "/api/hot": "http://127.0.0.1:7001",
+        "/api/door": "http://127.0.0.1:6400",
         "/api": "http://127.0.0.1:9080",
       },
     },

@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { NotebookPen, Sparkles, Flame } from "lucide-react";
+import { NotebookPen, Sparkles, DoorOpen } from "lucide-react";
 
 export const TAB_CONFIG = [
   {
@@ -19,11 +19,11 @@ export const TAB_CONFIG = [
     getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user }),
   },
   {
-    key: "hotlist",
-    label: "Hot List",
-    title: "Hot List",
-    Icon: Flame,
-    View: lazy(() => import("./views/HotlistVosView.jsx")),
+    key: "door",
+    label: "Door",
+    title: "The Door Framework",
+    Icon: DoorOpen,
+    View: lazy(() => import("./views/door/DoorView.jsx")),
     getProps: () => ({}),
   },
 ];

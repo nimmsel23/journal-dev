@@ -1,10 +1,11 @@
 /**
- * Journal Hotlist — Firestore-native Gegenstück zu hotlistApi.js (REST gegen
- * den aos server :7001, Taskwarrior-SOT). Für den cloud channel (Firebase
- * Hosting), wo kein lokaler aos server erreichbar ist: eigene, eigenständige
- * Hot List unter fitness/{uid}/hotlist — kein Taskwarrior-Mirror, aber
- * dasselbe Item-Shape wie die REST-Seite (id, title, status, created_at, …),
- * damit HotlistVosView.jsx backend-agnostisch bleibt.
+ * Door > Potential — Firestore-native Gegenstück zu potential.rest.js (REST
+ * gegen den aos server :7001, Taskwarrior-SOT). Für den cloud channel
+ * (Firebase Hosting), wo kein lokaler aos server erreichbar ist: eigene,
+ * eigenständige Hot List unter fitness/{uid}/hotlist — kein
+ * Taskwarrior-Mirror, aber dasselbe Item-Shape wie die REST-Seite (id,
+ * title, status, created_at, …), damit PotentialView.jsx backend-agnostisch
+ * bleibt.
  *
  * Collection: fitness/{uid}/hotlist/{docId} — bereits durch die bestehende
  * Firestore-Rule `match /fitness/{uid}/{document=**}` abgedeckt.
@@ -14,8 +15,8 @@ import {
   collection, doc, addDoc, setDoc, getDoc, getDocs,
   query, orderBy, serverTimestamp,
 } from "firebase/firestore";
-import { db } from "../../firebase.js";
-import { getUid } from "../core.js";
+import { db } from "../firebase.js";
+import { getUid } from "../db/core.js";
 
 function hotlistCol() {
   return collection(db, "fitness", getUid(), "hotlist");

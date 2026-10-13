@@ -59,13 +59,17 @@ jobs:
           git fetch origin "$SHA"
           git checkout "$SHA"
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.3.0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
       - name: Install (Workspaces)
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Firebase config bereitstellen (gitignored)
         run: |
@@ -78,7 +82,7 @@ jobs:
           FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
 
       - name: Build Journal
-        run: npm run build:firebase --workspace="$SUBMODULE_PATH"
+        run: pnpm --filter "./$SUBMODULE_PATH" run build:firebase
 
       - name: Deploy Preview Channel
         id: firebase_deploy

@@ -25,7 +25,7 @@
     "build:prev": "npm run deploy:preview"
   },
   "dependencies": {
-    "@vos/cross-app-aliases": "link:../vitalos/packages/cross-app-aliases",
+    "@vos/cross-app-aliases": "workspace:*",
     "@fastify/cors": "^9.0.1",
     "@fastify/static": "^7.0.4",
     "@fullcalendar/daygrid": "^6.1.15",

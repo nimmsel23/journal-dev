@@ -241,3 +241,38 @@
   .jv2-hstats { font-size: 12px; margin: 8px 0 12px; }
   .jv2-hstrip i { height: 22px; }
 }
+
+/* ── Smart Logger ── */
+.jv2-compose .jv2-smarttoggle {
+  all: unset; cursor: pointer; display: grid; place-items: center; width: 48px; flex: none;
+  background: var(--p); color: var(--ink); border-right: 2px solid var(--ink); font-size: 18px;
+}
+.jv2-compose .jv2-smarttoggle.on { background: var(--sig); color: #fff; }
+.jv2-compose .jv2-smarttoggle:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.jv2-compose { border-top: 2px solid var(--ink); }
+.jv2-compose textarea {
+  flex: 1; min-width: 0; border: 0; border-radius: 0; resize: vertical; background: var(--soft);
+  padding: 14px 12px; font: inherit; font-size: 14px; line-height: 1.4; color: var(--ink);
+}
+.jv2-compose textarea:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.jv2-compose.smart button[type="submit"] { align-self: stretch; }
+.jv2-smart { border-top: 2px solid var(--ink); background: var(--p); }
+.jv2-smart h4 {
+  margin: 0; padding: 8px 12px; background: var(--sig); color: #fff;
+  font-family: var(--mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+}
+.jv2-sline { display: grid; grid-template-columns: 76px 1fr; margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--ink); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+.jv2-sline b { font-family: var(--mono); font-size: 10px; font-weight: 600; text-transform: uppercase; padding-top: 3px; }
+.jv2-sact { display: flex; }
+.jv2-sact button {
+  all: unset; cursor: pointer; flex: 1; text-align: center; padding: 14px 8px; background: var(--ink); color: var(--p);
+  font-weight: 800; font-stretch: 75%; text-transform: uppercase;
+}
+.jv2-sact button.ghost { background: var(--p); color: var(--ink); border-left: 2px solid var(--ink); }
+.jv2-sact button:disabled { opacity: .5; cursor: default; }
+.jv2-sact button:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+@media (min-width: 700px) {
+  .jv2-compose .jv2-smarttoggle { width: 64px; font-size: 24px; }
+  .jv2-compose textarea { padding: 20px 22px; font-size: 17px; }
+  .jv2-sline { grid-template-columns: 110px 1fr; font-size: 16px; padding: 12px 22px; }
+}

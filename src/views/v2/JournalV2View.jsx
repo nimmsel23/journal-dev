@@ -12,6 +12,8 @@ import * as db from "@journal-db";
 import { getJournal, getJournalRange, saveJournal, deleteJournal } from "../../lib/db/journal.js";
 import { MonthView, WeekView, rangeFor } from "./JournalV2Range.jsx";
 import HabitsView from "./JournalV2Habits.jsx";
+import { analyzeSmartJournal } from "../../lib/smartJournalLogger.js";
+import { applySmartAnalysis } from "../../lib/smartJournalApply.js";
 import { addHabit, archiveHabit } from "./habitsDb.js";
 import { extractTags, timeStr } from "../../components/Journal/journalUtils";
 import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "./gcal.js";
@@ -45,6 +47,12 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     };
   }, []);
   const [draft, setDraft] = useState("");
+  // Smart Logger: Freitext → Vertex-Analyse → Vorschau → Übernehmen (Journal, Mahlzeiten, Wasser, Habits)
+  const [smart, setSmart] = useState(() => {
+    try { return localStorage.getItem("jv2:smart") === "1"; } catch { return false; }
+  });
+  const [analysis, setAnalysis] = useState(null);
+  const [smartMsg, setSmartMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const day = parseISO(date);
   const uid = user?.uid ?? null;
@@ -144,8 +152,51 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     }
   };
 
+  const toggleSmart = () => {
+    const next = !smart;
+    setSmart(next);
+    setAnalysis(null);
+    setSmartMsg("");
+    try { localStorage.setItem("jv2:smart", next ? "1" : "0"); } catch {}
+  };
+
+  const analyze = async () => {
+    if (!draft.trim() || busy) return;
+    setBusy(true);
+    setSmartMsg("");
+    try {
+      setAnalysis(await analyzeSmartJournal({ text: draft.trim(), habits: allHabits }));
+    } catch (error) {
+      console.error("Smart-Analyse fehlgeschlagen:", error);
+      setSmartMsg(error?.message === "vertex_ai_unavailable" ? "Vertex AI ist hier nicht verfügbar." : (error?.message || "Analyse fehlgeschlagen."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const applyAnalysis = async () => {
+    if (!analysis || busy) return;
+    setBusy(true);
+    setSmartMsg("");
+    try {
+      const res = await applySmartAnalysis({ date, analysis, habits: allHabits });
+      setAnalysis(null);
+      setDraft("");
+      const parts = [res.journal && "Eintrag", res.meals && `${res.meals} Mahlzeit${res.meals > 1 ? "en" : ""}`, res.water_ml && `${res.water_ml} ml Wasser`, res.habits.length && `${res.habits.length} Habit${res.habits.length > 1 ? "s" : ""}`].filter(Boolean);
+      setSmartMsg(`Übernommen: ${parts.join(", ") || "nichts"}.`);
+      qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
+      qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
+    } catch (error) {
+      console.error("Smart-Übernahme fehlgeschlagen:", error);
+      setSmartMsg(error?.message || "Übernahme fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submit = async (event) => {
     event.preventDefault();
+    if (smart) return analyze();
     const { text, tags } = extractTags(draft);
     if (!text || busy) return;
     setBusy(true);
@@ -302,17 +353,51 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           );
         })}
 
-        <form className="jv2-compose" onSubmit={submit}>
-          <input
-            id="jv2-input"
-            ref={inputRef}
-            aria-label="Neuer Eintrag"
-            placeholder="Neuer Eintrag … (+tag)"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            disabled={!uid}
-          />
-          <button type="submit" disabled={!uid || busy || !draft.trim()}>Log</button>
+        {smart && analysis && (
+          <div className="jv2-smart" aria-label="Vorschau der Analyse">
+            <h4>Vorschau</h4>
+            <p className="jv2-sline"><b>Eintrag</b>{analysis.journal_entry || "—"}</p>
+            {analysis.meals.map((m, i) => (
+              <p className="jv2-sline" key={i}><b>{m.type}</b>{m.description} · {Math.round(m.kcal)} kcal · P{Math.round(m.protein)} K{Math.round(m.carbs)} F{Math.round(m.fat)}</p>
+            ))}
+            {analysis.water_ml > 0 && <p className="jv2-sline"><b>Wasser</b>{analysis.water_ml} ml</p>}
+            {analysis.habits_done.map((h, i) => {
+              const known = allHabits.some((x) => String(x.name || "").trim().toLowerCase() === h.name.toLowerCase());
+              return <p className="jv2-sline" key={i}><b>Habit</b>{h.name}{known ? "" : " (unbekannt, wird übersprungen)"}</p>;
+            })}
+            <div className="jv2-sact">
+              <button type="button" onClick={applyAnalysis} disabled={busy}>Übernehmen</button>
+              <button type="button" className="ghost" onClick={() => setAnalysis(null)}>Verwerfen</button>
+            </div>
+          </div>
+        )}
+        {smartMsg && <div className="jv2-empty" role="status">{smartMsg}</div>}
+
+        <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>
+          <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Journal, Mahlzeiten, Wasser und Habits zerlegen">✦</button>
+          {smart ? (
+            <textarea
+              id="jv2-input"
+              ref={inputRef}
+              aria-label="Freitext für Smart Logger"
+              rows={3}
+              placeholder="Dein Tag in eigenen Worten: 2 Eier und Kaffee, 2 l Wasser, 30 Min Lesen …"
+              value={draft}
+              onChange={(e) => { setDraft(e.target.value); setAnalysis(null); }}
+              disabled={!uid}
+            />
+          ) : (
+            <input
+              id="jv2-input"
+              ref={inputRef}
+              aria-label="Neuer Eintrag"
+              placeholder="Neuer Eintrag … (+tag)"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              disabled={!uid}
+            />
+          )}
+          <button type="submit" disabled={!uid || busy || !draft.trim()}>{smart ? (busy && !analysis ? "…" : "Analyse") : "Log"}</button>
         </form>
 
         </>}

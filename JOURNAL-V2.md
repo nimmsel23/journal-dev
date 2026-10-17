@@ -15,6 +15,10 @@ Hash-Route, gleiche Datenquelle wie v1 (Firestore `fitness/{uid}/…`):
 | `#v2/monat/<datum>` | Monat (Raster mit KW) |
 | `#v2/habits/<datum>` | Habits (28 Tage bis zum Datum) |
 
+Door (Potential/Plan/Production/Profit) hat eigene Hashes: `#door2` (Potential), `#door2/plan`, `#door2/production`,
+`#door2/profit`. Tab-Key `door-v2`, Alias `door2` in `src/main.jsx`, Modus im State `doorMode` (eigene `DOOR_MODES`-Liste,
+kollidiert nicht mit `V2_MODES`). Links: im Journal-v2-Footer „Door →“, im Door-v2-Footer „← Journal“.
+
 Tab-Key `journal-v2` (`src/routes.js`, `bare: true` = ohne App-Header). Hash-Alias `v2` und Modus-Teil
 werden in `src/main.jsx` geparst; Modus liegt in `useApp().v2Mode` (`src/store.js`).
 Startansicht per Build-Variable `VITE_DEFAULT_TAB=journal-v2` (siehe Deploy), ein Hash hat Vorrang.
@@ -75,11 +79,53 @@ fitness-dev-Variante mit anderer `saveJournal`-Signatur (Tags als Array) durchsc
 | `pnpm run deploy:cloud` (`npm run firebase`) | Build + Deploy auf **journal-vos.web.app** (Target `journal`) |
 | `pnpm run deploy:v2` | Build nach `dist-v2` mit `VITE_DEFAULT_TAB=journal-v2` + Deploy auf **vos-journal.web.app** (Target `v2`) |
 | `pnpm run deploy:v2:build` | nur der v2-Build |
+| `pnpm run deploy:door` | Build nach `dist-door` mit `VITE_APP_FLAVOR=door` + `VITE_DEFAULT_TAB=door-v2` + Deploy auf **vos-door.web.app** (Target `door`) |
+| `pnpm run deploy:door:build` | nur der Door-Build |
 | `./deploy.sh [--pull] [--dry-run]` | Desktop-Prod `/opt/journal`: baut im Repo, kopiert nur `dist-firebase/`, keine Backups |
 
-Targets: `firebase.json` (zwei Hosting-Einträge) + `.firebaserc` (`journal` → `journal-vos`, `v2` → `vos-journal`).
+Targets: `firebase.json` (drei Hosting-Einträge) + `.firebaserc` (`journal` → `journal-vos`, `v2` → `vos-journal`,
+`door` → `vos-door`). Alle drei Builds enthalten denselben Code und unterscheiden sich nur durch Start-Tab, Name, Icons
+und Farben. Die Seiten `vos-journal` und `vos-door` wurden per `firebase hosting:sites:create` angelegt.
 CI-Workflows setzen `target: journal`. `firebase deploy` endete einmal mit „Timed out“ im Aufräumschritt nach
 erfolgreichem Release (Exit 2); das Hosting war trotzdem live.
+
+## Door v2 (Raster)
+
+`src/views/door/v2/`: `DoorV2View.jsx` (Shell, Modusleiste, Quelle-Umschalter, papierfarbener Vollbild-Effekt),
+`DoorV2Panels.jsx` (die vier Panels), `door-v2.css` (Scope `.dv2`). Datenquelle standardmäßig das Backend
+(`src/lib/door/{potential,plan,production,profit}.js`, REST bzw. Firestore), alternativ Google Tasks (nächster Abschnitt).
+- **Potential:** Hot List anzeigen, hinzufügen, erledigen, löschen (Zwei-Klick-Bestätigung).
+- **Plan:** Door War mit Q1–Q4 und Unsortiert, Quadranten zuweisen, „Door wählen“ nur bei Q2-Items.
+- **Production:** 7-Tage-Raster der Daily Hits mit Toggle, Hits der Woche mit Quote.
+- **Profit:** lesend (Wochen-Door mit Hits, abgeschlossene War Stacks, Reflexionen).
+- Bewusst weggelassen: Notizen/Bearbeiten, Lens-Auswahl (MoSCoW), War-Stack-Wizard, Reflexion schreiben.
+- Alle Modi haben Lade-, Fehler- (mit „Erneut versuchen“) und Leerzustand. Die alte v1-Ansicht bleibt unverändert.
+
+## Door als eigene App (vos-door.web.app)
+
+- **Icon-Paket** `public/icons-door/`: `icon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (Motiv in der
+  80-%-Sicherheitszone), `apple-touch-icon.png` (180), `favicon-32.png`, `favicon.ico` (32+48). Motiv: schwarzer Türrahmen,
+  blaue Tür, Griff, Papierhintergrund. Quelle sind `icon.svg`/`maskable.svg`, gerendert mit `rsvg-convert`.
+- **Flavor-Build:** `VITE_APP_FLAVOR=door` (in `vite.config.cjs`) setzt Manifest-Name „The Door“ / „Door“, Theme- und
+  Hintergrundfarbe Papier (`#f6f6f2`), die Door-Icons, den Titel, Apple-Web-App-Titel und einen hellen Splash (Plugin
+  `journal:flavor-html` ersetzt Strings in `index.html`). Im Door-Build sind `icons/**`, im Journal-Build `icons-door/**`
+  aus dem Service-Worker-Precache ausgenommen.
+- **Auth:** `vos-door.web.app` und `vos-door.firebaseapp.com` stehen in den autorisierten Domains von `fitness-aos`.
+
+## Kalender: Fire Map
+
+Der Kalender in Journal v2 zeigt standardmäßig nur den Google-Kalender „Fire Map“ (Name enthält „fire“; Taskwarrior-Termine
+`[TW today]` / `[TW overdue]`, von `firectl gcal due` gepusht, siehe auch `fire-gcal-calcurse`). Umschalter im Footer:
+„Alle Kalender“ / „Nur Fire Map“ (`localStorage jv2:cal-all`). Fehlt der Kalender, erscheint ein Hinweis.
+
+## Google-Cloud-Einrichtung (Projekt `fitness-aos`)
+
+Per `gcloud`/REST erledigt: Google Calendar API und Google Tasks API aktiviert; `vos-journal.web.app`,
+`vos-journal.firebaseapp.com`, `vos-door.web.app`, `vos-door.firebaseapp.com` in den Auth-Domains
+(Identity Toolkit `authorizedDomains`). Vertex/Firebase AI Logic und Billing waren bereits aktiv.
+**Nur in der Console möglich:** Scopes `calendar.readonly` und `tasks` im OAuth-Zustimmungsbildschirm (oder Konto als
+Testnutzer) und, bei `origin_mismatch`, die Ursprünge `https://vos-journal.web.app` / `https://vos-door.web.app` am
+Web-OAuth-Client.
 
 ## pnpm
 
@@ -116,4 +162,5 @@ Voraussetzung: Tasks API im GCP-Projekt aktiviert (fitness-aos: ja); der Scope `
 
 Weitere v1-Funktionen sollen schrittweise und unauffällig in v2 wandern (Kalender-Ansicht, Medien-Anhänge,
 Zeiträume `startDate`/`endDate`, Tagesprompts, Habit-Journale, Supplements/Mahlzeiten in der Timeline).
-Offen: Test des Ziehens auf dem iPad, Zustimmungsbildschirm für Calendar, Habit-Häufigkeit in der Quote.
+Offen: Test des Ziehens auf dem iPad, Zustimmungsbildschirm (Calendar, Tasks), Habit-Häufigkeit in der Quote,
+Browser-Test von Door v2 (Layout, Hash-Wechsel) und Google Tasks gegen die echte API (Zeitzonen der `due`-Tage, Token-Ablauf).

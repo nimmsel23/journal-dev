@@ -41,6 +41,16 @@ export const TAB_CONFIG = [
     getProps: (ctx) => ({ user: ctx.user, mode: ctx.gameMode, onModeChange: ctx.setGameMode }),
   },
   {
+    // Hash-Alias: #tent2 (optional #tent2/<datum>). Rendert ohne App-Header.
+    key: "tent-v2",
+    label: "Tent v2",
+    title: "General's Tent",
+    Icon: Sparkles,
+    bare: true,
+    View: lazy(() => import("./views/tent/TentV2View.jsx")),
+    getProps: (ctx) => ({ user: ctx.user, date: ctx.activeDate, onDateChange: ctx.setActiveDate }),
+  },
+  {
     key: "ai-log",
     label: "Smart Log",
     title: "AI Freihand Logging",

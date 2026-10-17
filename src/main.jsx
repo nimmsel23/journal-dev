@@ -24,7 +24,7 @@ function localToday() {
 }
 
 // Kurze Hash-Präfixe → Tab-Key (#v2, #v2/today, #v2/2026-10-17)
-const HASH_ALIASES = { v2: "journal-v2", door2: "door-v2", game2: "game-v2" };
+const HASH_ALIASES = { v2: "journal-v2", door2: "door-v2", game2: "game-v2", tent2: "tent-v2" };
 const V2_MODES = ["tag", "woche", "monat", "habits"];
 const DOOR_MODES = ["potential", "plan", "production", "profit"]; // #door2/plan
 const GAME_MODES = ["fire", "focus", "freedom", "frame", "voice"]; // #game2/focus, Kurzform #focus

@@ -7,6 +7,9 @@ export const useApp = create((set) => ({
   activeDate: format(new Date(), "yyyy-MM-dd"),
   setActiveTab: (activeTab) => set({ activeTab }),
   setActiveDate: (activeDate) => set({ activeDate }),
+  // Journal v2: Ansichtsmodus "tag" | "woche" | "monat" (Hash: #v2/woche/<datum>)
+  v2Mode: "tag",
+  setV2Mode: (v2Mode) => set({ v2Mode }),
 }));
 
 export const useSettings = create(

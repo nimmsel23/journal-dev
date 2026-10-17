@@ -18,7 +18,7 @@ export const TAB_CONFIG = [
     Icon: NotebookPen,
     bare: true,
     View: lazy(() => import("./views/v2/JournalV2View.jsx")),
-    getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user }),
+    getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user, mode: ctx.v2Mode, onModeChange: ctx.setV2Mode }),
   },
   {
     key: "ai-log",

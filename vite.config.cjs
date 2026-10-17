@@ -53,20 +53,28 @@ const RELAX = resolveSibling(["../relax-app", "../relax-dev"], "RELAX");
 module.exports = defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const appMode = process.env.VITE_APP_MODE || env.VITE_APP_MODE || "coach";
-  // Flavor "door": eigenes App-Icon-Paket (public/icons-door), Name, Farben, Splash
+  // Flavor (door/voice/game/tent): eigenes App-Icon-Paket (public/icons-<flavor>), Name, Farben, Splash
   // für das Hosting vos-door.web.app (pnpm run deploy:door). Default: Journal.
-  const DOOR = (process.env.VITE_APP_FLAVOR || env.VITE_APP_FLAVOR) === "door";
+  // Weitere Flavors: voice / game / tent (Raster-Apps auf vos-voice / vos-game / vos-tent), je eigenes Icon-Paket.
+  const FLAVORS = {
+    door: { name: "The Door", short: "Door", dir: "icons-door" },
+    voice: { name: "Voice", short: "Voice", dir: "icons-voice" },
+    game: { name: "Game", short: "Game", dir: "icons-game" },
+    tent: { name: "General's Tent", short: "Tent", dir: "icons-tent" },
+  };
+  const FL = FLAVORS[process.env.VITE_APP_FLAVOR || env.VITE_APP_FLAVOR];
+  const DOOR = !!FL; // „Flavor-App“ (Name historisch von Door)
   const flavorHtml = {
     name: "journal:flavor-html",
     transformIndexHtml(html) {
       if (!DOOR) return html;
       return html
-        .replace(/\/icons\/icon-192\.svg/g, "/icons-door/icon.svg")
-        .replace(/\/icons\/icon-192\.png"( sizes="192x192")?/g, (m, sz) => `/icons-door/icon-192.png"${sz || ""}`)
-        .replace('<link rel="apple-touch-icon" href="/icons-door/icon-192.png"', '<link rel="apple-touch-icon" href="/icons-door/apple-touch-icon.png"')
-        .replace('href="/favicon.ico"', 'href="/icons-door/favicon.ico"')
-        .replace(/Vital-Journal/g, "The Door")
-        .replace('content="Journal"', 'content="Door"')
+        .replace(/\/icons\/icon-192\.svg/g, `/${FL.dir}/icon.svg`)
+        .replace(/\/icons\/icon-192\.png"( sizes="192x192")?/g, (m, sz) => `/${FL.dir}/icon-192.png"${sz || ""}`)
+        .replace(`<link rel="apple-touch-icon" href="/${FL.dir}/icon-192.png"`, `<link rel="apple-touch-icon" href="/${FL.dir}/apple-touch-icon.png"`)
+        .replace('href="/favicon.ico"', `href="/${FL.dir}/favicon.ico"`)
+        .replace(/Vital-Journal/g, FL.name)
+        .replace('content="Journal"', `content="${FL.short}"`)
         .replace('content="#f59e0b"', 'content="#f6f6f2"')
         .replace("</head>", `<style>
       #splash { background: #f6f6f2; color: #0d0d0d; }
@@ -125,8 +133,8 @@ module.exports = defineConfig(async ({ mode }) => {
         registerType: "prompt",
         injectRegister: "auto",
         manifest: {
-          name: DOOR ? "The Door" : "Vital-Journal",
-          short_name: DOOR ? "Door" : "Vital-Journal",
+          name: FL ? FL.name : "Vital-Journal",
+          short_name: FL ? FL.short : "Vital-Journal",
           description: "Journal + Habits auf VitalOS-Stack",
           theme_color: DOOR ? "#f6f6f2" : "#f59e0b",
           background_color: DOOR ? "#f6f6f2" : "#0b1018", // = Splash in index.html, kein Farbsprung
@@ -135,9 +143,9 @@ module.exports = defineConfig(async ({ mode }) => {
           scope: "/",
           icons: DOOR
             ? [
-                { src: "/icons-door/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-                { src: "/icons-door/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-                { src: "/icons-door/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+                { src: `/${FL.dir}/icon-192.png`, sizes: "192x192", type: "image/png", purpose: "any" },
+                { src: `/${FL.dir}/icon-512.png`, sizes: "512x512", type: "image/png", purpose: "any" },
+                { src: `/${FL.dir}/icon-maskable-512.png`, sizes: "512x512", type: "image/png", purpose: "maskable" },
               ]
             : [
                 { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
@@ -150,7 +158,7 @@ module.exports = defineConfig(async ({ mode }) => {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
           navigateFallback: "/index.html",
           navigateFallbackDenylist: [/^\/api/, /^\/__\//],
-          globIgnores: DOOR ? ["**/*.map", "icons/**"] : ["**/*.map", "icons-door/**"],
+          globIgnores: ["**/*.map", ...["icons", "icons-door", "icons-voice", "icons-game", "icons-tent"].filter((d) => d !== (FL ? FL.dir : "icons")).map((d) => `${d}/**`)],
           // Nur Google Fonts cachen; Firebase/Auth/Firestore/Vertex bewusst ohne Route (immer Netzwerk)
           runtimeCaching: [
             {

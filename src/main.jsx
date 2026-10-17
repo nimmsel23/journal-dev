@@ -27,6 +27,7 @@ function localToday() {
 const HASH_ALIASES = { v2: "journal-v2", door2: "door-v2", game2: "game-v2", tent2: "tent-v2" };
 const V2_MODES = ["tag", "woche", "monat", "habits"];
 const DOOR_MODES = ["potential", "plan", "production", "profit"]; // #door2/plan
+const GAME_DEFAULT = import.meta.env.VITE_DEFAULT_GAME_MODE || "fire";
 const GAME_MODES = ["fire", "focus", "freedom", "frame", "voice"]; // #game2/focus, Kurzform #focus
 const HASH_ALIASES_REVERSE = Object.fromEntries(Object.entries(HASH_ALIASES).map(([k, v]) => [v, k]));
 
@@ -53,7 +54,7 @@ function parseHashState() {
 function buildHashState(rawTab, date, mode = "tag") {
   const tab = HASH_ALIASES_REVERSE[rawTab] ?? rawTab;
   if (!tab) return "#";
-  if (rawTab === "game-v2") return mode && mode !== "fire" ? `#${tab}/${mode}` : `#${tab}`; // kein Datum
+  if (rawTab === "game-v2") return mode && mode !== GAME_DEFAULT ? `#${tab}/${mode}` : `#${tab}`; // kein Datum
   if (rawTab === "door-v2") return mode && mode !== "potential" ? `#${tab}/${mode}` : `#${tab}`; // kein Datum
   const prefix = rawTab === "journal-v2" && mode !== "tag" ? `${tab}/${mode}` : tab;
   if (!date) return `#${prefix}`;
@@ -72,7 +73,7 @@ function App() {
   const { activeTab, setActiveTab, activeDate, setActiveDate, v2Mode, setV2Mode } = useApp();
   const [user, setUser] = React.useState(null);
   const [doorMode, setDoorMode] = React.useState("potential");
-  const [gameMode, setGameMode] = React.useState("fire");
+  const [gameMode, setGameMode] = React.useState(GAME_DEFAULT);
 
   // Auth-Status bekannt → Splash (index.html) ausblenden; Fallback nach 2,5 s
   React.useEffect(() => {
@@ -97,7 +98,7 @@ function App() {
       }
       if (tab === "journal-v2") setV2Mode(mode ?? "tag");
       if (tab === "door-v2") setDoorMode(mode ?? "potential");
-      if (tab === "game-v2") setGameMode(mode ?? "fire");
+      if (tab === "game-v2") setGameMode(mode ?? GAME_DEFAULT);
       if (date) {
         setActiveDate(date);
       }

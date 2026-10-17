@@ -81,11 +81,13 @@ fitness-dev-Variante mit anderer `saveJournal`-Signatur (Tags als Array) durchsc
 | `pnpm run deploy:v2:build` | nur der v2-Build |
 | `pnpm run deploy:door` | Build nach `dist-door` mit `VITE_APP_FLAVOR=door` + `VITE_DEFAULT_TAB=door-v2` + Deploy auf **vos-door.web.app** (Target `door`) |
 | `pnpm run deploy:door:build` | nur der Door-Build |
+| `pnpm run deploy:voice` / `deploy:game` / `deploy:tent` (jeweils `…:build`) | Flavor-Apps auf **vos-voice / vos-game / vos-tent.web.app** (Targets `voice`/`game`/`tent`) |
+| `pnpm run deploy:all` (`deploy:all:build`) | baut alle sechs Varianten und deployt alle Targets in einem `firebase deploy` |
 | `./deploy.sh [--pull] [--dry-run]` | Desktop-Prod `/opt/journal`: baut im Repo, kopiert nur `dist-firebase/`, keine Backups |
 
-Targets: `firebase.json` (drei Hosting-Einträge) + `.firebaserc` (`journal` → `journal-vos`, `v2` → `vos-journal`,
-`door` → `vos-door`). Alle drei Builds enthalten denselben Code und unterscheiden sich nur durch Start-Tab, Name, Icons
-und Farben. Die Seiten `vos-journal` und `vos-door` wurden per `firebase hosting:sites:create` angelegt.
+Targets: `firebase.json` (sechs Hosting-Einträge) + `.firebaserc` (`journal` → `journal-vos`, `v2` → `vos-journal`,
+`door` → `vos-door`, `voice` → `vos-voice`, `game` → `vos-game`, `tent` → `vos-tent`). Alle Builds enthalten denselben Code und unterscheiden sich nur durch Start-Tab, Name, Icons
+und Farben. Die Seiten `vos-journal`, `vos-door`, `vos-voice`, `vos-game` und `vos-tent` wurden per `firebase hosting:sites:create` angelegt.
 CI-Workflows setzen `target: journal`. `firebase deploy` endete einmal mit „Timed out“ im Aufräumschritt nach
 erfolgreichem Release (Exit 2); das Hosting war trotzdem live.
 
@@ -165,6 +167,11 @@ Zeiträume `startDate`/`endDate`, Tagesprompts, Habit-Journale, Supplements/Mahl
 Offen: Test des Ziehens auf dem iPad, Zustimmungsbildschirm (Calendar, Tasks), Habit-Häufigkeit in der Quote,
 Browser-Test von Door v2 (Layout, Hash-Wechsel) und Google Tasks gegen die echte API (Zeitzonen der `due`-Tage, Token-Ablauf).
 
+## Door v2 · Quellen-Registry und Plan-Board (Drag & Drop)
+
+- **Registry:** `SOURCES` in `src/lib/door/source.js` (Backend, Google Tasks, Taskwarrior); jede Quelle ist ein Funktionsset mit identischen Signaturen (`door(source)`). Die Wahl liegt pro Nutzer in Firestore `fitness/{uid}/settings/door` (von den Regeln für `fitness/{uid}/**` gedeckt), `localStorage` `dv2:source` ist nur Cache.
+- **Plan-Board:** dnd-kit (`@dnd-kit/core`). Karten haben einen Griff „⠿“ (nur der Griff sperrt Scrollen, wichtig für iPad); Ziel sind Q1–Q4 oder der beim Ziehen erscheinende Slot „Door der Woche“ (setzt Q2 und wählt die Door). Optimistisches Update im Query-Cache, danach Speichern. Hits zwischen Tagen ziehen (Production) gibt es noch nicht.
+
 ## Door v2 · Taskwarrior (TaskChampion-Sync)
 
 Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in `src/lib/door/source.js`; Wahl pro Nutzer in `fitness/{uid}/settings/door`).
@@ -172,6 +179,7 @@ Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in 
 - **Client:** `src/lib/door/taskchampion.js` – Pull gegen den `taskchampion-sync-server` (Snapshot + Versionen), Replik in IndexedDB `tc-door`. Krypto: PBKDF2-SHA256 (600 000 It., Salt = 16-Byte-Client-ID), ChaCha20-Poly1305 (`@noble/ciphers`), Hülle `[1][nonce 12][ct+tag]`, AAD `[1][Version-ID]`; Klartext ist **zlib-komprimiertes JSON**, Versionen als `{"operations":[…]}`.
 - **Adapter:** `taskwarrior.door.js` – Potential = `+hot`/`+potential`, Plan: Quadrant aus `priority` (H=Q1, M=Q2, L=Q3, leer=Q4; `+q1…+q4` überschreibt), Door der Woche `+door`, Production = `+hit` mit `due` in der Woche, Profit aus `end` der letzten 8 Wochen. **Schreiben** per AddVersion (`commit()` in `taskchampion.js`: erst Pull, dann Push, bei 409 neu ziehen und wiederholen). Schreibende Funktionen: Hot-List anlegen/erledigen/löschen (`+hot`), Quadrant ändern (setzt `priority`, entfernt `+q*`), Door wählen (`+door` an den gewählten Task, von anderen offenen Tasks entfernt), Hits anlegen/abhaken (`+hit`, `due` = lokale Mitternacht). Versionen gehen als **unkomprimiertes** UTF-8-JSON raus (komprimiert → `task sync` panict mit Utf8Error); nur Snapshots sind zlib.
 - **Zugangsdaten** (Server-URL, `sync.server.client_id`, `sync.encryption_secret` – Werte in `~/.taskrc` bzw. `~/.env/taskwarrior.env`) gibt man einmal pro Browser ein; sie liegen nur in der IndexedDB, nie in Firestore. Dieselbe Client-ID wie auf Desktop/iOS (Claw Warrior) nutzen.
+- **Infrastruktur:** `taskchampion-sync-server` (Port 53589) ist über den Tailscale-Funnel-Root `https://ideapad.tail7a15d6.ts.net/` erreichbar; der Root zeigt auf den CORS-Proxy (`tailscale funnel --bg --set-path=/ http://127.0.0.1:53590`).
 - **CORS:** der Sync-Server sendet keine CORS-Header → `scripts/tc-cors-proxy.mjs` (user-Unit `tc-cors-proxy.service`, `:53590`, erlaubt nur die Firebase-Origins) steht davor; Tailscale-Funnel-Root zeigt auf den Proxy.
 - **Verifiziert** mit einem Test-Account (eigene Client-ID): Push aus dem Browser-Client → `task sync` (3.5.0) liest die Änderungen; `task add` + `task sync` → Browser-Client liest zurück. Die echte Historie wurde dafür nicht angefasst.
 - **Offen:** Konfliktbehandlung ist simpel (neu ziehen, Eigenschaften überschreiben); Hits zwischen Tagen verschieben fehlt.
@@ -188,6 +196,14 @@ Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in 
 ## Tent v2 (`#tent2`)
 
 `src/views/tent/` – General's Tent als eigene Raster-Ansicht (nicht Teil von Game): Return and Report (Habits aus Firestore, Fire/Hits/Doors aus Taskwarrior), Lessons Learned, Course Correction, New Targets; „Tent schließen“ speichert einen Journal-Eintrag (Tags `tent`, `<Woche>`), Status „Tent offen/geschlossen“ je ISO-Woche. Core4-Scores aus dem aos server fehlen (Browser erreicht ihn nicht).
+
+## Geplant / offen (Stand Taskwarrior/Game/Tent)
+
+- Ungetestet im Browser: Game v2, Tent v2, Voice, die drei neuen Apps, Push nach Taskwarrior gegen die echte Historie (getestet nur mit Test-Account).
+- Inhalte der Map-Dokumente (Frame/Freedom/Focus/Fire-YAML) fehlen in Game v2; Core4-Scores im Tent.
+- Production: Hits zwischen Tagen verschieben (Fälligkeit ändern) je Quelle.
+- Zustimmungsbildschirm (Scopes `calendar.readonly`, `tasks`, ggf. Testnutzer) nur in der Cloud Console; JavaScript-Ursprünge der OAuth-Clients nur bei `origin_mismatch` nötig (Firebase-Popup läuft über `authDomain`).
+- vitalos: Umstellung auf direkten Zugriff auf `journal-dev` (Symlink/Pnpmfile/Checkout statt Submodul + Branch `vitalos`) ist nur besprochen, nicht umgesetzt.
 
 ## Weitere Apps: Voice, Game, Tent
 

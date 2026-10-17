@@ -4,12 +4,12 @@ import { useState } from "react";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { door } from "../../../lib/door/source.js";
-import { fetchProfitGtasks, addDailyHit } from "../../../lib/door/gtasks.door.js";
+import { fetchProfitGtasks } from "../../../lib/door/gtasks.door.js";
 import { fetchProfitTw } from "../../../lib/door/taskwarrior.door.js";
 
 const MSGS = {
   "gtasks-expired": "Google-Tasks-Sitzung abgelaufen – oben neu verbinden.",
-  "taskwarrior-readonly": "Taskwarrior ist hier nur lesend – bitte in Taskwarrior ändern und danach „Sync“ drücken.",
+  "tc-conflict": "Sync-Konflikt – bitte „Sync“ drücken und erneut versuchen.",
   "tc-unconfigured": "Taskwarrior ist nicht eingerichtet.",
   "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.",
   "tc-network": "Sync-Server nicht erreichbar (offline, CORS oder Proxy).",
@@ -118,7 +118,7 @@ export function PlanPanel({ uid, source = "backend" }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor),
   );
-  const canDrag = source !== "taskwarrior"; // Taskwarrior-Quelle ist lesend
+  const canDrag = true;
   const board = q.data?.board || { 1: [], 2: [], 3: [], 4: [], unsorted: [] };
   const byKey = new Map((q.data?.candidates || []).map((i) => [keyFor(i), i]));
   const selected = q.data?.selected?.selector || q.data?.doorWar?.selected?.selector || "";
@@ -194,7 +194,7 @@ export function ProductionPanel({ uid, source = "backend" }) {
   const [draft, setDraft] = useState("");
   const [day, setDay] = useState(() => DAYS[Math.min(6, (new Date().getDay() + 6) % 7)][0]);
   const add = useMutation({
-    mutationFn: ({ day: d, t }) => addDailyHit(d, t),
+    mutationFn: ({ day: d, t }) => D.addDailyHit(d, t),
     onSuccess: () => { setErr(""); setDraft(""); qc.invalidateQueries({ queryKey: ["dv2-prod", uid, source] }); qc.invalidateQueries({ queryKey: ["dv2-prod-sum", uid, source] }); },
     onError: (e) => setErr(msg(e)),
   });
@@ -208,14 +208,14 @@ export function ProductionPanel({ uid, source = "backend" }) {
         <span>Hits der Woche{sum ? ` · ${Math.round((sum.completion_rate || 0) * 100)} %` : ""}{q.data?.week ? ` · ${q.data.week}` : ""}</span>
       </div>
       {err && <div className="dv2-empty" role="alert">{err}</div>}
-      {source === "gtasks" && (
+      {(source === "gtasks" || source === "taskwarrior") && (
         <form className="dv2-compose" onSubmit={(e) => { e.preventDefault(); const t = draft.trim(); if (t) add.mutate({ day, t }); }}>
           <select aria-label="Tag" value={day} onChange={(e) => setDay(e.target.value)}>{DAYS.map(([d, l]) => <option key={d} value={d}>{l}</option>)}</select>
           <input aria-label="Neuer Hit" placeholder="Neuer Hit …" value={draft} onChange={(e) => setDraft(e.target.value)} />
           <button type="submit" disabled={!draft.trim() || add.isPending}>Add</button>
         </form>
       )}
-      <State q={q} empty={none ? (source === "gtasks" ? "Keine Hits diese Woche. Oben einen anlegen." : "Kein Daily-Plan. Erst einen War Stack im Plan anlegen.") : null}>
+      <State q={q} empty={none ? (source === "gtasks" || source === "taskwarrior" ? "Keine Hits diese Woche. Oben einen anlegen." : "Kein Daily-Plan. Erst einen War Stack im Plan anlegen.") : null}>
         <div className="dv2-grid">
           {DAYS.map(([d, label]) => {
             const items = days[d] || [];

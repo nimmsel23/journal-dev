@@ -16,7 +16,7 @@ const KEY = "dv2:source";
 export const SOURCES = [
   { id: "backend", label: "Backend" },
   { id: "gtasks", label: "Google Tasks", auth: "google" },
-  { id: "taskwarrior", label: "Taskwarrior (lesend)", auth: "taskchampion" },
+  { id: "taskwarrior", label: "Taskwarrior", auth: "taskchampion" },
 ];
 const valid = (s) => SOURCES.some((x) => x.id === s);
 

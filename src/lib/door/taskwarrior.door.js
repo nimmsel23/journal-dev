@@ -1,5 +1,5 @@
 // taskwarrior.door.js — Adapter: Door-v2-Funktionen auf Taskwarrior (TaskChampion-Replik im Browser),
-// gleiche Signaturen/Rückgabeformen wie gtasks.door.js. Derzeit NUR LESEND.
+// gleiche Signaturen/Rückgabeformen wie gtasks.door.js. Schreiben per TaskChampion-AddVersion (taskchampion.commit).
 //
 // Mapping (Tags der bestehenden Taskwarrior-Datenbank)
 //  Potential  = offene Tasks mit +hot oder +potential (Hot List)
@@ -8,11 +8,18 @@
 //  Profit     = erledigte Tasks (`end`) der letzten 8 Wochen: +hot/+potential und +hit; Doors = erledigte +door
 import { addDays, format, startOfWeek } from "date-fns";
 import { weekKey } from "./warstack.js";
-import { tasks } from "./taskchampion.js";
+import { tasks, commit, editOps, tagProps, newTaskOps, nowSecs } from "./taskchampion.js";
 
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const PROFIT_WEEKS = 8;
-const RO = () => { throw new Error("taskwarrior-readonly"); };
+
+/** Task per UUID ändern (immer gegen frischen Stand); props: null = entfernen. */
+async function edit(uuid, props) {
+  const t = (await tasks({ force: true })).find((x) => x.uuid === uuid);
+  if (!t) throw new Error("task_not_found");
+  await commit(editOps(t, { ...props, modified: nowSecs() }));
+  return t;
+}
 
 const has = (t, tag) => t[`tag_${tag}`] !== undefined;
 const secs = (v) => (v ? new Date(Number(v) * 1000) : null);
@@ -37,9 +44,13 @@ export async function fetchHotlist() {
   return (await tasks()).filter((t) => open(t) && isPot(t)).map(toItem)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
-export const addHotlistItem = RO;
-export const completeHotlistItem = RO;
-export const deleteHotlistItem = RO;
+export async function addHotlistItem(text) {
+  const title = String(text || "").trim();
+  if (!title) throw new Error("title_required");
+  await commit(newTaskOps(title, { tags: ["hot"] }).ops);
+}
+export const completeHotlistItem = (id) => edit(id, { status: "completed", end: nowSecs() });
+export const deleteHotlistItem = (id) => edit(id, { status: "deleted", end: nowSecs() });
 
 // ── Plan ──
 export async function fetchDoorWar() {
@@ -52,8 +63,26 @@ export async function fetchDoorWar() {
   const selected = { selector: door?.id || "", uuid: door?.id || "", week: door ? wk : "" };
   return { doorWar: { selected }, candidates, board, selected };
 }
-export const assignQuadrant = RO;
-export const selectWeeklyDoor = RO;
+const PRIO_OF = { 1: "H", 2: "M", 3: "L", 4: null };
+export async function assignQuadrant(id, quadrant) {
+  const t = (await tasks({ force: true })).find((x) => x.uuid === id);
+  if (!t) throw new Error("task_not_found");
+  // Priorität setzen; Q-Tags (Override) entfernen, sonst gewinnen sie weiter
+  let props = { priority: PRIO_OF[Number(quadrant)] };
+  for (const n of [1, 2, 3, 4]) if (has(t, `q${n}`)) props = { ...props, ...tagProps({ ...t, ...props }, `q${n}`, false) };
+  await commit(editOps(t, { ...props, modified: nowSecs() }));
+}
+// Eine Door pro Woche: +door von anderen offenen Tasks entfernen, am gewählten setzen
+export async function selectWeeklyDoor(id) {
+  const all = await tasks({ force: true });
+  const t = all.find((x) => x.uuid === id);
+  if (!t) throw new Error("task_not_found");
+  const now = nowSecs();
+  const ops = [];
+  for (const o of all) if (o.uuid !== id && o.status === "pending" && has(o, "door")) ops.push(...editOps(o, { ...tagProps(o, "door", false), modified: now }));
+  ops.push(...editOps(t, { ...tagProps(t, "door", true), modified: now }));
+  await commit(ops);
+}
 
 // ── Production ──
 const weekDates = (base = new Date()) => {
@@ -75,8 +104,18 @@ export async function fetchDailyWeek() {
   }
   return { week: weekKey(), days };
 }
-export const toggleDailyHit = RO;
-export const addDailyHit = RO;
+export async function toggleDailyHit(id) {
+  const t = (await tasks({ force: true })).find((x) => x.uuid === id);
+  if (!t) throw new Error("daily_hit_not_found");
+  await commit(editOps(t, t.status === "completed" ? { status: "pending", end: null, modified: nowSecs() } : { status: "completed", end: nowSecs(), modified: nowSecs() }));
+}
+export async function addDailyHit(dayKey, text) {
+  const title = String(text || "").trim();
+  const date = weekDates().find(([k]) => k === dayKey)?.[1];
+  if (!title || !date) throw new Error("title_required");
+  const due = String(Math.floor(new Date(`${date}T00:00:00`).getTime() / 1000)); // lokale Mitternacht wie `task due:`
+  await commit(newTaskOps(title, { tags: ["hit"], props: { due } }).ops);
+}
 export async function fetchHitsWeek() {
   const { list } = await weekHits();
   const done = list.filter((t) => t.status === "completed").length;

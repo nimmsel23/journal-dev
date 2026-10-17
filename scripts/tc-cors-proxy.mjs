@@ -5,7 +5,7 @@ import http from "node:http";
 const LISTEN = Number(process.env.TC_PROXY_PORT || 53590);
 const UPSTREAM = { host: "127.0.0.1", port: Number(process.env.TC_UPSTREAM_PORT || 53589) };
 const ORIGINS = (process.env.TC_ORIGINS ||
-  "https://vos-door.web.app,https://vos-journal.web.app,https://journal-vos.web.app,http://localhost:5173,http://localhost:4173").split(",");
+  "https://vos-door.web.app,https://vos-voice.web.app,https://vos-game.web.app,https://vos-tent.web.app,https://vos-journal.web.app,https://journal-vos.web.app,http://localhost:5173,http://localhost:4173").split(",");
 
 const cors = (origin) => (ORIGINS.includes(origin) ? {
   "Access-Control-Allow-Origin": origin,

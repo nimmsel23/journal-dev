@@ -4,8 +4,16 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { door } from "../../../lib/door/source.js";
 import { fetchProfitGtasks, addDailyHit } from "../../../lib/door/gtasks.door.js";
+import { fetchProfitTw } from "../../../lib/door/taskwarrior.door.js";
 
-const msg = (e) => (e?.message === "gtasks-expired" ? "Google-Tasks-Sitzung abgelaufen – oben neu verbinden." : e?.message || "Fehler");
+const MSGS = {
+  "gtasks-expired": "Google-Tasks-Sitzung abgelaufen – oben neu verbinden.",
+  "taskwarrior-readonly": "Taskwarrior ist hier nur lesend – bitte in Taskwarrior ändern und danach „Sync“ drücken.",
+  "tc-unconfigured": "Taskwarrior ist nicht eingerichtet.",
+  "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.",
+  "tc-network": "Sync-Server nicht erreichbar (offline, CORS oder Proxy).",
+};
+const msg = (e) => MSGS[e?.message] || e?.message || "Fehler";
 const selectorFor = (i) => i?.id || i?.task_uuid || i?.tw_uuid || i?.selector || "";
 const keyFor = (i) => i.war_uuid || i.id || i.task_uuid || "";
 
@@ -184,12 +192,12 @@ export function ProductionPanel({ uid, source = "backend" }) {
 
 /* ── Profit: Auswertung (nur lesen) ── */
 export function ProfitPanel({ uid, source = "backend" }) {
-  return source === "gtasks" ? <ProfitGtasks uid={uid} /> : <ProfitBackend uid={uid} source={source} />;
+  return source === "gtasks" || source === "taskwarrior" ? <ProfitGtasks uid={uid} source={source} /> : <ProfitBackend uid={uid} source={source} />;
 }
 
 /* Quelle Google Tasks: Wochen-Auswertung aus erledigten Tasks, keine Reflexionen */
-function ProfitGtasks({ uid }) {
-  const q = useQuery({ queryKey: ["dv2-profit-gt", uid], queryFn: fetchProfitGtasks, staleTime: 15_000 });
+function ProfitGtasks({ uid, source }) {
+  const q = useQuery({ queryKey: ["dv2-profit-gt", uid, source], queryFn: source === "taskwarrior" ? fetchProfitTw : fetchProfitGtasks, staleTime: 15_000 });
   const weeks = q.data?.weeks || [];
   const doors = q.data?.doors || [];
   return (

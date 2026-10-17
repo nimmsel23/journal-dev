@@ -24,8 +24,9 @@ function localToday() {
 }
 
 // Kurze Hash-Präfixe → Tab-Key (#v2, #v2/today, #v2/2026-10-17)
-const HASH_ALIASES = { v2: "journal-v2" };
+const HASH_ALIASES = { v2: "journal-v2", door2: "door-v2" };
 const V2_MODES = ["tag", "woche", "monat", "habits"];
+const DOOR_MODES = ["potential", "plan", "production", "profit"]; // #door2/plan
 const HASH_ALIASES_REVERSE = Object.fromEntries(Object.entries(HASH_ALIASES).map(([k, v]) => [v, k]));
 
 function parseHashState() {
@@ -37,6 +38,7 @@ function parseHashState() {
   // v2 hat einen optionalen Modus-Teil: #v2/woche/2026-10-17
   let mode = null;
   if (tab === "journal-v2" && V2_MODES.includes(parts[1])) mode = parts.splice(1, 1)[0];
+  if (tab === "door-v2" && DOOR_MODES.includes(parts[1])) mode = parts.splice(1, 1)[0];
   const rawDate = parts[1] ?? null;
   if (!tab) return { tab: null, date: null, mode };
   if (!rawDate) return { tab, date: null, mode };
@@ -48,6 +50,7 @@ function parseHashState() {
 function buildHashState(rawTab, date, mode = "tag") {
   const tab = HASH_ALIASES_REVERSE[rawTab] ?? rawTab;
   if (!tab) return "#";
+  if (rawTab === "door-v2") return mode && mode !== "potential" ? `#${tab}/${mode}` : `#${tab}`; // kein Datum
   const prefix = rawTab === "journal-v2" && mode !== "tag" ? `${tab}/${mode}` : tab;
   if (!date) return `#${prefix}`;
   return `#${prefix}/${date === localToday() ? "today" : date}`;
@@ -64,6 +67,7 @@ if (typeof window !== "undefined") {
 function App() {
   const { activeTab, setActiveTab, activeDate, setActiveDate, v2Mode, setV2Mode } = useApp();
   const [user, setUser] = React.useState(null);
+  const [doorMode, setDoorMode] = React.useState("potential");
 
   // Auth-Status bekannt → Splash (index.html) ausblenden; Fallback nach 2,5 s
   React.useEffect(() => {
@@ -87,6 +91,7 @@ function App() {
         setActiveTab(tab);
       }
       if (tab === "journal-v2") setV2Mode(mode ?? "tag");
+      if (tab === "door-v2") setDoorMode(mode ?? "potential");
       if (date) {
         setActiveDate(date);
       }
@@ -101,12 +106,12 @@ function App() {
 
   React.useEffect(() => {
     if (activeTab) {
-      const nextHash = buildHashState(activeTab, activeDate, v2Mode);
+      const nextHash = buildHashState(activeTab, activeDate, activeTab === "door-v2" ? doorMode : v2Mode);
       if (window.location.hash !== nextHash) {
         window.location.hash = nextHash;
       }
     }
-  }, [activeDate, activeTab, v2Mode]);
+  }, [activeDate, activeTab, v2Mode, doorMode]);
 
   const isCloud = window.location.hostname.includes("web.app") || window.location.hostname.includes("firebaseapp.com");
 
@@ -135,7 +140,7 @@ function App() {
     }
   };
 
-  const tabCtx = { activeDate, setActiveDate, setActiveTab, user, v2Mode, setV2Mode };
+  const tabCtx = { activeDate, setActiveDate, setActiveTab, user, v2Mode, setV2Mode, doorMode, setDoorMode };
 
   // "bare"-Tabs (z.B. Journal v2) bringen ihr eigenes Layout mit: kein App-Header.
   if (activeTabConfig?.bare) {

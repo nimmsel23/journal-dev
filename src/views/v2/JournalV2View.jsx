@@ -442,6 +442,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           {uid && (calOn
             ? <button type="button" className="jv2-link" onClick={disconnect}>Kalender trennen</button>
             : <button type="button" className="jv2-link" onClick={connect}>Kalender verbinden</button>)}
+          <a href="#door2">Door →</a>
           <a href="#journal">← v1</a>
         </div>
       </article>

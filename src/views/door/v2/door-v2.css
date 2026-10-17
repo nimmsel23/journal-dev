@@ -1,0 +1,139 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wght@300..700&display=swap");
+/* Door v2 · "Raster" — angelehnt an journal-v2.css. Alles unter .dv2 gescopet. */
+.dv2-page {
+  min-height: 100vh; min-height: 100dvh; background: #f6f6f2;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+.dv2 {
+  --p: #f6f6f2; --ink: #0d0d0d; --sig: #1738ff; --soft: #e2e2dc;
+  --mono: "Martian Mono", ui-monospace, monospace;
+  font-family: "Archivo", system-ui, sans-serif; color: var(--ink); background: var(--p);
+  min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+}
+.dv2 > .dv2-foot { margin-top: auto; }
+.dv2 *, .dv2 *::before, .dv2 *::after { box-sizing: border-box; }
+.dv2 button:focus-visible, .dv2 input:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.dv2 button:disabled { opacity: .5; cursor: default; }
+
+.dv2-modes { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 2px solid var(--ink); }
+.dv2-modes button {
+  all: unset; cursor: pointer; text-align: center; padding: 8px 2px; border-right: 1px solid var(--ink);
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; min-width: 0;
+}
+.dv2-modes button:last-child { border-right: 0; }
+.dv2-modes button[aria-selected="true"] { background: var(--ink); color: var(--p); }
+.dv2-modes button:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+
+.dv2-top { display: grid; grid-template-columns: auto 1fr; border-bottom: 2px solid var(--ink); }
+.dv2-no {
+  font-stretch: 62%; font-weight: 900; font-size: 96px; line-height: .82; letter-spacing: -.02em;
+  padding: 14px 18px 10px; border-right: 2px solid var(--ink); font-variant-numeric: tabular-nums;
+}
+.dv2-meta {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px; min-width: 0;
+  padding: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+}
+.dv2-meta b { font-size: 13px; }
+.dv2-kw { align-self: flex-start; background: var(--sig); color: #fff; padding: 2px 7px; }
+
+.dv2-empty { padding: 28px 14px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--ink); }
+.dv2-link, .dv2-foot a { all: unset; cursor: pointer; text-decoration: underline; }
+.dv2-link:focus-visible, .dv2-foot a:focus-visible { outline: 3px solid var(--sig); outline-offset: 2px; }
+.dv2-foot {
+  display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 2px solid var(--ink);
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+}
+
+.dv2-sec {
+  display: flex; justify-content: space-between; margin: 0; padding: 8px 12px; background: var(--soft);
+  border-bottom: 1px solid var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+}
+.dv2-sum { display: flex; align-items: baseline; gap: 14px; padding: 12px; border-bottom: 2px solid var(--ink); }
+.dv2-sum b { font-stretch: 62%; font-weight: 900; font-size: 56px; line-height: .9; font-variant-numeric: tabular-nums; }
+.dv2-sum span { font-family: var(--mono); font-size: 11px; text-transform: uppercase; min-width: 0; overflow-wrap: anywhere; }
+
+.dv2-row { display: grid; grid-template-columns: auto 1fr auto; border-bottom: 1px solid var(--ink); }
+.dv2-plan { grid-template-columns: 1fr; }
+.dv2-plan.door { box-shadow: inset 6px 0 0 var(--sig); }
+.dv2-text { padding: 12px; min-width: 0; }
+.dv2-text h3 { margin: 0; font-stretch: 75%; font-weight: 800; font-size: 22px; line-height: 1.05; overflow-wrap: anywhere; }
+.dv2-text p { margin: 4px 0 0; font-size: 14px; line-height: 1.4; max-width: 68ch; overflow-wrap: anywhere; }
+.dv2-check, .dv2-check.static {
+  all: unset; box-sizing: border-box; cursor: pointer; display: grid; place-items: center; width: 64px; border-right: 1px solid var(--ink);
+}
+.dv2-check.static { cursor: default; }
+.dv2-check:hover { background: var(--soft); }
+.dv2-check:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.dv2-check i {
+  font-style: normal; width: 32px; height: 32px; border: 2px solid var(--ink);
+  display: grid; place-items: center; font-weight: 700; font-size: 18px;
+}
+.dv2-check.done i { background: var(--sig); border-color: var(--sig); color: #fff; }
+.dv2-del {
+  all: unset; cursor: pointer; display: grid; place-items: center; min-width: 48px; padding: 0 10px;
+  font-family: var(--mono); font-size: 16px; border-left: 1px solid var(--ink);
+}
+.dv2-del.armed { background: var(--sig); color: #fff; font-size: 11px; text-transform: uppercase; }
+.dv2-del:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+
+.dv2-qs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+.dv2-qs button {
+  all: unset; cursor: pointer; border: 1.5px solid var(--ink); padding: 4px 10px;
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+}
+.dv2-qs button:hover { background: var(--ink); color: var(--p); }
+.dv2-qs button[aria-pressed="true"] { background: var(--ink); color: var(--p); }
+.dv2-qs button:focus-visible { outline: 3px solid var(--sig); outline-offset: 2px; }
+.dv2-qs .dv2-pick { border-color: var(--sig); color: var(--sig); }
+.dv2-qs .dv2-pick:hover { background: var(--sig); color: #fff; }
+.dv2-tag { background: var(--sig); color: #fff; padding: 4px 8px; font-family: var(--mono); font-size: 10px; text-transform: uppercase; }
+
+.dv2-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-bottom: 1px solid var(--ink); }
+.dv2-day { border-right: 1px solid var(--ink); min-width: 0; display: flex; flex-direction: column; }
+.dv2-day:last-child { border-right: 0; }
+.dv2-day h4 { margin: 0; padding: 6px 4px; text-align: center; background: var(--soft); border-bottom: 1px solid var(--ink); font-family: var(--mono); font-size: 10px; text-transform: uppercase; }
+.dv2-none { padding: 14px 0; text-align: center; font-family: var(--mono); opacity: .35; }
+.dv2-hit {
+  all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 3px; border-bottom: 1px solid var(--ink); text-align: center; min-width: 0;
+  font-family: var(--mono); font-size: 9px; line-height: 1.25; overflow-wrap: anywhere; hyphens: auto;
+}
+.dv2-hit:last-child { border-bottom: 0; }
+.dv2-hit:hover { background: var(--soft); }
+.dv2-hit:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.dv2-hit i { font-style: normal; width: 24px; height: 24px; border: 2px solid var(--ink); display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+.dv2-hit.big i { border-width: 3px; }
+.dv2-hit.done i { background: var(--sig); border-color: var(--sig); color: #fff; }
+.dv2-hit.done span { text-decoration: line-through; opacity: .6; }
+
+.dv2-compose { display: flex; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+.dv2-compose input {
+  all: unset; box-sizing: border-box; flex: 1; min-width: 0; padding: 14px; font-family: var(--mono); font-size: 14px;
+  border-right: 2px solid var(--ink);
+}
+.dv2-compose input:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.dv2-compose button {
+  all: unset; cursor: pointer; padding: 14px 20px; background: var(--ink); color: var(--p);
+  font-family: var(--mono); font-size: 13px; text-transform: uppercase;
+}
+.dv2-compose button:hover:not(:disabled) { background: var(--sig); }
+.dv2-compose button:disabled { opacity: .5; cursor: default; }
+.dv2-compose button:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+
+@media (min-width: 700px) {
+  .dv2-no { font-size: 140px; padding: 20px 28px 14px; }
+  .dv2-meta { padding: 18px 20px; font-size: 13px; }
+  .dv2-meta b { font-size: 16px; }
+  .dv2-modes button { padding: 14px 4px; font-size: 13px; }
+  .dv2-text { padding: 18px 22px; }
+  .dv2-text h3 { font-size: 32px; }
+  .dv2-text p { font-size: 17px; }
+  .dv2-check, .dv2-check.static { width: 90px; }
+  .dv2-sum b { font-size: 88px; }
+  .dv2-sum span { font-size: 13px; }
+  .dv2-sec { font-size: 13px; padding: 10px 22px; }
+  .dv2-hit { font-size: 12px; padding: 14px 6px; }
+  .dv2-day h4 { font-size: 12px; }
+  .dv2-compose input { padding: 20px 22px; font-size: 17px; }
+  .dv2-compose button { padding: 20px 30px; font-size: 18px; }
+}

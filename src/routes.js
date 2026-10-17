@@ -21,6 +21,16 @@ export const TAB_CONFIG = [
     getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user, mode: ctx.v2Mode, onModeChange: ctx.setV2Mode }),
   },
   {
+    // Hash-Alias: #door2 (Modus: #door2/plan). Rendert ohne App-Header.
+    key: "door-v2",
+    label: "Door v2",
+    title: "Door v2",
+    Icon: DoorOpen,
+    bare: true,
+    View: lazy(() => import("./views/door/v2/DoorV2View.jsx")),
+    getProps: (ctx) => ({ user: ctx.user, mode: ctx.doorMode, onModeChange: ctx.setDoorMode }),
+  },
+  {
     key: "ai-log",
     label: "Smart Log",
     title: "AI Freihand Logging",

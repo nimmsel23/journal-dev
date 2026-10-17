@@ -125,6 +125,14 @@ export async function updateJournal(id, text, opts = {}) {
   return { ok: true, id, text: content, startDate, endDate, tags };
 }
 
+// Uhrzeit eines Eintrags ändern (Journal v2: Drag auf die Timeline). `time` ist
+// ein ISO-String (UTC), `date` bleibt unverändert.
+export async function setJournalTime(id, isoTime) {
+  const userId = await uid();
+  await setDoc(doc(journalCol(userId), id), { time: isoTime, updated_at: serverTimestamp() }, { merge: true });
+  return { ok: true, id, time: isoTime };
+}
+
 export async function deleteJournal(id) {
   const userId = await uid();
   await deleteDoc(doc(journalCol(userId), id));

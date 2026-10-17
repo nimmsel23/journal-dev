@@ -9,9 +9,10 @@ import { de } from "date-fns/locale";
 import * as db from "@journal-db";
 // Journal-CRUD direkt aus journal-dev: @journal-db liefert dafür evtl. die
 // fitness-dev-Variante (andere saveJournal-Signatur, kein getJournalRange).
-import { getJournal, getJournalRange, saveJournal, deleteJournal } from "../../lib/db/journal.js";
+import { getJournal, getJournalRange, saveJournal, deleteJournal, setJournalTime } from "../../lib/db/journal.js";
 import { MonthView, WeekView, rangeFor } from "./JournalV2Range.jsx";
 import HabitsView from "./JournalV2Habits.jsx";
+import { TimelineOverlay, useTimelineDrag, hhmm } from "./TimelineDrag.jsx";
 import { analyzeSmartJournal } from "../../lib/smartJournalLogger.js";
 import { applySmartAnalysis } from "../../lib/smartJournalApply.js";
 import { addHabit, archiveHabit } from "./habitsDb.js";
@@ -21,6 +22,16 @@ import "./journal-v2.css";
 
 const HABIT_LIMIT = 5;
 const iso = (d) => format(d, "yyyy-MM-dd");
+
+// Lokale Uhrzeit eines Eintrags in Minuten seit 0:00. `time` ist meist ein
+// ISO-String (UTC) — timeStr() aus v1 schneidet davon nur die UTC-Stunde ab.
+function minutesOf(entry) {
+  const d = entry.time && String(entry.time).includes("T") ? new Date(entry.time) : null;
+  if (d && !Number.isNaN(d.getTime())) return d.getHours() * 60 + d.getMinutes();
+  const [h, m] = String(timeStr(entry) || "00:00").split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+const byMinutes = (a, b) => minutesOf(a) - minutesOf(b);
 
 function splitEntry(text) {
   const [first, ...rest] = String(text || "").split("\n");
@@ -47,6 +58,14 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     };
   }, []);
   const [draft, setDraft] = useState("");
+  // Timeline-Raster (Drag auf die versteckte Timeline): 60 / 30 / 15 Minuten
+  const [grain, setGrainState] = useState(() => {
+    try { return [60, 30, 15].includes(Number(localStorage.getItem("jv2:grain"))) ? Number(localStorage.getItem("jv2:grain")) : 30; } catch { return 30; }
+  });
+  const setGrain = (g) => {
+    setGrainState(g);
+    try { localStorage.setItem("jv2:grain", String(g)); } catch {}
+  };
   // Smart Logger: Freitext → Vertex-Analyse → Vorschau → Übernehmen (Journal, Mahlzeiten, Wasser, Habits)
   const [smart, setSmart] = useState(() => {
     try { return localStorage.getItem("jv2:smart") === "1"; } catch { return false; }
@@ -62,7 +81,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     enabled: !!uid,
     queryFn: async () => {
       const list = await getJournal(date);
-      return [...list].sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+      return [...list].sort(byMinutes);
     },
   });
 
@@ -211,6 +230,21 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     }
   };
 
+  const moveEntry = async (entry, minutes) => {
+    if (minutes === minutesOf(entry)) return;
+    const stamp = new Date(`${entry.date || date}T${hhmm(minutes)}:00`).toISOString();
+    const key = ["jv2-entries", uid, date];
+    qc.setQueryData(key, (prev = []) => prev.map((x) => (x.id === entry.id ? { ...x, time: stamp } : x)).sort(byMinutes));
+    try {
+      await setJournalTime(entry.id, stamp);
+      qc.invalidateQueries({ queryKey: ["jv2-range"] });
+    } catch (error) {
+      console.error("Uhrzeit ändern fehlgeschlagen:", error);
+      qc.invalidateQueries({ queryKey: key });
+    }
+  };
+  const timeline = useTimelineDrag({ grain, setGrain, onMove: moveEntry, minutesOf });
+
   const remove = async (id) => {
     await deleteJournal(id);
     qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
@@ -342,7 +376,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           const tags = e.tags || [];
           return (
             <div key={e.id} className={`jv2-entry${tags.includes("offen") ? " open" : ""}`}>
-              <time>{timeStr(e)}</time>
+              <button type="button" className="jv2-thandle" {...timeline.handleProps(e)} aria-label={`Uhrzeit ${hhmm(minutesOf(e))}: ziehen oder Pfeiltasten hoch/runter verschiebt den Eintrag`}>{hhmm(minutesOf(e))}</button>
               <div className="jv2-body">
                 {title && <h3>{title}</h3>}
                 {body && <p>{body}</p>}
@@ -411,6 +445,14 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           <a href="#journal">← v1</a>
         </div>
       </article>
+      <TimelineOverlay
+        drag={timeline.drag}
+        hover={timeline.hover}
+        grain={grain}
+        entries={list}
+        minutesOf={minutesOf}
+        title={timeline.drag ? splitEntry(timeline.drag.entry.text).title || String(timeline.drag.entry.text || "").slice(0, 28) : ""}
+      />
     </div>
   );
 }

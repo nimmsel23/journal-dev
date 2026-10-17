@@ -5,6 +5,7 @@ import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, u
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { door } from "../../../lib/door/source.js";
 import WarstackWizard from "./DoorV2Warstack.jsx";
+import * as twDoor from "../../../lib/door/taskwarrior.door.js";
 import { fetchProfitGtasks } from "../../../lib/door/gtasks.door.js";
 import { fetchProfitTw } from "../../../lib/door/taskwarrior.door.js";
 
@@ -154,8 +155,8 @@ export function PlanPanel({ uid, source = "backend" }) {
   return (
     <State q={q} empty={!q.isLoading && !q.isError && total === 0 ? "Keine Kandidaten. Erst Items in Potential anlegen." : null}>
       {err && <div className="dv2-empty" role="alert">{err}</div>}
-      {source === "backend" && (
-        <WarstackWizard uid={uid} door={byKey.get(selected) ? { id: selected, title: byKey.get(selected).title } : null}
+      {(source === "backend" || source === "taskwarrior") && (
+        <WarstackWizard uid={uid} api={source === "taskwarrior" ? twDoor : undefined} scope={source} door={byKey.get(selected) ? { id: selected, title: byKey.get(selected).title } : null}
           onDone={() => qc.invalidateQueries({ queryKey: key })} />
       )}
       <DndContext sensors={sensors} onDragStart={({ active }) => setDragId(String(active.id))} onDragEnd={onDragEnd} onDragCancel={() => setDragId(null)}>

@@ -3,22 +3,23 @@
 // Logik/Speicherung liegen in lib/door/plan.* (REST lokal, Firestore in der Cloud).
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import * as plan from "../../../lib/door/plan.js";
+import * as backendPlan from "../../../lib/door/plan.js";
 import { WARSTACK_STEPS } from "../../../lib/door/warstack.js";
 
 const DOMAINS = ["Power", "Production", "Process", "Protection"];
 const HIT_FIELDS = [["fact", "Fact"], ["obstacle", "Obstacle"], ["strike", "Strike"], ["responsibility", "Responsibility"]];
 const emptyHits = () => Array.from({ length: 4 }, () => ({ id: crypto.randomUUID(), fact: "", obstacle: "", strike: "", responsibility: "", done: false, completed_at: null }));
-const errText = (e) => ({ answer_required: "Bitte eine Antwort eingeben.", hits_required: "Es müssen 4 Hits angegeben werden." }[e?.message] || e?.message || "Fehler");
+const errText = (e) => ({ answer_required: "Bitte eine Antwort eingeben.", hits_required: "Es müssen 4 Hits angegeben werden.", door_required: "Erst eine Door der Woche wählen." }[e?.message] || e?.message || "Fehler");
 
-export default function WarstackWizard({ uid, door, onDone }) {
+export default function WarstackWizard({ uid, door, onDone, api = backendPlan, scope = "backend" }) {
+  const plan = api;
   const qc = useQueryClient();
   const [s, setS] = useState(null); // {id, step, question, hits}
   const [value, setValue] = useState("");
   const [hits, setHits] = useState(emptyHits);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const sessions = useQuery({ queryKey: ["dv2-ws-sessions", uid], queryFn: plan.fetchWarstackSessions, staleTime: 15_000 });
+  const sessions = useQuery({ queryKey: ["dv2-ws-sessions", uid, scope], queryFn: plan.fetchWarstackSessions, staleTime: 15_000 });
 
   const show = (next) => {
     setS(next); setValue(""); setErr("");
@@ -32,7 +33,7 @@ export default function WarstackWizard({ uid, door, onDone }) {
   const start = () => run(async () => {
     const r = await plan.startWarstack(door?.title || "Door", door?.id || "");
     show({ id: r.sessionId, step: r.step, question: r.question });
-    qc.invalidateQueries({ queryKey: ["dv2-ws-sessions", uid] });
+    qc.invalidateQueries({ queryKey: ["dv2-ws-sessions", uid, scope] });
   });
   const resume = (sess) => {
     const st = WARSTACK_STEPS[sess.step_index || 0];
@@ -43,8 +44,8 @@ export default function WarstackWizard({ uid, door, onDone }) {
     run(async () => {
       const payload = s.step === "hits" ? { hits } : { answer: value.trim() };
       const r = await plan.answerWarstack(s.id, s.step, payload);
-      qc.invalidateQueries({ queryKey: ["dv2-ws-sessions", uid] });
-      qc.invalidateQueries({ queryKey: ["dv2-ws-done", uid] });
+      qc.invalidateQueries({ queryKey: ["dv2-ws-sessions", uid, scope] });
+      qc.invalidateQueries({ queryKey: ["dv2-ws-done", uid, scope] });
       if (r.done) { setS(null); onDone?.(r.warstack); }
       else show({ id: s.id, step: r.step, question: r.question, hits: r.hits });
     });

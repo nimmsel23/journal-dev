@@ -7,7 +7,7 @@
 //  Production = Tasks mit +hit und `due` in dieser Woche; erledigt = status completed
 //  Profit     = erledigte Tasks (`end`) der letzten 8 Wochen: +hot/+potential und +hit; Doors = erledigte +door
 import { addDays, format, startOfWeek } from "date-fns";
-import { weekKey } from "./warstack.js";
+import { WARSTACK_STEPS, buildWarStackHits, weekKey } from "./warstack.js";
 import { tasks, commit, editOps, tagProps, newTaskOps, nowSecs } from "./taskchampion.js";
 
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
@@ -137,4 +137,72 @@ export async function fetchProfitTw() {
     .map((t) => ({ id: t.uuid, door_title: t.description || "", week: weekKey(secs(t.end)), completed_at: secs(t.end).toISOString() }))
     .sort((a, b) => b.completed_at.localeCompare(a.completed_at));
   return { weeks: [...weeks.values()].reverse(), doors };
+}
+
+// ── War Stack ──
+// Entwurf (Wizard-Stand) liegt in localStorage, je Door-Task. Beim Abschluss entsteht EIN Markdown-Dokument,
+// das als Annotation „WARSTACK\n<md>" am +door-Task hängt; dazu werden die UDAs domain, subdomain und
+// domino_door gesetzt. `door-taskopen` legt daraus beim ersten Öffnen die Datei
+// Vault/Door/War-Stacks/STACK_<slug>.md an (Browser kann keine Dateien schreiben).
+const DRAFT = "dv2:tw-ws:";
+const drafts = () => {
+  try {
+    return Object.keys(localStorage).filter((k) => k.startsWith(DRAFT)).map((k) => JSON.parse(localStorage.getItem(k)));
+  } catch { return []; }
+};
+const saveDraft = (d) => { try { localStorage.setItem(DRAFT + d.id, JSON.stringify(d)); } catch {} };
+const dropDraft = (id) => { try { localStorage.removeItem(DRAFT + id); } catch {} };
+const LABEL = { domain: "Domain", subdomain: "Sub-domain", domino_door: "Domino Door", trigger: "Trigger", narrative: "Narrative", validation: "Validation", impact_opening: "Impact on opening", consequences: "Consequences of inaction", insights: "Insights", lessons: "Lessons learned" };
+const HITS = [["fact", "Fact"], ["obstacle", "Obstacle"], ["strike", "Strike"], ["responsibility", "Responsibility"]];
+
+function warstackMd(d) {
+  const q = d.inquiry;
+  const lines = ["---", "type: warstack", `tw_uuid: ${d.id}`, `week: ${weekKey()}`, `domain: ${q.domain || ""}`, `subdomain: ${q.subdomain || ""}`, `created: ${new Date().toISOString()}`, "---", "", `# War Stack – ${q.domino_door || d.door_title}`, ""];
+  for (const { key } of WARSTACK_STEPS) {
+    if (key === "hits") {
+      lines.push("## Hits", "");
+      d.hits.forEach((h, i) => { lines.push(`### Hit ${i + 1}`); HITS.forEach(([f, l]) => lines.push(`- **${l}:** ${h[f] || ""}`)); lines.push(""); });
+    } else lines.push(`## ${LABEL[key]}`, "", q[key] || "", "");
+  }
+  return lines.join("\n");
+}
+
+export async function fetchWarstackSessions() { return drafts(); }
+export async function fetchWarstacks() { return []; }
+export async function startWarstack(doorTitle, selector = "") {
+  if (!selector) throw new Error("door_required");
+  const d = { id: selector, door_title: doorTitle, step_index: 0, inquiry: { domino_door: doorTitle }, hits: buildWarStackHits() };
+  saveDraft(d);
+  return { sessionId: d.id, step: WARSTACK_STEPS[0].key, question: WARSTACK_STEPS[0].question };
+}
+export async function answerWarstack(sessionId, step, { answer, hits } = {}) {
+  const d = drafts().find((x) => x.id === sessionId);
+  if (!d) throw new Error("session_not_found");
+  const cur = WARSTACK_STEPS[d.step_index];
+  if (!cur || (step && step !== cur.key)) throw new Error("step_mismatch");
+  if (cur.key === "hits") {
+    if (!Array.isArray(hits) || hits.length !== 4) throw new Error("hits_required");
+    d.hits = hits;
+  } else {
+    if (!answer) throw new Error("answer_required");
+    d.inquiry = { ...d.inquiry, [cur.key]: answer };
+  }
+  d.step_index += 1;
+  const next = WARSTACK_STEPS[d.step_index];
+  if (next) {
+    saveDraft(d);
+    return { sessionId, step: next.key, question: next.question, hits: next.key === "hits" ? d.hits : null, done: false };
+  }
+  const t = (await tasks({ force: true })).find((x) => x.uuid === d.id);
+  if (!t) throw new Error("task_not_found");
+  const md = warstackMd(d);
+  const ops = editOps(t, {
+    domain: d.inquiry.domain || null, subdomain: d.inquiry.subdomain || null, domino_door: d.inquiry.domino_door || null, modified: nowSecs(),
+    // alte WARSTACK-Annotation ersetzen
+    ...Object.fromEntries(Object.entries(t).filter(([k, v]) => k.startsWith("annotation_") && String(v).startsWith("WARSTACK\n")).map(([k]) => [k, null])),
+    [`annotation_${nowSecs()}`]: `WARSTACK\n${md}`,
+  });
+  await commit(ops);
+  dropDraft(d.id);
+  return { sessionId, step: null, question: null, done: true, warstack: { id: d.id, door_title: d.door_title } };
 }

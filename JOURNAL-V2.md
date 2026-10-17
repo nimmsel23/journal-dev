@@ -175,3 +175,16 @@ Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in 
 - **CORS:** der Sync-Server sendet keine CORS-Header → `scripts/tc-cors-proxy.mjs` (user-Unit `tc-cors-proxy.service`, `:53590`, erlaubt nur die Firebase-Origins) steht davor; Tailscale-Funnel-Root zeigt auf den Proxy.
 - **Verifiziert** mit einem Test-Account (eigene Client-ID): Push aus dem Browser-Client → `task sync` (3.5.0) liest die Änderungen; `task add` + `task sync` → Browser-Client liest zurück. Die echte Historie wurde dafür nicht angefasst.
 - **Offen:** Konfliktbehandlung ist simpel (neu ziehen, Eigenschaften überschreiben); Hits zwischen Tagen verschieben fehlt.
+
+## Door v2 · War Stack
+
+- **Backend-Quelle (Firestore/REST):** Wizard `DoorV2Warstack.jsx` im Plan – 11 Schritte aus `WARSTACK_STEPS`, Start an der gewählten Door, offene Sessions lassen sich fortsetzen.
+- **Taskwarrior-Quelle:** gleiche Oberfläche, Entwurf in `localStorage` (`dv2:tw-ws:<uuid>`). Beim Abschluss: UDAs `domain`, `subdomain`, `domino_door` am +door-Task und das fertige Markdown als Annotation `WARSTACK\n<md>`. `~/.dotfiles/bin/door-taskopen` (Funktion `seed_warstack`) legt daraus beim ersten Öffnen `Vault/Door/War-Stacks/STACK_<slug>.md` an, danach öffnet taskopen die Datei wie gewohnt. Mit Test-Account gegen `task sync` verifiziert.
+
+## Game v2 (`#game2/<fire|focus|freedom|frame|voice>`, Kurzformen `#fire` …)
+
+`src/views/game/`. Fire/Focus/Freedom/Frame lesen und schreiben die Taskwarrior-Replik (TaskChampion, gleiche Verbindung wie Door v2): Fire = überfällig/heute/Woche + `+fire`; Focus = `+focus` je Projekt; Freedom = `+freedom` je Projekt; Frame = offene Tasks je Domain (Body/Being/Balance/Business) bzw. `+frame`. Abhaken setzt `completed`, „Add“ legt Task mit dem Map-Tag an (Fire: heute fällig). **Voice** (`VoicePanel.jsx`, Fragen aus `voiceData.js` = `~/aos/voice/phases.py`): vier Phasen Stop/Submit/Struggle/Strike, jede Phase wird als Journal-Eintrag (Tags `voice`, `<phase>`) gespeichert. Die Inhalte der Map-Dokumente (YAML) werden nicht gelesen.
+
+## Tent v2 (`#tent2`)
+
+`src/views/tent/` – General's Tent als eigene Raster-Ansicht (nicht Teil von Game): Return and Report (Habits aus Firestore, Fire/Hits/Doors aus Taskwarrior), Lessons Learned, Course Correction, New Targets; „Tent schließen“ speichert einen Journal-Eintrag (Tags `tent`, `<Woche>`), Status „Tent offen/geschlossen“ je ISO-Woche. Core4-Scores aus dem aos server fehlen (Browser erreicht ihn nicht).

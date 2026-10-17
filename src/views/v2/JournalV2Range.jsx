@@ -27,7 +27,7 @@ export function rangeFor(mode, day) {
   return [startOfISOWeek(startOfMonth(day)), endOfISOWeek(endOfMonth(day))];
 }
 
-export function WeekView({ day, entries, habits, onPick }) {
+export function WeekView({ day, entries, habits, events = new Map(), onPick }) {
   const [from, to] = rangeFor("woche", day);
   const byDate = groupByDate(entries);
   const today = iso(new Date());
@@ -37,6 +37,7 @@ export function WeekView({ day, entries, habits, onPick }) {
         const key = iso(d);
         const list = byDate.get(key) || [];
         const done = habits.filter((h) => h.hasRecord(key)).length;
+        const evs = events.get(key) || [];
         return (
           <button key={key} type="button" className={`jv2-wrow${key === today ? " today" : ""}`} onClick={() => onPick(key)}>
             <span className="jv2-wnum">{format(d, "dd")}</span>
@@ -45,10 +46,14 @@ export function WeekView({ day, entries, habits, onPick }) {
               {list.length === 0 ? (
                 <span className="jv2-wempty">—</span>
               ) : (
-                <>
-                  <span className="jv2-wline">{firstLine(list[list.length - 1].text)}</span>
-                  <span className="jv2-wcount">{list.length} {list.length === 1 ? "Eintrag" : "Einträge"}</span>
-                </>
+                <span className="jv2-wline">{firstLine(list[list.length - 1].text)}</span>
+              )}
+              {(list.length > 0 || evs.length > 0) && (
+                <span className="jv2-wcount">
+                  {list.length > 0 && `${list.length} ${list.length === 1 ? "Eintrag" : "Einträge"}`}
+                  {list.length > 0 && evs.length > 0 && " · "}
+                  {evs.length > 0 && `${evs.length} ${evs.length === 1 ? "Termin" : "Termine"}`}
+                </span>
               )}
             </span>
             <span className="jv2-wdots" aria-label={`${done} von ${habits.length} Habits`}>
@@ -61,7 +66,7 @@ export function WeekView({ day, entries, habits, onPick }) {
   );
 }
 
-export function MonthView({ day, entries, habits, onPick }) {
+export function MonthView({ day, entries, habits, events = new Map(), onPick }) {
   const [from, to] = rangeFor("monat", day);
   const byDate = groupByDate(entries);
   const today = iso(new Date());
@@ -80,6 +85,7 @@ export function MonthView({ day, entries, habits, onPick }) {
             const key = iso(d);
             const n = (byDate.get(key) || []).length;
             const done = habits.filter((h) => h.hasRecord(key)).length;
+            const ne = (events.get(key) || []).length;
             const full = habits.length > 0 && done === habits.length;
             const cls = ["jv2-mcell", isSameMonth(d, day) ? "" : "out", key === today ? "today" : "", full ? "full" : ""].join(" ");
             return (
@@ -87,6 +93,7 @@ export function MonthView({ day, entries, habits, onPick }) {
                 <b>{format(d, "d")}</b>
                 <span className="jv2-mmark">
                   {n > 0 && <em>{n}</em>}
+                  {ne > 0 && <u title={`${ne} Termine`}>{ne}</u>}
                   {done > 0 && <i style={{ width: `${(done / Math.max(habits.length, 1)) * 100}%` }} />}
                 </span>
               </button>

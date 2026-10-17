@@ -2,7 +2,7 @@
 // Erreichbar über den Hash #v2 bzw. #v2/<yyyy-mm-dd|today> (siehe main.jsx).
 // Nutzt dieselben Datenquellen wie die v1-Timeline (@journal-db), schreibt
 // aber nur: Journal-Einträge (addDoc) und Habit-Records (recordHabit).
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, addWeeks, format, getDayOfYear, getISOWeek, isLeapYear, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
@@ -12,6 +12,7 @@ import * as db from "@journal-db";
 import { getJournal, getJournalRange, saveJournal, deleteJournal } from "../../lib/db/journal.js";
 import { MonthView, WeekView, rangeFor } from "./JournalV2Range.jsx";
 import { extractTags, timeStr } from "../../components/Journal/journalUtils";
+import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "./gcal.js";
 import "./journal-v2.css";
 
 const HABIT_LIMIT = 5;
@@ -61,6 +62,50 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     enabled: !!uid && mode !== "tag",
     queryFn: () => getJournalRange(rangeKey[0], rangeKey[1]),
   });
+
+  // Google Calendar (nur lesen): Termine zum Reviewen, Token nur in sessionStorage
+  const [calOn, setCalOn] = useState(() => calendarConnected());
+  const [calMsg, setCalMsg] = useState("");
+  const inputRef = useRef(null);
+  const evFrom = mode === "tag" ? day : rangeFrom;
+  const evTo = mode === "tag" ? day : rangeTo;
+  const events = useQuery({
+    queryKey: ["jv2-cal", uid, iso(evFrom), iso(evTo)],
+    enabled: !!uid && calOn,
+    retry: false,
+    queryFn: async () => {
+      try {
+        return await fetchEvents(evFrom, evTo);
+      } catch (error) {
+        if (error.message === "calendar-expired") {
+          setCalOn(false);
+          setCalMsg("Kalender-Zugriff abgelaufen. Bitte neu verbinden.");
+          return [];
+        }
+        setCalMsg(error.message);
+        return [];
+      }
+    },
+  });
+  const connect = async () => {
+    setCalMsg("");
+    try {
+      await connectCalendar();
+      setCalOn(true);
+      qc.invalidateQueries({ queryKey: ["jv2-cal"] });
+    } catch (error) {
+      setCalMsg(error.code === "auth/popup-closed-by-user" ? "" : error.message);
+    }
+  };
+  const disconnect = () => { clearCalendarToken(); setCalOn(false); };
+  // Review: Termin als Journal-Eintrag beginnen (Tag +termin, Titel vorbelegt)
+  const review = (ev) => {
+    setDraft(`+termin ${ev.title}: `);
+    inputRef.current?.focus();
+  };
+  const evList = events.data || [];
+  const eventsByDate = new Map();
+  evList.forEach((ev) => eventsByDate.set(ev.date, [...(eventsByDate.get(ev.date) || []), ev]));
 
   const habitKey = ["jv2-habits", uid];
   const toggleHabit = async (habit) => {
@@ -138,8 +183,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             </div>
           </div>
         )}
-        {mode === "woche" && <WeekView day={day} entries={range.data || []} habits={habitList} onPick={pick} />}
-        {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} onPick={pick} />}
+        {mode === "woche" && <WeekView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
+        {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
         {!uid && mode !== "tag" && (
           <div className="jv2-empty">
             Nicht angemeldet. <button type="button" className="jv2-link" onClick={() => db.signIn()}>Cloud Login</button>
@@ -184,6 +229,24 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             Nicht angemeldet. <button type="button" className="jv2-link" onClick={() => db.signIn()}>Cloud Login</button>
           </div>
         )}
+        {evList.map((ev) => {
+          const reviewed = list.some((e) => (e.tags || []).includes("termin") && e.text.startsWith(ev.title));
+          return (
+            <div key={ev.id} className="jv2-entry jv2-event">
+              <time>{ev.allDay ? "ganztg." : ev.time}</time>
+              <div className="jv2-body">
+                <h3>{ev.title}</h3>
+                {ev.location && <p>{ev.location}</p>}
+                <span className="jv2-tag">{ev.calendar}</span>
+                {reviewed ? (
+                  <span className="jv2-tag jv2-reviewed">✓ reviewt</span>
+                ) : (
+                  <button type="button" className="jv2-review" onClick={() => review(ev)}>Rückblick →</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
         {uid && entries.isLoading && <div className="jv2-empty">Lade …</div>}
         {uid && !entries.isLoading && list.length === 0 && <div className="jv2-empty">Noch kein Eintrag für diesen Tag.</div>}
 
@@ -206,6 +269,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         <form className="jv2-compose" onSubmit={submit}>
           <input
             id="jv2-input"
+            ref={inputRef}
             aria-label="Neuer Eintrag"
             placeholder="Neuer Eintrag … (+tag)"
             value={draft}
@@ -217,8 +281,12 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
 
         </>}
 
+        {calMsg && <div className="jv2-empty" role="alert">{calMsg}</div>}
         <div className="jv2-foot">
           <span>Journal v2 · Raster</span>
+          {uid && (calOn
+            ? <button type="button" className="jv2-link" onClick={disconnect}>Kalender trennen</button>
+            : <button type="button" className="jv2-link" onClick={connect}>Kalender verbinden</button>)}
           <a href="#journal">← v1</a>
         </div>
       </article>

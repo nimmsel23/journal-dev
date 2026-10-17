@@ -148,3 +148,19 @@
 .jv2-mmark i { display: block; height: 4px; background: var(--sig); max-width: 100%; }
 .jv2-mcell.full { background: var(--ink); color: var(--p); }
 .jv2-mcell.full .jv2-mmark i { background: var(--p); }
+
+/* ── Kalender-Termine (Review) ── */
+.jv2-event {
+  background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(13, 13, 13, .05) 6px 7px);
+}
+.jv2-review {
+  all: unset; cursor: pointer; margin-top: 8px; font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  background: var(--ink); color: var(--p); padding: 2px 8px;
+}
+.jv2-review:hover { background: var(--sig); }
+.jv2-review:focus-visible { outline: 3px solid var(--sig); outline-offset: 2px; }
+.jv2-reviewed { background: var(--sig); border-color: var(--sig); color: #fff; }
+.jv2-mmark u {
+  text-decoration: none; font-family: var(--mono); font-size: 9px; font-weight: 700;
+  border: 1.5px solid currentColor; padding: 0 3px; align-self: flex-start;
+}

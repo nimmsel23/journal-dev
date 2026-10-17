@@ -129,17 +129,17 @@ Web-OAuth-Client.
 
 ## pnpm
 
-Das Repo ist auf pnpm umgestellt (`packageManager: pnpm@11.3.0`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` mit
+Das Repo ist auf pnpm umgestellt (`packageManager: pnpm@11.3.0`, `pnpm-workspace.yaml` mit
 `allowBuilds`, `@firebase/util`-Override 1.12.1, `shamefullyHoist`). `@vos/cross-app-aliases` steht standalone als
 `link:` (pnpm kopiert `file:`-Verzeichnisse, relative Pfade brächen). **Im vitalos-Submodul** gilt stattdessen
-`workspace:*`; `pnpm-lock.yaml` und `pnpm-workspace.yaml` gehören dort nicht hinein (Root-Lock von vitalos).
+`workspace:*`; `pnpm-workspace.yaml` gehört dort nicht hinein. **`pnpm-lock.yaml` wird nicht getrackt** (`.gitignore`): das CI installiert aus dem Root-Lock von vitalos, `journal-dev` allein ist damit nicht reproduzierbar (frische Installs lösen Versionsbereiche neu auf).
 
 ## Nach vitalos übernehmen
 
 `vos-release journal` bricht an `package.json` ab (`link:` ↔ `workspace:*`). Manuell: in `~/vitalos/journal-app`
 (Branch `vitalos`) `origin/dev` mergen, `package.json` des `vitalos`-Stands behalten und nur die Änderungen aus dev
 übertragen (nicht komplett `--theirs`, sonst gehen die `@firebase/*`/`motion-*`-Deklarationen verloren),
-`pnpm-lock.yaml`/`pnpm-workspace.yaml` entfernen, `pnpm install --lockfile-only` im vitalos-Root, pushen, Pointer in vitalos committen.
+`pnpm-workspace.yaml` entfernen (ein Lockfile-Konflikt tritt nicht mehr auf), bei neuen Abhängigkeiten `pnpm install --lockfile-only` im vitalos-Root (sonst scheitert das CI mit `--frozen-lockfile`), pushen, Pointer in vitalos committen.
 
 ## Door v2 · Google Tasks
 

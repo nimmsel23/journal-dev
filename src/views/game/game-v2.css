@@ -11,3 +11,9 @@
 .gv2-step .dv2-qs button { min-height: 40px; padding: 0 12px; }
 .gv2-epi { margin: 0; padding: 10px 14px; font-style: italic; border-bottom: 1px solid var(--ink); }
 .gv2-save { padding: 14px; }
+
+.gv2-frame { border-bottom: 1px solid var(--ink); }
+.gv2-frame > summary { cursor: pointer; padding: 14px; display: flex; justify-content: space-between; list-style: none; font-size: 16px; }
+.gv2-frame > summary::-webkit-details-marker { display: none; }
+.gv2-frame > summary span { font-family: var(--mono); font-size: 12px; opacity: .65; }
+.gv2-frame[open] > summary { background: var(--ink); color: var(--p); }

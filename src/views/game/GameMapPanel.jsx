@@ -10,6 +10,7 @@ import { addDays, endOfISOWeek, format, startOfDay, startOfISOWeek } from "date-
 import { de } from "date-fns/locale";
 import * as tc from "../../lib/door/taskchampion.js";
 import TcSetup, { tcError } from "./TcSetup.jsx";
+import { FRAME_DOMAINS, FRAME_QUESTIONS, fetchFrames, saveFrameAnswer } from "./frameDb.js";
 import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "../v2/gcal.js";
 
 export const MAPS = {
@@ -107,7 +108,42 @@ function FireCalendar() {
   );
 }
 
-export default function GameMapPanel({ map }) {
+/* Frame: je Domain die fünf Fragen (journal/{uid}/frame/{domain}), speichert beim Verlassen des Feldes. */
+function FrameCards({ uid }) {
+  const qc = useQueryClient();
+  const [err, setErr] = useState("");
+  const q = useQuery({ queryKey: ["gv2-frame", uid], enabled: !!uid, queryFn: () => fetchFrames(uid), staleTime: 30_000 });
+  if (!uid) return <div className="dv2-empty">Frame speichern braucht den Cloud-Login.</div>;
+  const save = async (domain, key, value, old) => {
+    if (value.trim() === (old || "").trim()) return;
+    setErr("");
+    try { await saveFrameAnswer(uid, domain, key, value.trim()); qc.invalidateQueries({ queryKey: ["gv2-frame", uid] }); }
+    catch (e) { setErr(e?.code === "permission-denied" ? "Keine Berechtigung für journal/… – Firestore-Rules noch nicht deployt." : e?.message || "Speichern fehlgeschlagen"); }
+  };
+  return (
+    <section>
+      <h4 className="dv2-sec">Frame Map</h4>
+      {err && <div className="dv2-empty" role="alert">{err}</div>}
+      {q.isError && <div className="dv2-empty" role="alert">{q.error?.code === "permission-denied" ? "Keine Berechtigung für journal/… – Firestore-Rules noch nicht deployt." : q.error?.message}</div>}
+      {FRAME_DOMAINS.map((d) => {
+        const ans = q.data?.[d]?.questions || {};
+        const filled = FRAME_QUESTIONS.filter(([k]) => (ans[k] || "").trim()).length;
+        return (
+          <details key={d} className="gv2-frame">
+            <summary><b>{d[0].toUpperCase() + d.slice(1)}</b> <span>{filled}/{FRAME_QUESTIONS.length}</span></summary>
+            {FRAME_QUESTIONS.map(([k, label]) => (
+              <label key={`${d}-${k}-${ans[k] || ""}`} className="gv2-step"><b className="gv2-q">{label}</b>
+                <textarea rows={3} defaultValue={ans[k] || ""} onBlur={(e) => save(d, k, e.target.value, ans[k])} />
+              </label>
+            ))}
+          </details>
+        );
+      })}
+    </section>
+  );
+}
+
+export default function GameMapPanel({ map, uid }) {
   const spec = MAPS[map];
   const qc = useQueryClient();
   const [cfg, setCfg] = useState(undefined);
@@ -137,8 +173,8 @@ export default function GameMapPanel({ map }) {
     });
   };
 
-  if (cfg === undefined) return null;
-  if (cfg === null) return <TcSetup onDone={() => { setCfg(undefined); qc.invalidateQueries({ queryKey: ["gv2-cfg"] }); }} />;
+  if (cfg === undefined) return map === "frame" ? <FrameCards uid={uid} /> : null;
+  if (cfg === null) return map === "frame" ? <><FrameCards uid={uid} /><TcSetup onDone={() => { setCfg(undefined); qc.invalidateQueries({ queryKey: ["gv2-cfg"] }); }} /></> : <TcSetup onDone={() => { setCfg(undefined); qc.invalidateQueries({ queryKey: ["gv2-cfg"] }); }} />;
   const groups = groupsFor(map, q.data || []);
   const total = groups.reduce((n, g) => n + g.items.length, 0);
   return (
@@ -158,6 +194,7 @@ export default function GameMapPanel({ map }) {
       {q.isError && <div className="dv2-empty" role="alert">{tcError(q.error)}</div>}
       {!q.isLoading && !q.isError && total === 0 && <div className="dv2-empty">Nichts offen in {spec.label}. Tag <code>+{spec.tag}</code> setzen oder oben anlegen.</div>}
       {map === "fire" && <FireCalendar />}
+      {map === "frame" && <FrameCards uid={uid} />}
       {groups.map((g) => (
         <section key={g.key}>
           <h4 className="dv2-sec">{g.title} <span>{g.items.length}</span></h4>

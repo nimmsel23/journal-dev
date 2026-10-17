@@ -40,7 +40,7 @@ export default function GameV2View({ user, mode = "fire", onModeChange = () => {
             <span><b>{MODES[idx][1]}</b><br />{SUB[current]}</span>
           </div>
         </div>
-        {current === "voice" ? <VoicePanel user={user} /> : <GameMapPanel key={current} map={current} />}
+        {current === "voice" ? <VoicePanel user={user} /> : <GameMapPanel key={current} map={current} uid={user?.uid ?? null} />}
         <div className="dv2-foot">
           <a href="#door2">Door →</a>
           <a href="#v2">← Journal</a>

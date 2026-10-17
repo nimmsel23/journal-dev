@@ -164,3 +164,13 @@ Weitere v1-Funktionen sollen schrittweise und unauffällig in v2 wandern (Kalend
 Zeiträume `startDate`/`endDate`, Tagesprompts, Habit-Journale, Supplements/Mahlzeiten in der Timeline).
 Offen: Test des Ziehens auf dem iPad, Zustimmungsbildschirm (Calendar, Tasks), Habit-Häufigkeit in der Quote,
 Browser-Test von Door v2 (Layout, Hash-Wechsel) und Google Tasks gegen die echte API (Zeitzonen der `due`-Tage, Token-Ablauf).
+
+## Door v2 · Taskwarrior (TaskChampion-Sync, lesend)
+
+Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in `src/lib/door/source.js`; Wahl pro Nutzer in `fitness/{uid}/settings/door`).
+
+- **Client:** `src/lib/door/taskchampion.js` – Pull gegen den `taskchampion-sync-server` (Snapshot + Versionen), Replik in IndexedDB `tc-door`. Krypto: PBKDF2-SHA256 (600 000 It., Salt = 16-Byte-Client-ID), ChaCha20-Poly1305 (`@noble/ciphers`), Hülle `[1][nonce 12][ct+tag]`, AAD `[1][Version-ID]`; Klartext ist **zlib-komprimiertes JSON**, Versionen als `{"operations":[…]}`.
+- **Adapter:** `taskwarrior.door.js` – Potential = `+hot`/`+potential`, Plan: Quadrant `+q1…+q4`, Door der Woche `+door`, Production = `+hit` mit `due` in der Woche, Profit aus `end` der letzten 8 Wochen. **Schreiben ist gesperrt** (`taskwarrior-readonly`).
+- **Zugangsdaten** (Server-URL, `sync.server.client_id`, `sync.encryption_secret` – Werte in `~/.taskrc` bzw. `~/.env/taskwarrior.env`) gibt man einmal pro Browser ein; sie liegen nur in der IndexedDB, nie in Firestore. Dieselbe Client-ID wie auf Desktop/iOS (Claw Warrior) nutzen.
+- **CORS:** der Sync-Server sendet keine CORS-Header → `scripts/tc-cors-proxy.mjs` (user-Unit `tc-cors-proxy.service`, `:53590`, erlaubt nur die Firebase-Origins) steht davor; Tailscale-Funnel-Root zeigt auf den Proxy.
+- **Offen:** Push (AddVersion), Konfliktbehandlung, Quadranten-Konvention in Taskwarrior prüfen.

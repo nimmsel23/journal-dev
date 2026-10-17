@@ -5,6 +5,7 @@ import * as plan from "./plan.js";
 import * as prod from "./production.js";
 import * as profit from "./profit.js";
 import * as gt from "./gtasks.door.js";
+import * as tw from "./taskwarrior.door.js";
 
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db as fdb } from "../firebase.js";
@@ -15,6 +16,7 @@ const KEY = "dv2:source";
 export const SOURCES = [
   { id: "backend", label: "Backend" },
   { id: "gtasks", label: "Google Tasks", auth: "google" },
+  { id: "taskwarrior", label: "Taskwarrior (lesend)", auth: "taskchampion" },
 ];
 const valid = (s) => SOURCES.some((x) => x.id === s);
 
@@ -46,4 +48,4 @@ const backend = {
 };
 
 /** Funktionsset der gewählten Quelle (gleiche Signaturen/Formen). */
-export const door = (source) => ({ gtasks: gt }[source] || backend);
+export const door = (source) => ({ gtasks: gt, taskwarrior: tw }[source] || backend);

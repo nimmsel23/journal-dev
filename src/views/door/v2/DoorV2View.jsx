@@ -6,6 +6,8 @@ import * as db from "@journal-db";
 import { PotentialPanel, PlanPanel, ProductionPanel, ProfitPanel } from "./DoorV2Panels.jsx";
 import { SOURCES, getSource, setSource, loadRemoteSource } from "../../../lib/door/source.js";
 import * as gtasks from "../../../lib/door/gtasks.js";
+import * as tc from "../../../lib/door/taskchampion.js";
+import { useQueryClient } from "@tanstack/react-query";
 import "./door-v2.css";
 
 const MODES = [["potential", "Potential"], ["plan", "Plan"], ["production", "Production"], ["profit", "Profit"]];
@@ -42,6 +44,22 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
     try { await gtasks.connect(); } catch (e) { setGerr(e?.message || "Verbinden fehlgeschlagen"); }
     bump((n) => n + 1);
   };
+  // Taskwarrior (TaskChampion-Sync): Konfiguration liegt nur in der IndexedDB dieses Browsers
+  const qc = useQueryClient();
+  const isT = source === "taskwarrior";
+  const [tcCfg, setTcCfg] = useState(undefined); // undefined = lädt, null = nicht eingerichtet
+  const [form, setForm] = useState({ url: "", clientId: "", secret: "" });
+  const [tcBusy, setTcBusy] = useState(false);
+  const [tcInfo, setTcInfo] = useState("");
+  useEffect(() => { if (isT) tc.getConfig().then((c) => setTcCfg(c || null)); }, [isT]);
+  const tcRun = async (fn) => {
+    setGerr(""); setTcBusy(true);
+    try { await fn(); qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("dv2-") }); }
+    catch (e) { setGerr({ "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.", "tc-network": "Sync-Server nicht erreichbar (offline, CORS oder Proxy)." }[e?.message] || e?.message || "Sync fehlgeschlagen"); }
+    setTcBusy(false);
+  };
+  const tcSave = (e) => { e.preventDefault(); tcRun(async () => { setTcCfg(await tc.saveConfig(form)); await tc.sync(); setForm({ url: "", clientId: "", secret: "" }); }); };
+  const tcSync = () => tcRun(async () => { await tc.sync(); setTcInfo(new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })); });
   const uid = user?.uid ?? null;
   const current = PANELS[mode] ? mode : "potential";
   const Panel = PANELS[current];
@@ -69,8 +87,22 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
           {isG && <button type="button" className="dv2-link" onClick={connect}>{isConn ? "Neu verbinden" : "Google Tasks verbinden"}</button>}
           {isConn && <button type="button" className="dv2-link" onClick={() => { gtasks.disconnect(); bump((n) => n + 1); }}>Trennen</button>}
         </div>
+        {isT && tcCfg && (
+          <div className="dv2-src">
+            <button type="button" className="dv2-link" disabled={tcBusy} onClick={tcSync}>{tcBusy ? "Sync …" : "Sync"}</button>
+            {tcInfo && <span>Stand {tcInfo}</span>}
+            <button type="button" className="dv2-link" onClick={async () => { await tc.clearConfig(); setTcCfg(null); }}>Trennen</button>
+          </div>
+        )}
         {gerr && <div className="dv2-empty" role="alert">{gerr}</div>}
-        {isG && !isConn ? (
+        {isT && tcCfg === null ? (
+          <form className="dv2-compose" onSubmit={tcSave} style={{ flexWrap: "wrap" }}>
+            <input aria-label="Server-URL" placeholder="Server-URL (https://…)" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
+            <input aria-label="Client-ID" placeholder="sync.server.client_id" value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })} />
+            <input aria-label="Secret" type="password" placeholder="sync.encryption_secret" autoComplete="off" value={form.secret} onChange={(e) => setForm({ ...form, secret: e.target.value })} />
+            <button type="submit" disabled={tcBusy || !form.url || !form.clientId || !form.secret}>{tcBusy ? "Prüfe …" : "Verbinden"}</button>
+          </form>
+        ) : isT && tcCfg === undefined ? null : isG && !isConn ? (
           <div className="dv2-empty">Google Tasks ist nicht verbunden (oder die Sitzung ist abgelaufen). Oben „Google Tasks verbinden“ wählen.</div>
         ) : uid ? <Panel key={source} uid={uid} source={source} /> : (
           <div className="dv2-empty">

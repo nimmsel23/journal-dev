@@ -1,1 +1,17 @@
-{"projects":{"default":"fitness-aos"}}
+{
+  "projects": {
+    "default": "fitness-aos"
+  },
+  "targets": {
+    "fitness-aos": {
+      "hosting": {
+        "journal": [
+          "journal-vos"
+        ],
+        "v2": [
+          "vos-journal"
+        ]
+      }
+    }
+  }
+}

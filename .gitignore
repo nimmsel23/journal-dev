@@ -4,6 +4,7 @@ functions/node_modules
 functions/node_modules/
 dist/
 dist-firebase/
+dist-v2/
 .firebase/
 .firebase/hosting.*.cache
 /opt/

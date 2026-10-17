@@ -28,7 +28,7 @@ function loadEnvFile(path) {
 
 console.log(`🚀 Deploye Preview-Channel "${CHANNEL}" (${EXPIRES}) → ${PROJECT} ...`);
 const raw = execSync(
-  `firebase hosting:channel:deploy ${CHANNEL} --expires ${EXPIRES} --project ${PROJECT} --json`,
+  `firebase hosting:channel:deploy ${CHANNEL} --only journal --expires ${EXPIRES} --project ${PROJECT} --json`,
   { encoding: "utf8", stdio: ["inherit", "pipe", "inherit"] }
 );
 

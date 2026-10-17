@@ -10,10 +10,13 @@
   font-family: "Archivo", system-ui, sans-serif;
   color: var(--ink);
   background: var(--p);
-  border: 2px solid var(--ink);
-  max-width: 520px;
-  margin: 0 auto;
+  /* Vollbild: füllt den ganzen Viewport (iPad/PWA), kein Kartenrand */
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
+.jv2 > .jv2-foot { margin-top: auto; }
 .jv2 *, .jv2 *::before, .jv2 *::after { box-sizing: border-box; }
 .jv2 button:focus-visible, .jv2 input:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
 
@@ -88,7 +91,39 @@
 }
 .jv2-foot a, .jv2-link { all: unset; cursor: pointer; text-decoration: underline; }
 
-.jv2-page { min-height: 100vh; background: #d9d9d2; padding: 16px 12px 40px; }
+.jv2-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #f6f6f2; /* = --p, damit auch Overscroll/Safe-Areas papierfarben sind */
+  /* black-translucent-Statusleiste + Home-Indicator + Notch seitlich */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+.jv2-body p { max-width: 68ch; }
+
+/* Tablet/Desktop: mehr Luft und größere Typo statt schmaler Spalte */
+@media (min-width: 700px) {
+  .jv2-dayno { font-size: 168px; padding: 20px 28px 14px; }
+  .jv2-rangeno { font-size: 140px; }
+  .jv2-meta { padding: 18px 20px; font-size: 13px; }
+  .jv2-meta b { font-size: 16px; }
+  .jv2-habits button { padding: 16px 8px 12px; font-size: 12px; }
+  .jv2-habits i { width: 34px; height: 34px; font-size: 18px; }
+  .jv2-entry { grid-template-columns: 110px 1fr; }
+  .jv2-entry time { font-size: 15px; padding: 18px 0 0 22px; }
+  .jv2-body { padding: 18px 48px 20px 0; }
+  .jv2-body h3 { font-size: 34px; }
+  .jv2-body p { font-size: 17px; }
+  .jv2-compose input { padding: 20px 22px; font-size: 17px; }
+  .jv2-compose button { padding: 20px 30px; font-size: 18px; }
+  .jv2-wrow { grid-template-columns: 110px 1fr auto; }
+  .jv2-wnum { font-size: 64px; padding: 14px 0 14px 22px; }
+  .jv2-wline { font-size: 18px; }
+  .jv2-mcell b { font-size: 24px; }
+  .jv2-mcell { aspect-ratio: 1 / .8; padding: 8px 10px; }
+  .jv2-mkw { font-size: 11px; }
+  .jv2-mhead span { font-size: 12px; }
+  .jv2-modes button { padding: 14px 4px; font-size: 13px; }
+}
 
 /* ── Moduswechsel ── */
 .jv2-modes { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 2px solid var(--ink); }

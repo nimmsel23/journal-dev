@@ -2,7 +2,7 @@
 // Erreichbar über den Hash #v2 bzw. #v2/<yyyy-mm-dd|today> (siehe main.jsx).
 // Nutzt dieselben Datenquellen wie die v1-Timeline (@journal-db), schreibt
 // aber nur: Journal-Einträge (addDoc) und Habit-Records (recordHabit).
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, addWeeks, format, getDayOfYear, getISOWeek, isLeapYear, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
@@ -28,6 +28,20 @@ const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"]];
 
 export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {} }) {
   const qc = useQueryClient();
+  // Vollbild: Seitenhintergrund + Statusleiste papierfarben, solange v2 offen ist
+  useEffect(() => {
+    const paper = "#f6f6f2";
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const prev = { meta: meta?.getAttribute("content"), html: document.documentElement.style.background, body: document.body.style.background };
+    meta?.setAttribute("content", paper);
+    document.documentElement.style.background = paper;
+    document.body.style.background = paper;
+    return () => {
+      if (meta && prev.meta) meta.setAttribute("content", prev.meta);
+      document.documentElement.style.background = prev.html;
+      document.body.style.background = prev.body;
+    };
+  }, []);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const day = parseISO(date);

@@ -1,6 +1,7 @@
 // Die vier Phasen-Panels von Door v2. Query-Keys tragen die uid, damit ein
 // Nutzerwechsel keine fremden Daten aus dem Cache zeigt.
 import { useState } from "react";
+import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { door } from "../../../lib/door/source.js";
 import { fetchProfitGtasks, addDailyHit } from "../../../lib/door/gtasks.door.js";
@@ -76,56 +77,103 @@ export function PotentialPanel({ uid, source = "backend" }) {
 
 /* ── Plan: Door War ── */
 const QLABEL = { 1: "Q1 · Dringend + Wichtig", 2: "Q2 · Wichtig, nicht dringend", 3: "Q3 · Dringend, nicht wichtig", 4: "Q4 · Weder noch" };
+/* Plan-Board: Items per Griff (⠿) in Quadranten oder auf „Door der Woche“ ziehen (dnd-kit) */
+function PlanItem({ k, item, isDoor, busy, canDrag, onQuadrant, onDoor }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: k, disabled: !canDrag });
+  return (
+    <div ref={setNodeRef} className={`dv2-row dv2-plan${isDoor ? " door" : ""}${isDragging ? " dragging" : ""}`}>
+      {canDrag && <button type="button" className="dv2-grip" aria-label={`${item.title} verschieben`} {...listeners} {...attributes}>⠿</button>}
+      <div className="dv2-text">
+        <h3>{item.title}</h3>
+        <div className="dv2-qs">
+          {[1, 2, 3, 4].map((n) => (
+            <button key={n} type="button" aria-pressed={item.quadrant === n} disabled={busy} onClick={() => onQuadrant(k, n)}>Q{n}</button>
+          ))}
+          {item.quadrant === 2 && (isDoor
+            ? <span className="dv2-tag">Door der Woche</span>
+            : <button type="button" className="dv2-pick" disabled={busy} onClick={() => onDoor(k)}>Door wählen</button>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+function DropZone({ id, className = "", children }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return <section ref={setNodeRef} className={`dv2-drop ${className}${isOver ? " over" : ""}`}>{children}</section>;
+}
+
 export function PlanPanel({ uid, source = "backend" }) {
   const D = door(source);
   const qc = useQueryClient();
   const key = ["dv2-plan", uid, source];
   const [err, setErr] = useState("");
+  const [dragId, setDragId] = useState(null);
   const q = useQuery({ queryKey: key, queryFn: D.fetchDoorWar, staleTime: 15_000 });
   const act = useMutation({
     mutationFn: (fn) => fn(),
     onSuccess: () => { setErr(""); qc.invalidateQueries({ queryKey: key }); },
-    onError: (e) => setErr(msg(e)),
+    onError: (e) => { setErr(msg(e)); qc.invalidateQueries({ queryKey: key }); },
   });
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor),
+  );
+  const canDrag = source !== "taskwarrior"; // Taskwarrior-Quelle ist lesend
   const board = q.data?.board || { 1: [], 2: [], 3: [], 4: [], unsorted: [] };
   const byKey = new Map((q.data?.candidates || []).map((i) => [keyFor(i), i]));
   const selected = q.data?.selected?.selector || q.data?.doorWar?.selected?.selector || "";
   const total = Object.values(board).reduce((n, a) => n + (a?.length || 0), 0);
-  const Item = ({ k }) => {
+
+  // optimistisch im Cache verschieben, dann speichern
+  const moveLocal = (k, n) => qc.setQueryData(key, (d) => {
+    if (!d) return d;
+    const b = Object.fromEntries(Object.entries(d.board).map(([bk, arr]) => [bk, (arr || []).filter((x) => x !== k)]));
+    b[n] = [...(b[n] || []), k];
+    return { ...d, board: b, candidates: d.candidates.map((c) => (keyFor(c) === k ? { ...c, quadrant: n } : c)) };
+  });
+  const setQuadrant = (k, n) => { moveLocal(k, n); act.mutate(() => D.assignQuadrant(k, n)); };
+  const setDoor = (k) => act.mutate(() => D.selectWeeklyDoor(k));
+  const onDragEnd = ({ active, over }) => {
+    setDragId(null);
+    if (!over) return;
+    const k = String(active.id);
     const item = byKey.get(k);
-    if (!item) return null;
-    const isDoor = selected === k;
-    return (
-      <div className={`dv2-row dv2-plan${isDoor ? " door" : ""}`}>
-        <div className="dv2-text">
-          <h3>{item.title}</h3>
-          <div className="dv2-qs">
-            {[1, 2, 3, 4].map((n) => (
-              <button key={n} type="button" aria-pressed={item.quadrant === n} disabled={act.isPending} onClick={() => act.mutate(() => D.assignQuadrant(k, n))}>Q{n}</button>
-            ))}
-            {item.quadrant === 2 && (isDoor
-              ? <span className="dv2-tag">Door der Woche</span>
-              : <button type="button" className="dv2-pick" disabled={act.isPending} onClick={() => act.mutate(() => D.selectWeeklyDoor(k))}>Door wählen</button>)}
-          </div>
-        </div>
-      </div>
-    );
+    if (over.id === "door") {
+      if (selected === k) return;
+      if (item?.quadrant !== 2) moveLocal(k, 2);
+      act.mutate(async () => { if (item?.quadrant !== 2) await D.assignQuadrant(k, 2); await D.selectWeeklyDoor(k); });
+    } else if (String(over.id).startsWith("q")) {
+      const n = Number(String(over.id).slice(1));
+      if (item?.quadrant !== n) setQuadrant(k, n);
+    }
   };
+  const row = (k) => byKey.get(k) && (
+    <PlanItem key={k} k={k} item={byKey.get(k)} isDoor={selected === k} busy={act.isPending} canDrag={canDrag} onQuadrant={setQuadrant} onDoor={setDoor} />
+  );
   return (
     <State q={q} empty={!q.isLoading && !q.isError && total === 0 ? "Keine Kandidaten. Erst Items in Potential anlegen." : null}>
       {err && <div className="dv2-empty" role="alert">{err}</div>}
-      {[1, 2, 3, 4].map((n) => (
-        <section key={n}>
-          <h4 className="dv2-sec">{QLABEL[n]} <span>{(board[n] || []).length}</span></h4>
-          {(board[n] || []).map((k) => <Item key={k} k={k} />)}
-        </section>
-      ))}
-      {(board.unsorted || []).length > 0 && (
-        <section>
-          <h4 className="dv2-sec">Unsortiert <span>{board.unsorted.length}</span></h4>
-          {board.unsorted.map((k) => <Item key={k} k={k} />)}
-        </section>
-      )}
+      <DndContext sensors={sensors} onDragStart={({ active }) => setDragId(String(active.id))} onDragEnd={onDragEnd} onDragCancel={() => setDragId(null)}>
+        {canDrag && dragId && (
+          <DropZone id="door" className="dv2-doorslot">
+            <b>Door der Woche</b>
+            <span>{byKey.get(selected)?.title || "noch keine – hier ablegen"}</span>
+          </DropZone>
+        )}
+        {[1, 2, 3, 4].map((n) => (
+          <DropZone key={n} id={`q${n}`}>
+            <h4 className="dv2-sec">{QLABEL[n]} <span>{(board[n] || []).length}</span></h4>
+            {(board[n] || []).map(row)}
+          </DropZone>
+        ))}
+        {(board.unsorted || []).length > 0 && (
+          <section>
+            <h4 className="dv2-sec">Unsortiert <span>{board.unsorted.length}</span></h4>
+            {board.unsorted.map(row)}
+          </section>
+        )}
+        <DragOverlay>{dragId && byKey.get(dragId) ? <div className="dv2-row dv2-plan dv2-ghost"><div className="dv2-text"><h3>{byKey.get(dragId).title}</h3></div></div> : null}</DragOverlay>
+      </DndContext>
     </State>
   );
 }

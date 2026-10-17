@@ -140,3 +140,18 @@
 
 .dv2-src { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 2px solid var(--ink); font-family: var(--mono); font-size: 11px; text-transform: uppercase; }
 .dv2-src select, .dv2-compose select { font: inherit; background: transparent; color: inherit; border: 2px solid var(--ink); padding: 2px 4px; }
+
+/* Drag & Drop im Plan-Board (dnd-kit) */
+.dv2-plan { position: relative; }
+.dv2-plan.dragging { opacity: .35; }
+.dv2-grip {
+  position: absolute; right: 0; top: 0; width: 44px; height: 44px; border: 0; background: none;
+  color: var(--ink); font-size: 22px; cursor: grab; touch-action: none; opacity: .55;
+}
+.dv2-grip:active { cursor: grabbing; }
+.dv2-grip:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.dv2-drop { transition: box-shadow .12s; }
+.dv2-drop.over { box-shadow: inset 0 0 0 3px var(--sig); background: color-mix(in srgb, var(--sig) 7%, transparent); }
+.dv2-doorslot { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; margin-bottom: 8px; border: 2px dashed var(--sig); color: var(--sig); }
+.dv2-doorslot b { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+.dv2-ghost { background: var(--p); box-shadow: 0 8px 24px rgba(0,0,0,.25); border: 2px solid var(--ink); }

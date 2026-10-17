@@ -61,9 +61,10 @@ Bevor Commits aus dem `dev` Branch in den `master` Branch fließen, wird ein tem
 - **Live Deploy (ohne Bump):** `pnpm run deploy` oder `pnpm run deploy:cloud`
 - **Preview Deploy:** `pnpm run deploy:preview` (Erstellt den zeitlich begrenzten 24h-Link)
 - **Nur Journal v2:** `pnpm run deploy:v2` (Build nach `dist-v2`, startet in der v2-Ansicht, Deploy auf `vos-journal.web.app`, Hosting-Target `v2`)
+- **Nur Door:** `pnpm run deploy:door` (Build nach `dist-door` mit Door-Icons/-Namen, startet in Door v2, Deploy auf `vos-door.web.app`, Target `door`)
 - **Desktop-Prod:** `./deploy.sh` baut im Repo (dort liegen fitness/fuel/relax als Nachbarn) und kopiert nur `dist-firebase/` nach `/opt/journal`, ohne Backups. Optionen `--pull`, `--dry-run`.
 
-Zwei Hosting-Targets in `firebase.json`/`.firebaserc`: `journal` → `journal-vos`, `v2` → `vos-journal`. `deploy:cloud` deployt nur `hosting:journal`.
+Drei Hosting-Targets in `firebase.json`/`.firebaserc`: `journal` → `journal-vos`, `v2` → `vos-journal`, `door` → `vos-door`. `deploy:cloud` deployt nur `hosting:journal`.
 Details zu v2, Smart Logger, Kalender, Service Worker und dem Merge nach vitalos: [`JOURNAL-V2.md`](JOURNAL-V2.md).
 
 *Hinweis: Firebase ist so konfiguriert, dass es ausschließlich aus dem Verzeichnis `dist-firebase/` veröffentlicht.*

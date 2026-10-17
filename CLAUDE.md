@@ -402,4 +402,4 @@ See `~/.claude/agents/nutrition-agent.md` for full definition.
 
 ## Journal v2 (Raster)
 
-Zweite Journal-Oberfläche unter `src/views/v2/` (Hash `#v2`, `#v2/woche|monat|habits/<datum>`), mit versteckter Timeline per Drag, Smart Logger, Google-Calendar-Lesezugriff, Splash/Auto-Updater, eigenem Hosting `vos-journal.web.app` und pnpm. Doku: [`JOURNAL-V2.md`](JOURNAL-V2.md).
+Zweite Journal-Oberfläche unter `src/views/v2/` (Hash `#v2`, `#v2/woche|monat|habits/<datum>`), mit versteckter Timeline per Drag, Smart Logger, Google-Calendar-Lesezugriff, Splash/Auto-Updater, eigenem Hosting `vos-journal.web.app`, Door v2 (`#door2`, Google Tasks als Quelle) als eigene App auf `vos-door.web.app` und pnpm. Doku: [`JOURNAL-V2.md`](JOURNAL-V2.md).

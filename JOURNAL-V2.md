@@ -188,3 +188,19 @@ Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in 
 ## Tent v2 (`#tent2`)
 
 `src/views/tent/` – General's Tent als eigene Raster-Ansicht (nicht Teil von Game): Return and Report (Habits aus Firestore, Fire/Hits/Doors aus Taskwarrior), Lessons Learned, Course Correction, New Targets; „Tent schließen“ speichert einen Journal-Eintrag (Tags `tent`, `<Woche>`), Status „Tent offen/geschlossen“ je ISO-Woche. Core4-Scores aus dem aos server fehlen (Browser erreicht ihn nicht).
+
+## Weitere Apps: Voice, Game, Tent
+
+Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste `FLAVORS` in `vite.config.cjs`) mit eigenem Icon-Paket, Manifest, Splash und Hosting-Target.
+
+| App | Site | Start | Befehl | Icons |
+|---|---|---|---|---|
+| Voice | vos-voice.web.app | `#voice` (`VITE_DEFAULT_GAME_MODE=voice`) | `pnpm run deploy:voice` | `public/icons-voice` |
+| Game | vos-game.web.app | `#fire` | `pnpm run deploy:game` | `public/icons-game` |
+| Tent | vos-tent.web.app | `#tent2` | `pnpm run deploy:tent` | `public/icons-tent` |
+
+- Icons erzeugt `scripts/make-flavor-icons.sh` (rsvg-convert + ImageMagick, Raster-Stil).
+- `pnpm run deploy:all` baut und deployt jetzt alle sechs Targets (journal, v2, door, voice, game, tent).
+- Auth-Domains (`*.web.app`, `*.firebaseapp.com`) sind registriert, der TaskChampion-CORS-Proxy kennt die Origins.
+- OAuth-Client-Ursprünge der neuen Sites (für Google Calendar/Tasks) nur in der Cloud Console eintragbar.
+- Die ältere Vue-PWA `~/voice-dev` (Target `voice` in ihrem eigenen Firebase-Projekt) bleibt unberührt.

@@ -11,6 +11,8 @@ import * as db from "@journal-db";
 // fitness-dev-Variante (andere saveJournal-Signatur, kein getJournalRange).
 import { getJournal, getJournalRange, saveJournal, deleteJournal } from "../../lib/db/journal.js";
 import { MonthView, WeekView, rangeFor } from "./JournalV2Range.jsx";
+import HabitsView from "./JournalV2Habits.jsx";
+import { addHabit, archiveHabit } from "./habitsDb.js";
 import { extractTags, timeStr } from "../../components/Journal/journalUtils";
 import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "./gcal.js";
 import "./journal-v2.css";
@@ -24,7 +26,7 @@ function splitEntry(text) {
   return { title: null, body: text };
 }
 
-const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"]];
+const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["habits", "Habits"]];
 
 export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {} }) {
   const qc = useQueryClient();
@@ -62,7 +64,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     queryFn: async () => {
       try {
         const all = await db.getHabits(120);
-        return all.filter((h) => !h.deleted).slice(0, HABIT_LIMIT);
+        return all.filter((h) => !h.deleted);
       } catch {
         return [];
       }
@@ -73,7 +75,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const rangeKey = [iso(rangeFrom), iso(rangeTo)];
   const range = useQuery({
     queryKey: ["jv2-range", uid, ...rangeKey],
-    enabled: !!uid && mode !== "tag",
+    enabled: !!uid && (mode === "woche" || mode === "monat"),
     queryFn: () => getJournalRange(rangeKey[0], rangeKey[1]),
   });
 
@@ -85,7 +87,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const evTo = mode === "tag" ? day : rangeTo;
   const events = useQuery({
     queryKey: ["jv2-cal", uid, iso(evFrom), iso(evTo)],
-    enabled: !!uid && calOn,
+    enabled: !!uid && calOn && mode !== "habits",
     retry: false,
     queryFn: async () => {
       try {
@@ -164,12 +166,31 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
 
   const shift = (n) => {
-    const next = mode === "monat" ? addMonths(day, n) : mode === "woche" ? addWeeks(day, n) : addDays(day, n);
+    const next = mode === "monat" ? addMonths(day, n) : mode === "woche" ? addWeeks(day, n) : mode === "habits" ? addDays(day, 7 * n) : addDays(day, n);
     onDateChange(iso(next));
   };
   const pick = (d) => { onDateChange(d); onModeChange("tag"); };
   const list = entries.data || [];
-  const habitList = habits.data || [];
+  const allHabits = habits.data || [];
+  const habitList = allHabits.slice(0, HABIT_LIMIT); // Streifen in Tag/Woche/Monat
+  const doneToday = allHabits.filter((h) => h.hasRecord(date)).length;
+  const addNew = async (name) => {
+    try {
+      await addHabit(name);
+      await qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
+    } catch (error) {
+      console.error("Habit anlegen fehlgeschlagen:", error);
+    }
+  };
+  const archive = async (habit) => {
+    qc.setQueryData(["jv2-habits", uid], (prev = []) => prev.filter((h) => h.uuid !== habit.uuid));
+    try {
+      await archiveHabit(habit.uuid);
+    } catch (error) {
+      console.error("Habit archivieren fehlgeschlagen:", error);
+      qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
+    }
+  };
 
   return (
     <div className="jv2-page">
@@ -181,13 +202,13 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         </div>
         {mode !== "tag" && (
           <div className="jv2-top">
-            <div className="jv2-dayno jv2-rangeno">{mode === "woche" ? getISOWeek(day) : format(day, "MM")}</div>
+            <div className="jv2-dayno jv2-rangeno">{mode === "woche" ? getISOWeek(day) : mode === "habits" ? `${doneToday}/${allHabits.length}` : format(day, "MM")}</div>
             <div className="jv2-meta">
-              <span className="jv2-kw">{mode === "woche" ? "KW" : "Monat"}</span>
+              <span className="jv2-kw">{mode === "woche" ? "KW" : mode === "habits" ? "Habits" : "Monat"}</span>
               <span>
-                <b>{mode === "woche" ? `${format(rangeFrom, "d. MMM", { locale: de })} – ${format(rangeTo, "d. MMM", { locale: de })}` : format(day, "MMMM", { locale: de })}</b>
+                <b>{mode === "woche" ? `${format(rangeFrom, "d. MMM", { locale: de })} – ${format(rangeTo, "d. MMM", { locale: de })}` : mode === "habits" ? format(day, "EEE d. MMM", { locale: de }) : format(day, "MMMM", { locale: de })}</b>
                 <br />
-                {format(mode === "woche" ? rangeFrom : day, "yyyy")}
+                {mode === "habits" ? "letzte 28 Tage" : format(mode === "woche" ? rangeFrom : day, "yyyy")}
               </span>
               <span className="jv2-nav">
                 <button type="button" onClick={() => shift(-1)} aria-label="Zurück">←</button>
@@ -198,6 +219,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           </div>
         )}
         {mode === "woche" && <WeekView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
+        {mode === "habits" && uid && <HabitsView date={date} habits={allHabits} onToggle={toggleHabit} onAdd={addNew} onArchive={archive} />}
         {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
         {!uid && mode !== "tag" && (
           <div className="jv2-empty">

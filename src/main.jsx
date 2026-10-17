@@ -25,7 +25,7 @@ function localToday() {
 
 // Kurze Hash-Präfixe → Tab-Key (#v2, #v2/today, #v2/2026-10-17)
 const HASH_ALIASES = { v2: "journal-v2" };
-const V2_MODES = ["tag", "woche", "monat"];
+const V2_MODES = ["tag", "woche", "monat", "habits"];
 const HASH_ALIASES_REVERSE = Object.fromEntries(Object.entries(HASH_ALIASES).map(([k, v]) => [v, k]));
 
 function parseHashState() {

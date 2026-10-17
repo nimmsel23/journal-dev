@@ -28,3 +28,4 @@ data/
 
 # Lokales Archiv (mv statt rm), nie tracken
 .archiv/
+dist-door/

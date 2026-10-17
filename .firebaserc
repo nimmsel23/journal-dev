@@ -10,6 +10,9 @@
         ],
         "v2": [
           "vos-journal"
+        ],
+        "door": [
+          "vos-door"
         ]
       }
     }

@@ -13,6 +13,15 @@
         ],
         "door": [
           "vos-door"
+        ],
+        "voice": [
+          "vos-voice"
+        ],
+        "game": [
+          "vos-game"
+        ],
+        "tent": [
+          "vos-tent"
         ]
       }
     }

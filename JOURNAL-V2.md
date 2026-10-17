@@ -165,12 +165,42 @@ Zeiträume `startDate`/`endDate`, Tagesprompts, Habit-Journale, Supplements/Mahl
 Offen: Test des Ziehens auf dem iPad, Zustimmungsbildschirm (Calendar, Tasks), Habit-Häufigkeit in der Quote,
 Browser-Test von Door v2 (Layout, Hash-Wechsel) und Google Tasks gegen die echte API (Zeitzonen der `due`-Tage, Token-Ablauf).
 
-## Door v2 · Taskwarrior (TaskChampion-Sync, lesend)
+## Door v2 · Taskwarrior (TaskChampion-Sync)
 
 Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in `src/lib/door/source.js`; Wahl pro Nutzer in `fitness/{uid}/settings/door`).
 
 - **Client:** `src/lib/door/taskchampion.js` – Pull gegen den `taskchampion-sync-server` (Snapshot + Versionen), Replik in IndexedDB `tc-door`. Krypto: PBKDF2-SHA256 (600 000 It., Salt = 16-Byte-Client-ID), ChaCha20-Poly1305 (`@noble/ciphers`), Hülle `[1][nonce 12][ct+tag]`, AAD `[1][Version-ID]`; Klartext ist **zlib-komprimiertes JSON**, Versionen als `{"operations":[…]}`.
-- **Adapter:** `taskwarrior.door.js` – Potential = `+hot`/`+potential`, Plan: Quadrant aus `priority` (H=Q1, M=Q2, L=Q3, leer=Q4; `+q1…+q4` überschreibt), Door der Woche `+door`, Production = `+hit` mit `due` in der Woche, Profit aus `end` der letzten 8 Wochen. **Schreiben ist gesperrt** (`taskwarrior-readonly`).
+- **Adapter:** `taskwarrior.door.js` – Potential = `+hot`/`+potential`, Plan: Quadrant aus `priority` (H=Q1, M=Q2, L=Q3, leer=Q4; `+q1…+q4` überschreibt), Door der Woche `+door`, Production = `+hit` mit `due` in der Woche, Profit aus `end` der letzten 8 Wochen. **Schreiben** per AddVersion (`commit()` in `taskchampion.js`: erst Pull, dann Push, bei 409 neu ziehen und wiederholen). Schreibende Funktionen: Hot-List anlegen/erledigen/löschen (`+hot`), Quadrant ändern (setzt `priority`, entfernt `+q*`), Door wählen (`+door` an den gewählten Task, von anderen offenen Tasks entfernt), Hits anlegen/abhaken (`+hit`, `due` = lokale Mitternacht). Versionen gehen als **unkomprimiertes** UTF-8-JSON raus (komprimiert → `task sync` panict mit Utf8Error); nur Snapshots sind zlib.
 - **Zugangsdaten** (Server-URL, `sync.server.client_id`, `sync.encryption_secret` – Werte in `~/.taskrc` bzw. `~/.env/taskwarrior.env`) gibt man einmal pro Browser ein; sie liegen nur in der IndexedDB, nie in Firestore. Dieselbe Client-ID wie auf Desktop/iOS (Claw Warrior) nutzen.
 - **CORS:** der Sync-Server sendet keine CORS-Header → `scripts/tc-cors-proxy.mjs` (user-Unit `tc-cors-proxy.service`, `:53590`, erlaubt nur die Firebase-Origins) steht davor; Tailscale-Funnel-Root zeigt auf den Proxy.
-- **Offen:** Push (AddVersion), Konfliktbehandlung,
+- **Verifiziert** mit einem Test-Account (eigene Client-ID): Push aus dem Browser-Client → `task sync` (3.5.0) liest die Änderungen; `task add` + `task sync` → Browser-Client liest zurück. Die echte Historie wurde dafür nicht angefasst.
+- **Offen:** Konfliktbehandlung ist simpel (neu ziehen, Eigenschaften überschreiben); Hits zwischen Tagen verschieben fehlt.
+
+## Door v2 · War Stack
+
+- **Backend-Quelle (Firestore/REST):** Wizard `DoorV2Warstack.jsx` im Plan – 11 Schritte aus `WARSTACK_STEPS`, Start an der gewählten Door, offene Sessions lassen sich fortsetzen.
+- **Taskwarrior-Quelle:** gleiche Oberfläche, Entwurf in `localStorage` (`dv2:tw-ws:<uuid>`). Beim Abschluss: UDAs `domain`, `subdomain`, `domino_door` am +door-Task und das fertige Markdown als Annotation `WARSTACK\n<md>`. `~/.dotfiles/bin/door-taskopen` (Funktion `seed_warstack`) legt daraus beim ersten Öffnen `Vault/Door/War-Stacks/STACK_<slug>.md` an, danach öffnet taskopen die Datei wie gewohnt. Mit Test-Account gegen `task sync` verifiziert.
+
+## Game v2 (`#game2/<fire|focus|freedom|frame|voice>`, Kurzformen `#fire` …)
+
+`src/views/game/`. Fire/Focus/Freedom/Frame lesen und schreiben die Taskwarrior-Replik (TaskChampion, gleiche Verbindung wie Door v2): Fire = überfällig/heute/Woche + `+fire`; Focus = `+focus` je Projekt; Freedom = `+freedom` je Projekt; Frame = offene Tasks je Domain (Body/Being/Balance/Business) bzw. `+frame`. Abhaken setzt `completed`, „Add“ legt Task mit dem Map-Tag an (Fire: heute fällig). **Voice** (`VoicePanel.jsx`, Fragen aus `voiceData.js` = `~/aos/voice/phases.py`): vier Phasen Stop/Submit/Struggle/Strike, jede Phase wird als Journal-Eintrag (Tags `voice`, `<phase>`) gespeichert. Die Inhalte der Map-Dokumente (YAML) werden nicht gelesen.
+
+## Tent v2 (`#tent2`)
+
+`src/views/tent/` – General's Tent als eigene Raster-Ansicht (nicht Teil von Game): Return and Report (Habits aus Firestore, Fire/Hits/Doors aus Taskwarrior), Lessons Learned, Course Correction, New Targets; „Tent schließen“ speichert einen Journal-Eintrag (Tags `tent`, `<Woche>`), Status „Tent offen/geschlossen“ je ISO-Woche. Core4-Scores aus dem aos server fehlen (Browser erreicht ihn nicht).
+
+## Weitere Apps: Voice, Game, Tent
+
+Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste `FLAVORS` in `vite.config.cjs`) mit eigenem Icon-Paket, Manifest, Splash und Hosting-Target.
+
+| App | Site | Start | Befehl | Icons |
+|---|---|---|---|---|
+| Voice | vos-voice.web.app | `#voice` (`VITE_DEFAULT_GAME_MODE=voice`) | `pnpm run deploy:voice` | `public/icons-voice` |
+| Game | vos-game.web.app | `#fire` | `pnpm run deploy:game` | `public/icons-game` |
+| Tent | vos-tent.web.app | `#tent2` | `pnpm run deploy:tent` | `public/icons-tent` |
+
+- Icons erzeugt `scripts/make-flavor-icons.sh` (rsvg-convert + ImageMagick, Raster-Stil).
+- `pnpm run deploy:all` baut und deployt jetzt alle sechs Targets (journal, v2, door, voice, game, tent).
+- Auth-Domains (`*.web.app`, `*.firebaseapp.com`) sind registriert, der TaskChampion-CORS-Proxy kennt die Origins.
+- OAuth-Client-Ursprünge der neuen Sites (für Google Calendar/Tasks) nur in der Cloud Console eintragbar.
+- Die ältere Vue-PWA `~/voice-dev` (Target `voice` in ihrem eigenen Firebase-Projekt) bleibt unberührt.

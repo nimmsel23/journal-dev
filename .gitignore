@@ -29,3 +29,6 @@ data/
 # Lokales Archiv (mv statt rm), nie tracken
 .archiv/
 dist-door/
+dist-voice/
+dist-game/
+dist-tent/

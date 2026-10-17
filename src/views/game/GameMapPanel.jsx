@@ -1,15 +1,16 @@
 // GameMapPanel — Fire / Focus / Freedom / Frame als Raster-Liste, direkt aus der Taskwarrior-Replik
 // (TaskChampion, siehe lib/door/taskchampion.js). Abhaken und Anlegen schreiben zurück.
-//   Fire    = Strikes der Woche: überfällig, heute, Rest der Woche (+ alles mit +fire)
+//   Fire    = Strikes der Woche: überfällig, heute, Rest der Woche (+ alles mit +fire) + Termine aus Google Calendar „Fire Map“
 //   Focus   = Monatsergebnisse: +focus, gruppiert nach Projekt
 //   Freedom = Jahresvisionen: +freedom, gruppiert nach Projekt
 //   Frame   = Standort: offene Tasks je Domain (Body / Being / Balance / Business) bzw. +frame
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addDays, endOfISOWeek, format, startOfDay } from "date-fns";
+import { addDays, endOfISOWeek, format, startOfDay, startOfISOWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import * as tc from "../../lib/door/taskchampion.js";
 import TcSetup, { tcError } from "./TcSetup.jsx";
+import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "../v2/gcal.js";
 
 export const MAPS = {
   fire: { label: "Fire", sub: "Woche · Strikes", tag: "fire", hint: "Welcher Strike steht an – und wofür?" },
@@ -69,6 +70,43 @@ function Row({ t, busy, onToggle }) {
   );
 }
 
+/* Fire × Google Calendar: Termine der Woche aus dem Kalender „Fire Map“ (nur lesen).
+   Einträge „[TW …]“ sind von `firectl gcal due` gespiegelte Taskwarrior-Tasks → nicht doppelt anzeigen. */
+function FireCalendar() {
+  const [on, setOn] = useState(() => calendarConnected());
+  const [msg, setMsg] = useState("");
+  const from = startOfISOWeek(new Date()), to = endOfISOWeek(new Date());
+  const q = useQuery({ queryKey: ["gv2-cal", format(from, "yyyy-MM-dd"), on], enabled: on, queryFn: () => fetchEvents(from, to), staleTime: 60_000, retry: false });
+  const connect = async () => {
+    setMsg("");
+    try { await connectCalendar(); setOn(true); } catch (e) { setMsg(e?.message || "Verbinden fehlgeschlagen"); }
+  };
+  const expired = q.error?.message === "calendar-expired";
+  const err = q.error && !expired ? (q.error.message === "fire-calendar-missing" ? "Kalender „Fire Map“ nicht gefunden." : q.error.message) : msg;
+  const evs = (q.data || []).filter((e) => !e.title.startsWith("[TW "));
+  const mirrored = (q.data || []).length - evs.length;
+  const days = [...new Set(evs.map((e) => e.date))];
+  return (
+    <section>
+      <h4 className="dv2-sec">Kalender · Fire Map <span>{on && q.data ? evs.length : ""}</span></h4>
+      {(!on || expired) && <div className="dv2-src"><button type="button" className="dv2-link" onClick={connect}>{expired ? "Kalender neu verbinden" : "Google Kalender verbinden"}</button></div>}
+      {on && !expired && <div className="dv2-src"><button type="button" className="dv2-link" onClick={() => { clearCalendarToken(); setOn(false); }}>Kalender trennen</button>{mirrored > 0 && <span>{mirrored} gespiegelte Tasks ausgeblendet</span>}</div>}
+      {err && <div className="dv2-empty" role="alert">{err}</div>}
+      {on && !expired && q.data && evs.length === 0 && <div className="dv2-none" style={{ padding: "8px 14px" }}>Keine Termine diese Woche.</div>}
+      {days.map((d) => (
+        <div key={d}>
+          {evs.filter((e) => e.date === d).map((e) => (
+            <div key={e.id} className="dv2-row"><div className="dv2-text">
+              <h3>{e.title}</h3>
+              <p>{format(new Date(`${d}T12:00:00`), "EEE d. MMM", { locale: de })}{e.allDay ? " · ganztägig" : e.time ? ` · ${e.time}` : ""}{e.location ? ` · ${e.location}` : ""}</p>
+            </div></div>
+          ))}
+        </div>
+      ))}
+    </section>
+  );
+}
+
 export default function GameMapPanel({ map }) {
   const spec = MAPS[map];
   const qc = useQueryClient();
@@ -119,6 +157,7 @@ export default function GameMapPanel({ map }) {
       )}
       {q.isError && <div className="dv2-empty" role="alert">{tcError(q.error)}</div>}
       {!q.isLoading && !q.isError && total === 0 && <div className="dv2-empty">Nichts offen in {spec.label}. Tag <code>+{spec.tag}</code> setzen oder oben anlegen.</div>}
+      {map === "fire" && <FireCalendar />}
       {groups.map((g) => (
         <section key={g.key}>
           <h4 className="dv2-sec">{g.title} <span>{g.items.length}</span></h4>

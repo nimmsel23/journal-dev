@@ -3,6 +3,7 @@ const react = require("@vitejs/plugin-react");
 const { VitePWA } = require("vite-plugin-pwa");
 const path = require("path");
 const { existsSync } = require("fs");
+const APP_VERSION = require("./package.json").version;
 
 // Sibling-Repos existieren unter zwei Namensschemata, je nach Checkout:
 // ~/journal-dev (dev-Branch, Home-Root)     → Siblings heißen *-dev (fitness-dev, fuel-dev, relax-dev, habits-dev)
@@ -86,6 +87,7 @@ module.exports = defineConfig(async ({ mode }) => {
     base: "/",
     define: {
       "import.meta.env.VITE_APP_MODE": JSON.stringify(appMode),
+      __APP_VERSION__: JSON.stringify(APP_VERSION),
     },
     plugins: [
       firebaseRedirect,
@@ -93,14 +95,15 @@ module.exports = defineConfig(async ({ mode }) => {
       VitePWA({
         base: "/",
         scope: "/",
-        registerType: "autoUpdate",
+        // "prompt": Update-Zeitpunkt steuert components/UpdateManager.jsx (kein Reload mitten im Tippen)
+        registerType: "prompt",
         injectRegister: "auto",
         manifest: {
           name: "Vital-Journal",
           short_name: "Vital-Journal",
           description: "Journal + Habits auf VitalOS-Stack",
           theme_color: "#f59e0b",
-          background_color: "#0f172a",
+          background_color: "#0b1018", // = Splash in index.html, kein Farbsprung
           display: "standalone",
           start_url: "/",
           scope: "/",

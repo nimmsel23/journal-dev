@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Sparkles, RotateCcw } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,7 +15,7 @@ import { watchAuth, signIn, signOut, getUid } from "@journal-db";
 // Initialize Firebase (sets window.__firebaseAuth, window.__firebaseDb, etc.)
 import "./lib/firebase.js";
 
-import { useRegisterSW } from "virtual:pwa-register/react";
+import UpdateManager from "./components/UpdateManager.jsx";
 
 const qc = new QueryClient();
 
@@ -65,18 +65,19 @@ function App() {
   const { activeTab, setActiveTab, activeDate, setActiveDate, v2Mode, setV2Mode } = useApp();
   const [user, setUser] = React.useState(null);
 
-  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW({
-    onRegistered(r) {
-      if (!r) return;
-      // Check for updates every 10 minutes
-      setInterval(() => r.update(), 10 * 60 * 1000);
-      // Also check when app regains focus
-      window.addEventListener('focus', () => r.update());
-    },
-  });
-
-  // The update button is rendered above in the header when needRefresh is true.
-  React.useEffect(() => watchAuth((u) => setUser(u)), []);
+  // Auth-Status bekannt → Splash (index.html) ausblenden; Fallback nach 2,5 s
+  React.useEffect(() => {
+    const hide = () => window.__hideSplash?.();
+    const t = setTimeout(hide, 2500);
+    const off = watchAuth((u) => {
+      setUser(u);
+      hide();
+    });
+    return () => {
+      clearTimeout(t);
+      off?.();
+    };
+  }, []);
 
   // URL Hashing for Tab + Datum
   React.useEffect(() => {
@@ -155,15 +156,7 @@ function App() {
                   <Sparkles className="h-3.5 w-3.5" />
                   VOS Journal
                 </p>
-                {needRefresh && (
-                  <button
-                    onClick={() => updateServiceWorker(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-amber-200 hover:border-amber-400/60 hover:bg-amber-400/20 transition"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5 animate-spin" />
-                    Update
-                  </button>
-                )}
+                <span className="text-[10px] tracking-widest text-slate-500">v{__APP_VERSION__}</span>
                 {isCloud && (
                   user ? (
                     <button onClick={handleSignOut} className="text-[10px] text-slate-500 hover:text-white uppercase tracking-widest">
@@ -223,6 +216,7 @@ createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <QueryClientProvider client={qc}>
       <App />
+      <UpdateManager />
     </QueryClientProvider>
   </React.StrictMode>,
 );

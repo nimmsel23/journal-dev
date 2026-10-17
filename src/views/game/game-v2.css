@@ -1,0 +1,13 @@
+/* Game v2 — ergänzt door-v2.css (Raster). */
+.gv2-modes5 { grid-template-columns: repeat(5, 1fr); }
+.gv2-step { display: grid; gap: 8px; padding: 14px; border-bottom: 1px solid var(--ink); }
+.gv2-q { font-size: 15px; line-height: 1.3; }
+.gv2-hint { font-family: var(--mono); font-size: 11px; opacity: .65; line-height: 1.4; }
+.gv2-step textarea {
+  width: 100%; font: inherit; padding: 10px 12px; border: 2px solid var(--ink); background: #fff; color: var(--ink); border-radius: 0;
+}
+.gv2-step textarea:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.gv2-step .dv2-qs { margin-top: 0; }
+.gv2-step .dv2-qs button { min-height: 40px; padding: 0 12px; }
+.gv2-epi { margin: 0; padding: 10px 14px; font-style: italic; border-bottom: 1px solid var(--ink); }
+.gv2-save { padding: 14px; }

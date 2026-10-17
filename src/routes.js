@@ -31,6 +31,16 @@ export const TAB_CONFIG = [
     getProps: (ctx) => ({ user: ctx.user, mode: ctx.doorMode, onModeChange: ctx.setDoorMode }),
   },
   {
+    // Hash-Alias: #game2/<fire|focus|freedom|frame|voice> (Kurzformen #fire … #voice). Rendert ohne App-Header.
+    key: "game-v2",
+    label: "Game v2",
+    title: "Game v2",
+    Icon: Sparkles,
+    bare: true,
+    View: lazy(() => import("./views/game/GameV2View.jsx")),
+    getProps: (ctx) => ({ user: ctx.user, mode: ctx.gameMode, onModeChange: ctx.setGameMode }),
+  },
+  {
     key: "ai-log",
     label: "Smart Log",
     title: "AI Freihand Logging",

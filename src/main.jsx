@@ -23,10 +23,15 @@ function localToday() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Kurze Hash-Präfixe → Tab-Key (#v2, #v2/today, #v2/2026-10-17)
+const HASH_ALIASES = { v2: "journal-v2" };
+const HASH_ALIASES_REVERSE = Object.fromEntries(Object.entries(HASH_ALIASES).map(([k, v]) => [v, k]));
+
 function parseHashState() {
   const raw = window.location.hash.replace(/^#\/?/, "");
   if (!raw) return { tab: null, date: null };
-  const [tab = null, rawDate = null] = raw.split("/");
+  const [rawTab = null, rawDate = null] = raw.split("/");
+  const tab = rawTab ? (HASH_ALIASES[rawTab] ?? rawTab) : null;
   if (!tab) return { tab: null, date: null };
   if (!rawDate) return { tab, date: null };
   if (rawDate === "today") return { tab, date: localToday() };
@@ -34,7 +39,8 @@ function parseHashState() {
   return { tab, date: null };
 }
 
-function buildHashState(tab, date) {
+function buildHashState(rawTab, date) {
+  const tab = HASH_ALIASES_REVERSE[rawTab] ?? rawTab;
   if (!tab) return "#";
   if (!date) return `#${tab}`;
   return `#${tab}/${date === localToday() ? "today" : date}`;
@@ -121,6 +127,11 @@ function App() {
   };
 
   const tabCtx = { activeDate, setActiveDate, setActiveTab, user };
+
+  // "bare"-Tabs (z.B. Journal v2) bringen ihr eigenes Layout mit: kein App-Header.
+  if (activeTabConfig?.bare) {
+    return <TabContent activeTab={activeTab} ctx={tabCtx} />;
+  }
 
   return (
     <>

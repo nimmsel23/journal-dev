@@ -1,0 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wght@300..700&display=swap");
+
+/* Journal v2 · "Raster" — Schweizer Logbuch. Alles unter .jv2 gescopet. */
+.jv2 {
+  --p: #f6f6f2;
+  --ink: #0d0d0d;
+  --sig: #1738ff;
+  --soft: #e2e2dc;
+  --mono: "Martian Mono", ui-monospace, monospace;
+  font-family: "Archivo", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--p);
+  border: 2px solid var(--ink);
+  max-width: 520px;
+  margin: 0 auto;
+}
+.jv2 *, .jv2 *::before, .jv2 *::after { box-sizing: border-box; }
+.jv2 button:focus-visible, .jv2 input:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+
+.jv2-top { display: grid; grid-template-columns: auto 1fr; border-bottom: 2px solid var(--ink); }
+.jv2-dayno {
+  font-stretch: 62%; font-weight: 900; font-size: 112px; line-height: .82; letter-spacing: -.02em;
+  padding: 14px 14px 10px; border-right: 2px solid var(--ink); font-variant-numeric: tabular-nums;
+}
+.jv2-meta {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px; min-width: 0;
+  padding: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+}
+.jv2-meta b { font-size: 13px; }
+.jv2-kw { align-self: flex-start; background: var(--sig); color: #fff; padding: 2px 7px; }
+.jv2-nav { display: flex; gap: 6px; }
+.jv2-nav button {
+  all: unset; cursor: pointer; border: 1.5px solid var(--ink); padding: 2px 8px;
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+}
+.jv2-nav button:hover { background: var(--ink); color: var(--p); }
+
+.jv2-habits { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border-bottom: 2px solid var(--ink); }
+.jv2-habits button {
+  all: unset; box-sizing: border-box; cursor: pointer; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 4px 8px; text-align: center; border-right: 1px solid var(--ink);
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+}
+.jv2-habits button:last-child { border-right: 0; }
+.jv2-habits span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jv2-habits i {
+  font-style: normal; width: 26px; height: 26px; border: 2px solid var(--ink);
+  display: grid; place-items: center; font-size: 14px; font-weight: 700;
+}
+.jv2-habits .done i { background: var(--sig); border-color: var(--sig); color: #fff; }
+
+.jv2-entry { display: grid; grid-template-columns: 72px 1fr; border-bottom: 1px solid var(--ink); position: relative; }
+.jv2-entry time { font-family: var(--mono); font-weight: 600; font-size: 13px; padding: 12px 0 0 12px; }
+.jv2-body { padding: 12px 34px 14px 0; min-width: 0; }
+.jv2-body h3 {
+  margin: 0 0 3px; font-stretch: 75%; font-weight: 800; font-size: 24px; line-height: 1;
+  text-transform: uppercase; overflow-wrap: anywhere;
+}
+.jv2-body p { margin: 0; font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.jv2-tag {
+  display: inline-block; margin: 8px 6px 0 0; font-family: var(--mono); font-size: 10px;
+  text-transform: uppercase; border: 1.5px solid var(--ink); padding: 1px 6px;
+}
+.jv2-entry.open { background: var(--sig); color: #fff; }
+.jv2-entry.open .jv2-tag { border-color: #fff; }
+.jv2-del {
+  all: unset; cursor: pointer; position: absolute; top: 8px; right: 10px; width: 22px; height: 22px;
+  text-align: center; line-height: 22px; font-family: var(--mono); opacity: .35;
+}
+.jv2-del:hover, .jv2-del:focus-visible { opacity: 1; }
+.jv2-empty { padding: 28px 14px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--ink); }
+
+.jv2-compose { display: flex; }
+.jv2-compose input {
+  flex: 1; min-width: 0; border: 0; border-radius: 0; background: var(--soft);
+  padding: 14px 12px; font: inherit; font-size: 14px; color: var(--ink);
+}
+.jv2-compose button {
+  all: unset; cursor: pointer; background: var(--ink); color: var(--p); padding: 14px 18px;
+  font-weight: 800; font-stretch: 75%; text-transform: uppercase;
+}
+.jv2-compose button:disabled { opacity: .5; cursor: default; }
+
+.jv2-foot {
+  display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 2px solid var(--ink);
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+}
+.jv2-foot a, .jv2-link { all: unset; cursor: pointer; text-decoration: underline; }
+
+.jv2-page { min-height: 100vh; background: #d9d9d2; padding: 16px 12px 40px; }

@@ -117,7 +117,28 @@ module.exports = defineConfig(async ({ mode }) => {
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
           navigateFallback: "/index.html",
-          navigateFallbackDenylist: [/^\/api/],
+          navigateFallbackDenylist: [/^\/api/, /^\/__\//],
+          globIgnores: ["**/*.map"],
+          // Nur Google Fonts cachen; Firebase/Auth/Firestore/Vertex bewusst ohne Route (immer Netzwerk)
+          runtimeCaching: [
+            {
+              urlPattern: ({ url }) => url.origin === "https://fonts.googleapis.com",
+              handler: "StaleWhileRevalidate",
+              options: {
+                cacheName: "google-fonts-css",
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            {
+              urlPattern: ({ url }) => url.origin === "https://fonts.gstatic.com",
+              handler: "CacheFirst",
+              options: {
+                cacheName: "google-fonts-files",
+                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+          ],
         },
         devOptions: {
           enabled: false,

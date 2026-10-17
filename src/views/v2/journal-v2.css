@@ -199,3 +199,45 @@
   text-decoration: none; font-family: var(--mono); font-size: 9px; font-weight: 700;
   border: 1.5px solid currentColor; padding: 0 3px; align-self: flex-start;
 }
+
+/* ── Habits-Ansicht ── */
+.jv2-modes { grid-template-columns: repeat(4, 1fr); }
+.jv2-hrow { display: grid; grid-template-columns: auto 1fr auto; border-bottom: 1px solid var(--ink); }
+.jv2-htoggle {
+  all: unset; box-sizing: border-box; cursor: pointer; display: grid; place-items: center;
+  width: 64px; border-right: 1px solid var(--ink);
+}
+.jv2-htoggle i {
+  font-style: normal; width: 32px; height: 32px; border: 2px solid var(--ink);
+  display: grid; place-items: center; font-weight: 700; font-size: 18px;
+}
+.jv2-hrow.done .jv2-htoggle i { background: var(--sig); border-color: var(--sig); color: #fff; }
+.jv2-htoggle:hover { background: var(--soft); }
+.jv2-htoggle:focus-visible, .jv2-hdel:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.jv2-hmain { padding: 10px 12px 12px; min-width: 0; }
+.jv2-hmain h3 {
+  margin: 0; font-stretch: 75%; font-weight: 800; font-size: 24px; line-height: 1;
+  text-transform: uppercase; overflow-wrap: anywhere;
+}
+.jv2-hstats {
+  display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 5px 0 8px;
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; font-variant-numeric: tabular-nums;
+}
+.jv2-hstrip { display: grid; grid-template-columns: repeat(28, 1fr); gap: 2px; }
+.jv2-hstrip i { display: block; height: 14px; border: 1px solid var(--ink); }
+.jv2-hstrip i.on { background: var(--sig); border-color: var(--sig); }
+.jv2-hstrip i:last-child { outline: 2px solid var(--ink); outline-offset: 1px; }
+.jv2-hdel {
+  all: unset; cursor: pointer; align-self: start; padding: 8px 12px; opacity: .35;
+  font-family: var(--mono); font-size: 14px;
+}
+.jv2-hdel:hover, .jv2-hdel:focus-visible { opacity: 1; }
+.jv2-hdel.sure { opacity: 1; font-size: 10px; text-transform: uppercase; background: var(--ink); color: var(--p); margin: 8px; padding: 4px 8px; }
+@media (min-width: 700px) {
+  .jv2-htoggle { width: 100px; }
+  .jv2-htoggle i { width: 44px; height: 44px; font-size: 24px; }
+  .jv2-hmain { padding: 16px 20px 18px; }
+  .jv2-hmain h3 { font-size: 34px; }
+  .jv2-hstats { font-size: 12px; margin: 8px 0 12px; }
+  .jv2-hstrip i { height: 22px; }
+}

@@ -137,3 +137,6 @@
   .dv2-compose input { padding: 20px 22px; font-size: 17px; }
   .dv2-compose button { padding: 20px 30px; font-size: 18px; }
 }
+
+.dv2-src { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 2px solid var(--ink); font-family: var(--mono); font-size: 11px; text-transform: uppercase; }
+.dv2-src select, .dv2-compose select { font: inherit; background: transparent; color: inherit; border: 2px solid var(--ink); padding: 2px 4px; }

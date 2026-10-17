@@ -2,12 +2,10 @@
 // Nutzerwechsel keine fremden Daten aus dem Cache zeigt.
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchHotlist, addHotlistItem, completeHotlistItem, deleteHotlistItem } from "../../../lib/door/potential.js";
-import { fetchDoorWar, selectWeeklyDoor, assignQuadrant } from "../../../lib/door/plan.js";
-import { fetchDailyWeek, toggleDailyHit, fetchHitsWeek } from "../../../lib/door/production.js";
-import { fetchProfitWeek, fetchCompletedWarstacks, fetchReflections } from "../../../lib/door/profit.js";
+import { door } from "../../../lib/door/source.js";
+import { fetchProfitGtasks, addDailyHit } from "../../../lib/door/gtasks.door.js";
 
-const msg = (e) => e?.message || "Fehler";
+const msg = (e) => (e?.message === "gtasks-expired" ? "Google-Tasks-Sitzung abgelaufen – oben neu verbinden." : e?.message || "Fehler");
 const selectorFor = (i) => i?.id || i?.task_uuid || i?.tw_uuid || i?.selector || "";
 const keyFor = (i) => i.war_uuid || i.id || i.task_uuid || "";
 
@@ -20,13 +18,14 @@ function State({ q, children, empty }) {
 }
 
 /* ── Potential: Hot List ── */
-export function PotentialPanel({ uid }) {
+export function PotentialPanel({ uid, source = "backend" }) {
+  const D = door(source);
   const qc = useQueryClient();
-  const key = ["dv2-hotlist", uid];
+  const key = ["dv2-hotlist", uid, source];
   const [draft, setDraft] = useState("");
   const [armed, setArmed] = useState(null); // Zwei-Klick-Löschen
   const [err, setErr] = useState("");
-  const q = useQuery({ queryKey: key, queryFn: () => fetchHotlist("active"), staleTime: 15_000 });
+  const q = useQuery({ queryKey: key, queryFn: () => D.fetchHotlist("active"), staleTime: 15_000 });
   const refresh = () => qc.invalidateQueries({ queryKey: key });
   const run = async (fn) => {
     setErr("");
@@ -37,12 +36,12 @@ export function PotentialPanel({ uid }) {
     e.preventDefault();
     const text = draft.trim();
     if (!text) return;
-    run(async () => { await addHotlistItem(text); setDraft(""); });
+    run(async () => { await D.addHotlistItem(text); setDraft(""); });
   };
   const del = (sel) => {
     if (armed !== sel) { setArmed(sel); return; }
     setArmed(null);
-    run(() => deleteHotlistItem(sel));
+    run(() => D.deleteHotlistItem(sel));
   };
   return (
     <>
@@ -51,7 +50,7 @@ export function PotentialPanel({ uid }) {
           const sel = selectorFor(i);
           return (
             <div key={sel || i.title} className="dv2-row">
-              <button type="button" className="dv2-check" aria-label="Erledigt" onClick={() => run(() => completeHotlistItem(sel))}><i /></button>
+              <button type="button" className="dv2-check" aria-label="Erledigt" onClick={() => run(() => D.completeHotlistItem(sel))}><i /></button>
               <div className="dv2-text"><h3>{i.title}</h3></div>
               <button type="button" className={`dv2-del${armed === sel ? " armed" : ""}`} aria-label={armed === sel ? "Löschen bestätigen" : "Löschen"} onClick={() => del(sel)} onBlur={() => setArmed(null)}>{armed === sel ? "Löschen?" : "×"}</button>
             </div>
@@ -69,11 +68,12 @@ export function PotentialPanel({ uid }) {
 
 /* ── Plan: Door War ── */
 const QLABEL = { 1: "Q1 · Dringend + Wichtig", 2: "Q2 · Wichtig, nicht dringend", 3: "Q3 · Dringend, nicht wichtig", 4: "Q4 · Weder noch" };
-export function PlanPanel({ uid }) {
+export function PlanPanel({ uid, source = "backend" }) {
+  const D = door(source);
   const qc = useQueryClient();
-  const key = ["dv2-plan", uid];
+  const key = ["dv2-plan", uid, source];
   const [err, setErr] = useState("");
-  const q = useQuery({ queryKey: key, queryFn: fetchDoorWar, staleTime: 15_000 });
+  const q = useQuery({ queryKey: key, queryFn: D.fetchDoorWar, staleTime: 15_000 });
   const act = useMutation({
     mutationFn: (fn) => fn(),
     onSuccess: () => { setErr(""); qc.invalidateQueries({ queryKey: key }); },
@@ -93,11 +93,11 @@ export function PlanPanel({ uid }) {
           <h3>{item.title}</h3>
           <div className="dv2-qs">
             {[1, 2, 3, 4].map((n) => (
-              <button key={n} type="button" aria-pressed={item.quadrant === n} disabled={act.isPending} onClick={() => act.mutate(() => assignQuadrant(k, n))}>Q{n}</button>
+              <button key={n} type="button" aria-pressed={item.quadrant === n} disabled={act.isPending} onClick={() => act.mutate(() => D.assignQuadrant(k, n))}>Q{n}</button>
             ))}
             {item.quadrant === 2 && (isDoor
               ? <span className="dv2-tag">Door der Woche</span>
-              : <button type="button" className="dv2-pick" disabled={act.isPending} onClick={() => act.mutate(() => selectWeeklyDoor(k))}>Door wählen</button>)}
+              : <button type="button" className="dv2-pick" disabled={act.isPending} onClick={() => act.mutate(() => D.selectWeeklyDoor(k))}>Door wählen</button>)}
           </div>
         </div>
       </div>
@@ -124,14 +124,22 @@ export function PlanPanel({ uid }) {
 
 /* ── Production: Daily Hits ── */
 const DAYS = [["mon", "Mo"], ["tue", "Di"], ["wed", "Mi"], ["thu", "Do"], ["fri", "Fr"], ["sat", "Sa"], ["sun", "So"]];
-export function ProductionPanel({ uid }) {
+export function ProductionPanel({ uid, source = "backend" }) {
+  const D = door(source);
   const qc = useQueryClient();
   const [err, setErr] = useState("");
-  const q = useQuery({ queryKey: ["dv2-prod", uid], queryFn: () => fetchDailyWeek(), staleTime: 15_000 });
-  const s = useQuery({ queryKey: ["dv2-prod-sum", uid], queryFn: fetchHitsWeek, staleTime: 15_000 });
+  const q = useQuery({ queryKey: ["dv2-prod", uid, source], queryFn: () => D.fetchDailyWeek(), staleTime: 15_000 });
+  const s = useQuery({ queryKey: ["dv2-prod-sum", uid, source], queryFn: D.fetchHitsWeek, staleTime: 15_000 });
   const tog = useMutation({
-    mutationFn: (id) => toggleDailyHit(id),
-    onSuccess: () => { setErr(""); qc.invalidateQueries({ queryKey: ["dv2-prod", uid] }); qc.invalidateQueries({ queryKey: ["dv2-prod-sum", uid] }); },
+    mutationFn: (id) => D.toggleDailyHit(id),
+    onSuccess: () => { setErr(""); qc.invalidateQueries({ queryKey: ["dv2-prod", uid, source] }); qc.invalidateQueries({ queryKey: ["dv2-prod-sum", uid, source] }); },
+    onError: (e) => setErr(msg(e)),
+  });
+  const [draft, setDraft] = useState("");
+  const [day, setDay] = useState(() => DAYS[Math.min(6, (new Date().getDay() + 6) % 7)][0]);
+  const add = useMutation({
+    mutationFn: ({ day: d, t }) => addDailyHit(d, t),
+    onSuccess: () => { setErr(""); setDraft(""); qc.invalidateQueries({ queryKey: ["dv2-prod", uid, source] }); qc.invalidateQueries({ queryKey: ["dv2-prod-sum", uid, source] }); },
     onError: (e) => setErr(msg(e)),
   });
   const days = q.data?.days || {};
@@ -144,7 +152,14 @@ export function ProductionPanel({ uid }) {
         <span>Hits der Woche{sum ? ` · ${Math.round((sum.completion_rate || 0) * 100)} %` : ""}{q.data?.week ? ` · ${q.data.week}` : ""}</span>
       </div>
       {err && <div className="dv2-empty" role="alert">{err}</div>}
-      <State q={q} empty={none ? "Kein Daily-Plan. Erst einen War Stack im Plan anlegen." : null}>
+      {source === "gtasks" && (
+        <form className="dv2-compose" onSubmit={(e) => { e.preventDefault(); const t = draft.trim(); if (t) add.mutate({ day, t }); }}>
+          <select aria-label="Tag" value={day} onChange={(e) => setDay(e.target.value)}>{DAYS.map(([d, l]) => <option key={d} value={d}>{l}</option>)}</select>
+          <input aria-label="Neuer Hit" placeholder="Neuer Hit …" value={draft} onChange={(e) => setDraft(e.target.value)} />
+          <button type="submit" disabled={!draft.trim() || add.isPending}>Add</button>
+        </form>
+      )}
+      <State q={q} empty={none ? (source === "gtasks" ? "Keine Hits diese Woche. Oben einen anlegen." : "Kein Daily-Plan. Erst einen War Stack im Plan anlegen.") : null}>
         <div className="dv2-grid">
           {DAYS.map(([d, label]) => {
             const items = days[d] || [];
@@ -168,10 +183,34 @@ export function ProductionPanel({ uid }) {
 }
 
 /* ── Profit: Auswertung (nur lesen) ── */
-export function ProfitPanel({ uid }) {
-  const w = useQuery({ queryKey: ["dv2-profit", uid], queryFn: () => fetchProfitWeek(), staleTime: 15_000 });
-  const c = useQuery({ queryKey: ["dv2-profit-done", uid], queryFn: fetchCompletedWarstacks, staleTime: 15_000 });
-  const r = useQuery({ queryKey: ["dv2-profit-refl", uid], queryFn: fetchReflections, staleTime: 15_000 });
+export function ProfitPanel({ uid, source = "backend" }) {
+  return source === "gtasks" ? <ProfitGtasks uid={uid} /> : <ProfitBackend uid={uid} source={source} />;
+}
+
+/* Quelle Google Tasks: Wochen-Auswertung aus erledigten Tasks, keine Reflexionen */
+function ProfitGtasks({ uid }) {
+  const q = useQuery({ queryKey: ["dv2-profit-gt", uid], queryFn: fetchProfitGtasks, staleTime: 15_000 });
+  const weeks = q.data?.weeks || [];
+  const doors = q.data?.doors || [];
+  return (
+    <State q={q}>
+      <h4 className="dv2-sec">Erledigt pro Woche <span>{weeks.length}</span></h4>
+      {weeks.map((w) => (
+        <div key={w.week} className="dv2-row"><div className="dv2-text"><h3>{w.week}</h3><p>{w.potential} Potential · {w.hits} Hits</p></div></div>
+      ))}
+      <h4 className="dv2-sec">Erledigte Wochen-Doors <span>{doors.length}</span></h4>
+      {doors.length === 0 ? <div className="dv2-empty">Noch keine erledigte Door.</div> : doors.map((x) => (
+        <div key={x.id} className="dv2-row"><div className="dv2-text"><h3>{x.door_title}</h3><p>{x.week}</p></div></div>
+      ))}
+    </State>
+  );
+}
+
+function ProfitBackend({ uid, source }) {
+  const D = door(source);
+  const w = useQuery({ queryKey: ["dv2-profit", uid, source], queryFn: () => D.fetchProfitWeek(), staleTime: 15_000 });
+  const c = useQuery({ queryKey: ["dv2-profit-done", uid, source], queryFn: D.fetchCompletedWarstacks, staleTime: 15_000 });
+  const r = useQuery({ queryKey: ["dv2-profit-refl", uid, source], queryFn: D.fetchReflections, staleTime: 15_000 });
   const ws = w.data?.warstack;
   const title = ws?.door_title || w.data?.selected?.title;
   const done = c.data || [];

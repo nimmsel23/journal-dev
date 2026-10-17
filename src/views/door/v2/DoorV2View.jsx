@@ -1,9 +1,11 @@
 // DoorV2View — Door-Framework (Potential → Plan → Production → Profit) im
 // Design "Raster" (siehe views/v2/journal-v2.css). Hash: #door2 bzw. #door2/<modus>.
 // Datenquellen: bestehende src/lib/door/* (REST lokal, Firestore in der Cloud).
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import * as db from "@journal-db";
 import { PotentialPanel, PlanPanel, ProductionPanel, ProfitPanel } from "./DoorV2Panels.jsx";
+import { getSource, setSource } from "../../../lib/door/source.js";
+import * as gtasks from "../../../lib/door/gtasks.js";
 import "./door-v2.css";
 
 const MODES = [["potential", "Potential"], ["plan", "Plan"], ["production", "Production"], ["profit", "Profit"]];
@@ -25,6 +27,17 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
     };
   }, []);
 
+  const [source, setSrc] = useState(getSource);
+  const [, bump] = useState(0);
+  const [gerr, setGerr] = useState("");
+  const pick = (s) => { setSource(s); setSrc(s); setGerr(""); };
+  const isG = source === "gtasks";
+  const isConn = isG && gtasks.connected();
+  const connect = async () => {
+    setGerr("");
+    try { await gtasks.connect(); } catch (e) { setGerr(e?.message || "Verbinden fehlgeschlagen"); }
+    bump((n) => n + 1);
+  };
   const uid = user?.uid ?? null;
   const current = PANELS[mode] ? mode : "potential";
   const Panel = PANELS[current];
@@ -45,7 +58,18 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
             <span><b>{MODES[idx][1]}</b><br />Phase {idx + 1} / 4</span>
           </div>
         </div>
-        {uid ? <Panel uid={uid} /> : (
+        <div className="dv2-src">
+          <label>Quelle <select value={source} onChange={(e) => pick(e.target.value)}>
+            <option value="backend">Backend</option>
+            <option value="gtasks">Google Tasks</option>
+          </select></label>
+          {isG && <button type="button" className="dv2-link" onClick={connect}>{isConn ? "Neu verbinden" : "Google Tasks verbinden"}</button>}
+          {isConn && <button type="button" className="dv2-link" onClick={() => { gtasks.disconnect(); bump((n) => n + 1); }}>Trennen</button>}
+        </div>
+        {gerr && <div className="dv2-empty" role="alert">{gerr}</div>}
+        {isG && !isConn ? (
+          <div className="dv2-empty">Google Tasks ist nicht verbunden (oder die Sitzung ist abgelaufen). Oben „Google Tasks verbinden“ wählen.</div>
+        ) : uid ? <Panel key={source} uid={uid} source={source} /> : (
           <div className="dv2-empty">
             Nicht angemeldet. <button type="button" className="dv2-link" onClick={() => db.signIn()}>Cloud Login</button>
           </div>

@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import * as db from "@journal-db";
 import { PotentialPanel, PlanPanel, ProductionPanel, ProfitPanel } from "./DoorV2Panels.jsx";
-import { getSource, setSource } from "../../../lib/door/source.js";
+import { SOURCES, getSource, setSource, loadRemoteSource } from "../../../lib/door/source.js";
 import * as gtasks from "../../../lib/door/gtasks.js";
 import "./door-v2.css";
 
@@ -30,7 +30,11 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
   const [source, setSrc] = useState(getSource);
   const [, bump] = useState(0);
   const [gerr, setGerr] = useState("");
-  const pick = (s) => { setSource(s); setSrc(s); setGerr(""); };
+  const pick = (s) => { setSource(s, user?.uid); setSrc(s); setGerr(""); };
+  // Quelle ist nutzerspezifisch: gespeicherte Wahl aus Firestore übernehmen
+  useEffect(() => {
+    if (user?.uid) loadRemoteSource(user.uid).then((s) => s && setSrc(s));
+  }, [user?.uid]);
   const isG = source === "gtasks";
   const isConn = isG && gtasks.connected();
   const connect = async () => {
@@ -60,8 +64,7 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
         </div>
         <div className="dv2-src">
           <label>Quelle <select value={source} onChange={(e) => pick(e.target.value)}>
-            <option value="backend">Backend</option>
-            <option value="gtasks">Google Tasks</option>
+            {SOURCES.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
           </select></label>
           {isG && <button type="button" className="dv2-link" onClick={connect}>{isConn ? "Neu verbinden" : "Google Tasks verbinden"}</button>}
           {isConn && <button type="button" className="dv2-link" onClick={() => { gtasks.disconnect(); bump((n) => n + 1); }}>Trennen</button>}

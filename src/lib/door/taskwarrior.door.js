@@ -3,7 +3,7 @@
 //
 // Mapping (Tags der bestehenden Taskwarrior-Datenbank)
 //  Potential  = offene Tasks mit +hot oder +potential (Hot List)
-//  Plan       = dieselben Tasks; Quadrant aus priority (H=Q1, M=Q2, L=Q3, leer=unsortiert), Door der Woche = +door
+//  Plan       = dieselben Tasks; Quadrant aus priority (H=Q1, M=Q2, L=Q3, leer=Q4), Door der Woche = +door
 //  Production = Tasks mit +hit und `due` in dieser Woche; erledigt = status completed
 //  Profit     = erledigte Tasks (`end`) der letzten 8 Wochen: +hot/+potential und +hit; Doors = erledigte +door
 import { addDays, format, startOfWeek } from "date-fns";
@@ -19,9 +19,9 @@ const secs = (v) => (v ? new Date(Number(v) * 1000) : null);
 const isPot = (t) => has(t, "hot") || has(t, "potential");
 const waiting = (t) => t.wait && Number(t.wait) * 1000 > Date.now();
 const open = (t) => t.status === "pending" && !waiting(t);
-// Quadrant aus Taskwarrior-Priorität: H→Q1, M→Q2, L→Q3, ohne Priorität → unsortiert (+q1…+q4 überschreibt)
+// Quadrant aus Taskwarrior-Priorität: H→Q1, M→Q2, L→Q3, ohne Priorität → Q4 (+q1…+q4 überschreibt)
 const PRIO_Q = { H: 1, M: 2, L: 3 };
-const quadrantOf = (t) => [1, 2, 3, 4].find((q) => has(t, `q${q}`)) || PRIO_Q[t.priority] || null;
+const quadrantOf = (t) => [1, 2, 3, 4].find((q) => has(t, `q${q}`)) || PRIO_Q[t.priority] || 4;
 
 function toItem(t) {
   const q = quadrantOf(t);

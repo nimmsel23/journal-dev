@@ -18,7 +18,7 @@ Fuel Centre operiert in zwei getrennten Umgebungen mit unterschiedlichen Schwerp
 - **Umgebung:** Lokaler Node.js Server (Port 7000), Pfad: `/opt/fuel`
 - **Daten:** Lokale JSON-Dateien (`data/`) & SQLite.
 - **Features:** Vollständiges Backend, Inhaltsstoff-Suche, lokaler Katalog-Master.
-- **Start:** `npm run prod` im Ordner `/opt/fuel`.
+- **Start:** `pnpm run prod` im Ordner `/opt/fuel`.
 
 ---
 
@@ -44,8 +44,8 @@ Um eine stabile PWA-Erfahrung zu garantieren, haben wir einen klaren Git-basiert
 
 ### 24h Preview Workflow (Der Sicherheits-Check)
 Bevor Commits aus dem `dev` Branch in den `master` Branch fließen, wird ein temporärer Preview-Link generiert:
-1. **Entwickeln im `dev` Branch:** Änderungen werden in `~/journal-dev` gebaut (`npm run dev`).
-2. **Preview Deploy (24h):** Mit dem Befehl `npm run deploy:preview` wird ein Build für Firebase erstellt und ein Preview Channel gestartet. Man erhält einen Link, der 24 Stunden gültig ist — er wird zusätzlich per Telegram verschickt (`scripts/deploy-preview.mjs`, Creds aus `~/.env/fitness.env`).
+1. **Entwickeln im `dev` Branch:** Änderungen werden in `~/journal-dev` gebaut (`pnpm run dev`).
+2. **Preview Deploy (24h):** Mit dem Befehl `pnpm run deploy:preview` wird ein Build für Firebase erstellt und ein Preview Channel gestartet. Man erhält einen Link, der 24 Stunden gültig ist — er wird zusätzlich per Telegram verschickt (`scripts/deploy-preview.mjs`, Creds aus `~/.env/fitness.env`).
 3. **Testen:** Der Preview-Link wird auf verschiedenen Geräten geprüft.
 
 > **Warum lokal und nicht als GitHub Action?** Die Crossover-Aliase in `vite.config.cjs`
@@ -54,12 +54,12 @@ Bevor Commits aus dem `dev` Branch in den `master` Branch fließen, wird ein tem
 > fitness-dev. Auf einem GitHub-Runner existieren diese Repos nicht (und ihre `dev`-Stände
 > sind lokal oft weiter als auf GitHub), deshalb kann CI diesen Build nicht bauen.
 > Die ursprünglichen Actions liegen deaktiviert in `.github/workflows.disabled/`.
-4. **Merge & Live-Deploy:** Wenn alles passt, werden die Änderungen in den `master` Branch gemerged (ggf. in der VitalOS-Shell gezogen) und final mit `npm run deploy:cloud` live geschaltet.
+4. **Merge & Live-Deploy:** Wenn alles passt, werden die Änderungen in den `master` Branch gemerged (ggf. in der VitalOS-Shell gezogen) und final mit `pnpm run deploy:cloud` live geschaltet.
 
 ### Befehle für Firebase Hosting
-- **Live Deploy (mit Versions-Bump):** `npm run release` (Erhöht die Version in `package.json` und pusht live)
-- **Live Deploy (ohne Bump):** `npm run deploy` oder `npm run deploy:cloud`
-- **Preview Deploy:** `npm run deploy:preview` (Erstellt den zeitlich begrenzten 24h-Link)
+- **Live Deploy (mit Versions-Bump):** `pnpm run release` (Erhöht die Version in `package.json` und pusht live)
+- **Live Deploy (ohne Bump):** `pnpm run deploy` oder `pnpm run deploy:cloud`
+- **Preview Deploy:** `pnpm run deploy:preview` (Erstellt den zeitlich begrenzten 24h-Link)
 
 *Hinweis: Firebase ist so konfiguriert, dass es ausschließlich aus dem Verzeichnis `dist-firebase/` veröffentlicht.*
 

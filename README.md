@@ -109,8 +109,8 @@ Gibt `name, brand, kcal, kh, fett, ew` pro 100 g zurück. Kein API-Key, kein Acc
 ### Lokal (Entwicklung)
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Danach läuft die App auf `http://127.0.0.1:9000`. Der Supervisor startet Backend und Frontend zusammen.
@@ -119,7 +119,7 @@ Danach läuft die App auf `http://127.0.0.1:9000`. Der Supervisor startet Backen
 
 Die App ist für Firebase Hosting optimiert und funktioniert in der Cloud ohne eigenen Server (via Firestore).
 
-1.  **Build:** `npm run build`
+1.  **Build:** `pnpm run build`
 2.  **Deployment:** `firebase deploy` (im Hauptverzeichnis)
 
 Die App erkennt automatisch, ob sie auf `*.web.app` läuft, und nutzt dann Firestore statt der lokalen API.
@@ -129,8 +129,8 @@ Die App erkennt automatisch, ob sie auf `*.web.app` läuft, und nutzt dann Fires
 Um lokale Kataloge und Logs mit der Cloud abzugleichen:
 
 ```bash
-npm run sync:push   # Lokal -> Firestore
-npm run sync:pull   # Firestore -> Lokal
+pnpm run sync:push   # Lokal -> Firestore
+pnpm run sync:pull   # Firestore -> Lokal
 ```
 
 Detaillierte Infos zur Cloud-Anbindung findest du in [FIRESTORE.md](FIRESTORE.md).

@@ -51,8 +51,8 @@ msg "📦 Installing dependencies and building UI"
 sudo chown -R "$(id -u):$(id -g)" "$DEST"
 (
   cd "$DEST"
-  npm ci --silent --include=dev
-  npm run build > /dev/null
+  pnpm install --frozen-lockfile --silent
+  pnpm run build > /dev/null
 )
 
 # 4. Restart Service

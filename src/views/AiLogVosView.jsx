@@ -3,6 +3,7 @@ import { Activity, BrainCircuit, CheckSquare, Droplets, Sparkles, Utensils, Wand
 
 import * as db from "@journal-db";
 import { analyzeSmartJournal } from "../lib/smartJournalLogger.js";
+import { applySmartAnalysis } from "../lib/smartJournalApply.js";
 
 const MEAL_LABELS = {
   breakfast: "Fruehstueck",
@@ -85,42 +86,7 @@ export default function AiLogVosView({ date, user }) {
     setSuccess("");
 
     try {
-      if (analysis.journal_entry) {
-        await db.saveJournal(date, analysis.journal_entry, { tags: ["smart-log"] });
-      }
-
-      if (analysis.meals.length > 0 || analysis.water_ml > 0) {
-        const currentLog = await db.getNutritionLog(date);
-        const nextMeals = [
-          ...(currentLog?.meals || []),
-          ...analysis.meals.map((meal, index) => ({
-            id: `smart_${Date.now().toString(36)}_${index}`,
-            type: meal.type,
-            description: meal.description,
-            notes: meal.notes || "Smart Logger",
-            kcal: meal.kcal,
-            protein: meal.protein,
-            carbs: meal.carbs,
-            fat: meal.fat,
-            time: new Date().toISOString(),
-            catalog_item_id: null,
-            catalog_components: [],
-            catalog_addon_ids: [],
-          })),
-        ];
-        await db.saveNutritionLog(date, {
-          ...currentLog,
-          date,
-          meals: nextMeals,
-          water_ml: Math.max(Number(currentLog?.water_ml || 0), Number(analysis.water_ml || 0)),
-        });
-      }
-
-      for (const habitHit of analysis.habits_done) {
-        const match = habitMap.get(habitHit.name.toLowerCase());
-        if (!match?.uuid) continue;
-        await db.recordHabit(match.uuid, date);
-      }
+      await applySmartAnalysis({ date, analysis, habits });
 
       setSuccess("Journal, Meals und Habits wurden uebernommen.");
       setAnalysis(null);

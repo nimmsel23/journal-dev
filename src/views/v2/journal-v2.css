@@ -1,0 +1,166 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wght@300..700&display=swap");
+
+/* Journal v2 · "Raster" — Schweizer Logbuch. Alles unter .jv2 gescopet. */
+.jv2 {
+  --p: #f6f6f2;
+  --ink: #0d0d0d;
+  --sig: #1738ff;
+  --soft: #e2e2dc;
+  --mono: "Martian Mono", ui-monospace, monospace;
+  font-family: "Archivo", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--p);
+  border: 2px solid var(--ink);
+  max-width: 520px;
+  margin: 0 auto;
+}
+.jv2 *, .jv2 *::before, .jv2 *::after { box-sizing: border-box; }
+.jv2 button:focus-visible, .jv2 input:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+
+.jv2-top { display: grid; grid-template-columns: auto 1fr; border-bottom: 2px solid var(--ink); }
+.jv2-dayno {
+  font-stretch: 62%; font-weight: 900; font-size: 112px; line-height: .82; letter-spacing: -.02em;
+  padding: 14px 14px 10px; border-right: 2px solid var(--ink); font-variant-numeric: tabular-nums;
+}
+.jv2-meta {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px; min-width: 0;
+  padding: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+}
+.jv2-meta b { font-size: 13px; }
+.jv2-kw { align-self: flex-start; background: var(--sig); color: #fff; padding: 2px 7px; }
+.jv2-nav { display: flex; gap: 6px; }
+.jv2-nav button {
+  all: unset; cursor: pointer; border: 1.5px solid var(--ink); padding: 2px 8px;
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+}
+.jv2-nav button:hover { background: var(--ink); color: var(--p); }
+
+.jv2-habits { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border-bottom: 2px solid var(--ink); }
+.jv2-habits button {
+  all: unset; box-sizing: border-box; cursor: pointer; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 4px 8px; text-align: center; border-right: 1px solid var(--ink);
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+}
+.jv2-habits button:last-child { border-right: 0; }
+.jv2-habits span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jv2-habits i {
+  font-style: normal; width: 26px; height: 26px; border: 2px solid var(--ink);
+  display: grid; place-items: center; font-size: 14px; font-weight: 700;
+}
+.jv2-habits .done i { background: var(--sig); border-color: var(--sig); color: #fff; }
+
+.jv2-entry { display: grid; grid-template-columns: 72px 1fr; border-bottom: 1px solid var(--ink); position: relative; }
+.jv2-entry time { font-family: var(--mono); font-weight: 600; font-size: 13px; padding: 12px 0 0 12px; }
+.jv2-body { padding: 12px 34px 14px 0; min-width: 0; }
+.jv2-body h3 {
+  margin: 0 0 3px; font-stretch: 75%; font-weight: 800; font-size: 24px; line-height: 1;
+  text-transform: uppercase; overflow-wrap: anywhere;
+}
+.jv2-body p { margin: 0; font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.jv2-tag {
+  display: inline-block; margin: 8px 6px 0 0; font-family: var(--mono); font-size: 10px;
+  text-transform: uppercase; border: 1.5px solid var(--ink); padding: 1px 6px;
+}
+.jv2-entry.open { background: var(--sig); color: #fff; }
+.jv2-entry.open .jv2-tag { border-color: #fff; }
+.jv2-del {
+  all: unset; cursor: pointer; position: absolute; top: 8px; right: 10px; width: 22px; height: 22px;
+  text-align: center; line-height: 22px; font-family: var(--mono); opacity: .35;
+}
+.jv2-del:hover, .jv2-del:focus-visible { opacity: 1; }
+.jv2-empty { padding: 28px 14px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--ink); }
+
+.jv2-compose { display: flex; }
+.jv2-compose input {
+  flex: 1; min-width: 0; border: 0; border-radius: 0; background: var(--soft);
+  padding: 14px 12px; font: inherit; font-size: 14px; color: var(--ink);
+}
+.jv2-compose button {
+  all: unset; cursor: pointer; background: var(--ink); color: var(--p); padding: 14px 18px;
+  font-weight: 800; font-stretch: 75%; text-transform: uppercase;
+}
+.jv2-compose button:disabled { opacity: .5; cursor: default; }
+
+.jv2-foot {
+  display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 2px solid var(--ink);
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+}
+.jv2-foot a, .jv2-link { all: unset; cursor: pointer; text-decoration: underline; }
+
+.jv2-page { min-height: 100vh; background: #d9d9d2; padding: 16px 12px 40px; }
+
+/* ── Moduswechsel ── */
+.jv2-modes { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 2px solid var(--ink); }
+.jv2-modes button {
+  all: unset; cursor: pointer; text-align: center; padding: 8px 4px; border-right: 1px solid var(--ink);
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+}
+.jv2-modes button:last-child { border-right: 0; }
+.jv2-modes button[aria-selected="true"] { background: var(--ink); color: var(--p); }
+.jv2-rangeno { font-size: 96px; }
+
+/* ── Woche ── */
+.jv2-week { display: flex; flex-direction: column; }
+.jv2-wrow {
+  all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 64px 1fr auto;
+  align-items: stretch; border-bottom: 1px solid var(--ink);
+}
+.jv2-wrow:hover { background: var(--soft); }
+.jv2-wrow:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.jv2-wnum {
+  font-stretch: 62%; font-weight: 900; font-size: 44px; line-height: 1; padding: 10px 0 10px 12px;
+  font-variant-numeric: tabular-nums;
+}
+.jv2-wrow.today .jv2-wnum { color: var(--sig); }
+.jv2-wmain { display: flex; flex-direction: column; gap: 2px; padding: 10px 8px; min-width: 0; }
+.jv2-wday { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.jv2-wline { font-size: 14px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jv2-wcount { font-family: var(--mono); font-size: 10px; text-transform: uppercase; opacity: .6; }
+.jv2-wempty { font-family: var(--mono); opacity: .35; }
+.jv2-wdots { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 0 12px 0 4px; }
+.jv2-wdots i { width: 10px; height: 10px; border: 1.5px solid var(--ink); display: block; }
+.jv2-wdots i.on { background: var(--sig); border-color: var(--sig); }
+
+/* ── Monat ── */
+.jv2-mhead, .jv2-mweek { display: grid; grid-template-columns: 26px repeat(7, 1fr); }
+.jv2-mhead span {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; text-align: center;
+  padding: 6px 0; border-bottom: 2px solid var(--ink);
+}
+.jv2-mkw {
+  font-family: var(--mono); font-size: 9px; display: grid; place-items: center; border-right: 1px solid var(--ink);
+  background: var(--soft);
+}
+.jv2-mcell {
+  all: unset; box-sizing: border-box; cursor: pointer; min-width: 0; aspect-ratio: 1 / 1.05;
+  display: flex; flex-direction: column; justify-content: space-between; padding: 5px 5px 4px;
+  border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-variant-numeric: tabular-nums;
+}
+.jv2-mcell:last-child { border-right: 0; }
+.jv2-mcell:hover { background: var(--soft); }
+.jv2-mcell:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.jv2-mcell b { font-stretch: 75%; font-weight: 800; font-size: 16px; line-height: 1; }
+.jv2-mcell.out { opacity: .35; }
+.jv2-mcell.today b { background: var(--sig); color: #fff; align-self: flex-start; padding: 1px 4px; }
+.jv2-mmark { display: flex; flex-direction: column; gap: 3px; min-height: 12px; }
+.jv2-mmark em { font-style: normal; font-family: var(--mono); font-size: 9px; font-weight: 700; }
+.jv2-mmark i { display: block; height: 4px; background: var(--sig); max-width: 100%; }
+.jv2-mcell.full { background: var(--ink); color: var(--p); }
+.jv2-mcell.full .jv2-mmark i { background: var(--p); }
+
+/* ── Kalender-Termine (Review) ── */
+.jv2-event {
+  background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(13, 13, 13, .05) 6px 7px);
+}
+.jv2-review {
+  all: unset; cursor: pointer; margin-top: 8px; font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  background: var(--ink); color: var(--p); padding: 2px 8px;
+}
+.jv2-review:hover { background: var(--sig); }
+.jv2-review:focus-visible { outline: 3px solid var(--sig); outline-offset: 2px; }
+.jv2-reviewed { background: var(--sig); border-color: var(--sig); color: #fff; }
+.jv2-mmark u {
+  text-decoration: none; font-family: var(--mono); font-size: 9px; font-weight: 700;
+  border: 1.5px solid currentColor; padding: 0 3px; align-self: flex-start;
+}

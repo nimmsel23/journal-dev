@@ -2,6 +2,7 @@
   "name": "@vos/journal",
   "version": "0.1.1",
   "private": true,
+  "packageManager": "pnpm@11.3.0",
   "type": "module",
   "exports": {
     ".": "./src/db.js",
@@ -15,14 +16,14 @@
     "preview": "vite preview --config vite.config.cjs",
     "build:firebase": "VITE_APP_MODE=client vite build --mode firebase --config vite.config.cjs",
     "build:cloud": "VITE_APP_MODE=client vite build --mode firebase --config vite.config.cjs",
-    "deploy": "npm run build:cloud && firebase deploy --only hosting --project fitness-aos",
-    "deploy:cloud": "npm run build:cloud && firebase deploy --only hosting --project fitness-aos",
-    "deploy:preview": "npm run build:cloud && node scripts/deploy-preview.mjs",
-    "release": "npm version patch --no-git-tag-version && npm run deploy:cloud",
-    "firebase": "npm run deploy:cloud",
-    "deploy:prev": "npm run deploy:preview",
-    "build:preview": "npm run deploy:preview",
-    "build:prev": "npm run deploy:preview"
+    "deploy": "pnpm run build:cloud && firebase deploy --only hosting --project fitness-aos",
+    "deploy:cloud": "pnpm run build:cloud && firebase deploy --only hosting --project fitness-aos",
+    "deploy:preview": "pnpm run build:cloud && node scripts/deploy-preview.mjs",
+    "release": "npm version patch --no-git-tag-version && pnpm run deploy:cloud",
+    "firebase": "pnpm run deploy:cloud",
+    "deploy:prev": "pnpm run deploy:preview",
+    "build:preview": "pnpm run deploy:preview",
+    "build:prev": "pnpm run deploy:preview"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
@@ -84,6 +85,7 @@
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "vite": "^5.4.8",
-    "vite-plugin-pwa": "^0.20.5"
+    "vite-plugin-pwa": "^0.20.5",
+    "workbox-window": "^7.4.1"
   }
 }

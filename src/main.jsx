@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Sparkles, RotateCcw } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,7 +15,7 @@ import { watchAuth, signIn, signOut, getUid } from "@journal-db";
 // Initialize Firebase (sets window.__firebaseAuth, window.__firebaseDb, etc.)
 import "./lib/firebase.js";
 
-import { useRegisterSW } from "virtual:pwa-register/react";
+import UpdateManager from "./components/UpdateManager.jsx";
 
 const qc = new QueryClient();
 
@@ -23,21 +23,34 @@ function localToday() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Kurze Hash-Präfixe → Tab-Key (#v2, #v2/today, #v2/2026-10-17)
+const HASH_ALIASES = { v2: "journal-v2" };
+const V2_MODES = ["tag", "woche", "monat"];
+const HASH_ALIASES_REVERSE = Object.fromEntries(Object.entries(HASH_ALIASES).map(([k, v]) => [v, k]));
+
 function parseHashState() {
   const raw = window.location.hash.replace(/^#\/?/, "");
   if (!raw) return { tab: null, date: null };
-  const [tab = null, rawDate = null] = raw.split("/");
-  if (!tab) return { tab: null, date: null };
-  if (!rawDate) return { tab, date: null };
-  if (rawDate === "today") return { tab, date: localToday() };
-  if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return { tab, date: rawDate };
-  return { tab, date: null };
+  const parts = raw.split("/");
+  const rawTab = parts[0] || null;
+  const tab = rawTab ? (HASH_ALIASES[rawTab] ?? rawTab) : null;
+  // v2 hat einen optionalen Modus-Teil: #v2/woche/2026-10-17
+  let mode = null;
+  if (tab === "journal-v2" && V2_MODES.includes(parts[1])) mode = parts.splice(1, 1)[0];
+  const rawDate = parts[1] ?? null;
+  if (!tab) return { tab: null, date: null, mode };
+  if (!rawDate) return { tab, date: null, mode };
+  if (rawDate === "today") return { tab, date: localToday(), mode };
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return { tab, date: rawDate, mode };
+  return { tab, date: null, mode };
 }
 
-function buildHashState(tab, date) {
+function buildHashState(rawTab, date, mode = "tag") {
+  const tab = HASH_ALIASES_REVERSE[rawTab] ?? rawTab;
   if (!tab) return "#";
-  if (!date) return `#${tab}`;
-  return `#${tab}/${date === localToday() ? "today" : date}`;
+  const prefix = rawTab === "journal-v2" && mode !== "tag" ? `${tab}/${mode}` : tab;
+  if (!date) return `#${prefix}`;
+  return `#${prefix}/${date === localToday() ? "today" : date}`;
 }
 
 if (typeof window !== "undefined") {
@@ -49,29 +62,31 @@ if (typeof window !== "undefined") {
 }
 
 function App() {
-  const { activeTab, setActiveTab, activeDate, setActiveDate } = useApp();
+  const { activeTab, setActiveTab, activeDate, setActiveDate, v2Mode, setV2Mode } = useApp();
   const [user, setUser] = React.useState(null);
 
-  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW({
-    onRegistered(r) {
-      if (!r) return;
-      // Check for updates every 10 minutes
-      setInterval(() => r.update(), 10 * 60 * 1000);
-      // Also check when app regains focus
-      window.addEventListener('focus', () => r.update());
-    },
-  });
-
-  // The update button is rendered above in the header when needRefresh is true.
-  React.useEffect(() => watchAuth((u) => setUser(u)), []);
+  // Auth-Status bekannt → Splash (index.html) ausblenden; Fallback nach 2,5 s
+  React.useEffect(() => {
+    const hide = () => window.__hideSplash?.();
+    const t = setTimeout(hide, 2500);
+    const off = watchAuth((u) => {
+      setUser(u);
+      hide();
+    });
+    return () => {
+      clearTimeout(t);
+      off?.();
+    };
+  }, []);
 
   // URL Hashing for Tab + Datum
   React.useEffect(() => {
     const handleHashChange = () => {
-      const { tab, date } = parseHashState();
+      const { tab, date, mode } = parseHashState();
       if (tab && TAB_CONFIG.some((t) => t.key === tab)) {
         setActiveTab(tab);
       }
+      if (tab === "journal-v2") setV2Mode(mode ?? "tag");
       if (date) {
         setActiveDate(date);
       }
@@ -82,16 +97,16 @@ function App() {
 
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
-  }, [setActiveDate, setActiveTab]);
+  }, [setActiveDate, setActiveTab, setV2Mode]);
 
   React.useEffect(() => {
     if (activeTab) {
-      const nextHash = buildHashState(activeTab, activeDate);
+      const nextHash = buildHashState(activeTab, activeDate, v2Mode);
       if (window.location.hash !== nextHash) {
         window.location.hash = nextHash;
       }
     }
-  }, [activeDate, activeTab]);
+  }, [activeDate, activeTab, v2Mode]);
 
   const isCloud = window.location.hostname.includes("web.app") || window.location.hostname.includes("firebaseapp.com");
 
@@ -120,7 +135,12 @@ function App() {
     }
   };
 
-  const tabCtx = { activeDate, setActiveDate, setActiveTab, user };
+  const tabCtx = { activeDate, setActiveDate, setActiveTab, user, v2Mode, setV2Mode };
+
+  // "bare"-Tabs (z.B. Journal v2) bringen ihr eigenes Layout mit: kein App-Header.
+  if (activeTabConfig?.bare) {
+    return <TabContent activeTab={activeTab} ctx={tabCtx} />;
+  }
 
   return (
     <>
@@ -136,15 +156,7 @@ function App() {
                   <Sparkles className="h-3.5 w-3.5" />
                   VOS Journal
                 </p>
-                {needRefresh && (
-                  <button
-                    onClick={() => updateServiceWorker(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-amber-200 hover:border-amber-400/60 hover:bg-amber-400/20 transition"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5 animate-spin" />
-                    Update
-                  </button>
-                )}
+                <span className="text-[10px] tracking-widest text-slate-500">v{__APP_VERSION__}</span>
                 {isCloud && (
                   user ? (
                     <button onClick={handleSignOut} className="text-[10px] text-slate-500 hover:text-white uppercase tracking-widest">
@@ -204,6 +216,7 @@ createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <QueryClientProvider client={qc}>
       <App />
+      <UpdateManager />
     </QueryClientProvider>
   </React.StrictMode>,
 );

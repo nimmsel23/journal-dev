@@ -109,23 +109,33 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   // Google Calendar (nur lesen): Termine zum Reviewen, Token nur in sessionStorage
   const [calOn, setCalOn] = useState(() => calendarConnected());
   const [calMsg, setCalMsg] = useState("");
+  // Standard: nur Fire Map; „alle“ zeigt jeden in Google ausgewählten Kalender
+  const [calAll, setCalAll] = useState(() => {
+    try { return localStorage.getItem("jv2:cal-all") === "1"; } catch { return false; }
+  });
+  const toggleCalAll = () => {
+    const next = !calAll;
+    setCalAll(next);
+    setCalMsg("");
+    try { localStorage.setItem("jv2:cal-all", next ? "1" : "0"); } catch {}
+  };
   const inputRef = useRef(null);
   const evFrom = mode === "tag" ? day : rangeFrom;
   const evTo = mode === "tag" ? day : rangeTo;
   const events = useQuery({
-    queryKey: ["jv2-cal", uid, iso(evFrom), iso(evTo)],
+    queryKey: ["jv2-cal", uid, iso(evFrom), iso(evTo), calAll],
     enabled: !!uid && calOn && mode !== "habits",
     retry: false,
     queryFn: async () => {
       try {
-        return await fetchEvents(evFrom, evTo);
+        return await fetchEvents(evFrom, evTo, { all: calAll });
       } catch (error) {
         if (error.message === "calendar-expired") {
           setCalOn(false);
           setCalMsg("Kalender-Zugriff abgelaufen. Bitte neu verbinden.");
           return [];
         }
-        setCalMsg(error.message);
+        setCalMsg(error.message === "fire-calendar-missing" ? "Kalender „Fire Map“ nicht gefunden. Unten auf „Alle Kalender“ umschalten." : error.message);
         return [];
       }
     },
@@ -440,8 +450,12 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         <div className="jv2-foot">
           <span>Journal v2 · Raster</span>
           {uid && (calOn
-            ? <button type="button" className="jv2-link" onClick={disconnect}>Kalender trennen</button>
+            ? <>
+                <button type="button" className="jv2-link" onClick={toggleCalAll}>{calAll ? "Nur Fire Map" : "Alle Kalender"}</button>
+                <button type="button" className="jv2-link" onClick={disconnect}>Kalender trennen</button>
+              </>
             : <button type="button" className="jv2-link" onClick={connect}>Kalender verbinden</button>)}
+          <a href="#door2">Door →</a>
           <a href="#journal">← v1</a>
         </div>
       </article>

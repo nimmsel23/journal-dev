@@ -51,7 +51,7 @@ fitness-dev-Variante mit anderer `saveJournal`-Signatur (Tags als Array) durchsc
   `gemini-2.5-flash`) → Vorschau (Eintrag, Mahlzeiten, Wasser, Habits) → „Übernehmen“. Schreibt Journal (Tag `smart-log`),
   Nutrition-Log und Habit-Records. Unbekannte Habit-Namen werden übersprungen. Toggle in `localStorage jv2:smart`.
 - **Google Calendar (nur lesen):** „Kalender verbinden“ im Footer, `reauthenticateWithPopup` mit Scope
-  `calendar.readonly`. Token ~1 h nur in `sessionStorage`, nie in Firestore. Alle in Google ausgewählten Kalender,
+  `calendar.readonly`. Token ~1 h nur in `sessionStorage`, nie in Firestore. Standard: nur der Kalender „Fire Map“ (Taskwarrior-Termine `[TW today]`/`[TW overdue]`, von `firectl gcal due` gepusht); „Alle Kalender“ im Footer zeigt jeden in Google ausgewählten Kalender,
   abgelehnte/abgesagte Termine entfallen. „Rückblick →“ legt einen Eintrag mit Tag `termin` an. Voraussetzung im
   GCP-Projekt `fitness-aos`: Calendar API aktiviert (ist es) und Scope im OAuth-Zustimmungsbildschirm bzw. Testnutzer.
 - **Vollbild / iPad:** Seite füllt den Viewport (`100dvh`), Safe-Area-Insets, Papierfarbe auch für Hintergrund und
@@ -94,6 +94,23 @@ Das Repo ist auf pnpm umgestellt (`packageManager: pnpm@11.3.0`, `pnpm-lock.yaml
 (Branch `vitalos`) `origin/dev` mergen, `package.json` des `vitalos`-Stands behalten und nur die Änderungen aus dev
 übertragen (nicht komplett `--theirs`, sonst gehen die `@firebase/*`/`motion-*`-Deklarationen verloren),
 `pnpm-lock.yaml`/`pnpm-workspace.yaml` entfernen, `pnpm install --lockfile-only` im vitalos-Root, pushen, Pointer in vitalos committen.
+
+## Door v2 · Google Tasks
+
+Umschalter „Quelle“ in der Door-v2-Shell (`localStorage` `dv2:source` = `backend` | `gtasks`, Default `backend`; v1 unberührt).
+Module: `src/lib/door/gtasks.js` (Auth + REST), `gtasks.door.js` (Adapter mit denselben Rückgabeformen wie die Backend-Module),
+`source.js` (Umschaltung). Auth wie `gcal.js`: `reauthenticateWithPopup` mit Scope `https://www.googleapis.com/auth/tasks`,
+Token nur in `sessionStorage` (`dv2:gtasks-token`), 401 → „abgelaufen“, Knopf „Google Tasks verbinden/Neu verbinden“.
+Angefasst werden ausschließlich die Listen „Door · Potential“ und „Door · Production“ (werden bei Bedarf angelegt).
+
+- **Potential**: Task in „Door · Potential“; erledigen = `status: completed`, löschen = DELETE.
+- **Plan**: dieselben Tasks; Priorität in der ersten Zeile von `notes`: `Door: Q2 · Door 2026-W42` (Quadrant + Wochen-Door,
+  nur auf Q2; eine Door pro Woche). Restliche Notizzeilen bleiben erhalten, der Titel bleibt sauber. Sortierung per `move` nicht umgesetzt.
+- **Production**: Tasks in „Door · Production“, `due` = Tag der Woche (Mo–So); Toggle completed ↔ needsAction; Quote = erledigt/gesamt.
+  Hits werden im Panel selbst angelegt (Tag + Text).
+- **Profit** (nur lesend): letzte 8 Wochen, erledigte Potential-Tasks und Hits je Woche (nach `completed`), Liste erledigter Wochen-Doors. Keine Reflexionen.
+
+Voraussetzung: Tasks API im GCP-Projekt aktiviert (fitness-aos: ja); der Scope `tasks` muss im OAuth-Zustimmungsbildschirm stehen (oder der Nutzer Testnutzer sein).
 
 ## Geplant / offen
 

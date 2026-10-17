@@ -72,9 +72,14 @@ const iso = (d) => format(d, "yyyy-MM-dd");
  * Termine aller ausgewählten Kalender im Zeitraum [from, to] (Date, inklusive).
  * Mehrtägige Termine werden pro Tag aufgeteilt; jeder Eintrag hat `date`.
  */
-export async function fetchEvents(from, to) {
+const FIRE_RE = /fire/i;
+
+export async function fetchEvents(from, to, { all = false } = {}) {
   const calendars = (await api("/users/me/calendarList", { minAccessRole: "reader" })).items || [];
-  const picked = calendars.filter((c) => c.selected !== false);
+  const visible = calendars.filter((c) => c.selected !== false);
+  // Standard: nur der Kalender „Fire Map“ (Taskwarrior-Termine, von `firectl gcal due` gepusht)
+  const picked = all ? visible : visible.filter((c) => FIRE_RE.test(c.summaryOverride || c.summary || ""));
+  if (!all && picked.length === 0) throw new Error("fire-calendar-missing");
   const params = {
     timeMin: new Date(`${iso(from)}T00:00:00`).toISOString(),
     timeMax: new Date(`${iso(addDays(to, 1))}T00:00:00`).toISOString(),

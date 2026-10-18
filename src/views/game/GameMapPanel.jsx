@@ -3,7 +3,7 @@
 //   Fire    = Strikes der Woche: überfällig, heute, Rest der Woche (+ alles mit +fire) + Termine aus Google Calendar „Fire Map“
 //   Focus   = Monatsergebnisse: +focus, gruppiert nach Projekt
 //   Freedom = Jahresvisionen: +freedom, gruppiert nach Projekt
-//   Frame   = Standort: offene Tasks je Domain (Body / Being / Balance / Business) bzw. +frame
+//   Frame   = Frame Map je Domain (Body / Being / Balance / Business), fünf Fragen in Firestore – keine Tasks
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, endOfISOWeek, format, startOfDay, startOfISOWeek } from "date-fns";
@@ -17,9 +17,8 @@ export const MAPS = {
   fire: { label: "Fire", sub: "Woche · Strikes", tag: "fire", hint: "Welcher Strike steht an – und wofür?" },
   focus: { label: "Focus", sub: "Monat · Ergebnisse", tag: "focus", hint: "Was muss diesen Monat anders sein?" },
   freedom: { label: "Freedom", sub: "Jahr · Visionen", tag: "freedom", hint: "Wofür machst du das alles?" },
-  frame: { label: "Frame", sub: "Standort · Domains", tag: "frame", hint: "Wo stehst du jetzt – Body, Being, Balance, Business?" },
+  frame: { label: "Frame", sub: "Standort · Domains", hint: "Wo stehst du jetzt – Body, Being, Balance, Business?" },
 };
-const DOMAINS = ["body", "being", "balance", "business"];
 
 const has = (t, tag) => t[`tag_${tag}`] !== undefined;
 const secs = (v) => (v ? new Date(Number(v) * 1000) : null);
@@ -43,12 +42,6 @@ export function groupsFor(map, all) {
     }
     return [["over", "Überfällig"], ["today", "Heute"], ["week", "Diese Woche"], ["tag", "Fire ohne Termin"]]
       .map(([key, title]) => ({ key, title, items: g[key].sort(byPrio) })).filter((x) => x.items.length);
-  }
-  if (map === "frame") {
-    const pool = list.filter((t) => has(t, "frame") || DOMAINS.includes(String(t.domain || "").toLowerCase()));
-    const g = Object.fromEntries([...DOMAINS, "other"].map((d) => [d, []]));
-    for (const t of pool) (g[String(t.domain || "").toLowerCase()] || g.other).push(t);
-    return [...DOMAINS, "other"].map((d) => ({ key: d, title: d === "other" ? "Ohne Domain" : d[0].toUpperCase() + d.slice(1), items: g[d].sort(byPrio) })).filter((x) => x.items.length);
   }
   const tag = MAPS[map].tag;
   const g = new Map();
@@ -173,8 +166,9 @@ export default function GameMapPanel({ map, uid }) {
     });
   };
 
-  if (cfg === undefined) return map === "frame" ? <FrameCards uid={uid} /> : null;
-  if (cfg === null) return map === "frame" ? <><FrameCards uid={uid} /><TcSetup onDone={() => { setCfg(undefined); qc.invalidateQueries({ queryKey: ["gv2-cfg"] }); }} /></> : <TcSetup onDone={() => { setCfg(undefined); qc.invalidateQueries({ queryKey: ["gv2-cfg"] }); }} />;
+  if (map === "frame") return <FrameCards uid={uid} />; // Frame = Frame Map je Domain, keine Tasks
+  if (cfg === undefined) return null;
+  if (cfg === null) return <TcSetup onDone={() => { setCfg(undefined); qc.invalidateQueries({ queryKey: ["gv2-cfg"] }); }} />;
   const groups = groupsFor(map, q.data || []);
   const total = groups.reduce((n, g) => n + g.items.length, 0);
   return (
@@ -194,7 +188,6 @@ export default function GameMapPanel({ map, uid }) {
       {q.isError && <div className="dv2-empty" role="alert">{tcError(q.error)}</div>}
       {!q.isLoading && !q.isError && total === 0 && <div className="dv2-empty">Nichts offen in {spec.label}. Tag <code>+{spec.tag}</code> setzen oder oben anlegen.</div>}
       {map === "fire" && <FireCalendar />}
-      {map === "frame" && <FrameCards uid={uid} />}
       {groups.map((g) => (
         <section key={g.key}>
           <h4 className="dv2-sec">{g.title} <span>{g.items.length}</span></h4>

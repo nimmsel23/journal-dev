@@ -55,7 +55,7 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
   const tcRun = async (fn) => {
     setGerr(""); setTcBusy(true);
     try { await fn(); qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("dv2-") }); }
-    catch (e) { setGerr({ "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.", "tc-network": "Sync-Server nicht erreichbar (offline, CORS oder Proxy)." }[e?.message] || e?.message || "Sync fehlgeschlagen"); }
+    catch (e) { setGerr({ "tc-body": "Antwort des Sync-Servers brach ab oder war nicht lesbar (Netz/Proxy).", "tc-format": "Unerwartetes Datenformat vom Sync-Server.", "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.", "tc-network": "Sync-Server nicht erreichbar (offline, CORS oder Proxy)." }[e?.message] || e?.message || "Sync fehlgeschlagen"); }
     setTcBusy(false);
   };
   const tcSave = (e) => { e.preventDefault(); tcRun(async () => { setTcCfg(await tc.saveConfig(form)); await tc.sync(); setForm({ url: "", clientId: "", secret: "" }); }); };

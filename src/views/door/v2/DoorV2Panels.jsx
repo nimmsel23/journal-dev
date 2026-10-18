@@ -14,6 +14,8 @@ const MSGS = {
   "tc-conflict": "Sync-Konflikt – bitte „Sync“ drücken und erneut versuchen.",
   "tc-unconfigured": "Taskwarrior ist nicht eingerichtet.",
   "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.",
+  "tc-body": "Antwort des Sync-Servers brach ab oder war nicht lesbar (Netz/Proxy).",
+  "tc-format": "Unerwartetes Datenformat vom Sync-Server.",
   "tc-network": "Sync-Server nicht erreichbar (offline, CORS oder Proxy).",
 };
 const msg = (e) => MSGS[e?.message] || e?.message || "Fehler";

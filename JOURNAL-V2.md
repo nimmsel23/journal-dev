@@ -169,7 +169,7 @@ Browser-Test von Door v2 (Layout, Hash-Wechsel) und Google Tasks gegen die echte
 
 ## Door v2 · Quellen-Registry und Plan-Board (Drag & Drop)
 
-- **Registry:** `SOURCES` in `src/lib/door/source.js` (Backend, Google Tasks, Taskwarrior); jede Quelle ist ein Funktionsset mit identischen Signaturen (`door(source)`). Die Wahl liegt pro Nutzer in Firestore `fitness/{uid}/settings/door` (von den Regeln für `fitness/{uid}/**` gedeckt), `localStorage` `dv2:source` ist nur Cache.
+- **Registry:** `SOURCES` in `src/lib/door/source.js` (Backend, Google Tasks, Taskwarrior); jede Quelle ist ein Funktionsset mit identischen Signaturen (`door(source)`). Die Wahl liegt pro Nutzer in Firestore `journal/{uid}/settings/door` (Rule `journal/{uid}/**`; der alte Pfad `fitness/{uid}/settings/door` wird nur noch als Fallback gelesen), `localStorage` `dv2:source` ist nur Cache.
 - **Plan-Board:** dnd-kit (`@dnd-kit/core`). Karten haben einen Griff „⠿“ (nur der Griff sperrt Scrollen, wichtig für iPad); Ziel sind Q1–Q4 oder der beim Ziehen erscheinende Slot „Door der Woche“ (setzt Q2 und wählt die Door). Optimistisches Update im Query-Cache, danach Speichern. Hits zwischen Tagen ziehen (Production) gibt es noch nicht.
 
 ## Door v2 · Taskwarrior (TaskChampion-Sync)
@@ -191,7 +191,7 @@ Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in 
 
 ## Game v2 (`#game2/<fire|focus|freedom|frame|voice>`, Kurzformen `#fire` …)
 
-`src/views/game/`. Fire/Focus/Freedom/Frame lesen und schreiben die Taskwarrior-Replik (TaskChampion, gleiche Verbindung wie Door v2): Fire = überfällig/heute/Woche + `+fire`; Focus = `+focus` je Projekt; Freedom = `+freedom` je Projekt; Frame = offene Tasks je Domain (Body/Being/Balance/Business) bzw. `+frame`. Abhaken setzt `completed`, „Add“ legt Task mit dem Map-Tag an (Fire: heute fällig). **Voice** (`VoicePanel.jsx`, Fragen aus `voiceData.js` = `~/aos/voice/phases.py`): vier Phasen Stop/Submit/Struggle/Strike, jede Phase wird als Journal-Eintrag (Tags `voice`, `<phase>`) gespeichert. Die Inhalte der Map-Dokumente (YAML) werden nicht gelesen.
+`src/views/game/`. Fire/Focus/Freedom/Frame lesen und schreiben die Taskwarrior-Replik (TaskChampion, gleiche Verbindung wie Door v2): Fire = überfällig/heute/Woche + `+fire`; Focus = `+focus` je Projekt; Freedom = `+freedom` je Projekt; **Frame ist keine Taskliste**, sondern die Frame Map: je Domain (Body/Being/Balance/Business) die fünf Fragen aus `~/aos/game/frame/cli.py` (`FRAME_QUESTIONS`), gespeichert pro Nutzer in Firestore `journal/{uid}/frame/{domain}` (`frameDb.js`, YAML-Schlüssel als Feldnamen). Die Rule `match /journal/{uid}/{document=**}` steht in `~/vitalos/firestore.rules` (projektglobal, manuell deployen) – ohne sie meldet die Ansicht „Keine Berechtigung“. Abhaken setzt `completed`, „Add“ legt Task mit dem Map-Tag an (Fire: heute fällig). **Voice** (`VoicePanel.jsx`, Fragen aus `voiceData.js` = `~/aos/voice/phases.py`): vier Phasen Stop/Submit/Struggle/Strike, jede Phase wird als Journal-Eintrag (Tags `voice`, `<phase>`) gespeichert. Die Inhalte der Map-Dokumente (YAML) werden nicht gelesen.
 
 ## Tent v2 (`#tent2`)
 

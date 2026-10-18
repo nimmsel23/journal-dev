@@ -20,19 +20,21 @@ export const SOURCES = [
 ];
 const valid = (s) => SOURCES.some((x) => x.id === s);
 
-// localStorage = schneller Cache, Firestore (fitness/{uid}/settings/door) = Wahrheit pro Nutzer
+// localStorage = schneller Cache, Firestore (journal/{uid}/settings/door) = Wahrheit pro Nutzer;
+// der alte Pfad fitness/{uid}/settings/door wird nur noch als Fallback gelesen
 export const getSource = () => {
   try { const s = localStorage.getItem(KEY); return valid(s) ? s : "backend"; } catch { return "backend"; }
 };
 export const setSource = (s, uid) => {
   try { localStorage.setItem(KEY, s); } catch {}
-  if (uid) setDoc(doc(fdb, "fitness", uid, "settings", "door"), { source: s }, { merge: true }).catch(() => {});
+  if (uid) setDoc(doc(fdb, "journal", uid, "settings", "door"), { source: s }, { merge: true }).catch(() => {});
 };
 /** Nutzer-Einstellung aus Firestore; undefined wenn keine gespeichert/erreichbar. */
 export const loadRemoteSource = async (uid) => {
   try {
-    const snap = await getDoc(doc(fdb, "fitness", uid, "settings", "door"));
-    const s = snap.exists() ? snap.data().source : null;
+    let snap = await getDoc(doc(fdb, "journal", uid, "settings", "door")).catch(() => null);
+    if (!snap?.exists()) snap = await getDoc(doc(fdb, "fitness", uid, "settings", "door")).catch(() => null); // Altbestand
+    const s = snap?.exists() ? snap.data().source : null;
     if (valid(s)) { try { localStorage.setItem(KEY, s); } catch {} return s; }
   } catch {}
   return undefined;

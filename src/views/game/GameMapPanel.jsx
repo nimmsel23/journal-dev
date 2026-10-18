@@ -3,22 +3,22 @@
 //   Fire    = Strikes der Woche: überfällig, heute, Rest der Woche (+ alles mit +fire) + Termine aus Google Calendar „Fire Map“
 //   Focus   = Monatsergebnisse: +focus, gruppiert nach Projekt
 //   Freedom = Jahresvisionen: +freedom, gruppiert nach Projekt
-//   Frame   = Standort: offene Tasks je Domain (Body / Being / Balance / Business) bzw. +frame
+//   Frame   = Frame Map je Domain (Body / Being / Balance / Business), fünf Fragen in Firestore – keine Tasks
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, endOfISOWeek, format, startOfDay, startOfISOWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import * as tc from "../../lib/door/taskchampion.js";
 import TcSetup, { tcError } from "./TcSetup.jsx";
+import { FRAME_DOMAINS, FRAME_QUESTIONS, fetchFrames, saveFrameAnswer } from "./frameDb.js";
 import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "../v2/gcal.js";
 
 export const MAPS = {
   fire: { label: "Fire", sub: "Woche · Strikes", tag: "fire", hint: "Welcher Strike steht an – und wofür?" },
   focus: { label: "Focus", sub: "Monat · Ergebnisse", tag: "focus", hint: "Was muss diesen Monat anders sein?" },
   freedom: { label: "Freedom", sub: "Jahr · Visionen", tag: "freedom", hint: "Wofür machst du das alles?" },
-  frame: { label: "Frame", sub: "Standort · Domains", tag: "frame", hint: "Wo stehst du jetzt – Body, Being, Balance, Business?" },
+  frame: { label: "Frame", sub: "Standort · Domains", hint: "Wo stehst du jetzt – Body, Being, Balance, Business?" },
 };
-const DOMAINS = ["body", "being", "balance", "business"];
 
 const has = (t, tag) => t[`tag_${tag}`] !== undefined;
 const secs = (v) => (v ? new Date(Number(v) * 1000) : null);
@@ -42,12 +42,6 @@ export function groupsFor(map, all) {
     }
     return [["over", "Überfällig"], ["today", "Heute"], ["week", "Diese Woche"], ["tag", "Fire ohne Termin"]]
       .map(([key, title]) => ({ key, title, items: g[key].sort(byPrio) })).filter((x) => x.items.length);
-  }
-  if (map === "frame") {
-    const pool = list.filter((t) => has(t, "frame") || DOMAINS.includes(String(t.domain || "").toLowerCase()));
-    const g = Object.fromEntries([...DOMAINS, "other"].map((d) => [d, []]));
-    for (const t of pool) (g[String(t.domain || "").toLowerCase()] || g.other).push(t);
-    return [...DOMAINS, "other"].map((d) => ({ key: d, title: d === "other" ? "Ohne Domain" : d[0].toUpperCase() + d.slice(1), items: g[d].sort(byPrio) })).filter((x) => x.items.length);
   }
   const tag = MAPS[map].tag;
   const g = new Map();
@@ -107,7 +101,42 @@ function FireCalendar() {
   );
 }
 
-export default function GameMapPanel({ map }) {
+/* Frame: je Domain die fünf Fragen (journal/{uid}/frame/{domain}), speichert beim Verlassen des Feldes. */
+function FrameCards({ uid }) {
+  const qc = useQueryClient();
+  const [err, setErr] = useState("");
+  const q = useQuery({ queryKey: ["gv2-frame", uid], enabled: !!uid, queryFn: () => fetchFrames(uid), staleTime: 30_000 });
+  if (!uid) return <div className="dv2-empty">Frame speichern braucht den Cloud-Login.</div>;
+  const save = async (domain, key, value, old) => {
+    if (value.trim() === (old || "").trim()) return;
+    setErr("");
+    try { await saveFrameAnswer(uid, domain, key, value.trim()); qc.invalidateQueries({ queryKey: ["gv2-frame", uid] }); }
+    catch (e) { setErr(e?.code === "permission-denied" ? "Keine Berechtigung für journal/… – Firestore-Rules noch nicht deployt." : e?.message || "Speichern fehlgeschlagen"); }
+  };
+  return (
+    <section>
+      <h4 className="dv2-sec">Frame Map</h4>
+      {err && <div className="dv2-empty" role="alert">{err}</div>}
+      {q.isError && <div className="dv2-empty" role="alert">{q.error?.code === "permission-denied" ? "Keine Berechtigung für journal/… – Firestore-Rules noch nicht deployt." : q.error?.message}</div>}
+      {FRAME_DOMAINS.map((d) => {
+        const ans = q.data?.[d]?.questions || {};
+        const filled = FRAME_QUESTIONS.filter(([k]) => (ans[k] || "").trim()).length;
+        return (
+          <details key={d} className="gv2-frame">
+            <summary><b>{d[0].toUpperCase() + d.slice(1)}</b> <span>{filled}/{FRAME_QUESTIONS.length}</span></summary>
+            {FRAME_QUESTIONS.map(([k, label]) => (
+              <label key={`${d}-${k}-${ans[k] || ""}`} className="gv2-step"><b className="gv2-q">{label}</b>
+                <textarea rows={3} defaultValue={ans[k] || ""} onBlur={(e) => save(d, k, e.target.value, ans[k])} />
+              </label>
+            ))}
+          </details>
+        );
+      })}
+    </section>
+  );
+}
+
+export default function GameMapPanel({ map, uid }) {
   const spec = MAPS[map];
   const qc = useQueryClient();
   const [cfg, setCfg] = useState(undefined);
@@ -137,6 +166,7 @@ export default function GameMapPanel({ map }) {
     });
   };
 
+  if (map === "frame") return <FrameCards uid={uid} />; // Frame = Frame Map je Domain, keine Tasks
   if (cfg === undefined) return null;
   if (cfg === null) return <TcSetup onDone={() => { setCfg(undefined); qc.invalidateQueries({ queryKey: ["gv2-cfg"] }); }} />;
   const groups = groupsFor(map, q.data || []);

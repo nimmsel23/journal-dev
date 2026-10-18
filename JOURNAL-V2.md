@@ -191,7 +191,19 @@ Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in 
 
 ## Game v2 (`#game2/<fire|focus|freedom|frame|voice>`, Kurzformen `#fire` …)
 
-`src/views/game/`. Fire/Focus/Freedom/Frame lesen und schreiben die Taskwarrior-Replik (TaskChampion, gleiche Verbindung wie Door v2): Fire = überfällig/heute/Woche + `+fire`; Focus = `+focus` je Projekt; Freedom = `+freedom` je Projekt; **Frame ist keine Taskliste**, sondern die Frame Map: je Domain (Body/Being/Balance/Business) die fünf Fragen aus `~/aos/game/frame/cli.py` (`FRAME_QUESTIONS`), gespeichert pro Nutzer in Firestore `journal/{uid}/frame/{domain}` (`frameDb.js`, YAML-Schlüssel als Feldnamen). Die Rule `match /journal/{uid}/{document=**}` steht in `~/vitalos/firestore.rules` (projektglobal, manuell deployen) – ohne sie meldet die Ansicht „Keine Berechtigung“. Abhaken setzt `completed`, „Add“ legt Task mit dem Map-Tag an (Fire: heute fällig). **Voice** (`VoicePanel.jsx`, Fragen aus `voiceData.js` = `~/aos/voice/phases.py`): vier Phasen Stop/Submit/Struggle/Strike, jede Phase wird als Journal-Eintrag (Tags `voice`, `<phase>`) gespeichert. Die Inhalte der Map-Dokumente (YAML) werden nicht gelesen.
+`src/views/game/`. Die Maps sind keine Tasklisten (außer Fire), sondern Dokumente je Domain (Body/Being/Balance/Business) im Firestore des Nutzers (`journal/{uid}/…`, Rule `journal/{uid}/**`); Fragen/Felder aus `~/aos/game` (`maps/store.py`, `freedom/model.py`, `frame/cli.py`), Antworten speichern beim Verlassen des Feldes.
+
+| Map | Inhalt | Firestore |
+|---|---|---|
+| Frame | fünf Fragen je Domain (`FRAME_QUESTIONS`) | `journal/{uid}/frame/{domain}` |
+| Freedom | **Ideal Parallel World** (8 Felder, ohne Zeitraum), **Annual** (Jahr), **Quarterly** (Quartal) – je Domain | `journal/{uid}/freedom/{view}_{periode}_{domain}` |
+| Focus | **Monthly** (Mission, Ergebnisse, Engpass, Kapazität, Habits, Routines, Additions, Eliminations, Set Sail), **Weekly** (Focus der Woche) – je Domain | `journal/{uid}/focus/{view}_{periode}_{domain}` |
+
+Perioden wechselt man per ← → (`mapDb.js`: `periodKey`/`shiftPeriod`). Die Quarterly-Felder (`quarter_game`, `quarter_evidence`) sind in der Pillar-Doku nicht definiert und analog zum Annual Game ergänzt.
+
+**Fire (Taskwarrior)** = die Woche nach dem Door-Framework: **eine Door** (`+door`, mit `domain`) und ihre **4 Hits/Strikes/Bigrocks** (`+hit` bzw. `alphatype:bigrock`, Platz = `hit_number` 1–4, diese Woche fällig oder erledigt). Leere Plätze legen beim „Add“ einen Task an (`+hit`, `alphatype:bigrock`, `hit_number`, `domain` und `domino_door` von der Door, fällig heute). Hits lassen sich abhaken und wieder öffnen. Darunter: Termine aus Google Calendar „Fire Map“ (lesend, `[TW …]`-Spiegel ausgeblendet), „weiterer Strike“ (`+fire`) und die übrigen offenen Strikes (überfällig/heute/Woche). Ohne gewählte Door verweist die Ansicht auf Door v2 → Plan.
+
+**Voice** (`VoicePanel.jsx`, Fragen aus `voiceData.js` = `~/aos/voice/phases.py`): vier Phasen Stop/Submit/Struggle/Strike, jede Phase wird als Journal-Eintrag (Tags `voice`, `<phase>`) gespeichert.
 
 ## Tent v2 (`#tent2`)
 
@@ -200,7 +212,7 @@ Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in 
 ## Geplant / offen (Stand Taskwarrior/Game/Tent)
 
 - Ungetestet im Browser: Game v2, Tent v2, Voice, die drei neuen Apps, Push nach Taskwarrior gegen die echte Historie (getestet nur mit Test-Account).
-- Inhalte der Map-Dokumente (Frame/Freedom/Focus/Fire-YAML) fehlen in Game v2; Core4-Scores im Tent.
+- Game v2 liest/schreibt die YAML-Maps des Pillars nicht (eigene Firestore-Dokumente); Core4-Scores im Tent.
 - Production: Hits zwischen Tagen verschieben (Fälligkeit ändern) je Quelle.
 - Zustimmungsbildschirm (Scopes `calendar.readonly`, `tasks`, ggf. Testnutzer) nur in der Cloud Console; JavaScript-Ursprünge der OAuth-Clients nur bei `origin_mismatch` nötig (Firebase-Popup läuft über `authDomain`).
 - vitalos: Umstellung auf direkten Zugriff auf `journal-dev` (Symlink/Pnpmfile/Checkout statt Submodul + Branch `vitalos`) ist nur besprochen, nicht umgesetzt.

@@ -17,3 +17,4 @@
 .gv2-frame > summary::-webkit-details-marker { display: none; }
 .gv2-frame > summary span { font-family: var(--mono); font-size: 12px; opacity: .65; }
 .gv2-frame[open] > summary { background: var(--ink); color: var(--p); }
+.gv2-views button { text-align: center; padding: 10px 2px; }

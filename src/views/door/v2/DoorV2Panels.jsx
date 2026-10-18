@@ -7,6 +7,7 @@ import { door } from "../../../lib/door/source.js";
 import WarstackWizard from "./DoorV2Warstack.jsx";
 import * as twDoor from "../../../lib/door/taskwarrior.door.js";
 import { fetchProfitGtasks } from "../../../lib/door/gtasks.door.js";
+import { fetchProfitReviews } from "../../../lib/door/profitFromJournal.js";
 import { fetchProfitTw } from "../../../lib/door/taskwarrior.door.js";
 
 const MSGS = {
@@ -342,7 +343,27 @@ function ProfitGtasks({ uid, source }) {
       {doors.length === 0 ? <div className="dv2-empty">Noch keine erledigte Door.</div> : doors.map((x) => (
         <div key={x.id} className="dv2-row"><div className="dv2-text"><h3>{x.door_title}</h3><p>{x.week}</p></div></div>
       ))}
+      <ProfitReviews uid={uid} />
     </State>
+  );
+}
+
+/* Reviews aus dem Journal: Einträge mit +p / +profit / +review (quelle-unabhängig) */
+function ProfitReviews({ uid }) {
+  const q = useQuery({ queryKey: ["dv2-profit-reviews", uid], enabled: !!uid, queryFn: () => fetchProfitReviews(uid), staleTime: 15_000 });
+  const list = q.data || [];
+  return (
+    <>
+      <h4 className="dv2-sec">Reviews aus dem Journal <span>{list.length}</span></h4>
+      {q.isError ? <div className="dv2-empty" role="alert">{msg(q.error)}</div>
+        : list.length === 0 ? <div className="dv2-empty">{q.isLoading ? "Lade …" : "Noch keine. Im Journal mit +review, +profit oder +p taggen."}</div>
+        : list.map((x) => (
+          <div key={x.id} className="dv2-row"><div className="dv2-text">
+            <h3>{x.title || "—"}</h3>
+            <p>{x.week} · {x.date}{String(x.text || "").trim().split("\n").length > 1 ? ` — ${String(x.text).trim().split("\n").slice(1).join(" ").slice(0, 240)}` : ""}</p>
+          </div></div>
+        ))}
+    </>
   );
 }
 
@@ -381,6 +402,7 @@ function ProfitBackend({ uid, source }) {
         : refl.map((x) => (
           <div key={x.id || x.path} className="dv2-row"><div className="dv2-text"><h3>{x.door_title || "—"}</h3><p>{x.reflection || ""}</p></div></div>
         ))}
+      <ProfitReviews uid={uid} />
     </>
   );
 }

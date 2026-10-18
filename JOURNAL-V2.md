@@ -178,6 +178,8 @@ Browser-Test von Door v2 (Layout, Hash-Wechsel) und Google Tasks gegen die echte
 - **Antippen** öffnet ein Blatt: Q1–Q4-Knöpfe (auch ohne Touch), **Notiz** (nur Taskwarrior: Annotation `NOTE\n<text>` am Task; `door-taskopen` übernimmt sie beim ersten `hot`-Öffnen in die Potential-Markdown) und **War Stack starten** (Wizard startet direkt für diesen Eintrag bzw. setzt eine offene Session fort).
 - **+hot im Journal:** Ein Journal-Eintrag mit Tag `hot` (v1 und v2) wird beim Speichern/Bearbeiten über `saveJournal`/`updateJournal` (`lib/db/journal.js` → `lib/door/hotFromJournal.js`) als Potential-Item in der in Door v2 gewählten Quelle angelegt (Titel = erste Zeile ohne `+tags`). Der Marker `hot_potential` am Eintrag verhindert Doppel-Anlage; scheitert die Quelle (z. B. Taskwarrior nicht verbunden), bleibt der Marker aus und der nächste Speichervorgang versucht es erneut. Das Journal-Speichern selbst bleibt unberührt.
 
+- **+p / +profit / +review im Journal:** Solche Einträge landen beim Speichern/Bearbeiten (`lib/db/journal.js` → `lib/door/profitFromJournal.js`) in `journal/{uid}/profit/{Eintrags-ID}` (Titel, Text, Datum, Woche) und erscheinen im **Profit**-Panel unter „Reviews aus dem Journal“ – für alle drei Quellen. Doc-ID = Eintrags-ID, also kein Duplikat beim Bearbeiten; Löschen des Journal-Eintrags entfernt die Review mit. Gilt für Einträge, die ab jetzt gespeichert werden.
+
 ## Door v2 · Taskwarrior (TaskChampion-Sync)
 
 Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in `src/lib/door/source.js`; Wahl pro Nutzer in `fitness/{uid}/settings/door`).

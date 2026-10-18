@@ -58,6 +58,19 @@ async function hotToPotential(userId, id, text, tags) {
   }
 }
 
+// +p / +profit / +review im Journal → Door › Profit (Reviews). Doc-ID = Eintrags-ID, daher idempotent.
+async function profitReview(userId, id, text, tags, date) {
+  try {
+    const m = await import("../door/profitFromJournal.js");
+    if (!m.hasProfitTag(tags)) return;
+    let d = date;
+    if (!d) d = (await getDoc(doc(journalCol(userId), id))).data()?.date;
+    await m.saveProfitReview(userId, id, { text, date: d, tags });
+  } catch (e) {
+    console.warn("+profit → Profit-Review fehlgeschlagen:", e?.message || e);
+  }
+}
+
 // ── Journal ───────────────────────────────────────────────────────────────────
 
 export async function getJournal(date = localToday()) {
@@ -124,6 +137,7 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
   if (endDate) docData.endDate = endDate;
   const ref = await addDoc(journalCol(userId), docData);
   void hotToPotential(userId, ref.id, content, tags);
+  void profitReview(userId, ref.id, content, tags, date);
   return { id: ref.id, date, text: content, time, startDate, endDate };
 }
 
@@ -138,7 +152,7 @@ export async function updateJournal(id, text, opts = {}) {
   patch.endDate = endDate || null;
   if (tags) patch.tags = tags;
   await setDoc(doc(journalCol(userId), id), patch, { merge: true });
-  if (tags) void hotToPotential(userId, id, content, tags);
+  if (tags) { void hotToPotential(userId, id, content, tags); void profitReview(userId, id, content, tags); }
   return { ok: true, id, text: content, startDate, endDate, tags };
 }
 
@@ -153,6 +167,8 @@ export async function setJournalTime(id, isoTime) {
 export async function deleteJournal(id) {
   const userId = await uid();
   await deleteDoc(doc(journalCol(userId), id));
+  // zugehörige Profit-Review (+profit/+review/+p) mit entfernen – best effort
+  import("../door/profitFromJournal.js").then((m) => m.removeProfitReview(userId, id)).catch(() => {});
   return { ok: true, id };
 }
 

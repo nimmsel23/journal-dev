@@ -1,6 +1,6 @@
 // Die vier Phasen-Panels von Door v2. Query-Keys tragen die uid, damit ein
 // Nutzerwechsel keine fremden Daten aus dem Cache zeigt.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { door } from "../../../lib/door/source.js";
@@ -31,12 +31,89 @@ function State({ q, children, empty }) {
 }
 
 /* ── Potential: Hot List ── */
+/* Potential: Wischen legt den Plan-Quadranten fest   Q1 «  Q2 ‹  Eintrag  › Q3  » Q4
+   (kurz = Q2/Q3, weit = Q1/Q4); Antippen öffnet Notiz + War Stack. */
+const SWIPE_SHORT = 56, SWIPE_LONG = 130;
+const swipeTarget = (d) => (d <= -SWIPE_LONG ? 1 : d <= -SWIPE_SHORT ? 2 : d >= SWIPE_LONG ? 4 : d >= SWIPE_SHORT ? 3 : null);
+
+function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, D, source, uid, onChanged }) {
+  const [dx, setDx] = useState(0);
+  const st = useRef(null);
+  const dxRef = useRef(0);
+  const [note, setNote] = useState("");
+  const [ws, setWs] = useState(false);
+  const [msgText, setMsgText] = useState("");
+  const move = (v) => { dxRef.current = v; setDx(v); };
+  const target = swipeTarget(dx);
+  const end = (e) => {
+    const s = st.current; st.current = null;
+    const d = dxRef.current; move(0);
+    if (!s || e.type === "pointercancel") return;
+    if (!s.moved) { onToggle(); return; }
+    const q = swipeTarget(d);
+    if (q) onQuadrant(sel, q);
+  };
+  const saveNote = async () => {
+    setMsgText("");
+    try { await D.addNote(sel, note); setNote(""); setMsgText("Notiz gespeichert – in taskopen verfügbar."); onChanged(); }
+    catch (e) { setMsgText(msg(e)); }
+  };
+  const wsApi = source === "taskwarrior" ? twDoor : undefined;
+  return (
+    <div className={`dv2-swipe${open ? " open" : ""}`}>
+      <div className="dv2-swhint" aria-hidden="true">
+        <span className={dx > 0 ? "on" : ""}>{dx > 0 && target ? `Q${target}` : ""}</span>
+        <span className={dx < 0 ? "on" : ""}>{dx < 0 && target ? `Q${target}` : ""}</span>
+      </div>
+      <div
+        className="dv2-row dv2-swrow" role="button" tabIndex={0} aria-expanded={open}
+        style={{ transform: dx ? `translateX(${dx}px)` : undefined, transition: dx ? "none" : "transform .18s" }}
+        onPointerDown={(e) => { if (busy || (e.pointerType === "mouse" && e.button !== 0)) return; st.current = { x: e.clientX, id: e.pointerId, moved: false }; }}
+        onPointerMove={(e) => {
+          const s = st.current; if (!s) return;
+          const d = e.clientX - s.x;
+          if (!s.moved && Math.abs(d) > 8) { s.moved = true; try { e.currentTarget.setPointerCapture(s.id); } catch {} }
+          if (s.moved) move(Math.max(-220, Math.min(220, d)));
+        }}
+        onPointerUp={end} onPointerCancel={end}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+      >
+        <div className="dv2-text">
+          <h3>{item.title}</h3>
+        </div>
+        <span className={`dv2-qbadge${item.quadrant ? " set" : ""}`}>{item.quadrant ? `Q${item.quadrant}` : "–"}</span>
+      </div>
+      {open && (
+        <div className="dv2-sheet">
+          <div className="dv2-qs" role="group" aria-label="Quadrant">
+            {[1, 2, 3, 4].map((n) => (
+              <button key={n} type="button" aria-pressed={item.quadrant === n} disabled={busy} onClick={() => onQuadrant(sel, n)}>Q{n}</button>
+            ))}
+          </div>
+          {D.addNote && (
+            <div className="dv2-note">
+              <textarea aria-label="Notiz" rows={3} placeholder="Notiz – wird als Annotation am Task gespeichert (taskopen)" value={note} onChange={(e) => setNote(e.target.value)} />
+              <button type="button" disabled={!note.trim()} onClick={saveNote}>Notiz speichern</button>
+            </div>
+          )}
+          {msgText && <div className="dv2-none" role="status">{msgText}</div>}
+          {(source === "backend" || source === "taskwarrior") && (
+            ws
+              ? <WarstackWizard uid={uid} api={wsApi} scope={source} autoStart door={{ id: sel, title: item.title }} onDone={() => { setWs(false); onChanged(); }} />
+              : <div className="dv2-qs"><button type="button" className="dv2-pick" onClick={() => setWs(true)}>War Stack starten</button></div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PotentialPanel({ uid, source = "backend" }) {
   const D = door(source);
   const qc = useQueryClient();
   const key = ["dv2-hotlist", uid, source];
   const [draft, setDraft] = useState("");
-  const [armed, setArmed] = useState(null); // Zwei-Klick-Löschen
+  const [openId, setOpenId] = useState(null);
   const [err, setErr] = useState("");
   const q = useQuery({ queryKey: key, queryFn: () => D.fetchHotlist("active"), staleTime: 15_000 });
   const refresh = () => qc.invalidateQueries({ queryKey: key });
@@ -51,22 +128,21 @@ export function PotentialPanel({ uid, source = "backend" }) {
     if (!text) return;
     run(async () => { await D.addHotlistItem(text); setDraft(""); });
   };
-  const del = (sel) => {
-    if (armed !== sel) { setArmed(sel); return; }
-    setArmed(null);
-    run(() => D.deleteHotlistItem(sel));
+  // Quadrant setzen: sofort im Cache, dann speichern
+  const setQuadrant = (sel, n) => {
+    qc.setQueryData(key, (d) => (d || []).map((i) => (selectorFor(i) === sel ? { ...i, quadrant: n } : i)));
+    run(() => D.assignQuadrant(sel, n));
   };
   return (
     <>
+      <div className="dv2-none dv2-swipehelp">Wischen: ‹ Q2 · « Q1 · › Q3 · » Q4 – Antippen: Notiz / War Stack</div>
       <State q={q} empty={!q.isLoading && !q.isError && items.length === 0 ? "Hot List leer." : null}>
         {items.map((i) => {
           const sel = selectorFor(i);
           return (
-            <div key={sel || i.title} className="dv2-row">
-              <button type="button" className="dv2-check" aria-label="Erledigt" onClick={() => run(() => D.completeHotlistItem(sel))}><i /></button>
-              <div className="dv2-text"><h3>{i.title}</h3></div>
-              <button type="button" className={`dv2-del${armed === sel ? " armed" : ""}`} aria-label={armed === sel ? "Löschen bestätigen" : "Löschen"} onClick={() => del(sel)} onBlur={() => setArmed(null)}>{armed === sel ? "Löschen?" : "×"}</button>
-            </div>
+            <PotentialRow key={sel || i.title} item={i} sel={sel} busy={false} open={openId === sel}
+              onToggle={() => setOpenId(openId === sel ? null : sel)} onQuadrant={setQuadrant}
+              D={D} source={source} uid={uid} onChanged={refresh} />
           );
         })}
       </State>

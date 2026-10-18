@@ -1,8 +1,7 @@
 // GameMapPanel — Fire / Focus / Freedom / Frame als Raster-Liste, direkt aus der Taskwarrior-Replik
 // (TaskChampion, siehe lib/door/taskchampion.js). Abhaken und Anlegen schreiben zurück.
 //   Fire    = Strikes der Woche: überfällig, heute, Rest der Woche (+ alles mit +fire) + Termine aus Google Calendar „Fire Map“
-//   Focus   = Monatsergebnisse: +focus, gruppiert nach Projekt
-//   Freedom = Jahresvisionen: +freedom, gruppiert nach Projekt
+//   Focus / Freedom / Frame sind keine Tasklisten, sondern Map-Dokumente je Domain (MapDocsPanel, FrameCards).
 //   Frame   = Frame Map je Domain (Body / Being / Balance / Business), fünf Fragen in Firestore – keine Tasks
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,13 +9,14 @@ import { addDays, endOfISOWeek, format, startOfDay, startOfISOWeek } from "date-
 import { de } from "date-fns/locale";
 import * as tc from "../../lib/door/taskchampion.js";
 import TcSetup, { tcError } from "./TcSetup.jsx";
+import MapDocsPanel from "./MapDocsPanel.jsx";
 import { FRAME_DOMAINS, FRAME_QUESTIONS, fetchFrames, saveFrameAnswer } from "./frameDb.js";
 import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "../v2/gcal.js";
 
 export const MAPS = {
   fire: { label: "Fire", sub: "Woche · Strikes", tag: "fire", hint: "Welcher Strike steht an – und wofür?" },
-  focus: { label: "Focus", sub: "Monat · Ergebnisse", tag: "focus", hint: "Was muss diesen Monat anders sein?" },
-  freedom: { label: "Freedom", sub: "Jahr · Visionen", tag: "freedom", hint: "Wofür machst du das alles?" },
+  focus: { label: "Focus", sub: "Monthly · Weekly", hint: "Was muss diesen Monat anders sein?" },
+  freedom: { label: "Freedom", sub: "IPW · Annual · Quarterly", hint: "Wofür machst du das alles?" },
   frame: { label: "Frame", sub: "Standort · Domains", hint: "Wo stehst du jetzt – Body, Being, Balance, Business?" },
 };
 
@@ -43,14 +43,7 @@ export function groupsFor(map, all) {
     return [["over", "Überfällig"], ["today", "Heute"], ["week", "Diese Woche"], ["tag", "Fire ohne Termin"]]
       .map(([key, title]) => ({ key, title, items: g[key].sort(byPrio) })).filter((x) => x.items.length);
   }
-  const tag = MAPS[map].tag;
-  const g = new Map();
-  for (const t of list.filter((x) => has(x, tag)).sort(byPrio)) {
-    const k = t.project || "Ohne Projekt";
-    if (!g.has(k)) g.set(k, []);
-    g.get(k).push(t);
-  }
-  return [...g].map(([key, items]) => ({ key, title: key, items }));
+  return [];
 }
 
 function Row({ t, busy, onToggle }) {
@@ -167,6 +160,7 @@ export default function GameMapPanel({ map, uid }) {
   };
 
   if (map === "frame") return <FrameCards uid={uid} />; // Frame = Frame Map je Domain, keine Tasks
+  if (map === "freedom" || map === "focus") return <MapDocsPanel kind={map} uid={uid} />; // Map-Dokumente je Domain, keine Tasks
   if (cfg === undefined) return null;
   if (cfg === null) return <TcSetup onDone={() => { setCfg(undefined); qc.invalidateQueries({ queryKey: ["gv2-cfg"] }); }} />;
   const groups = groupsFor(map, q.data || []);

@@ -1,6 +1,7 @@
 // GameMapPanel — Fire / Focus / Freedom / Frame als Raster-Liste, direkt aus der Taskwarrior-Replik
 // (TaskChampion, siehe lib/door/taskchampion.js). Abhaken und Anlegen schreiben zurück.
-//   Fire    = Strikes der Woche: überfällig, heute, Rest der Woche (+ alles mit +fire) + Termine aus Google Calendar „Fire Map“
+//   Fire    = die Woche: EINE Door (+door, Domain) und ihre 4 Hits/Strikes/Bigrocks (+hit, alphatype bigrock,
+//             hit_number 1–4); darunter übrige Strikes (überfällig/heute/Woche/+fire) + Termine aus Google Calendar „Fire Map“
 //   Focus / Freedom / Frame sind keine Tasklisten, sondern Map-Dokumente je Domain (MapDocsPanel, FrameCards).
 //   Frame   = Frame Map je Domain (Body / Being / Balance / Business), fünf Fragen in Firestore – keine Tasks
 import { useState } from "react";
@@ -14,7 +15,7 @@ import { FRAME_DOMAINS, FRAME_QUESTIONS, fetchFrames, saveFrameAnswer } from "./
 import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "../v2/gcal.js";
 
 export const MAPS = {
-  fire: { label: "Fire", sub: "Woche · Strikes", tag: "fire", hint: "Welcher Strike steht an – und wofür?" },
+  fire: { label: "Fire", sub: "Woche · 4 Hits", tag: "fire", hint: "Welche Door öffnest du diese Woche – mit welchen 4 Hits?" },
   focus: { label: "Focus", sub: "Monthly · Weekly", hint: "Was muss diesen Monat anders sein?" },
   freedom: { label: "Freedom", sub: "IPW · Annual · Quarterly", hint: "Wofür machst du das alles?" },
   frame: { label: "Frame", sub: "Standort · Domains", hint: "Wo stehst du jetzt – Body, Being, Balance, Business?" },
@@ -44,6 +45,22 @@ export function groupsFor(map, all) {
       .map(([key, title]) => ({ key, title, items: g[key].sort(byPrio) })).filter((x) => x.items.length);
   }
   return [];
+}
+
+/** Door der Woche (+door) und die bis zu 4 Hits der Woche (+hit bzw. alphatype bigrock; Platz = hit_number). */
+export function weekDoor(all) {
+  const from = startOfISOWeek(new Date()), to = addDays(endOfISOWeek(new Date()), 1);
+  const inW = (t, f) => { const d = secs(t[f]); return d && d >= from && d <= to; };
+  const door = all.find((t) => open(t) && has(t, "door")) || null;
+  const hits = all.filter((t) => (t.status === "pending" || t.status === "completed") && (has(t, "hit") || t.alphatype === "bigrock")
+    && (inW(t, "due") || (t.status === "completed" && inW(t, "end"))))
+    .sort((a, b) => (Number(a.hit_number) || 99) - (Number(b.hit_number) || 99) || (secs(a.due) || 0) - (secs(b.due) || 0));
+  const slots = [null, null, null, null];
+  const rest = [];
+  for (const h of hits) { const n = Number(h.hit_number); if (n >= 1 && n <= 4 && !slots[n - 1]) slots[n - 1] = h; else rest.push(h); }
+  const extra = [];
+  for (const h of rest) { const i = slots.indexOf(null); if (i >= 0) slots[i] = h; else extra.push(h); }
+  return { door, slots, extra };
 }
 
 function Row({ t, busy, onToggle }) {
@@ -129,14 +146,24 @@ function FrameCards({ uid }) {
   );
 }
 
+function HitRow({ t, busy, onToggle }) {
+  const done = t.status === "completed";
+  return (
+    <button type="button" className={`dv2-hit${done ? " done" : ""}`} aria-pressed={done} disabled={busy} onClick={() => onToggle(t)} style={{ width: "100%" }}>
+      <i>{done ? "✓" : ""}</i><span>{t.description}</span>
+    </button>
+  );
+}
+
 export default function GameMapPanel({ map, uid }) {
   const spec = MAPS[map];
   const qc = useQueryClient();
   const [cfg, setCfg] = useState(undefined);
   const [draft, setDraft] = useState("");
+  const [slotDraft, setSlotDraft] = useState({});
   const [err, setErr] = useState("");
   useQuery({ queryKey: ["gv2-cfg"], queryFn: async () => { const c = await tc.getConfig(); setCfg(c || null); return c || null; }, staleTime: Infinity });
-  const q = useQuery({ queryKey: ["gv2-tasks", map], queryFn: () => tc.tasks(), enabled: !!cfg, staleTime: 15_000 });
+  const q = useQuery({ queryKey: ["gv2-tasks", map], queryFn: () => tc.tasks(), enabled: !!cfg && map === "fire", staleTime: 15_000 });
   const refresh = () => qc.invalidateQueries({ queryKey: ["gv2-tasks"] });
   const act = useMutation({
     mutationFn: (fn) => fn(),
@@ -145,43 +172,70 @@ export default function GameMapPanel({ map, uid }) {
   });
   const toggle = (t) => act.mutate(async () => {
     const fresh = (await tc.tasks({ force: true })).find((x) => x.uuid === t.uuid);
-    if (fresh) await tc.commit(tc.editOps(fresh, { status: "completed", end: tc.nowSecs(), modified: tc.nowSecs() }));
+    if (!fresh) return;
+    const now = tc.nowSecs();
+    await tc.commit(tc.editOps(fresh, fresh.status === "completed" ? { status: "pending", end: null, modified: now } : { status: "completed", end: now, modified: now }));
   });
+  const todayDue = () => String(Math.floor(startOfDay(new Date()).getTime() / 1000));
   const add = (e) => {
     e.preventDefault();
     const text = draft.trim();
     if (!text) return;
     setDraft("");
-    act.mutate(async () => {
-      const props = {};
-      if (map === "fire") props.due = String(Math.floor(startOfDay(new Date()).getTime() / 1000)); // heute fällig
-      await tc.commit(tc.newTaskOps(text, { tags: [spec.tag], props }).ops);
-    });
+    act.mutate(() => tc.commit(tc.newTaskOps(text, { tags: [spec.tag], props: { due: todayDue() } }).ops));
+  };
+  const addHit = (n, door) => {
+    const text = (slotDraft[n] || "").trim();
+    if (!text) return;
+    setSlotDraft((d) => ({ ...d, [n]: "" }));
+    act.mutate(() => tc.commit(tc.newTaskOps(text, {
+      tags: ["hit"],
+      props: { alphatype: "bigrock", hit_number: String(n), due: todayDue(), ...(door?.domain ? { domain: door.domain } : {}), ...(door ? { domino_door: door.domino_door || door.description } : {}) },
+    }).ops));
   };
 
   if (map === "frame") return <FrameCards uid={uid} />; // Frame = Frame Map je Domain, keine Tasks
   if (map === "freedom" || map === "focus") return <MapDocsPanel kind={map} uid={uid} />; // Map-Dokumente je Domain, keine Tasks
   if (cfg === undefined) return null;
   if (cfg === null) return <TcSetup onDone={() => { setCfg(undefined); qc.invalidateQueries({ queryKey: ["gv2-cfg"] }); }} />;
-  const groups = groupsFor(map, q.data || []);
-  const total = groups.reduce((n, g) => n + g.items.length, 0);
+  const all = q.data || [];
+  const { door, slots, extra } = weekDoor(all);
+  const shown = new Set([...slots, ...extra].filter(Boolean).map((t) => t.uuid));
+  const groups = groupsFor(map, all).map((g) => ({ ...g, items: g.items.filter((t) => !shown.has(t.uuid) && !has(t, "door")) })).filter((g) => g.items.length);
+  const doneN = slots.filter((t) => t?.status === "completed").length;
   return (
     <>
-      <div className="dv2-sum"><b>{total}</b><span>{spec.hint}</span></div>
+      <div className="dv2-sum"><b>{doneN}/4</b><span>{door ? `Door: ${door.description}${door.domain ? ` · ${door.domain}` : ""}` : spec.hint}</span></div>
       <div className="dv2-src">
         <button type="button" className="dv2-link" disabled={act.isPending} onClick={() => act.mutate(() => tc.sync())}>Sync</button>
         {q.isFetching && <span>lädt …</span>}
       </div>
       {err && <div className="dv2-empty" role="alert">{err}</div>}
-      {map !== "frame" && (
-        <form className="dv2-compose" onSubmit={add}>
-          <input aria-label={`Neu in ${spec.label}`} placeholder={map === "fire" ? "Neuer Strike (heute) …" : `Neu in ${spec.label} …`} value={draft} onChange={(e) => setDraft(e.target.value)} />
-          <button type="submit" disabled={!draft.trim() || act.isPending}>Add</button>
-        </form>
-      )}
       {q.isError && <div className="dv2-empty" role="alert">{tcError(q.error)}</div>}
-      {!q.isLoading && !q.isError && total === 0 && <div className="dv2-empty">Nichts offen in {spec.label}. Tag <code>+{spec.tag}</code> setzen oder oben anlegen.</div>}
-      {map === "fire" && <FireCalendar />}
+      <section>
+        <h4 className="dv2-sec">Door der Woche <span>{door?.domain || ""}</span></h4>
+        {door
+          ? <div className="dv2-row"><div className="dv2-text"><h3>{door.description}</h3><p>{[door.domain, door.domino_door && door.domino_door !== door.description ? door.domino_door : ""].filter(Boolean).join(" · ")}</p></div></div>
+          : <div className="dv2-empty">Noch keine Door gewählt. <a className="dv2-link" href="#door2/plan">Im Plan wählen →</a></div>}
+      </section>
+      <section>
+        <h4 className="dv2-sec">4 Hits zum Öffnen <span>{doneN}/4</span></h4>
+        {slots.map((t, i) => t
+          ? <HitRow key={t.uuid} t={t} busy={act.isPending} onToggle={toggle} />
+          : (
+            <form key={`slot-${i}`} className="dv2-compose" onSubmit={(e) => { e.preventDefault(); addHit(i + 1, door); }}>
+              <input aria-label={`Hit ${i + 1}`} placeholder={`Hit ${i + 1} …`} value={slotDraft[i + 1] || ""} onChange={(e) => setSlotDraft((d) => ({ ...d, [i + 1]: e.target.value }))} />
+              <button type="submit" disabled={!(slotDraft[i + 1] || "").trim() || act.isPending}>Add</button>
+            </form>
+          ))}
+        {extra.length > 0 && <h4 className="dv2-sec">Weitere Hits <span>{extra.length}</span></h4>}
+        {extra.map((t) => <HitRow key={t.uuid} t={t} busy={act.isPending} onToggle={toggle} />)}
+      </section>
+      <FireCalendar />
+      <form className="dv2-compose" onSubmit={add}>
+        <input aria-label="Neuer Strike" placeholder="Weiterer Strike (heute) …" value={draft} onChange={(e) => setDraft(e.target.value)} />
+        <button type="submit" disabled={!draft.trim() || act.isPending}>Add</button>
+      </form>
       {groups.map((g) => (
         <section key={g.key}>
           <h4 className="dv2-sec">{g.title} <span>{g.items.length}</span></h4>

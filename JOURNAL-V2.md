@@ -169,7 +169,7 @@ Browser-Test von Door v2 (Layout, Hash-Wechsel) und Google Tasks gegen die echte
 
 ## Door v2 · Quellen-Registry und Plan-Board (Drag & Drop)
 
-- **Registry:** `SOURCES` in `src/lib/door/source.js` (Backend, Google Tasks, Taskwarrior); jede Quelle ist ein Funktionsset mit identischen Signaturen (`door(source)`). Die Wahl liegt pro Nutzer in Firestore `fitness/{uid}/settings/door` (von den Regeln für `fitness/{uid}/**` gedeckt), `localStorage` `dv2:source` ist nur Cache.
+- **Registry:** `SOURCES` in `src/lib/door/source.js` (Backend, Google Tasks, Taskwarrior); jede Quelle ist ein Funktionsset mit identischen Signaturen (`door(source)`). Die Wahl liegt pro Nutzer in Firestore `journal/{uid}/settings/door` (Rule `journal/{uid}/**`; der alte Pfad `fitness/{uid}/settings/door` wird nur noch als Fallback gelesen), `localStorage` `dv2:source` ist nur Cache.
 - **Plan-Board:** dnd-kit (`@dnd-kit/core`). Karten haben einen Griff „⠿“ (nur der Griff sperrt Scrollen, wichtig für iPad); Ziel sind Q1–Q4 oder der beim Ziehen erscheinende Slot „Door der Woche“ (setzt Q2 und wählt die Door). Optimistisches Update im Query-Cache, danach Speichern. Hits zwischen Tagen ziehen (Production) gibt es noch nicht.
 
 ## Door v2 · Taskwarrior (TaskChampion-Sync)

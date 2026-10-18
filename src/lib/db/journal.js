@@ -14,7 +14,7 @@
 import { localToday } from "./core.js";
 import { db, auth } from "../firebase.js";
 import {
-  collection, doc, addDoc, setDoc, getDocs, deleteDoc,
+  collection, doc, addDoc, setDoc, getDoc, getDocs, deleteDoc,
   query, where, orderBy, limit as fbLimit, serverTimestamp,
 } from "firebase/firestore";
 
@@ -41,6 +41,21 @@ function normalizeEntry(snap) {
 
 function journalCol(userId) {
   return collection(db, "fitness", userId, "journal");
+}
+
+// +hot im Journal → Door › Potential. Marker `hot_potential` am Eintrag verhindert Doppel-Anlage bei
+// späterem Bearbeiten; scheitert die Quelle (z. B. Taskwarrior nicht verbunden), bleibt der Marker aus
+// und der nächste Speichervorgang des Eintrags versucht es erneut. Journal-Speichern bleibt unberührt.
+async function hotToPotential(userId, id, text, tags) {
+  try {
+    const { hasHotTag, addToPotential } = await import("../door/hotFromJournal.js");
+    if (!hasHotTag(tags)) return;
+    const ref = doc(journalCol(userId), id);
+    if ((await getDoc(ref)).data()?.hot_potential) return;
+    if (await addToPotential(text)) await setDoc(ref, { hot_potential: true }, { merge: true });
+  } catch (e) {
+    console.warn("+hot → Potential fehlgeschlagen:", e?.message || e);
+  }
 }
 
 // ── Journal ───────────────────────────────────────────────────────────────────
@@ -108,6 +123,7 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
   if (startDate) docData.startDate = startDate;
   if (endDate) docData.endDate = endDate;
   const ref = await addDoc(journalCol(userId), docData);
+  void hotToPotential(userId, ref.id, content, tags);
   return { id: ref.id, date, text: content, time, startDate, endDate };
 }
 
@@ -122,6 +138,7 @@ export async function updateJournal(id, text, opts = {}) {
   patch.endDate = endDate || null;
   if (tags) patch.tags = tags;
   await setDoc(doc(journalCol(userId), id), patch, { merge: true });
+  if (tags) void hotToPotential(userId, id, content, tags);
   return { ok: true, id, text: content, startDate, endDate, tags };
 }
 

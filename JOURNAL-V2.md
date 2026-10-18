@@ -172,6 +172,14 @@ Browser-Test von Door v2 (Layout, Hash-Wechsel) und Google Tasks gegen die echte
 - **Registry:** `SOURCES` in `src/lib/door/source.js` (Backend, Google Tasks, Taskwarrior); jede Quelle ist ein Funktionsset mit identischen Signaturen (`door(source)`). Die Wahl liegt pro Nutzer in Firestore `journal/{uid}/settings/door` (Rule `journal/{uid}/**`; der alte Pfad `fitness/{uid}/settings/door` wird nur noch als Fallback gelesen), `localStorage` `dv2:source` ist nur Cache.
 - **Plan-Board:** dnd-kit (`@dnd-kit/core`). Karten haben einen Griff „⠿“ (nur der Griff sperrt Scrollen, wichtig für iPad); Ziel sind Q1–Q4 oder der beim Ziehen erscheinende Slot „Door der Woche“ (setzt Q2 und wählt die Door). Optimistisches Update im Query-Cache, danach Speichern. Hits zwischen Tagen ziehen (Production) gibt es noch nicht.
 
+## Potential: Wischen, Notiz, +hot aus dem Journal
+
+- **Wischen** (`PotentialRow` in `DoorV2Panels.jsx`, Pointer Events, `touch-action: pan-y`): `Q1 « Q2 ‹ Eintrag › Q3 » Q4` – kurz (≥ 56 px) = Q2/Q3, weit (≥ 130 px) = Q1/Q4; setzt über `assignQuadrant` den Plan-Quadranten (bei Taskwarrior `priority`), der Quadrant steht als Badge an der Zeile. Haken (erledigt) und Kreuz (löschen) sind entfernt.
+- **Antippen** öffnet ein Blatt: Q1–Q4-Knöpfe (auch ohne Touch), **Notiz** (nur Taskwarrior: Annotation `NOTE\n<text>` am Task; `door-taskopen` übernimmt sie beim ersten `hot`-Öffnen in die Potential-Markdown) und **War Stack starten** (Wizard startet direkt für diesen Eintrag bzw. setzt eine offene Session fort).
+- **+hot im Journal:** Ein Journal-Eintrag mit Tag `hot` (v1 und v2) wird beim Speichern/Bearbeiten über `saveJournal`/`updateJournal` (`lib/db/journal.js` → `lib/door/hotFromJournal.js`) als Potential-Item in der in Door v2 gewählten Quelle angelegt (Titel = erste Zeile ohne `+tags`). Der Marker `hot_potential` am Eintrag verhindert Doppel-Anlage; scheitert die Quelle (z. B. Taskwarrior nicht verbunden), bleibt der Marker aus und der nächste Speichervorgang versucht es erneut. Das Journal-Speichern selbst bleibt unberührt.
+
+- **+p / +profit / +review im Journal:** Solche Einträge landen beim Speichern/Bearbeiten (`lib/db/journal.js` → `lib/door/profitFromJournal.js`) in `journal/{uid}/profit/{Eintrags-ID}` (Titel, Text, Datum, Woche) und erscheinen im **Profit**-Panel unter „Reviews aus dem Journal“ – für alle drei Quellen. Doc-ID = Eintrags-ID, also kein Duplikat beim Bearbeiten; Löschen des Journal-Eintrags entfernt die Review mit. Gilt für Einträge, die ab jetzt gespeichert werden.
+
 ## Door v2 · Taskwarrior (TaskChampion-Sync)
 
 Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in `src/lib/door/source.js`; Wahl pro Nutzer in `fitness/{uid}/settings/door`).

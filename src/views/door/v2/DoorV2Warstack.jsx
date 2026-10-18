@@ -1,7 +1,7 @@
 // War-Stack-Wizard für den Plan (Quelle „Backend“): startet mit der Door der Woche und
 // führt die 11 Schritte aus WARSTACK_STEPS durch (Hits als 4×4 Felder).
 // Logik/Speicherung liegen in lib/door/plan.* (REST lokal, Firestore in der Cloud).
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as backendPlan from "../../../lib/door/plan.js";
 import { WARSTACK_STEPS } from "../../../lib/door/warstack.js";
@@ -11,7 +11,7 @@ const HIT_FIELDS = [["fact", "Fact"], ["obstacle", "Obstacle"], ["strike", "Stri
 const emptyHits = () => Array.from({ length: 4 }, () => ({ id: crypto.randomUUID(), fact: "", obstacle: "", strike: "", responsibility: "", done: false, completed_at: null }));
 const errText = (e) => ({ answer_required: "Bitte eine Antwort eingeben.", hits_required: "Es müssen 4 Hits angegeben werden.", door_required: "Erst eine Door der Woche wählen." }[e?.message] || e?.message || "Fehler");
 
-export default function WarstackWizard({ uid, door, onDone, api = backendPlan, scope = "backend" }) {
+export default function WarstackWizard({ uid, door, onDone, api = backendPlan, scope = "backend", autoStart = false }) {
   const plan = api;
   const qc = useQueryClient();
   const [s, setS] = useState(null); // {id, step, question, hits}
@@ -35,6 +35,14 @@ export default function WarstackWizard({ uid, door, onDone, api = backendPlan, s
     show({ id: r.sessionId, step: r.step, question: r.question });
     qc.invalidateQueries({ queryKey: ["dv2-ws-sessions", uid, scope] });
   });
+  // direkt starten (z. B. aus Potential): bestehende Session derselben Door fortsetzen, sonst neu
+  useEffect(() => {
+    if (!autoStart || !door || s) return;
+    if (sessions.isLoading) return;
+    const existing = (sessions.data || []).find((x) => x.id === door.id || x.source_selector === door.id);
+    if (existing && (existing.step_index || 0) < WARSTACK_STEPS.length) resume(existing); else start();
+  }, [autoStart, sessions.isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const resume = (sess) => {
     const st = WARSTACK_STEPS[sess.step_index || 0];
     if (st) show({ id: sess.id, step: st.key, question: st.question, hits: sess.hits });

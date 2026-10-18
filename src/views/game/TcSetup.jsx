@@ -2,7 +2,7 @@
 import { useState } from "react";
 import * as tc from "../../lib/door/taskchampion.js";
 
-const ERR = { "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.", "tc-network": "Sync-Server nicht erreichbar (offline, CORS oder Proxy)." };
+const ERR = { "tc-body": "Antwort des Sync-Servers brach ab oder war nicht lesbar (Netz/Proxy).", "tc-format": "Unerwartetes Datenformat vom Sync-Server.", "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.", "tc-network": "Sync-Server nicht erreichbar (offline, CORS oder Proxy)." };
 export const tcError = (e) => ERR[e?.message] || e?.message || "Sync fehlgeschlagen";
 
 export default function TcSetup({ onDone }) {

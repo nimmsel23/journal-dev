@@ -7,6 +7,7 @@
 //  - Klartext: Versionen = {"operations":[…]} als UTF-8-JSON; Snapshot = zlib-komprimiertes {uuid: {prop: value}}
 // Client-ID/Secret liegen nur in der IndexedDB dieses Browsers, nie in Firestore.
 import { chacha20poly1305 } from "@noble/ciphers/chacha.js";
+import { unzlibSync } from "fflate";
 
 const NIL = "00000000-0000-0000-0000-000000000000";
 const STALE_MS = 60_000;
@@ -79,10 +80,10 @@ async function open(cfg, versionId, buf) {
   } catch {
     throw new Error("tc-decrypt"); // falsches Secret oder falsche Client-ID
   }
-  // Klartext ist zlib-komprimiertes JSON (0x78-Header); unkomprimiert wird ebenfalls akzeptiert
+  // Snapshots sind zlib-komprimiert (0x78-Header), Versionen reines JSON. Reine JS-Dekompression statt
+  // DecompressionStream/Response-Stream (Safari/iOS wirft dort ein unspezifisches „Load failed“).
   if (plain[0] === 0x78) {
-    const ds = new Blob([plain]).stream().pipeThrough(new DecompressionStream("deflate"));
-    plain = new Uint8Array(await new Response(ds).arrayBuffer());
+    try { plain = unzlibSync(plain); } catch { throw new Error("tc-format"); }
   }
   return JSON.parse(new TextDecoder().decode(plain));
 }
@@ -93,6 +94,10 @@ async function call(cfg, path) {
   try { res = await fetch(`${cfg.url}/v1/client/${path}`, { headers: { "X-Client-Id": cfg.clientId } }); }
   catch { throw new Error("tc-network"); } // offline, CORS oder Proxy down
   return res;
+}
+/** Antwortkörper lesen; ein Abbruch mitten im Transfer ist ein Netzwerkfehler (Safari: „Load failed“). */
+async function bodyOf(res) {
+  try { return await res.arrayBuffer(); } catch { throw new Error("tc-body"); }
 }
 
 // ── Replik anwenden ──
@@ -117,7 +122,7 @@ async function pullSnapshot(cfg, st) {
   if (res.status === 404) return false;
   if (!res.ok) throw new Error(`tc-http-${res.status}`);
   const vid = res.headers.get("X-Version-Id");
-  st.tasks = await open(cfg, vid, await res.arrayBuffer());
+  st.tasks = await open(cfg, vid, await bodyOf(res));
   st.versionId = vid;
   return true;
 }
@@ -139,7 +144,7 @@ export function sync() {
         continue;
       }
       if (!res.ok) throw new Error(`tc-http-${res.status}`);
-      const ops = await open(cfg, st.versionId, await res.arrayBuffer());
+      const ops = await open(cfg, st.versionId, await bodyOf(res));
       applyOps(st.tasks, Array.isArray(ops) ? ops : ops.operations || []);
       st.versionId = res.headers.get("X-Version-Id");
     }

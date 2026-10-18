@@ -49,6 +49,12 @@ export async function addHotlistItem(text) {
   if (!title) throw new Error("title_required");
   await commit(newTaskOps(title, { tags: ["hot"] }).ops);
 }
+/** Notiz als Annotation „NOTE\n<text>“ (door-taskopen legt daraus die Potential-Markdown an). */
+export async function addNote(id, text) {
+  const note = String(text || "").trim();
+  if (!note) throw new Error("answer_required");
+  await edit(id, { [`annotation_${nowSecs()}`]: `NOTE\n${note}` });
+}
 export const completeHotlistItem = (id) => edit(id, { status: "completed", end: nowSecs() });
 export const deleteHotlistItem = (id) => edit(id, { status: "deleted", end: nowSecs() });
 

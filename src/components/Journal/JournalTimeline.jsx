@@ -23,6 +23,7 @@ import JournalForm from "./JournalForm";
 import JournalEntry from "./JournalEntry";
 import JournalModal from "./JournalModal";
 import CrossoverButtons from "../../import-crossover/CrossoverButtons";
+import { useJournalPushNotifications } from "../../hooks/useJournalPushNotifications.js";
 
 // Timeline-Cache pro User: zeigt beim (Neu-)Laden sofort den letzten bekannten
 // Stand an, während Firestore im Hintergrund neu lädt (optimistic paint).
@@ -75,13 +76,14 @@ const TOKENS = {
   "--j-accent": "var(--accent, #4a9eff)",
 };
 
-export default function JournalTimeline({ onOpenSession, onNavigateShell, user: userProp, showCrossover = false, date: controlledDate = null, onDateChange = null }) {
+export default function JournalTimeline({ onOpenSession, onNavigateShell, user: userProp, showCrossover = false, enableJournalPush = false, date: controlledDate = null, onDateChange = null }) {
   // Host-Apps (vitalos JournalApp/RelaxApp, fuel) übergeben kein user-Prop —
   // dann selbst auf Auth subscriben, sonst bleibt die Timeline hinter dem
   // user?.uid-Guard dauerhaft leer. Prop gewinnt, Fallback nur ohne Prop.
   const [authUser, setAuthUser] = useState(null);
   useEffect(() => db.watchAuth?.(u => setAuthUser(u)), []);
   const user = userProp ?? authUser;
+  const journalPush = useJournalPushNotifications(enableJournalPush ? user : null);
   // Quellen, deren Laden fehlschlug (Auth abgelaufen, Rules, offline) —
   // sichtbar machen statt still leere Abschnitte zu rendern.
   const [loadWarnings, setLoadWarnings] = useState([]);
@@ -769,6 +771,11 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
           onChange={handleSettingChange}
           onClose={() => setShowSettings(false)}
           showIntegrations={typeof db.getSettings === "function"}
+          pushSettings={enableJournalPush ? journalPush.settings : null}
+          pushBusy={journalPush.busy}
+          onEnablePush={journalPush.enable}
+          onDisablePush={journalPush.disable}
+          onReminderTimeChange={journalPush.updateReminderTime}
         />
       )}
     </div>

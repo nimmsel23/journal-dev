@@ -51,6 +51,7 @@ async function sendReminder(uid, tokens, title, body, link) {
   try {
     const message = {
       data: {
+        app: "journal",
         title,
         body,
         link: link || "/",
@@ -80,10 +81,13 @@ exports.scheduledPushReminders = functions
     let failureCount = 0;
 
     try {
-      const usersSnap = await db.collectionGroup("push").get();
+      const usersSnap = await db.collectionGroup("push")
+        .where("apps.journal.enabled", "==", true)
+        .get();
 
       for (const doc of usersSnap.docs) {
-        const data = doc.data() || {};
+        const stored = doc.data() || {};
+        const data = stored.apps?.journal || {};
         if (!data.enabled) continue;
 
         const tokens = normalizeTokens(data);

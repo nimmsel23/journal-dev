@@ -23,7 +23,7 @@ function Toggle({ active, onClick, label, desc, accent = 'var(--j-accent)' }) {
   );
 }
 
-export default function JournalSettings({ onClose, settings, onChange, showIntegrations = false }) {
+export default function JournalSettings({ onClose, settings, onChange, showIntegrations = false, pushSettings, pushBusy, onEnablePush, onDisablePush, onReminderTimeChange }) {
   return (
     <TabSettingsModal title="Journal · Einstellungen" onClose={onClose}>
       <div className="space-y-6">
@@ -36,6 +36,30 @@ export default function JournalSettings({ onClose, settings, onChange, showInteg
             desc="Cardio-Einträge in sportartspezifischer Farbe"
           />
         </div>
+
+        {pushSettings && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--j-dim)] mb-2">Benachrichtigungen</h4>
+            <Toggle
+              active={!!pushSettings.enabled}
+              onClick={() => pushSettings.enabled ? onDisablePush?.() : onEnablePush?.()}
+              label="Journal-Erinnerung"
+              desc={pushBusy ? "Wird eingerichtet …" : "Erhalte eine Erinnerung zum Schreiben"}
+              accent="#f59e0b"
+            />
+            {pushSettings.enabled && (
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--j-dim)]">
+                Erinnerungszeit
+                <input
+                  type="time"
+                  value={pushSettings.reminderTime || "18:00"}
+                  onChange={(event) => onReminderTimeChange?.(event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-[var(--j-line)] bg-[var(--j-bg)] px-4 py-3 text-sm text-[var(--j-ink)]"
+                />
+              </label>
+            )}
+          </div>
+        )}
 
         {showIntegrations && (
           <div className="space-y-3">

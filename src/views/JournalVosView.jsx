@@ -7,7 +7,7 @@ import JournalTimeline from "../components/Journal/JournalTimeline.jsx";
 
 export default function JournalVosView(props) {
   if (props.embedded) {
-    return <JournalTimeline {...props} showCrossover />;
+    return <JournalTimeline {...props} showCrossover enableJournalPush />;
   }
 
   return (
@@ -23,7 +23,7 @@ export default function JournalVosView(props) {
       </header>
 
       <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 p-6">
-        <JournalTimeline {...props} showCrossover />
+        <JournalTimeline {...props} showCrossover enableJournalPush />
       </div>
     </section>
   );

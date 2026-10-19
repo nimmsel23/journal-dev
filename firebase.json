@@ -37,20 +37,20 @@
           ]
         },
         {
-          "source": "/journal-messaging-sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
           "source": "**/*.@(js|css|woff2)",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/journal-messaging-sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
             }
           ]
         }
@@ -90,20 +90,20 @@
           ]
         },
         {
-          "source": "/journal-messaging-sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
           "source": "**/*.@(js|css|woff2)",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/journal-messaging-sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
             }
           ]
         }

@@ -1,10 +1,4 @@
-# Standalone-Settings für ~/journal-dev (greift nur bei direktem Install hier).
-# Im vitalos-Workspace gilt dessen pnpm-workspace.yaml — Werte hier = Kopie davon.
-#
-# shamefullyHoist: Sibling-Repos (fitness/fuel/relax) und framer-motion
-# importieren transitive Pakete (motion-dom, ...) ohne sie zu deklarieren.
-# @firebase/util 1.12.1: firebase@11.10 nutzt die Version; ohne Pin landet
-# zusätzlich 1.15.1 (firebase-admin) im Root-Hoist und bricht firestore/auth.
+# Standalone Journal dependency settings.
 allowBuilds:
   '@firebase/util': true
   better-sqlite3: true
@@ -13,3 +7,4 @@ allowBuilds:
 overrides:
   '@firebase/util': 1.12.1
 shamefullyHoist: true
+

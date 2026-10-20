@@ -1,12 +1,13 @@
-// journal-dev Unified DB wrapper (wie fuel-dev)
-// Imports the entire fitness-dev database layer (auth, habits, general journal, sessions)
+// Journal-owned database facade. No sibling repositories are required.
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 
 import { db } from "../lib/firebase.js";
 import { getUid, localToday } from "../lib/db/core.js";
 export { deleteJournal } from "../lib/db/journal.js";
 
-export * from "@fitness-db/index.firestore.js";
+export * from "../lib/db/core.js";
+export * from "../lib/db/firestore/legacyJournal.js";
+export { getSettings, saveSettings } from "../lib/db/firestore/settings.js";
 
 // Der fruehere Fallback auf ../../../src/cloud/db.firestore.js zog den
 // VitalOS-Shell-Firebase-Layer in den Standalone-Build und brach den
@@ -105,8 +106,7 @@ export {
   saveNutritionLog,
 } from "../lib/db/firestore/nutrition.js";
 
-// Supplements — kein eigenes journal-dev-Modul dafür, direkt aus fuel-dev
-export { getSupplementsHistory } from "@fuel/lib/db/firestore/supplements.js";
+export { getSupplementsHistory } from "../lib/db/firestore/supplements.js";
 
-// Relax — kein eigenes journal-dev-Modul dafür, direkt aus relax-dev
-export { getRelaxSessionHistory } from "@relax/lib/db/firestore/sessions.js";
+export { getRelaxSessionHistory } from "../lib/db/firestore/relax.js";
+

@@ -1,10 +1,7 @@
 import { Target, Dumbbell, Clock, Brain, Edit, CheckCircle2, UtensilsCrossed, NotebookPen, Pill, MoonStar } from "lucide-react";
 import { EFFORT_LABELS, timeStr, TYPE_COLORS, TAG_COLORS } from "./journalUtils";
-// Via Alias, NICHT relativ über den src/constants-Symlink: dessen Ziel ist
-// ein absoluter /home/alpha-Pfad und im CI-Runner tot. @fitness/constants
-// definieren alle Konsumenten (journal, fitness, fuel .cjs, vitalos)
-// checkout-relativ.
-import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
+// Activity presentation data is owned by Journal.
+import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "../../constants/ActivityConstants.js";
 
 const ACCENT = "var(--j-accent)";
 
@@ -271,3 +268,4 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
     </div>
   );
 }
+

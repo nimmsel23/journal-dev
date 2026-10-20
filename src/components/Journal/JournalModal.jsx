@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom";
 import { X, Target, Dumbbell, Book, Brain, CheckCircle2, UtensilsCrossed, NotebookPen, MoonStar, Pill, Pencil, Trash2, CalendarRange } from "lucide-react";
 import { EFFORT_LABELS, TYPE_COLORS, TAG_COLORS } from "./journalUtils";
-import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "@fitness/constants/ActivityConstants";
+import { ACTIVITY_ICONS, ACTIVITY_LABELS, BLOCK_COLORS } from "../../constants/ActivityConstants.js";
 
 const ACCENT = "var(--j-accent)";
 
@@ -315,3 +315,4 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
     document.body
   );
 }
+

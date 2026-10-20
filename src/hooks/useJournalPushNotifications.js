@@ -18,6 +18,13 @@ export function useJournalPushNotifications(user) {
   const [permission, setPermission] = useState(() => typeof Notification === "undefined" ? "unsupported" : Notification.permission);
   const [busy, setBusy] = useState(false);
 
+  const save = useCallback(async (next) => {
+    if (!user?.uid) return;
+    const normalized = normalize(next);
+    await setDoc(pushRef(user.uid), { apps: { journal: normalized } }, { merge: true });
+    setSettings(normalized);
+  }, [user?.uid]);
+
   useEffect(() => {
     if (!user?.uid) { setSettings(null); return; }
     let active = true;
@@ -42,13 +49,6 @@ export function useJournalPushNotifications(user) {
     })();
     return () => { active = false; };
   }, [user?.uid, permission, settings, save]);
-
-  const save = useCallback(async (next) => {
-    if (!user?.uid) return;
-    const normalized = normalize(next);
-    await setDoc(pushRef(user.uid), { apps: { journal: normalized } }, { merge: true });
-    setSettings(normalized);
-  }, [user?.uid]);
 
   const enable = useCallback(async () => {
     if (!user?.uid) return;

@@ -16,6 +16,7 @@
     "preview": "vite preview --config vite.config.cjs",
     "build:firebase": "VITE_APP_MODE=client vite build --mode firebase --config vite.config.cjs",
     "build:cloud": "VITE_APP_MODE=client vite build --mode firebase --config vite.config.cjs",
+    "deploy:vos": "bash scripts/deploy-vos.sh",
     "deploy": "pnpm run build:cloud && firebase deploy --only hosting:journal --project fitness-aos",
     "deploy:cloud": "pnpm run build:cloud && firebase deploy --only hosting:journal --project fitness-aos",
     "deploy:v2:build": "VITE_APP_MODE=client VITE_DEFAULT_TAB=journal-v2 vite build --mode firebase --config vite.config.cjs --outDir dist-v2",

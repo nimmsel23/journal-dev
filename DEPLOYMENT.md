@@ -80,3 +80,17 @@ Das Tool `fuelctl` dient als Master-Controller für die lokale Umgebung.
 - **`fuelctl status`**: Zeigt den Zustand von Dev (9000), V2 (7000) und dem Sync-Watcher an.
 - **`fuelctl dev up`**: Startet das lokale Entwicklungslabor (Port 9000).
 - **`fuelctl sync`**: Manueller Datenabgleich zwischen V2 (Lokal) und V3 (Cloud).
+
+## VitalOS-Release
+
+Nach dem Committen: `npm run deploy:vos`. Der Befehl nutzt
+`vos-release journal --yes`: `dev` pushen, in `vitalos/journal-app` nach
+`vitalos` mergen, den Branch pushen und den Journal-Gitlink in VitalOS
+committen/pushen. Der Parent-Push stößt das CI-Deployment an.
+
+Der lokale VitalOS-Checkout mit `bin/vos-release` muss neben `journal-dev`
+liegen oder über PATH erreichbar sein. Der Helper prüft Branches und
+Arbeitsverzeichnisse. Der Aufruf fragt nicht erneut nach Bestätigung.
+`npm run deploy:vos -- --dry-run` zeigt die geplanten Schritte; der bestehende
+Preflight kann dabei Remote-Refs und Git-Objekte aktualisieren. Ein erfolgreicher
+Aufruf bestätigt die Git-Übergabe; das Deployment-Ergebnis in der CI prüfen.

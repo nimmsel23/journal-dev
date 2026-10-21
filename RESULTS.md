@@ -1,3 +1,12 @@
+## 2026-10-21 — npm run deploy:vos
+
+Neuer npm-Befehl nutzt vos-release journal --yes: dev pushen, nach
+journal-app/vitalos mergen, Release-Branch sowie VitalOS-Pointer pushen.
+Vorhandene Release-Prüfungen wiederverwendet und Ablauf in DEPLOYMENT.md
+dokumentiert. Bash-Syntax und npm-Aufruf mit isoliertem Stub geprüft:
+journal/--yes, Weitergabe von --dry-run und unveränderte Fehlercodes.
+Kein echter Release ausgeführt.
+
 # Results
 
 ## 2026-10-21

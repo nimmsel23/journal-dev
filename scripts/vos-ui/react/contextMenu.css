@@ -1,0 +1,7 @@
+.vos-context-menu-item { background: transparent; }
+.vos-context-menu-item:hover,
+.vos-context-menu-item:focus {
+  background: color-mix(in srgb, var(--ink, #f1f5f9) 10%, transparent);
+  outline: 2px solid var(--accent, var(--j-accent, #fb923c));
+  outline-offset: -2px;
+}

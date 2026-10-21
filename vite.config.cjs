@@ -52,6 +52,7 @@ const FUEL = resolveSibling(["../fuel-app", "../fuel-dev"], "FUEL");
 const RELAX = resolveSibling(["../relax-app", "../relax-dev"], "RELAX");
 
 module.exports = defineConfig(async ({ mode }) => {
+  const { vosChangelog } = await import("./scripts/vos-changelog/vos-changelog-vite.mjs");
   const env = loadEnv(mode, process.cwd(), "");
   const appMode = process.env.VITE_APP_MODE || env.VITE_APP_MODE || "coach";
   // Flavor (door/voice/game/tent): eigenes App-Icon-Paket (public/icons-<flavor>), Name, Farben, Splash
@@ -123,7 +124,7 @@ module.exports = defineConfig(async ({ mode }) => {
       "import.meta.env.VITE_APP_MODE": JSON.stringify(appMode),
       __APP_VERSION__: JSON.stringify(APP_VERSION),
     },
-    plugins: [
+    plugins: [vosChangelog({ appId: (process.env.VITE_APP_FLAVOR || env.VITE_APP_FLAVOR) || ((process.env.VITE_DEFAULT_TAB || env.VITE_DEFAULT_TAB) === 'journal-v2' ? 'journal-v2' : 'journal'), appName: FL?.name || ((process.env.VITE_DEFAULT_TAB || env.VITE_DEFAULT_TAB) === 'journal-v2' ? 'Journal v2' : 'Journal'), accent: '#a78bfa' }),
       firebaseRedirect,
       flavorHtml,
       react(),

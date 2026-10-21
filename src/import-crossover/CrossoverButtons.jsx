@@ -1,7 +1,7 @@
 import { Activity, Utensils, Wind } from "lucide-react";
-import ContextMenuButton from "@vos-shell-ui/ContextMenuButton.jsx";
-import { getAppDestinations } from "@vos-shell-ui/appDestinations.js";
-import { handleNavigationKeys } from "@vos-shell-ui/navigation.js";
+import ContextMenuButton from "../../scripts/vos-ui/react/ContextMenuButton.jsx";
+import { getAppDestinations } from "../../scripts/vos-ui/react/appDestinations.js";
+import { handleNavigationKeys } from "../../scripts/vos-ui/react/navigation.js";
 
 export default function CrossoverButtons({ onLogFitness, onLogFuel, onLogRelax, onNavigate }) {
   const menuItems = (app) => getAppDestinations(app).map((item) => ({

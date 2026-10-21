@@ -1,5 +1,7 @@
 # Fuel Centre
 
+Journal build/deployment: see [standalone instructions](STANDALONE.md). Journal no longer requires sibling repositories or VitalOS submodules.
+
 Offlinefähiges Nutrition Journal als mobile PWA plus Node-Server plus CLI-Backend.
 
 Ziel:
@@ -280,3 +282,4 @@ Jedes Item hat:
 - Import-/Exportpfade für Backup, Vault und mögliche Docker-Services definieren
 - Changelog/Architektur-Doku für Ernährungscoach-Ausbildung und Privatnutzung ergänzen
 - Klienten-Auth für `~/vital`-Integration (Pfad-Normalisierung ist bereits vorbereitet)
+

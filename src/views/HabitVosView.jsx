@@ -1,5 +1,5 @@
 import { CheckSquare } from "lucide-react";
-import Habits from "@habits/views/Habits/index.jsx";
+import Habits from "./v2/JournalV2View.jsx";
 
 export default function HabitVosView(props) {
   return (
@@ -15,8 +15,9 @@ export default function HabitVosView(props) {
       </header>
 
       <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 p-6 shadow-glow vos-fuel">
-        <Habits {...props} />
+        <Habits {...props} mode="habits" />
       </div>
     </section>
   );
 }
+

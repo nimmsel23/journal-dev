@@ -53,10 +53,9 @@ function mergeTimelineGroups(primary = [], secondary = []) {
   });
   return [...grouped.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
-// Via @habits-Alias, NICHT relativ über den views/Habits-Symlink: dessen
-// Ziel ist ein absoluter /home/alpha-Pfad und im CI-Runner tot.
-import { ICON_COMPONENTS_MAP } from "@habits/views/Habits/utils";
-import HabitJournalModal from "@habits/views/Habits/HabitJournalModal";
+// Local copies keep the timeline independent of the Habits checkout.
+import { ICON_COMPONENTS_MAP } from "./habits/utils.js";
+import HabitJournalModal from "./habits/HabitJournalModal.jsx";
 
 const CROSSOVER_URLS = {
   fitness: "https://fitness-aos.web.app",
@@ -782,3 +781,4 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
     </div>
   );
 }
+

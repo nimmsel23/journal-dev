@@ -1,11 +1,4 @@
-# Preview-Deploy für Journal: dev-Push → 24h-Channel "dev", PR → eigener PR-Channel.
-#
-# Warum vitalos-Checkout: Die Vite-Configs aliassen Nachbar-Repos
-# (Cross-Repo-Imports) — ein nackter Checkout dieses Repos kann nie bauen
-# (deshalb waren die alten Workflows in workflows.disabled/). Das Meta-Repo
-# vitalos liefert per Submodules alle Nachbarn, danach wird DIESES Submodule
-# auf den gerade gepushten Commit gesetzt und nur dieser Workspace gebaut.
-# Telegram-Link kommt wie bei der lokalen Pipeline (scripts/deploy-preview.mjs).
+# Standalone Journal build: no VitalOS checkout or submodules.
 
 name: Preview (Journal dev)
 
@@ -15,49 +8,41 @@ on:
     branches: [dev]
     paths:
       - 'src/**'
+      - 'public/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'vite.config.cjs'
+      - 'index.html'
+      - 'firebase.json'
+      - '.firebaserc'
+      - '.github/workflows/preview-dev.yml'
   pull_request:
     branches: [master, dev]
     paths:
       - 'src/**'
+      - 'public/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'vite.config.cjs'
+      - 'index.html'
+      - 'firebase.json'
+      - '.firebaserc'
+      - '.github/workflows/preview-dev.yml'
 
 jobs:
   preview:
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout vitalos (Meta-Repo, liefert Nachbar-Repos)
+      - name: Checkout Journal
         uses: actions/checkout@v4
-        with:
-          repository: nimmsel23/vitalos
-          ref: master
-
-      - name: Submodules via HTTPS + Token
-        run: |
-          git config --global url."https://x-access-token:${{ github.token }}@github.com/".insteadOf "git@github.com:"
-          git submodule sync
-          git submodule update --init --recursive
-
-      - name: Submodule-Pfad auflösen (journal-app bevorzugt, journal-dev als Fallback)
-        # Gleiche appDir()-Logik wie packages/cross-app-aliases/index.mjs: erster
-        # existierender Kandidat gewinnt — kein hardcoded Name, der bei der
-        # nächsten Dev/App-Umbenennung wieder bricht.
-        run: |
-          if [ -d "journal-app" ]; then
-            SUBMODULE_PATH="journal-app"
-          elif [ -d "journal-dev" ]; then
-            SUBMODULE_PATH="journal-dev"
-          else
-            echo "::error::Weder journal-app noch journal-dev im Checkout gefunden"
-            exit 1
-          fi
-          echo "SUBMODULE_PATH=$SUBMODULE_PATH" >> "$GITHUB_ENV"
-          echo "Aufgelöst: $SUBMODULE_PATH"
-
-      - name: Submodule auf den ausgelösten Commit setzen
-        run: |
-          cd "$SUBMODULE_PATH"
-          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
-          git fetch origin "$SHA"
-          git checkout "$SHA"
 
       - uses: pnpm/action-setup@v4
         with:
@@ -68,21 +53,14 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install (Workspaces)
+      - name: Install Journal
         run: pnpm install --frozen-lockfile
 
-      - name: Firebase config bereitstellen (gitignored)
-        run: |
-          if [ -n "$FIREBASE_CONFIG" ]; then
-            echo "$FIREBASE_CONFIG" > "$SUBMODULE_PATH/firebase.config.js"
-          elif [ ! -f "$SUBMODULE_PATH/firebase.config.js" ]; then
-            cp firebase.config.js "$SUBMODULE_PATH/firebase.config.js"
-          fi
-        env:
-          FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+      - name: Test
+        run: pnpm test
 
       - name: Build Journal
-        run: pnpm --filter "./$SUBMODULE_PATH" run build:firebase
+        run: pnpm run build:firebase
 
       - name: Deploy Preview Channel
         id: firebase_deploy
@@ -91,7 +69,7 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FITNESS_AOS || secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: fitness-aos
-          entryPoint: ${{ env.SUBMODULE_PATH }}
+          entryPoint: .
           target: journal
           channelId: ${{ github.event_name != 'pull_request' && 'dev' || '' }}
           expires: 24h
@@ -109,3 +87,4 @@ jobs:
             ⏱️ Gültig 24h.
 
             Commit: ${{ github.event.pull_request.title || github.event.head_commit.message }}
+

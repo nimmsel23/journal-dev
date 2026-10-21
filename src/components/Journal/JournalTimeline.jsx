@@ -129,16 +129,16 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
     onDateChange?.(nextDate);
   }
 
-  function navigateCrossover(target, subTab = null) {
+  function navigateCrossover(target, subTab = null, destinationUrl = null) {
     if (onNavigateShell) {
-      onNavigateShell(target, target === "fitness" ? null : subTab);
+      onNavigateShell(target, subTab);
       return;
     }
-    if (target === "fitness" && onOpenSession) {
+    if (target === "fitness" && !destinationUrl && onOpenSession) {
       onOpenSession(date);
       return;
     }
-    const url = CROSSOVER_URLS[target];
+    const url = destinationUrl || CROSSOVER_URLS[target];
     if (url && typeof window !== "undefined") window.location.href = url;
   }
   const [journalSettings, setJournalSettings] = useState(() => ({
@@ -582,7 +582,8 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
 
         {showCrossover && (
           <CrossoverButtons
-            onLogFitness={() => navigateCrossover('fitness', 'session')}
+            onNavigate={navigateCrossover}
+            onLogFitness={() => navigateCrossover('fitness')}
             onLogFuel={() => navigateCrossover('fuel', 'log')}
             onLogRelax={() => navigateCrossover('relax', 'session')}
           />

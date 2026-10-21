@@ -36,6 +36,7 @@ async function resolveCrossAppAliases() {
     return crossAppAliases();
   } catch {
     return {
+      "@vos-shell-ui": resolveSibling(["../packages/mini-app-shell/react", "../vitalos/packages/mini-app-shell/react"], "@vos-shell-ui"),
       "@fitness-db": resolveSibling(["../fitness-app/src/lib/db", "../fitness-dev/src/lib/db"], "@fitness-db"),
       "@fitness/constants": resolveSibling(["../fitness-app/src/constants", "../fitness-dev/src/constants"], "@fitness/constants"),
       "@fitness/components": resolveSibling(["../fitness-app/src/components", "../fitness-dev/src/components"], "@fitness/components"),

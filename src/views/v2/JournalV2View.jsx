@@ -15,7 +15,7 @@ import HabitsView from "./JournalV2Habits.jsx";
 import { TimelineOverlay, useTimelineDrag, hhmm } from "./TimelineDrag.jsx";
 import { analyzeSmartJournal } from "../../lib/smartJournalLogger.js";
 import { applySmartAnalysis } from "../../lib/smartJournalApply.js";
-import { addHabit, archiveHabit } from "./habitsDb.js";
+import { addHabit, getHabitsRange, setHabitArchived, updateHabit } from "./habitsDb.js";
 import { extractTags, timeStr } from "../../components/Journal/journalUtils";
 import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "./gcal.js";
 import "./journal-v2.css";
@@ -41,7 +41,7 @@ function splitEntry(text) {
 
 const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["habits", "Habits"]];
 
-export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {} }) {
+export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal }) {
   const qc = useQueryClient();
   // Vollbild: Seitenhintergrund + Statusleiste papierfarben, solange v2 offen ist
   useEffect(() => {
@@ -85,18 +85,37 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     },
   });
 
+  // Load history around the selected date, including the complete visible week/month.
+  const habitFrom = iso(addDays(day, -119));
+  const [, habitRangeEnd] = rangeFor(mode === "monat" ? "monat" : "woche", day);
+  const habitTo = iso(habitRangeEnd);
+  const habitKey = ["jv2-habits", uid, habitFrom, habitTo];
+  const [habitPending, setHabitPending] = useState(false);
+  const habitLock = useRef(false);
+  const [habitError, setHabitError] = useState("");
   const habits = useQuery({
-    queryKey: ["jv2-habits", uid],
+    queryKey: habitKey,
     enabled: !!uid,
-    queryFn: async () => {
-      try {
-        const all = await db.getHabits(120);
-        return all.filter((h) => !h.deleted);
-      } catch {
-        return [];
-      }
-    },
+    retry: false,
+    queryFn: () => getHabitsRange(habitFrom, habitTo),
   });
+  const habitAction = async (action) => {
+    if (!uid || habitLock.current) return false;
+    habitLock.current = true;
+    setHabitPending(true);
+    setHabitError("");
+    try {
+      await action();
+      await qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
+      return true;
+    } catch (error) {
+      setHabitError(error?.message || "Habit konnte nicht gespeichert werden.");
+      return false;
+    } finally {
+      habitLock.current = false;
+      setHabitPending(false);
+    }
+  };
 
   const [rangeFrom, rangeTo] = rangeFor(mode === "monat" ? "monat" : "woche", day);
   const rangeKey = [iso(rangeFrom), iso(rangeTo)];
@@ -160,25 +179,9 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const eventsByDate = new Map();
   evList.forEach((ev) => eventsByDate.set(ev.date, [...(eventsByDate.get(ev.date) || []), ev]));
 
-  const habitKey = ["jv2-habits", uid];
-  const toggleHabit = async (habit) => {
-    const done = habit.hasRecord(date);
-    // optimistisch: records lokal anpassen, dann schreiben
-    qc.setQueryData(habitKey, (prev = []) =>
-      prev.map((h) => {
-        if (h.uuid !== habit.uuid) return h;
-        const records = done
-          ? h.records.filter((r) => r.date !== date)
-          : [...h.records, { habitId: h.uuid, date, completion: "DONE" }];
-        return { ...h, records, hasRecord: (d) => records.some((r) => r.date === d && r.completion === "DONE") };
-      }),
-    );
-    try {
-      await (done ? db.unrecordHabit(habit.uuid, date) : db.recordHabit(habit.uuid, date));
-    } catch (error) {
-      console.error("Habit toggle failed:", error);
-      qc.invalidateQueries({ queryKey: habitKey });
-    }
+  const toggleHabit = (habit, recordDate = date) => {
+    if (recordDate > db.localToday() || habit.deleted) return Promise.resolve(false);
+    return habitAction(() => habit.hasRecord(recordDate) ? db.unrecordHabit(habit.uuid, recordDate) : db.recordHabit(habit.uuid, recordDate));
   };
 
   const toggleSmart = () => {
@@ -266,26 +269,13 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
   const pick = (d) => { onDateChange(d); onModeChange("tag"); };
   const list = entries.data || [];
-  const allHabits = habits.data || [];
+  const allHabits = (habits.data || []).filter((h) => !h.deleted);
   const habitList = allHabits.slice(0, HABIT_LIMIT); // Streifen in Tag/Woche/Monat
   const doneToday = allHabits.filter((h) => h.hasRecord(date)).length;
-  const addNew = async (name) => {
-    try {
-      await addHabit(name);
-      await qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
-    } catch (error) {
-      console.error("Habit anlegen fehlgeschlagen:", error);
-    }
-  };
-  const archive = async (habit) => {
-    qc.setQueryData(["jv2-habits", uid], (prev = []) => prev.filter((h) => h.uuid !== habit.uuid));
-    try {
-      await archiveHabit(habit.uuid);
-    } catch (error) {
-      console.error("Habit archivieren fehlgeschlagen:", error);
-      qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
-    }
-  };
+  const addNew = (fields) => habitAction(() => addHabit(fields));
+  const editHabit = (habit, fields) => habitAction(() => updateHabit(habit.uuid, fields));
+  const archive = (habit) => habitAction(() => setHabitArchived(habit.uuid, true));
+  const restore = (habit) => habitAction(() => setHabitArchived(habit.uuid, false));
 
   return (
     <div className="jv2-page">
@@ -314,7 +304,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           </div>
         )}
         {mode === "woche" && <WeekView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
-        {mode === "habits" && uid && <HabitsView date={date} habits={allHabits} onToggle={toggleHabit} onAdd={addNew} onArchive={archive} />}
+        {mode === "habits" && uid && <HabitsView date={date} today={db.localToday()} habits={habits.data || []} onToggle={toggleHabit} onAdd={addNew} onUpdate={editHabit} onArchive={archive} onRestore={restore} pending={habitPending} loading={habits.isPending} error={habitError || (habits.isError ? "Habits konnten nicht geladen werden." : "")} onRetry={() => { setHabitError(""); habits.refetch(); }} />}
+        {mode !== "habits" && (habitError || habits.isError) && <div className="jv2-empty" role="alert">{habitError || "Habits konnten nicht geladen werden."} <button type="button" className="jv2-link" onClick={() => { setHabitError(""); habits.refetch(); }}>Erneut laden</button></div>}
         {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
         {!uid && mode !== "tag" && (
           <div className="jv2-empty">
@@ -346,7 +337,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             {habitList.map((h) => {
               const done = h.hasRecord(date);
               return (
-                <button key={h.uuid} type="button" className={done ? "done" : ""} aria-pressed={done} onClick={() => toggleHabit(h)}>
+                <button key={h.uuid} type="button" className={done ? "done" : ""} aria-pressed={done} disabled={habitPending || date > db.localToday()} onClick={() => toggleHabit(h)}>
                   <i>{done ? "✓" : ""}</i>
                   <span>{h.name}</span>
                 </button>
@@ -455,8 +446,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
                 <button type="button" className="jv2-link" onClick={disconnect}>Kalender trennen</button>
               </>
             : <button type="button" className="jv2-link" onClick={connect}>Kalender verbinden</button>)}
-          <a href="#door2">Door →</a>
-          <a href="#journal">← v1</a>
+          <a href="#door2" onClick={(event) => { if (onNavigateJournal) { event.preventDefault(); onNavigateJournal("door-v2"); } }}>Door →</a>
+          <a href="#journal" onClick={(event) => { if (onNavigateJournal) { event.preventDefault(); onNavigateJournal("journal"); } }}>← v1</a>
         </div>
       </article>
       <TimelineOverlay

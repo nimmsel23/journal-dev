@@ -1,3 +1,22 @@
+## 2026-10-22 — Habits v2 vervollständigt
+
+Bearbeiten von Name/Core4-Kategorie/Frequenz, Tagesraster-Korrekturen,
+Archiv/Wiederherstellen, Suche und Filter ergänzt. Bestehende Icons/Reihenfolge
+und Habit-Records bleiben erhalten. Laden folgt dem gewählten Zeitraum statt
+heute. Serien/Quoten berücksichtigen feste Wochentage, Erstellungsdatum und
+Zukunft; Monatsziele zählen den gewählten Kalendermonat. Fehler werden angezeigt,
+Entwürfe bei fehlgeschlagenem Speichern erhalten, parallele Aktionen gesperrt.
+Kein optimistisches Verstecken fehlgeschlagener Schreibvorgänge mehr.
+Optionale Host-Navigation für die eingebetteten Journal-v2-Links ergänzt.
+
+Validierung: 13 Node-Tests erfolgreich, einschließlich sechs neuen Tests für
+Statistik/Validierung/historische Abfrage und schonende Firestore-Schreibpayloads
+mit isolierten Test-Doubles. Browserprüfung bei 320/390px mit synthetischen
+Daten: vergangene Tage, fehlgeschlagenes/erfolgreiches Anlegen, Bearbeiten,
+Kategorie/Monatsziel, Archiv/Abbruch/Wiederherstellen, Metadaten/Historie, Filter
+und Layout. Keine echten Nutzerdaten geschrieben. Firebase-Build erfolgreich;
+keine Live-Firestore-/Auth-Prüfung und kein Push/Deployment.
+
 ## 2026-10-22 — Getrennter Push-Sender
 
 Reminder-Function heißt `scheduledJournalPushReminders` in der eigenen Firebase-Codebase `journal`. Deployment erfolgt gezielt über VitalOS `deploy-push-functions.yml`, damit andere App-Sender weder überschrieben noch implizit gelöscht werden.

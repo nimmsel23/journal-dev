@@ -240,3 +240,22 @@ Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste 
 - Auth-Domains (`*.web.app`, `*.firebaseapp.com`) sind registriert, der TaskChampion-CORS-Proxy kennt die Origins.
 - OAuth-Client-Ursprünge der neuen Sites (für Google Calendar/Tasks) nur in der Cloud Console eintragbar.
 - Die ältere Vue-PWA `~/voice-dev` (Target `voice` in ihrem eigenen Firebase-Projekt) bleibt unberührt.
+
+
+## Habits v2 · Erweiterung 2026-10-22
+
+- Name, Core4-Kategorie und Frequenz bearbeiten; täglich, feste Wochentage oder
+  Monatsziel (1–31). Icon, Reihenfolge und bestehende Records bleiben erhalten.
+- Suchen und nach aktiv/offen/erledigt/archiviert filtern. Archivieren mit
+  Bestätigung und Abbruch; Archiv wiederherstellen ohne Historienverlust.
+- Das 28-Tage-Raster ist mit Maus/Tastatur bedienbar und kann vergangene
+  Erledigungen setzen/zurücknehmen. Zukünftige Tage sind gesperrt.
+- Datenfenster folgt dem gewählten Tag, einschließlich sichtbarer Woche/Monat;
+  frühere Zeiträume werden nicht mehr fälschlich mit Daten ab heute dargestellt.
+- Serien zählen geplante Wochentage; Quote ignoriert freie, zukünftige und
+  vor dem Erstellungsdatum liegende Tage. Monatsziele zeigen Kalenderfortschritt.
+- Fehler beim Laden/Speichern bleiben sichtbar. Wiederholen ist möglich;
+  fehlgeschlagene Entwürfe bleiben erhalten. Laufende Änderungen sperren
+  parallele Bedienung und werden erst nach bestätigtem Schreiben übernommen.
+- In Habits über den eingebauten JournalAppWrapper und den Einstieg „Habits v2“.
+  Eingebettete Links bleiben beim Host; standalone bleiben #door2/#journal gültig.

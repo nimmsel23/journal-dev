@@ -1,5 +1,6 @@
 {
   "functions": {
+    "codebase": "journal",
     "source": "functions",
     "runtime": "nodejs22"
   },

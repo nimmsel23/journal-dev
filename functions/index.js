@@ -70,7 +70,7 @@ async function sendReminder(uid, tokens, title, body, link) {
   }
 }
 
-exports.scheduledPushReminders = functions
+exports.scheduledJournalPushReminders = functions
   .region("europe-west1")
   .pubsub.schedule("every 5 minutes")
   .timeZone(TIME_ZONE)
@@ -81,11 +81,11 @@ exports.scheduledPushReminders = functions
     let failureCount = 0;
 
     try {
-      const usersSnap = await db.collectionGroup("push")
-        .where("apps.journal.enabled", "==", true)
-        .get();
-
-      for (const doc of usersSnap.docs) {
+      // "push" is a settings document, not a collection group.
+      const users = await db.collection("fitness").listDocuments();
+      for (const user of users) {
+        const doc = await user.collection("settings").doc("push").get();
+        if (!doc.exists) continue;
         const stored = doc.data() || {};
         const data = stored.apps?.journal || {};
         if (!data.enabled) continue;
@@ -94,7 +94,7 @@ exports.scheduledPushReminders = functions
         if (tokens.length === 0) continue;
 
         if (isReminderDue(data.reminderTime, minutes)) {
-          const uid = doc.ref.parent.parent.id;
+          const uid = user.id;
           const result = await sendReminder(
             uid,
             tokens,

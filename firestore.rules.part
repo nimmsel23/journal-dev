@@ -1,0 +1,7 @@
+    // Journal-v2-Apps (journal-dev): journal/{uid}/frame/{domain} (Game v2 · Frame Map),
+    // journal/{uid}/settings/{door,taskchampion} u. a. Nur der Besitzer; Coach bewusst ausgenommen.
+    // Modul-Fragment: wird von ~/vitalos (scripts/build-rules.mjs) in firestore.rules eingebettet
+    // und von dort deployed. Nutzt owner() aus dem Root-Ruleset.
+    match /journal/{uid}/{document=**} {
+      allow read, write: if owner(uid);
+    }

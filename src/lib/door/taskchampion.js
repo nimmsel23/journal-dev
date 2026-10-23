@@ -5,9 +5,11 @@
 //  - Schlüssel: PBKDF2-HMAC-SHA256, 600 000 Iterationen, Salt = 16-Byte-Client-ID, 32 Byte
 //  - Hülle: [1 B Version=1][12 B Nonce][ChaCha20-Poly1305-Ciphertext+Tag], AAD = [1][16 B Version-ID]
 //  - Klartext: Versionen = {"operations":[…]} als UTF-8-JSON; Snapshot = zlib-komprimiertes {uuid: {prop: value}}
-// Client-ID/Secret liegen nur in der IndexedDB dieses Browsers, nie in Firestore.
+// Client-ID/Secret: IndexedDB/localStorage dieses Browsers + Firestore journal/{uid}/settings/taskchampion (geräteübergreifend).
 import { chacha20poly1305 } from "@noble/ciphers/chacha.js";
 import { unzlibSync } from "fflate";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { db as fdb, auth } from "../firebase.js";
 
 const NIL = "00000000-0000-0000-0000-000000000000";
 const STALE_MS = 60_000;
@@ -44,11 +46,30 @@ const LS_KEY = "tc:config";
 const lsGet = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch { return null; } };
 const lsPut = (v) => { try { v ? localStorage.setItem(LS_KEY, JSON.stringify(v)) : localStorage.removeItem(LS_KEY); } catch { /* Speicher gesperrt */ } };
 const persist = () => { try { navigator.storage?.persist?.(); } catch { /* optional */ } };
+// Wahrheit pro Nutzer: Firestore journal/{uid}/settings/taskchampion – gilt für alle Apps/Geräte
+// (jede App hat eigene Origin und damit eigenen Browser-Speicher). Beim ersten Zugriff ohne lokale Config geholt.
+const validCfg = (c) => c && c.url && c.clientId && c.secret;
+const userRef = async () => {
+  if (!auth) return null;
+  if (auth.currentUser) return doc(fdb, "journal", auth.currentUser.uid, "settings", "taskchampion");
+  const u = await new Promise((res) => { const off = auth.onAuthStateChanged((x) => { off(); res(x); }); setTimeout(() => res(null), 3000); });
+  return u ? doc(fdb, "journal", u.uid, "settings", "taskchampion") : null;
+};
+const remoteGet = async () => { try { const r = await userRef(); const sn = r && await getDoc(r); return sn?.exists() && validCfg(sn.data()) ? sn.data() : null; } catch { return null; } };
+const remotePut = async (cfg) => { try { const r = await userRef(); if (r) await setDoc(r, cfg); } catch { /* offline: lokal gilt */ } };
+const remoteDel = async () => { try { const r = await userRef(); if (r) await deleteDoc(r); } catch { /* offline */ } };
+let remoteTried = false;
 export const getConfig = async () => {
   let cfg;
   try { cfg = await get("config"); } catch { cfg = null; }
   if (cfg) { if (!lsGet()) lsPut(cfg); return cfg; }
   cfg = lsGet();
+  if (!cfg && !remoteTried) {
+    remoteTried = true;
+    cfg = await remoteGet();
+    if (!cfg) remoteTried = false; // nicht angemeldet/offline: später erneut versuchen
+    else lsPut(cfg);
+  }
   if (cfg) { try { await put("config", cfg); } catch { /* nur Spiegel verfügbar */ } }
   return cfg || undefined;
 };
@@ -62,11 +83,12 @@ export const saveConfig = async ({ url, clientId, secret }) => {
   keyCache = null;
   lsPut(cfg);
   persist();
+  await remotePut(cfg);
   try { await put("config", cfg); } catch { /* Spiegel in localStorage genügt */ }
   if (!same) { await del("state"); mem = null; }
   return cfg;
 };
-export const clearConfig = async () => { keyCache = null; mem = null; lsPut(null); await del("config"); await del("state"); };
+export const clearConfig = async () => { keyCache = null; mem = null; lsPut(null); remoteTried = true; await remoteDel(); await del("config"); await del("state"); };
 
 // ── Krypto ──
 const uuidBytes = (id) => Uint8Array.from(id.replace(/-/g, "").match(/../g).map((h) => parseInt(h, 16)));

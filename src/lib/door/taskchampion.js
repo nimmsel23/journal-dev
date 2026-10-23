@@ -38,19 +38,35 @@ const put = (k, v) => (noIdb ? Promise.resolve(void fallback.set(k, v)) : kv("re
 const del = (k) => (noIdb ? Promise.resolve(void fallback.delete(k)) : kv("readwrite", (s) => s.delete(k)));
 
 // ── Konfiguration ──
-export const getConfig = () => get("config");
+// Zugangsdaten zusätzlich in localStorage spiegeln: IndexedDB kann (Safari-ITP, Speicherdruck, gesperrter
+// Speicher) leer zurückkommen – dann aus dem Spiegel wiederherstellen statt neu abzufragen.
+const LS_KEY = "tc:config";
+const lsGet = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch { return null; } };
+const lsPut = (v) => { try { v ? localStorage.setItem(LS_KEY, JSON.stringify(v)) : localStorage.removeItem(LS_KEY); } catch { /* Speicher gesperrt */ } };
+const persist = () => { try { navigator.storage?.persist?.(); } catch { /* optional */ } };
+export const getConfig = async () => {
+  let cfg;
+  try { cfg = await get("config"); } catch { cfg = null; }
+  if (cfg) { if (!lsGet()) lsPut(cfg); return cfg; }
+  cfg = lsGet();
+  if (cfg) { try { await put("config", cfg); } catch { /* nur Spiegel verfügbar */ } }
+  return cfg || undefined;
+};
 export const saveConfig = async ({ url, clientId, secret }) => {
   const cfg = { url: String(url).trim().replace(/\/+$/, ""), clientId: String(clientId).trim().toLowerCase(), secret: String(secret) };
   if (!/^https?:\/\//.test(cfg.url)) throw new Error("Server-URL muss mit https:// beginnen");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(cfg.clientId)) throw new Error("Client-ID ist keine UUID");
   if (!cfg.secret) throw new Error("Secret fehlt");
+  const old = await getConfig();
+  const same = old && old.clientId === cfg.clientId && old.secret === cfg.secret; // nur URL geändert → Replik behalten
   keyCache = null;
-  await put("config", cfg);
-  await del("state");
-  mem = null;
+  lsPut(cfg);
+  persist();
+  try { await put("config", cfg); } catch { /* Spiegel in localStorage genügt */ }
+  if (!same) { await del("state"); mem = null; }
   return cfg;
 };
-export const clearConfig = async () => { keyCache = null; mem = null; await del("config"); await del("state"); };
+export const clearConfig = async () => { keyCache = null; mem = null; lsPut(null); await del("config"); await del("state"); };
 
 // ── Krypto ──
 const uuidBytes = (id) => Uint8Array.from(id.replace(/-/g, "").match(/../g).map((h) => parseInt(h, 16)));
@@ -159,7 +175,10 @@ export async function tasks({ force = false } = {}) {
   const cfg = await getConfig();
   if (!cfg) throw new Error("tc-unconfigured");
   const st = await state();
-  if (force || Date.now() - st.syncedAt > STALE_MS) await sync();
+  if (force || Date.now() - st.syncedAt > STALE_MS) {
+    // offline/Proxy down: mit der gespeicherten Replik weiterarbeiten statt neu zu verlangen
+    try { await sync(); } catch (e) { if (st.versionId === NIL || e?.message !== "tc-network") throw e; }
+  }
   return Object.entries((await state()).tasks).map(([uuid, t]) => ({ uuid, ...t }));
 }
 

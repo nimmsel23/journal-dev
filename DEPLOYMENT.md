@@ -1,96 +1,67 @@
-# Fuel Centre — Deployment & App-Architektur
+# Journal — Deployment
 
-Dieses Dokument beschreibt die Trennung zwischen der **Firebase PWA (V3)** und der **Desktop Produktion (V2)**.
+Entwicklung auf `dev`, Live auf `master`. Gebaut und deployt wird standalone (kein VitalOS-Checkout nötig, siehe
+[`STANDALONE.md`](STANDALONE.md)); Hosting liegt im Firebase-Projekt `fitness-aos`.
 
-## 1. Die zwei Welten
+## Ablauf
 
-Fuel Centre operiert in zwei getrennten Umgebungen mit unterschiedlichen Schwerpunkten.
+1. **Entwickeln auf `dev`** (`pnpm run dev`, `pnpm test`, `pnpm run build:cloud`). Nach jeder fertigen Änderung committen.
+2. **Push auf `dev`** startet die Preview-CI: Test → `build:firebase` → Preview-Channel `dev`, 24 h gültig, Link per
+   Telegram. Gleiches gilt für Pull Requests gegen `dev`/`master` (eigener Channel pro PR).
+3. **Prüfen** auf Handy/iPad mit dem Preview-Link.
+4. **Merge nach `master`** und Push startet die Live-CI: Test → `build:cloud` → Deploy auf **journal-vos.web.app**
+   (Target `journal`), danach Telegram-Nachricht.
+5. **Nach vitalos übernehmen** (siehe unten).
 
-### Firebase PWA (V3)
-- **Status:** Die moderne, AI-gestützte Version für das Handy (Cloud).
-- **Umgebung:** Firebase Hosting (`fuel-aos.web.app`)
-- **Daten:** Google Firestore (Cloud-Schnittstelle).
-- **Features:** Schnelles AI-Logging, Heatmap, Dashboard.
-- **Build-Befehl:** `fuelctl dev build v3` (Erzeugt `dist-firebase/`)
+Beide Workflows (`.github/workflows/preview-dev.yml`, `deploy-master.yml`) laufen nur bei Änderungen an `src/`,
+`public/`, `tests/`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `vite.config.cjs`, `index.html`,
+`firebase.json`, `.firebaserc` oder am Workflow selbst. Beide installieren mit `pnpm install --frozen-lockfile`:
+**`package.json` und `pnpm-lock.yaml` immer zusammen committen**, sonst bricht die CI ab.
 
-### Desktop Produktion (V2)
-- **Status:** Die komplette Backend-Version mit Katalog-Management (Enhancement).
-- **Umgebung:** Lokaler Node.js Server (Port 7000), Pfad: `/opt/fuel`
-- **Daten:** Lokale JSON-Dateien (`data/`) & SQLite.
-- **Features:** Vollständiges Backend, Inhaltsstoff-Suche, lokaler Katalog-Master.
-- **Start:** `pnpm run prod` im Ordner `/opt/fuel`.
+## Hosting-Targets
 
----
+Sechs Einträge in `firebase.json`/`.firebaserc`, alle aus demselben Code mit eigenem Start-Tab, Namen, Icons und Farben:
 
-## 2. Automatisierung & Daemons
+| Target | Site | Build-Ordner | Befehl |
+|---|---|---|---|
+| `journal` | journal-vos.web.app | `dist-firebase` | `pnpm run deploy:cloud` (`deploy`, `release`) |
+| `v2` | vos-journal.web.app | `dist-v2` | `pnpm run deploy:v2` |
+| `door` | vos-door.web.app | `dist-door` | `pnpm run deploy:door` |
+| `voice` | vos-voice.web.app | `dist-voice` | `pnpm run deploy:voice` |
+| `game` | vos-game.web.app | `dist-game` | `pnpm run deploy:game` |
+| `tent` | vos-tent.web.app | `dist-tent` | `pnpm run deploy:tent` |
 
-### Firestore Sync Watcher
-Ein Daemon-Prozess überwacht lokale Änderungen und gleicht sie mit der Cloud ab.
-- **Service:** `fuel-sync-watcher.service`
-- **Script:** `scripts/firestore-sync.mjs watch`
+- Nur bauen: `deploy:<name>:build` (z. B. `deploy:door:build`).
+- Alle sechs bauen und mit einem `firebase deploy` ausrollen: `pnpm run deploy:all` (`deploy:all:build` nur bauen).
+- `pnpm run release` erhöht zusätzlich die Version in `package.json`.
+- Lokale Vorschau über einen 24-h-Channel `preview` (Link per Telegram, Zugangsdaten aus `~/.env/fitness.env`):
+  `pnpm run deploy:preview` (`scripts/deploy-preview.mjs`).
+- CI und `deploy:cloud` deployen nur das Target `journal`; die anderen fünf nur über die Befehle oben.
+- Firebase veröffentlicht ausschließlich aus dem jeweiligen Build-Ordner. Ein `firebase deploy` kann im Aufräumschritt
+  mit „Timed out“ enden (Exit 2), obwohl das Release schon live ist.
 
-### Inbox (Geplant)
-Eine Inbox-Funktion für die schnelle Erfassung von Rohdaten zur späteren Katalogisierung.
+## Lokale Hooks
 
----
+`.githooks/post-commit` löst bei einem Commit **auf `master`** (mit Änderungen unter `src/`, `public/`, `index.html`,
+`vite.config*`, `package.json`, `firebase.json`) `npm run deploy` aus. Auf `dev` passiert nichts. Commits auf `master`
+also nur bewusst und nur mit OK.
 
-## 3. Git & Deployment-Workflow (Dev vs. Master)
+## Desktop-Prod
 
-Um eine stabile PWA-Erfahrung zu garantieren, haben wir einen klaren Git-basierten Workflow für Deployments etabliert. Wir trennen dabei zwischen den Home-Verzeichnissen (Entwicklung) und den VitalOS-Verzeichnissen (Produktion).
-
-### Architektur & Branches
-- **Home Repos (z. B. `~/journal-dev`)**: Hier läuft die Entwicklung auf dem **`dev`** Branch. Änderungen werden hier entwickelt und committet.
-- **VitalOS Shell Apps (z. B. in `~/vitalos/...`)**: Hier läuft der **`master`** Branch, aus dem das tatsächliche finale Produktions-Setup gespeist wird.
-
-### 24h Preview Workflow (Der Sicherheits-Check)
-Bevor Commits aus dem `dev` Branch in den `master` Branch fließen, wird ein temporärer Preview-Link generiert:
-1. **Entwickeln im `dev` Branch:** Änderungen werden in `~/journal-dev` gebaut (`pnpm run dev`).
-2. **Preview Deploy (24h):** Mit dem Befehl `pnpm run deploy:preview` wird ein Build für Firebase erstellt und ein Preview Channel gestartet. Man erhält einen Link, der 24 Stunden gültig ist — er wird zusätzlich per Telegram verschickt (`scripts/deploy-preview.mjs`, Creds aus `~/.env/fitness.env`).
-3. **Testen:** Der Preview-Link wird auf verschiedenen Geräten geprüft.
-
-> **Warum lokal und nicht als GitHub Action?** Die Crossover-Aliase in `vite.config.cjs`
-> (`@fuel`, `@habits`, `@fitness/*`, `@db`) zeigen absolut auf die Nachbar-Repos unter
-> `/home/alpha/` — journal importiert Komponenten direkt aus fuel-dev, habits-dev und
-> fitness-dev. Auf einem GitHub-Runner existieren diese Repos nicht (und ihre `dev`-Stände
-> sind lokal oft weiter als auf GitHub), deshalb kann CI diesen Build nicht bauen.
-> Die ursprünglichen Actions liegen deaktiviert in `.github/workflows.disabled/`.
-4. **Merge & Live-Deploy:** Wenn alles passt, werden die Änderungen in den `master` Branch gemerged (ggf. in der VitalOS-Shell gezogen) und final mit `pnpm run deploy:cloud` live geschaltet.
-
-### Befehle für Firebase Hosting
-- **Live Deploy (mit Versions-Bump):** `pnpm run release` (Erhöht die Version in `package.json` und pusht live)
-- **Live Deploy (ohne Bump):** `pnpm run deploy` oder `pnpm run deploy:cloud`
-- **Preview Deploy:** `pnpm run deploy:preview` (Erstellt den zeitlich begrenzten 24h-Link)
-- **Nur Journal v2:** `pnpm run deploy:v2` (Build nach `dist-v2`, startet in der v2-Ansicht, Deploy auf `vos-journal.web.app`, Hosting-Target `v2`)
-- **Alles:** `pnpm run deploy:all` (baut alle sechs Varianten, ein `firebase deploy` für alle Targets)
-- **Nur Voice/Game/Tent:** `pnpm run deploy:voice` / `deploy:game` / `deploy:tent`
-- **Nur Door:** `pnpm run deploy:door` (Build nach `dist-door` mit Door-Icons/-Namen, startet in Door v2, Deploy auf `vos-door.web.app`, Target `door`)
-- **Desktop-Prod:** `./deploy.sh` baut im Repo (dort liegen fitness/fuel/relax als Nachbarn) und kopiert nur `dist-firebase/` nach `/opt/journal`, ohne Backups. Optionen `--pull`, `--dry-run`.
-
-Sechs Hosting-Targets in `firebase.json`/`.firebaserc`: `journal` → `journal-vos`, `v2` → `vos-journal`, `door` → `vos-door`, `voice` → `vos-voice`, `game` → `vos-game`, `tent` → `vos-tent`. `deploy:cloud` deployt nur `hosting:journal`.
-Details zu v2, Smart Logger, Kalender, Service Worker und dem Merge nach vitalos: [`JOURNAL-V2.md`](JOURNAL-V2.md).
-
-*Hinweis: Firebase ist so konfiguriert, dass es ausschließlich aus dem Verzeichnis `dist-firebase/` veröffentlicht.*
-
----
-
-## 4. System-Steuerung (`fuelctl`)
-
-Das Tool `fuelctl` dient als Master-Controller für die lokale Umgebung.
-
-- **`fuelctl status`**: Zeigt den Zustand von Dev (9000), V2 (7000) und dem Sync-Watcher an.
-- **`fuelctl dev up`**: Startet das lokale Entwicklungslabor (Port 9000).
-- **`fuelctl sync`**: Manueller Datenabgleich zwischen V2 (Lokal) und V3 (Cloud).
+`./deploy.sh [--pull] [--dry-run]` baut das Repo und kopiert nur `dist-firebase/` nach `/opt/journal`
+(`journal.service`), ohne Backups. Der Kopfkommentar im Skript nennt noch Nachbar-Repos (fitness/fuel/relax) aus der
+Zeit vor dem Standalone-Build; ob diese Logik noch gebraucht wird, ist ungeprüft.
 
 ## VitalOS-Release
 
-Nach dem Committen: `npm run deploy:vos`. Der Befehl nutzt
-`vos-release journal --yes`: `dev` pushen, in `vitalos/journal-app` nach
-`vitalos` mergen, den Branch pushen und den Journal-Gitlink in VitalOS
-committen/pushen. Der Parent-Push stößt das CI-Deployment an.
+Nach dem Committen: `pnpm run deploy:vos` (oder `journal-release` aus `~/vitalos/bin`). Der Befehl nutzt
+`vos-release journal --yes`: `dev` pushen, in `vitalos/journal-app` nach `vitalos` mergen, den Branch pushen und den
+Journal-Gitlink in VitalOS committen und pushen. Der Parent-Push stößt das CI-Deployment an.
 
-Der lokale VitalOS-Checkout mit `bin/vos-release` muss neben `journal-dev`
-liegen oder über PATH erreichbar sein. Der Helper prüft Branches und
-Arbeitsverzeichnisse. Der Aufruf fragt nicht erneut nach Bestätigung.
-`npm run deploy:vos -- --dry-run` zeigt die geplanten Schritte; der bestehende
-Preflight kann dabei Remote-Refs und Git-Objekte aktualisieren. Ein erfolgreicher
-Aufruf bestätigt die Git-Übergabe; das Deployment-Ergebnis in der CI prüfen.
+Der VitalOS-Checkout mit `bin/vos-release` muss neben `journal-dev` liegen oder über `PATH` erreichbar sein. Der Helper
+prüft Branches und Arbeitsverzeichnisse und fragt nicht erneut nach Bestätigung. `pnpm run deploy:vos -- --dry-run` zeigt
+die geplanten Schritte; der Preflight kann dabei Remote-Refs und Git-Objekte aktualisieren. Ein erfolgreicher Aufruf
+bestätigt die Git-Übergabe, das Deploy-Ergebnis in der CI bleibt zu prüfen. Stolpersteine beim manuellen Merge nach
+vitalos (`package.json`, Lockfile): [`JOURNAL-V2.md`](JOURNAL-V2.md), Abschnitt „Nach vitalos übernehmen“.
+
+Details zu v2, Door, Game, Tent, Service Worker und Updater: [`JOURNAL-V2.md`](JOURNAL-V2.md).

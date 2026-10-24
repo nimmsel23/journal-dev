@@ -16,12 +16,15 @@ Hash-Route, gleiche Datenquelle wie v1 (Firestore `fitness/{uid}/…`):
 | `#v2/habits/<datum>` | Habits (28 Tage bis zum Datum) |
 
 Door (Potential/Plan/Production/Profit) hat eigene Hashes: `#door2` (Potential), `#door2/plan`, `#door2/production`,
-`#door2/profit`. Tab-Key `door-v2`, Alias `door2` in `src/main.jsx`, Modus im State `doorMode` (eigene `DOOR_MODES`-Liste,
-kollidiert nicht mit `V2_MODES`). Links: im Journal-v2-Footer „Door →“, im Door-v2-Footer „← Journal“.
+`#door2/profit`. Links: im Journal-v2-Footer „Door →“, im Door-v2-Footer „← Journal“.
 
-Tab-Key `journal-v2` (`src/routes.js`, `bare: true` = ohne App-Header). Hash-Alias `v2` und Modus-Teil
-werden in `src/main.jsx` geparst; Modus liegt in `useApp().v2Mode` (`src/store.js`).
-Startansicht per Build-Variable `VITE_DEFAULT_TAB=journal-v2` (siehe Deploy), ein Hash hat Vorrang.
+**Routing:** Die URL ist die einzige Quelle für Tab, Modus und Datum (kein eigener State, funktioniert offline).
+`src/lib/hashRoute.js` hält die Tab-Tabelle (Alias `v2`/`door2`/`game2`/`tent2`, Modi, ob das Datum im Hash steht) und
+parst/baut den Hash; `src/lib/useHashRoute.js` liefert `{ tab, mode, date, setDate, setMode, navigate }`. Tab-Keys
+(`journal-v2`, `door-v2`, `game-v2`, `tent-v2`) stehen in `src/routes.js` (`bare: true` = ohne App-Header); die Views
+bekommen `mode`/`date` und die Setter über `getProps`. Ein Hash ohne bekannten Tab fällt auf den Start-Tab, der per
+Build-Variable `VITE_DEFAULT_TAB` gesetzt wird (siehe Deploy). Das Datum bleibt beim Tab-Wechsel erhalten. Der Parser ist
+gegen das frühere Verhalten getestet (`tests/hash-route.test.mjs`).
 
 ## Dateien
 
@@ -33,6 +36,7 @@ Startansicht per Build-Variable `VITE_DEFAULT_TAB=journal-v2` (siehe Deploy), ei
 | `TimelineDrag.jsx` | Versteckte Timeline (Hook `useTimelineDrag` + `TimelineOverlay`) |
 | `gcal.js` | Google-Calendar-Lesezugriff |
 | `habitsDb.js` | Habit anlegen / archivieren |
+| `src/lib/useSetting.js` | Einstellung mit localStorage-Persistenz (`jv2:grain`, `jv2:smart`, `jv2:cal-all`) |
 | `src/lib/smartJournalApply.js` | Smart-Logger-Übernahme (auch vom Tab „Smart Log“ genutzt) |
 | `src/lib/db/journal.js` | `getJournal`, `getJournalRange`, `saveJournal`, `setJournalTime`, `deleteJournal` |
 
@@ -48,12 +52,12 @@ fitness-dev-Variante mit anderer `saveJournal`-Signatur (Tags als Array) durchsc
   Quote = erledigte Tage / 28. Archivieren setzt nur `deleted: true`, Records bleiben. Navigation in 7-Tage-Schritten.
 - **Versteckte Timeline (Drag):** Uhrzeit eines Eintrags anfassen und ziehen → seitlich erscheint eine Timeline
   (Zeile = Stunde, Zellen = Halbe/Viertel). Raster 1 h / 30 min / 15 min beim Ziehen durch Darüberfahren der Kopfzeile
-  wählbar (`localStorage jv2:grain`). Loslassen setzt `time` (`setJournalTime`), außerhalb loslassen bricht ab.
+  wählbar (`jv2:grain`, per `useSetting`). Loslassen setzt `time` (`setJournalTime`), außerhalb loslassen bricht ab.
   Tastatur: Fokus auf die Uhrzeit, Pfeil hoch/runter verschiebt um das Raster. Umsetzung mit Pointer Events
   (`touch-action: none`, `setPointerCapture`), bewusst ohne dnd-kit; Touch auf dem iPad ist ungetestet.
 - **Smart Logger (✦ in der Eingabezeile):** Freitext → `analyzeSmartJournal` (Firebase AI Logic / Vertex,
   `gemini-2.5-flash`) → Vorschau (Eintrag, Mahlzeiten, Wasser, Habits) → „Übernehmen“. Schreibt Journal (Tag `smart-log`),
-  Nutrition-Log und Habit-Records. Unbekannte Habit-Namen werden übersprungen. Toggle in `localStorage jv2:smart`.
+  Nutrition-Log und Habit-Records. Unbekannte Habit-Namen werden übersprungen. Toggle in `jv2:smart` (per `useSetting`; alte Werte `"1"`/`"0"` bleiben lesbar).
 - **Google Calendar (nur lesen):** „Kalender verbinden“ im Footer, `reauthenticateWithPopup` mit Scope
   `calendar.readonly`. Token ~1 h nur in `sessionStorage`, nie in Firestore. Standard: nur der Kalender „Fire Map“ (Taskwarrior-Termine `[TW today]`/`[TW overdue]`, von `firectl gcal due` gepusht); „Alle Kalender“ im Footer zeigt jeden in Google ausgewählten Kalender,
   abgelehnte/abgesagte Termine entfallen. „Rückblick →“ legt einen Eintrag mit Tag `termin` an. Voraussetzung im
@@ -118,7 +122,7 @@ erfolgreichem Release (Exit 2); das Hosting war trotzdem live.
 
 Der Kalender in Journal v2 zeigt standardmäßig nur den Google-Kalender „Fire Map“ (Name enthält „fire“; Taskwarrior-Termine
 `[TW today]` / `[TW overdue]`, von `firectl gcal due` gepusht, siehe auch `fire-gcal-calcurse`). Umschalter im Footer:
-„Alle Kalender“ / „Nur Fire Map“ (`localStorage jv2:cal-all`). Fehlt der Kalender, erscheint ein Hinweis.
+„Alle Kalender“ / „Nur Fire Map“ (`jv2:cal-all`, per `useSetting`). Fehlt der Kalender, erscheint ein Hinweis.
 
 ## Google-Cloud-Einrichtung (Projekt `fitness-aos`)
 
@@ -131,16 +135,23 @@ Web-OAuth-Client.
 
 ## pnpm
 
-Das Repo ist auf pnpm umgestellt (`packageManager: pnpm@11.3.0`, `pnpm-workspace.yaml` mit
-`allowBuilds`, `@firebase/util`-Override 1.12.1, `shamefullyHoist`). `@vos/cross-app-aliases` steht standalone als
-`link:` (pnpm kopiert `file:`-Verzeichnisse, relative Pfade brächen). **Im vitalos-Submodul** gilt stattdessen
-`workspace:*`; `pnpm-workspace.yaml` gehört dort nicht hinein. **`pnpm-lock.yaml` wird nicht getrackt** (`.gitignore`): das CI installiert aus dem Root-Lock von vitalos, `journal-dev` allein ist damit nicht reproduzierbar (frische Installs lösen Versionsbereiche neu auf).
+Das Repo nutzt pnpm (`packageManager: pnpm@11.3.0`, `pnpm-workspace.yaml` mit `allowBuilds`, `@firebase/util`-Override
+1.12.1, `shamefullyHoist`). **`pnpm-lock.yaml` ist getrackt**, beide CI-Workflows installieren damit per
+`--frozen-lockfile` (siehe `DEPLOYMENT.md`); `package.json` und Lock gehören in denselben Commit. Die vitalos-CI
+installiert dagegen aus dem Root-Lock von vitalos. Lokal ist `node_modules` ein Symlink auf `~/vitalos/node_modules`
+(kein `pnpm install` in diesem Repo, siehe `CLAUDE.md`).
+
+**Stand 2026-10-24:** Die Dependencies wurden bereinigt. Entfernt sind die fuel-Reste (`fastify`, `better-sqlite3`,
+`zod`, `react-hook-form`, `recharts`, `@fullcalendar/*`, `@radix-ui/*` u. a.), die zwölf einzelnen `@firebase/*`-Pakete
+(der Code importiert nur `firebase/*`) sowie `zustand` (der Store entfiel mit dem Hash-Routing).
 
 ## Nach vitalos übernehmen
 
-`vos-release journal` bricht an `package.json` ab (`link:` ↔ `workspace:*`). Manuell: in `~/vitalos/journal-app`
-(Branch `vitalos`) `origin/dev` mergen, `package.json` des `vitalos`-Stands behalten und nur die Änderungen aus dev
-übertragen (nicht komplett `--theirs`, sonst gehen die `@firebase/*`/`motion-*`-Deklarationen verloren),
+Normalfall: `pnpm run deploy:vos` bzw. `journal-release` (siehe `DEPLOYMENT.md`). Früher brach `vos-release journal` an
+`package.json` ab (`link:` ↔ `workspace:*`); die `link:`-Abhängigkeit gibt es in dev nicht mehr, ob der Abbruch damit
+weg ist, ist ungeprüft. Manuell: in `~/vitalos/journal-app` (Branch `vitalos`) `origin/dev` mergen, `package.json` des
+`vitalos`-Stands behalten und nur die Änderungen aus dev übertragen (dev hat die `@firebase/*`/`motion-*`-Deklarationen
+entfernt; ob der `vitalos`-Stand sie noch braucht, ist ungeprüft),
 `pnpm-workspace.yaml` entfernen (ein Lockfile-Konflikt tritt nicht mehr auf), bei neuen Abhängigkeiten `pnpm install --lockfile-only` im vitalos-Root (sonst scheitert das CI mit `--frozen-lockfile`), pushen, Pointer in vitalos committen.
 
 ## Door v2 · Google Tasks
@@ -182,7 +193,7 @@ Browser-Test von Door v2 (Layout, Hash-Wechsel) und Google Tasks gegen die echte
 
 ## Door v2 · Taskwarrior (TaskChampion-Sync)
 
-Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in `src/lib/door/source.js`; Wahl pro Nutzer in `fitness/{uid}/settings/door`).
+Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in `src/lib/door/source.js`; Wahl pro Nutzer in `journal/{uid}/settings/door`, alter Pfad `fitness/{uid}/settings/door` nur als Fallback).
 
 - **Client:** `src/lib/door/taskchampion.js` – Pull gegen den `taskchampion-sync-server` (Snapshot + Versionen), Replik in IndexedDB `tc-door`. Krypto: PBKDF2-SHA256 (600 000 It., Salt = 16-Byte-Client-ID), ChaCha20-Poly1305 (`@noble/ciphers`), Hülle `[1][nonce 12][ct+tag]`, AAD `[1][Version-ID]`; Klartext ist **zlib-komprimiertes JSON**, Versionen als `{"operations":[…]}`.
 - **Adapter:** `taskwarrior.door.js` – Potential = `+hot`/`+potential`, Plan: Quadrant aus `priority` (H=Q1, M=Q2, L=Q3, leer=Q4; `+q1…+q4` überschreibt), Door der Woche `+door`, Production = `+hit` mit `due` in der Woche, Profit aus `end` der letzten 8 Wochen. **Schreiben** per AddVersion (`commit()` in `taskchampion.js`: erst Pull, dann Push, bei 409 neu ziehen und wiederholen). Schreibende Funktionen: Hot-List anlegen/erledigen/löschen (`+hot`), Quadrant ändern (setzt `priority`, entfernt `+q*`), Door wählen (`+door` an den gewählten Task, von anderen offenen Tasks entfernt), Hits anlegen/abhaken (`+hit`, `due` = lokale Mitternacht). Versionen gehen als **unkomprimiertes** UTF-8-JSON raus (komprimiert → `task sync` panict mit Utf8Error); nur Snapshots sind zlib.

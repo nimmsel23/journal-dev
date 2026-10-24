@@ -1,3 +1,22 @@
+## 2026-10-24 — Aufräumen: Dependencies, Hash-Routing, Docs
+
+fuel-dev-Reste entfernt: 24 ungenutzte Dependencies (Fastify, SQLite, FullCalendar, zod, react-hook-form,
+12 einzelne `@firebase/*` u. a.), `zustand`, `store.js`, tote Workflows, das fuel-Dispatcher-Backup und alle
+fuel-Docs (AGENT, ARCHITECTURE, FIRESTORE, GEMINI, HOT, NUTRITION, TOOLLIST, `.claude/README.md`, fuel-Tickets).
+Das Bundle blieb byte-identisch, die entfernten Pakete waren nie darin. `pnpm-lock.yaml` ist getrackt und passt
+wieder zur `package.json` (CI nutzt `--frozen-lockfile`). Lokal ist `node_modules` jetzt ein Symlink auf
+`~/vitalos/node_modules` (835 MB gespart, kein `pnpm install` mehr im Repo).
+
+v2: `useSetting`-Hook ersetzt die handgebauten localStorage-Blöcke in `JournalV2View`; Habit-Pending/-Fehler
+laufen über `useMutation` (Ref-Guard bleibt gegen Doppelklick im selben Tick). URL-Hash ist jetzt die einzige
+Quelle für Tab/Modus/Datum (`hashRoute.js` + `useHashRoute`), `main.jsx` von 234 auf 159 Zeilen, alle
+bestehenden URLs bleiben gültig. `localToday()` nutzte UTC und sprang nach 22/23 Uhr auf den nächsten Tag,
+jetzt Ortszeit. CLAUDE.md, README, DEPLOYMENT und JOURNAL-V2 an den Ist-Zustand angepasst.
+
+Validierung: 24 Node-Tests, `build:firebase` und beide CI-Läufe grün. Headless-Thorium lädt `#v2/woche/…`,
+`#door2/plan`, `#focus`, `#tent2/…` und `#v2` in die richtige Ansicht. Klick-Navigation, Offline-Reload und
+Habit-Doppelklick sind nicht im Browser geprüft.
+
 ## 2026-10-22 — Habits v2 vervollständigt
 
 Bearbeiten von Name/Core4-Kategorie/Frequenz, Tagesraster-Korrekturen,

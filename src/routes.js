@@ -8,7 +8,7 @@ export const TAB_CONFIG = [
     title: "Journal",
     Icon: NotebookPen,
     View: lazy(() => import("./views/JournalVosView.jsx")),
-    getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user }),
+    getProps: (ctx) => ({ date: ctx.date, onDateChange: ctx.setDate, user: ctx.user }),
   },
   {
     // Hash-Alias: #v2 (siehe main.jsx HASH_ALIASES). Rendert ohne App-Header.
@@ -18,7 +18,7 @@ export const TAB_CONFIG = [
     Icon: NotebookPen,
     bare: true,
     View: lazy(() => import("./views/v2/JournalV2View.jsx")),
-    getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user, mode: ctx.v2Mode, onModeChange: ctx.setV2Mode }),
+    getProps: (ctx) => ({ date: ctx.date, onDateChange: ctx.setDate, user: ctx.user, mode: ctx.mode, onModeChange: ctx.setMode }),
   },
   {
     // Hash-Alias: #door2 (Modus: #door2/plan). Rendert ohne App-Header.
@@ -28,7 +28,7 @@ export const TAB_CONFIG = [
     Icon: DoorOpen,
     bare: true,
     View: lazy(() => import("./views/door/v2/DoorV2View.jsx")),
-    getProps: (ctx) => ({ user: ctx.user, mode: ctx.doorMode, onModeChange: ctx.setDoorMode }),
+    getProps: (ctx) => ({ user: ctx.user, mode: ctx.mode, onModeChange: ctx.setMode }),
   },
   {
     // Hash-Alias: #game2/<fire|focus|freedom|frame|voice> (Kurzformen #fire … #voice). Rendert ohne App-Header.
@@ -38,7 +38,7 @@ export const TAB_CONFIG = [
     Icon: Sparkles,
     bare: true,
     View: lazy(() => import("./views/game/GameV2View.jsx")),
-    getProps: (ctx) => ({ user: ctx.user, mode: ctx.gameMode, onModeChange: ctx.setGameMode }),
+    getProps: (ctx) => ({ user: ctx.user, mode: ctx.mode, onModeChange: ctx.setMode }),
   },
   {
     // Hash-Alias: #tent2 (optional #tent2/<datum>). Rendert ohne App-Header.
@@ -48,7 +48,7 @@ export const TAB_CONFIG = [
     Icon: Sparkles,
     bare: true,
     View: lazy(() => import("./views/tent/TentV2View.jsx")),
-    getProps: (ctx) => ({ user: ctx.user, date: ctx.activeDate, onDateChange: ctx.setActiveDate }),
+    getProps: (ctx) => ({ user: ctx.user, date: ctx.date, onDateChange: ctx.setDate }),
   },
   {
     key: "ai-log",
@@ -56,7 +56,7 @@ export const TAB_CONFIG = [
     title: "AI Freihand Logging",
     Icon: Sparkles,
     View: lazy(() => import("./views/AiLogVosView.jsx")),
-    getProps: (ctx) => ({ date: ctx.activeDate, onDateChange: ctx.setActiveDate, user: ctx.user }),
+    getProps: (ctx) => ({ date: ctx.date, onDateChange: ctx.setDate, user: ctx.user }),
   },
   {
     key: "door",

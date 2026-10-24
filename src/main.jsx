@@ -10,7 +10,7 @@ import { TAB_CONFIG } from "./routes.js";
 import TabContent from "./components/TabContent.jsx";
 import { IosInstallHint } from "./components/IosInstallHint.jsx";
 import { InstallPromptHandler } from "./components/InstallPromptHandler.jsx";
-import { useApp } from "./store.js";
+import { useHashRoute } from "./lib/useHashRoute.js";
 import { watchAuth, signIn, signOut, getUid } from "@journal-db";
 // Initialize Firebase (sets window.__firebaseAuth, window.__firebaseDb, etc.)
 import "./lib/firebase.js";
@@ -18,48 +18,6 @@ import "./lib/firebase.js";
 import UpdateManager from "./components/UpdateManager.jsx";
 
 const qc = new QueryClient();
-
-function localToday() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-// Kurze Hash-Präfixe → Tab-Key (#v2, #v2/today, #v2/2026-10-17)
-const HASH_ALIASES = { v2: "journal-v2", door2: "door-v2", game2: "game-v2", tent2: "tent-v2" };
-const V2_MODES = ["tag", "woche", "monat", "habits"];
-const DOOR_MODES = ["potential", "plan", "production", "profit"]; // #door2/plan
-const GAME_DEFAULT = import.meta.env.VITE_DEFAULT_GAME_MODE || "fire";
-const GAME_MODES = ["fire", "focus", "freedom", "frame", "voice"]; // #game2/focus, Kurzform #focus
-const HASH_ALIASES_REVERSE = Object.fromEntries(Object.entries(HASH_ALIASES).map(([k, v]) => [v, k]));
-
-function parseHashState() {
-  const raw = window.location.hash.replace(/^#\/?/, "");
-  if (!raw) return { tab: null, date: null };
-  const parts = raw.split("/");
-  if (GAME_MODES.includes(parts[0])) parts.unshift("game2"); // #fire → #game2/fire
-  const rawTab = parts[0] || null;
-  const tab = rawTab ? (HASH_ALIASES[rawTab] ?? rawTab) : null;
-  // v2 hat einen optionalen Modus-Teil: #v2/woche/2026-10-17
-  let mode = null;
-  if (tab === "journal-v2" && V2_MODES.includes(parts[1])) mode = parts.splice(1, 1)[0];
-  if (tab === "door-v2" && DOOR_MODES.includes(parts[1])) mode = parts.splice(1, 1)[0];
-  if (tab === "game-v2" && GAME_MODES.includes(parts[1])) mode = parts.splice(1, 1)[0];
-  const rawDate = parts[1] ?? null;
-  if (!tab) return { tab: null, date: null, mode };
-  if (!rawDate) return { tab, date: null, mode };
-  if (rawDate === "today") return { tab, date: localToday(), mode };
-  if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return { tab, date: rawDate, mode };
-  return { tab, date: null, mode };
-}
-
-function buildHashState(rawTab, date, mode = "tag") {
-  const tab = HASH_ALIASES_REVERSE[rawTab] ?? rawTab;
-  if (!tab) return "#";
-  if (rawTab === "game-v2") return mode && mode !== GAME_DEFAULT ? `#${tab}/${mode}` : `#${tab}`; // kein Datum
-  if (rawTab === "door-v2") return mode && mode !== "potential" ? `#${tab}/${mode}` : `#${tab}`; // kein Datum
-  const prefix = rawTab === "journal-v2" && mode !== "tag" ? `${tab}/${mode}` : tab;
-  if (!date) return `#${prefix}`;
-  return `#${prefix}/${date === localToday() ? "today" : date}`;
-}
 
 if (typeof window !== "undefined") {
   window.journalDebug = {
@@ -70,10 +28,8 @@ if (typeof window !== "undefined") {
 }
 
 function App() {
-  const { activeTab, setActiveTab, activeDate, setActiveDate, v2Mode, setV2Mode } = useApp();
+  const { tab: activeTab, mode, date, setDate, setMode, navigate } = useHashRoute();
   const [user, setUser] = React.useState(null);
-  const [doorMode, setDoorMode] = React.useState("potential");
-  const [gameMode, setGameMode] = React.useState(GAME_DEFAULT);
 
   // Auth-Status bekannt → Splash (index.html) ausblenden; Fallback nach 2,5 s
   React.useEffect(() => {
@@ -88,37 +44,6 @@ function App() {
       off?.();
     };
   }, []);
-
-  // URL Hashing for Tab + Datum
-  React.useEffect(() => {
-    const handleHashChange = () => {
-      const { tab, date, mode } = parseHashState();
-      if (tab && TAB_CONFIG.some((t) => t.key === tab)) {
-        setActiveTab(tab);
-      }
-      if (tab === "journal-v2") setV2Mode(mode ?? "tag");
-      if (tab === "door-v2") setDoorMode(mode ?? "potential");
-      if (tab === "game-v2") setGameMode(mode ?? GAME_DEFAULT);
-      if (date) {
-        setActiveDate(date);
-      }
-    };
-
-    // Initial check
-    handleHashChange();
-
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, [setActiveDate, setActiveTab, setV2Mode]);
-
-  React.useEffect(() => {
-    if (activeTab) {
-      const nextHash = buildHashState(activeTab, activeDate, activeTab === "door-v2" ? doorMode : activeTab === "game-v2" ? gameMode : v2Mode);
-      if (window.location.hash !== nextHash) {
-        window.location.hash = nextHash;
-      }
-    }
-  }, [activeDate, activeTab, v2Mode, doorMode, gameMode]);
 
   const isCloud = window.location.hostname.includes("web.app") || window.location.hostname.includes("firebaseapp.com");
 
@@ -147,7 +72,7 @@ function App() {
     }
   };
 
-  const tabCtx = { activeDate, setActiveDate, setActiveTab, user, v2Mode, setV2Mode, doorMode, setDoorMode, gameMode, setGameMode };
+  const tabCtx = { user, date, setDate, mode, setMode };
 
   // "bare"-Tabs (z.B. Journal v2) bringen ihr eigenes Layout mit: kein App-Header.
   if (activeTabConfig?.bare) {
@@ -190,7 +115,7 @@ function App() {
               <motion.button
                 whileTap={{ scale: 0.96 }}
                 key={key}
-                onClick={() => setActiveTab(key)}
+                onClick={() => navigate({ tab: key })}
                 className={twMerge(
                   "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition",
                   activeTab === key

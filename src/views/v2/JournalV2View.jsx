@@ -3,7 +3,7 @@
 // Nutzt dieselben Datenquellen wie die v1-Timeline (@journal-db), schreibt
 // aber nur: Journal-Einträge (addDoc) und Habit-Records (recordHabit).
 import { useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, addWeeks, format, getDayOfYear, getISOWeek, isLeapYear, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import * as db from "@journal-db";
@@ -83,9 +83,13 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const [, habitRangeEnd] = rangeFor(mode === "monat" ? "monat" : "woche", day);
   const habitTo = iso(habitRangeEnd);
   const habitKey = ["jv2-habits", uid, habitFrom, habitTo];
-  const [habitPending, setHabitPending] = useState(false);
   const habitLock = useRef(false);
-  const [habitError, setHabitError] = useState("");
+  const habitMutation = useMutation({
+    mutationFn: (action) => action(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["jv2-habits", uid] }),
+  });
+  const habitPending = habitMutation.isPending;
+  const habitError = habitMutation.isError ? (habitMutation.error?.message || "Habit konnte nicht gespeichert werden.") : "";
   const habits = useQuery({
     queryKey: habitKey,
     enabled: !!uid,
@@ -94,19 +98,14 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   });
   const habitAction = async (action) => {
     if (!uid || habitLock.current) return false;
-    habitLock.current = true;
-    setHabitPending(true);
-    setHabitError("");
+    habitLock.current = true; // synchron: isPending springt erst nach dem nächsten Render um
     try {
-      await action();
-      await qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
+      await habitMutation.mutateAsync(action);
       return true;
-    } catch (error) {
-      setHabitError(error?.message || "Habit konnte nicht gespeichert werden.");
-      return false;
+    } catch {
+      return false; // Fehler steht in habitMutation.error
     } finally {
       habitLock.current = false;
-      setHabitPending(false);
     }
   };
 
@@ -291,8 +290,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           </div>
         )}
         {mode === "woche" && <WeekView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
-        {mode === "habits" && uid && <HabitsView date={date} today={db.localToday()} habits={habits.data || []} onToggle={toggleHabit} onAdd={addNew} onUpdate={editHabit} onArchive={archive} onRestore={restore} pending={habitPending} loading={habits.isPending} error={habitError || (habits.isError ? "Habits konnten nicht geladen werden." : "")} onRetry={() => { setHabitError(""); habits.refetch(); }} />}
-        {mode !== "habits" && (habitError || habits.isError) && <div className="jv2-empty" role="alert">{habitError || "Habits konnten nicht geladen werden."} <button type="button" className="jv2-link" onClick={() => { setHabitError(""); habits.refetch(); }}>Erneut laden</button></div>}
+        {mode === "habits" && uid && <HabitsView date={date} today={db.localToday()} habits={habits.data || []} onToggle={toggleHabit} onAdd={addNew} onUpdate={editHabit} onArchive={archive} onRestore={restore} pending={habitPending} loading={habits.isPending} error={habitError || (habits.isError ? "Habits konnten nicht geladen werden." : "")} onRetry={() => { habitMutation.reset(); habits.refetch(); }} />}
+        {mode !== "habits" && (habitError || habits.isError) && <div className="jv2-empty" role="alert">{habitError || "Habits konnten nicht geladen werden."} <button type="button" className="jv2-link" onClick={() => { habitMutation.reset(); habits.refetch(); }}>Erneut laden</button></div>}
         {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
         {!uid && mode !== "tag" && (
           <div className="jv2-empty">

@@ -17,6 +17,7 @@ import { analyzeSmartJournal } from "../../lib/smartJournalLogger.js";
 import { applySmartAnalysis } from "../../lib/smartJournalApply.js";
 import { addHabit, getHabitsRange, setHabitArchived, updateHabit } from "./habitsDb.js";
 import { extractTags, timeStr } from "../../components/Journal/journalUtils";
+import { asBool, useSetting } from "../../lib/useSetting.js";
 import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "./gcal.js";
 import "./journal-v2.css";
 
@@ -59,17 +60,9 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   }, []);
   const [draft, setDraft] = useState("");
   // Timeline-Raster (Drag auf die versteckte Timeline): 60 / 30 / 15 Minuten
-  const [grain, setGrainState] = useState(() => {
-    try { return [60, 30, 15].includes(Number(localStorage.getItem("jv2:grain"))) ? Number(localStorage.getItem("jv2:grain")) : 30; } catch { return 30; }
-  });
-  const setGrain = (g) => {
-    setGrainState(g);
-    try { localStorage.setItem("jv2:grain", String(g)); } catch {}
-  };
+  const [grain, setGrain] = useSetting("jv2:grain", 30, (v) => ([60, 30, 15].includes(Number(v)) ? Number(v) : undefined));
   // Smart Logger: Freitext → Vertex-Analyse → Vorschau → Übernehmen (Journal, Mahlzeiten, Wasser, Habits)
-  const [smart, setSmart] = useState(() => {
-    try { return localStorage.getItem("jv2:smart") === "1"; } catch { return false; }
-  });
+  const [smart, setSmart] = useSetting("jv2:smart", false, asBool);
   const [analysis, setAnalysis] = useState(null);
   const [smartMsg, setSmartMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -129,14 +122,10 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const [calOn, setCalOn] = useState(() => calendarConnected());
   const [calMsg, setCalMsg] = useState("");
   // Standard: nur Fire Map; „alle“ zeigt jeden in Google ausgewählten Kalender
-  const [calAll, setCalAll] = useState(() => {
-    try { return localStorage.getItem("jv2:cal-all") === "1"; } catch { return false; }
-  });
+  const [calAll, setCalAll] = useSetting("jv2:cal-all", false, asBool);
   const toggleCalAll = () => {
-    const next = !calAll;
-    setCalAll(next);
+    setCalAll(!calAll);
     setCalMsg("");
-    try { localStorage.setItem("jv2:cal-all", next ? "1" : "0"); } catch {}
   };
   const inputRef = useRef(null);
   const evFrom = mode === "tag" ? day : rangeFrom;
@@ -185,11 +174,9 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
 
   const toggleSmart = () => {
-    const next = !smart;
-    setSmart(next);
+    setSmart(!smart);
     setAnalysis(null);
     setSmartMsg("");
-    try { localStorage.setItem("jv2:smart", next ? "1" : "0"); } catch {}
   };
 
   const analyze = async () => {

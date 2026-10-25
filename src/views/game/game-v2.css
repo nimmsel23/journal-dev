@@ -18,3 +18,9 @@
 .gv2-frame > summary span { font-family: var(--mono); font-size: 12px; opacity: .65; }
 .gv2-frame[open] > summary { background: var(--ink); color: var(--p); }
 .gv2-views button { text-align: center; padding: 10px 2px; }
+
+.gv2-mandel { position: fixed; inset: 0; z-index: 1000; background: #000; display: grid; }
+.gv2-mandel canvas { width: 100%; height: 100%; display: block; }
+.gv2-mandel-ring { position: absolute; inset: 0; pointer-events: none; }
+.gv2-mandel-t { position: absolute; left: 0; right: 0; bottom: max(24px, env(safe-area-inset-bottom)); text-align: center; color: #fff; font: 600 clamp(28px, 8vw, 56px)/1 system-ui, sans-serif; text-shadow: 0 2px 12px #000; pointer-events: none; }
+.gv2-mandel-x { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(0,0,0,.45); color: #fff; font-size: 20px; }

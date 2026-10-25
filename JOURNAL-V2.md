@@ -270,3 +270,13 @@ Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste 
   parallele Bedienung und werden erst nach bestätigtem Schreiben übernommen.
 - In Habits über den eingebauten JournalAppWrapper und den Einstieg „Habits v2“.
   Eingebettete Links bleiben beim Host; standalone bleiben #door2/#journal gültig.
+
+## Offline-first (Game, Voice, Journal-Schreiben)
+
+- **Schreiben ist lokal fertig**: Firestore-Writes werden nicht mehr awaited (die Promise löst erst nach Server-Bestätigung auf und hängt offline). `lib/offline.js` `track()` zählt sie, schluckt Fehler und meldet sie über `useSyncState()`; `saveJournal`/`updateJournal`/`deleteJournal`, `saveFrameAnswer`, `saveMapAnswer` liefern `synced` bzw. eine Promise<boolean>.
+- **Lesen ist cache-first**: Frame/Freedom/Focus hören per `onSnapshot` (`useLiveSnap`, `watchFrames`, `watchMapDocs`) – sofort lokaler Stand, Server-Änderungen kommen im Hintergrund nach. react-query läuft global mit `networkMode: "offlineFirst"`.
+- **Taskwarrior (Fire)**: `taskchampion.js` hält eine Outbox (`state.pending` in IndexedDB). `commit()` merkt Operationen vor und zeigt sie sofort (`tasks()` = Replik + Outbox), `flush()` zieht neue Versionen und sendet die Outbox (409 → neu ziehen). `onChange()` meldet Änderungen der Replik an die Ansichten.
+- **Hintergrund-Sync**: `startBackgroundSync` (main.jsx) leert die Outbox beim Start, bei `online`, beim Sichtbarwerden und alle 60 s. Echtes Background-Sync bei geschlossener App (SW) gibt es nicht.
+- **Kalender (Fire Map)**: letzter Stand der Woche liegt in localStorage und bleibt offline sichtbar.
+- **SyncBadge** (GameV2View) zeigt Offline-Status, offene Änderungen und Schreibfehler.
+- Grenze: die allererste Taskwarrior-Replik und Google-Login/Kalender-Token brauchen einmal Netz.

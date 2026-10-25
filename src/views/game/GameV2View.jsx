@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import GameMapPanel, { MAPS } from "./GameMapPanel.jsx";
 import VoicePanel from "./VoicePanel.jsx";
+import SyncBadge from "../../components/SyncBadge.jsx";
 import "../door/v2/door-v2.css";
 import "./game-v2.css";
 
@@ -42,6 +43,7 @@ export default function GameV2View({ user, mode = "fire", onModeChange = () => {
             <span><b>{MODES[idx][1]}</b><br />{SUB[current]}</span>
           </div>
         </div>
+        <SyncBadge />
         {current === "voice" ? <VoicePanel user={user} /> : <GameMapPanel key={current} map={current} uid={user?.uid ?? null} />}
         {!embedded && (
           <div className="dv2-foot">

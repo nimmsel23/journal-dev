@@ -1,8 +1,9 @@
 // frameDb.js — Frame Map je Domain im Firestore des Nutzers: journal/{uid}/frame/{domain}.
 // Felder = YAML-Schlüssel aus ~/aos/game/frame/cli.py (FRAME_QUESTIONS), damit Abgleich mit dem Pillar möglich bleibt.
 // Rules: `match /journal/{uid}/{document=**}` in ~/vitalos/firestore.rules (projektglobal, manuell deployen).
-import { collection, doc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase.js";
+import { track } from "../../lib/offline.js";
 
 export const FRAME_DOMAINS = ["body", "being", "balance", "business"];
 export const FRAME_QUESTIONS = [
@@ -13,14 +14,23 @@ export const FRAME_QUESTIONS = [
   ["what_is_not_working_about_where_i_am", "What is not working about where I am?"],
 ];
 
-/** → {body: {questions:{…}}, …} (fehlende Domains = leer) */
-export async function fetchFrames(uid) {
-  const snap = await getDocs(collection(db, "journal", uid, "frame"));
+const toFrames = (snap) => {
   const out = Object.fromEntries(FRAME_DOMAINS.map((d) => [d, { questions: {} }]));
   snap.forEach((d) => { if (out[d.id]) out[d.id] = { questions: {}, ...d.data() }; });
   return out;
+};
+
+/** → {body: {questions:{…}}, …} (fehlende Domains = leer) */
+export async function fetchFrames(uid) {
+  return toFrames(await getDocs(collection(db, "journal", uid, "frame")));
 }
 
-export async function saveFrameAnswer(uid, domain, key, value) {
-  await setDoc(doc(db, "journal", uid, "frame", domain), { domain, questions: { [key]: value }, updated: serverTimestamp() }, { merge: true });
+/** Cache-first: sofort der lokale Stand (auch offline), danach Server-Änderungen im Hintergrund. */
+export function watchFrames(uid, onNext, onError) {
+  return onSnapshot(collection(db, "journal", uid, "frame"), (snap) => onNext(toFrames(snap)), onError);
+}
+
+/** Schreibt lokal und gleicht im Hintergrund ab → Promise<boolean> (true = vom Server bestätigt). */
+export function saveFrameAnswer(uid, domain, key, value) {
+  return track(setDoc(doc(db, "journal", uid, "frame", domain), { domain, questions: { [key]: value }, updated: serverTimestamp() }, { merge: true }));
 }

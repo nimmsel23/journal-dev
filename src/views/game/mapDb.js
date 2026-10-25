@@ -3,8 +3,9 @@
 // Felder/Fragen stammen aus ~/aos/game/maps/store.py und freedom/model.py (Quarterly ist dort nicht definiert →
 // hier analog zum Annual Game ergänzt). Rules: journal/{uid}/** (Besitzer).
 import { addMonths, addQuarters, addWeeks, addYears, format, getISOWeek, getISOWeekYear, getQuarter, startOfISOWeek, startOfMonth, startOfQuarter } from "date-fns";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase.js";
+import { track } from "../../lib/offline.js";
 
 export const DOMAINS = ["body", "being", "balance", "business"];
 
@@ -93,6 +94,18 @@ export async function fetchMapDocs(uid, kind, view, period) {
   const snaps = await Promise.all(DOMAINS.map((d) => getDoc(ref(uid, kind, view, period, d))));
   return Object.fromEntries(DOMAINS.map((d, i) => [d, snaps[i].exists() ? snaps[i].data() : { answers: {} }]));
 }
-export async function saveMapAnswer(uid, kind, view, period, domain, key, value) {
-  await setDoc(ref(uid, kind, view, period, domain), { kind, view, period, domain, answers: { [key]: value }, updated: serverTimestamp() }, { merge: true });
+
+/** Cache-first: je Domain ein Listener; onNext bekommt nach jeder Änderung das Gesamtobjekt wie fetchMapDocs. */
+export function watchMapDocs(uid, kind, view, period, onNext, onError) {
+  const cur = Object.fromEntries(DOMAINS.map((d) => [d, undefined]));
+  const offs = DOMAINS.map((d) => onSnapshot(ref(uid, kind, view, period, d), (snap) => {
+    cur[d] = snap.exists() ? snap.data() : { answers: {} };
+    if (DOMAINS.every((x) => cur[x] !== undefined)) onNext({ ...cur });
+  }, onError));
+  return () => offs.forEach((off) => off());
+}
+
+/** Schreibt lokal und gleicht im Hintergrund ab → Promise<boolean>. */
+export function saveMapAnswer(uid, kind, view, period, domain, key, value) {
+  return track(setDoc(ref(uid, kind, view, period, domain), { kind, view, period, domain, answers: { [key]: value }, updated: serverTimestamp() }, { merge: true }));
 }

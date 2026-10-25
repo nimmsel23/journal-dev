@@ -13,8 +13,9 @@
 
 import { localToday } from "./core.js";
 import { db, auth } from "../firebase.js";
+import { track } from "../offline.js";
 import {
-  collection, doc, addDoc, setDoc, getDoc, getDocs, deleteDoc,
+  collection, doc, setDoc, getDoc, getDocs, deleteDoc,
   query, where, orderBy, limit as fbLimit, serverTimestamp,
 } from "firebase/firestore";
 
@@ -135,10 +136,12 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
   };
   if (startDate) docData.startDate = startDate;
   if (endDate) docData.endDate = endDate;
-  const ref = await addDoc(journalCol(userId), docData);
+  // Offline-first: lokal sofort fertig, der Server-Abgleich läuft im Hintergrund (`synced` löst nach Bestätigung auf).
+  const ref = doc(journalCol(userId));
+  const synced = track(setDoc(ref, docData));
   void hotToPotential(userId, ref.id, content, tags);
   void profitReview(userId, ref.id, content, tags, date);
-  return { id: ref.id, date, text: content, time, startDate, endDate };
+  return { id: ref.id, date, text: content, time, startDate, endDate, synced };
 }
 
 export async function updateJournal(id, text, opts = {}) {
@@ -151,25 +154,25 @@ export async function updateJournal(id, text, opts = {}) {
   patch.startDate = startDate || null;
   patch.endDate = endDate || null;
   if (tags) patch.tags = tags;
-  await setDoc(doc(journalCol(userId), id), patch, { merge: true });
+  const synced = track(setDoc(doc(journalCol(userId), id), patch, { merge: true }));
   if (tags) { void hotToPotential(userId, id, content, tags); void profitReview(userId, id, content, tags); }
-  return { ok: true, id, text: content, startDate, endDate, tags };
+  return { ok: true, id, text: content, startDate, endDate, tags, synced };
 }
 
 // Uhrzeit eines Eintrags ändern (Journal v2: Drag auf die Timeline). `time` ist
 // ein ISO-String (UTC), `date` bleibt unverändert.
 export async function setJournalTime(id, isoTime) {
   const userId = await uid();
-  await setDoc(doc(journalCol(userId), id), { time: isoTime, updated_at: serverTimestamp() }, { merge: true });
-  return { ok: true, id, time: isoTime };
+  const synced = track(setDoc(doc(journalCol(userId), id), { time: isoTime, updated_at: serverTimestamp() }, { merge: true }));
+  return { ok: true, id, time: isoTime, synced };
 }
 
 export async function deleteJournal(id) {
   const userId = await uid();
-  await deleteDoc(doc(journalCol(userId), id));
+  const synced = track(deleteDoc(doc(journalCol(userId), id)));
   // zugehörige Profit-Review (+profit/+review/+p) mit entfernen – best effort
   import("../door/profitFromJournal.js").then((m) => m.removeProfitReview(userId, id)).catch(() => {});
-  return { ok: true, id };
+  return { ok: true, id, synced };
 }
 
 // ── HabitJournal Timeline-Reads ───────────────────────────────────────────────

@@ -10,6 +10,7 @@ import { chacha20poly1305 } from "@noble/ciphers/chacha.js";
 import { unzlibSync } from "fflate";
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db as fdb, auth } from "../firebase.js";
+import { setOutbox } from "../offline.js";
 
 const NIL = "00000000-0000-0000-0000-000000000000";
 const STALE_MS = 60_000;
@@ -85,10 +86,10 @@ export const saveConfig = async ({ url, clientId, secret }) => {
   persist();
   await remotePut(cfg);
   try { await put("config", cfg); } catch { /* Spiegel in localStorage genügt */ }
-  if (!same) { await del("state"); mem = null; }
+  if (!same) { await del("state"); mem = null; setOutbox(0); }
   return cfg;
 };
-export const clearConfig = async () => { keyCache = null; mem = null; lsPut(null); remoteTried = true; await remoteDel(); await del("config"); await del("state"); };
+export const clearConfig = async () => { keyCache = null; mem = null; setOutbox(0); lsPut(null); remoteTried = true; await remoteDel(); await del("config"); await del("state"); };
 
 // ── Krypto ──
 const uuidBytes = (id) => Uint8Array.from(id.replace(/-/g, "").match(/../g).map((h) => parseInt(h, 16)));
@@ -127,8 +128,10 @@ async function open(cfg, versionId, buf) {
 }
 
 // ── HTTP ──
+const isOffline = () => typeof navigator !== "undefined" && navigator.onLine === false;
 async function call(cfg, path) {
   let res;
+  if (isOffline()) throw new Error("tc-network");
   try { res = await fetch(`${cfg.url}/v1/client/${path}`, { headers: { "X-Client-Id": cfg.clientId } }); }
   catch { throw new Error("tc-network"); } // offline, CORS oder Proxy down
   return res;
@@ -152,8 +155,17 @@ function applyOps(tasks, ops) {
   }
 }
 
-let mem = null; // {versionId, tasks, syncedAt}
-const state = async () => (mem ||= (await get("state")) || { versionId: NIL, tasks: {}, syncedAt: 0 });
+let mem = null; // {versionId, tasks, syncedAt, pending}  tasks = Stand des Servers, pending = lokale, noch nicht gesendete Operationen
+const state = async () => {
+  if (!mem) { mem = (await get("state")) || { versionId: NIL, tasks: {}, syncedAt: 0 }; mem.pending ||= []; setOutbox(mem.pending.length); }
+  return mem;
+};
+
+// Änderungen der lokalen Replik (Sync, Commit) → Ansichten laden neu, ohne Netz abzuwarten
+const listeners = new Set();
+const notify = () => listeners.forEach((f) => { try { f(); } catch { /* Listener-Fehler egal */ } });
+export const onChange = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
+const clone = (o) => (typeof structuredClone === "function" ? structuredClone(o) : JSON.parse(JSON.stringify(o)));
 
 async function pullSnapshot(cfg, st) {
   const res = await call(cfg, "snapshot");
@@ -188,20 +200,23 @@ export function sync() {
     }
     st.syncedAt = Date.now();
     await put("state", st);
+    notify();
     return st;
   })().finally(() => { running = null; }));
 }
 
-/** Tasks als Array (Replik); synct, wenn älter als 60 s oder force. */
+/** Tasks als Array: lokale Replik plus noch nicht gesendete Änderungen. Antwortet sofort aus dem Speicher; ein
+ *  Abgleich mit dem Server läuft im Hintergrund (`onChange` meldet das Ergebnis). Nur die allererste Replik braucht Netz. */
 export async function tasks({ force = false } = {}) {
   const cfg = await getConfig();
   if (!cfg) throw new Error("tc-unconfigured");
   const st = await state();
-  if (force || Date.now() - st.syncedAt > STALE_MS) {
-    // offline/Proxy down: mit der gespeicherten Replik weiterarbeiten statt neu zu verlangen
-    try { await sync(); } catch (e) { if (st.versionId === NIL || e?.message !== "tc-network") throw e; }
-  }
-  return Object.entries((await state()).tasks).map(([uuid, t]) => ({ uuid, ...t }));
+  if (st.versionId === NIL) await sync(); // noch keine Replik: einmal laden (offline → tc-network)
+  else if (force) { try { await flush(); } catch (e) { if (e?.message !== "tc-network") throw e; } }
+  else if (Date.now() - st.syncedAt > STALE_MS) flush().catch(() => {});
+  const view = clone((await state()).tasks);
+  applyOps(view, (await state()).pending);
+  return Object.entries(view).map(([uuid, t]) => ({ uuid, ...t }));
 }
 
 export const lastSync = async () => (await state()).syncedAt || 0;
@@ -230,29 +245,48 @@ export function newTaskOps(description, { tags = [], props = {} } = {}) {
   return { uuid, ops: [{ Create: { uuid } }, ...editOps({ uuid }, all)] };
 }
 
-/** Operationen an den Server senden (vorher Pull; bei Konflikt 409 neu ziehen und wiederholen). */
+/** Änderung lokal vormerken (sofort sichtbar, offline-fähig) und im Hintergrund an den Server senden. */
 export async function commit(ops) {
   if (!ops.length) return;
-  const cfg = await getConfig();
-  if (!cfg) throw new Error("tc-unconfigured");
-  for (let attempt = 0; attempt < 5; attempt++) {
+  if (!(await getConfig())) throw new Error("tc-unconfigured");
+  const st = await state();
+  st.pending.push(...ops);
+  await put("state", st);
+  setOutbox(st.pending.length);
+  notify();
+  flush().catch(() => {}); // offline/Server down: bleibt in der Warteschlange, nächster Anlass sendet erneut
+}
+
+let flushing = null;
+/** Neue Versionen holen, danach alle vorgemerkten Operationen senden (bei Konflikt 409 neu ziehen und wiederholen). */
+export function flush() {
+  return (flushing ||= (async () => {
+    const cfg = await getConfig();
+    if (!cfg) throw new Error("tc-unconfigured");
     await sync();
     const st = await state();
-    let res;
-    try {
-      res = await fetch(`${cfg.url}/v1/client/add-version/${st.versionId}`, {
-        method: "POST",
-        headers: { "X-Client-Id": cfg.clientId, "Content-Type": "application/vnd.taskchampion.history-segment" },
-        body: await seal(cfg, st.versionId, { operations: ops }),
-      });
-    } catch { throw new Error("tc-network"); }
-    if (res.status === 409) continue; // jemand war schneller → neu ziehen, erneut senden
-    if (!res.ok) throw new Error(`tc-http-${res.status}`);
-    applyOps(st.tasks, ops);
-    st.versionId = res.headers.get("X-Version-Id");
-    st.syncedAt = Date.now();
-    await put("state", st);
-    return;
-  }
-  throw new Error("tc-conflict");
+    for (let attempt = 0; st.pending.length && attempt < 5; attempt++) {
+      const sent = st.pending.slice();
+      if (isOffline()) throw new Error("tc-network");
+      let res;
+      try {
+        res = await fetch(`${cfg.url}/v1/client/add-version/${st.versionId}`, {
+          method: "POST",
+          headers: { "X-Client-Id": cfg.clientId, "Content-Type": "application/vnd.taskchampion.history-segment" },
+          body: await seal(cfg, st.versionId, { operations: sent }),
+        });
+      } catch { throw new Error("tc-network"); }
+      if (res.status === 409) { await sync(); continue; } // jemand war schneller → neu ziehen, erneut senden
+      if (!res.ok) throw new Error(`tc-http-${res.status}`);
+      applyOps(st.tasks, sent);
+      st.pending = st.pending.slice(sent.length); // Änderungen, die während des Sendens dazukamen, bleiben stehen
+      st.versionId = res.headers.get("X-Version-Id");
+      st.syncedAt = Date.now();
+      await put("state", st);
+      setOutbox(st.pending.length);
+      notify();
+      attempt = -1; // erfolgreich: Rest (falls vorhanden) mit frischem Versuchszähler
+    }
+    if (st.pending.length) throw new Error("tc-conflict");
+  })().finally(() => { flushing = null; }));
 }

@@ -4,14 +4,15 @@
 //             hit_number 1–4); darunter übrige Strikes (überfällig/heute/Woche/+fire) + Termine aus Google Calendar „Fire Map“
 //   Focus / Freedom / Frame sind keine Tasklisten, sondern Map-Dokumente je Domain (MapDocsPanel, FrameCards).
 //   Frame   = Frame Map je Domain (Body / Being / Balance / Business), fünf Fragen in Firestore – keine Tasks
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, endOfISOWeek, format, startOfDay, startOfISOWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import * as tc from "../../lib/door/taskchampion.js";
 import TcSetup, { tcError } from "./TcSetup.jsx";
 import MapDocsPanel from "./MapDocsPanel.jsx";
-import { FRAME_DOMAINS, FRAME_QUESTIONS, fetchFrames, saveFrameAnswer } from "./frameDb.js";
+import { FRAME_DOMAINS, FRAME_QUESTIONS, saveFrameAnswer, watchFrames } from "./frameDb.js";
+import { useLiveSnap } from "../../lib/useLiveSnap.js";
 import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "../v2/gcal.js";
 
 export const MAPS = {
@@ -80,23 +81,41 @@ function FireCalendar() {
   const [on, setOn] = useState(() => calendarConnected());
   const [msg, setMsg] = useState("");
   const from = startOfISOWeek(new Date()), to = endOfISOWeek(new Date());
-  const q = useQuery({ queryKey: ["gv2-cal", format(from, "yyyy-MM-dd"), on], enabled: on, queryFn: () => fetchEvents(from, to), staleTime: 60_000, retry: false });
+  // Termine der Woche lokal vorhalten: offline (oder Token abgelaufen) bleibt der zuletzt geladene Stand sichtbar
+  const calKey = `gv2:cal:${format(from, "yyyy-MM-dd")}`;
+  const cached = () => { try { return JSON.parse(localStorage.getItem(calKey) || "null"); } catch { return null; } };
+  const q = useQuery({
+    queryKey: ["gv2-cal", format(from, "yyyy-MM-dd"), on], enabled: on, staleTime: 60_000, retry: false,
+    queryFn: async () => {
+      try {
+        const ev = await fetchEvents(from, to);
+        try { localStorage.setItem(calKey, JSON.stringify(ev)); } catch { /* Speicher voll/gesperrt */ }
+        return ev;
+      } catch (e) {
+        if (e?.message === "calendar-expired" || e?.message === "fire-calendar-missing") throw e;
+        const c = cached();
+        if (c) return c;
+        throw e;
+      }
+    },
+  });
+  const events = q.data ?? cached();
   const connect = async () => {
     setMsg("");
     try { await connectCalendar(); setOn(true); } catch (e) { setMsg(e?.message || "Verbinden fehlgeschlagen"); }
   };
   const expired = q.error?.message === "calendar-expired";
   const err = q.error && !expired ? (q.error.message === "fire-calendar-missing" ? "Kalender „Fire Map“ nicht gefunden." : q.error.message) : msg;
-  const evs = (q.data || []).filter((e) => !e.title.startsWith("[TW "));
-  const mirrored = (q.data || []).length - evs.length;
+  const evs = (events || []).filter((e) => !e.title.startsWith("[TW "));
+  const mirrored = (events || []).length - evs.length;
   const days = [...new Set(evs.map((e) => e.date))];
   return (
     <section>
-      <h4 className="dv2-sec">Kalender · Fire Map <span>{on && q.data ? evs.length : ""}</span></h4>
+      <h4 className="dv2-sec">Kalender · Fire Map <span>{events ? evs.length : ""}</span></h4>
       {(!on || expired) && <div className="dv2-src"><button type="button" className="dv2-link" onClick={connect}>{expired ? "Kalender neu verbinden" : "Google Kalender verbinden"}</button></div>}
       {on && !expired && <div className="dv2-src"><button type="button" className="dv2-link" onClick={() => { clearCalendarToken(); setOn(false); }}>Kalender trennen</button>{mirrored > 0 && <span>{mirrored} gespiegelte Tasks ausgeblendet</span>}</div>}
       {err && <div className="dv2-empty" role="alert">{err}</div>}
-      {on && !expired && q.data && evs.length === 0 && <div className="dv2-none" style={{ padding: "8px 14px" }}>Keine Termine diese Woche.</div>}
+      {on && !expired && events && evs.length === 0 && <div className="dv2-none" style={{ padding: "8px 14px" }}>Keine Termine diese Woche.</div>}
       {days.map((d) => (
         <div key={d}>
           {evs.filter((e) => e.date === d).map((e) => (
@@ -113,23 +132,18 @@ function FireCalendar() {
 
 /* Frame: je Domain die fünf Fragen (journal/{uid}/frame/{domain}), speichert beim Verlassen des Feldes. */
 function FrameCards({ uid }) {
-  const qc = useQueryClient();
-  const [err, setErr] = useState("");
-  const q = useQuery({ queryKey: ["gv2-frame", uid], enabled: !!uid, queryFn: () => fetchFrames(uid), staleTime: 30_000 });
+  const live = useLiveSnap(!!uid, (next, fail) => watchFrames(uid, next, fail), [uid]);
   if (!uid) return <div className="dv2-empty">Frame speichern braucht den Cloud-Login.</div>;
-  const save = async (domain, key, value, old) => {
-    if (value.trim() === (old || "").trim()) return;
-    setErr("");
-    try { await saveFrameAnswer(uid, domain, key, value.trim()); qc.invalidateQueries({ queryKey: ["gv2-frame", uid] }); }
-    catch (e) { setErr(e?.code === "permission-denied" ? "Keine Berechtigung für journal/… – Firestore-Rules noch nicht deployt." : e?.message || "Speichern fehlgeschlagen"); }
+  // lokal speichern, Abgleich im Hintergrund (Fehler zeigt die SyncBadge)
+  const save = (domain, key, value, old) => {
+    if (value.trim() !== (old || "").trim()) saveFrameAnswer(uid, domain, key, value.trim());
   };
   return (
     <section>
       <h4 className="dv2-sec">Frame Map</h4>
-      {err && <div className="dv2-empty" role="alert">{err}</div>}
-      {q.isError && <div className="dv2-empty" role="alert">{q.error?.code === "permission-denied" ? "Keine Berechtigung für journal/… – Firestore-Rules noch nicht deployt." : q.error?.message}</div>}
+      {live.error && <div className="dv2-empty" role="alert">{live.error.code === "permission-denied" ? "Keine Berechtigung für journal/… – Firestore-Rules noch nicht deployt." : live.error.message}</div>}
       {FRAME_DOMAINS.map((d) => {
-        const ans = q.data?.[d]?.questions || {};
+        const ans = live.data?.[d]?.questions || {};
         const filled = FRAME_QUESTIONS.filter(([k]) => (ans[k] || "").trim()).length;
         return (
           <details key={d} className="gv2-frame">
@@ -165,13 +179,15 @@ export default function GameMapPanel({ map, uid }) {
   useQuery({ queryKey: ["gv2-cfg"], queryFn: async () => { const c = await tc.getConfig(); setCfg(c || null); return c || null; }, staleTime: Infinity });
   const q = useQuery({ queryKey: ["gv2-tasks", map], queryFn: () => tc.tasks(), enabled: !!cfg && map === "fire", staleTime: 15_000 });
   const refresh = () => qc.invalidateQueries({ queryKey: ["gv2-tasks"] });
+  // Hintergrund-Sync oder lokale Änderung → Liste neu aus der lokalen Replik lesen
+  useEffect(() => tc.onChange(refresh), []); // eslint-disable-line react-hooks/exhaustive-deps
   const act = useMutation({
     mutationFn: (fn) => fn(),
     onSuccess: () => { setErr(""); refresh(); },
     onError: (e) => { setErr(tcError(e)); refresh(); },
   });
   const toggle = (t) => act.mutate(async () => {
-    const fresh = (await tc.tasks({ force: true })).find((x) => x.uuid === t.uuid);
+    const fresh = (await tc.tasks()).find((x) => x.uuid === t.uuid);
     if (!fresh) return;
     const now = tc.nowSecs();
     await tc.commit(tc.editOps(fresh, fresh.status === "completed" ? { status: "pending", end: null, modified: now } : { status: "completed", end: now, modified: now }));
@@ -207,7 +223,7 @@ export default function GameMapPanel({ map, uid }) {
     <>
       <div className="dv2-sum"><b>{doneN}/4</b><span>{door ? `Door: ${door.description}${door.domain ? ` · ${door.domain}` : ""}` : spec.hint}</span></div>
       <div className="dv2-src">
-        <button type="button" className="dv2-link" disabled={act.isPending} onClick={() => act.mutate(() => tc.sync())}>Sync</button>
+        <button type="button" className="dv2-link" disabled={act.isPending} onClick={() => act.mutate(() => tc.flush())}>Sync</button>
         {q.isFetching && <span>lädt …</span>}
       </div>
       {err && <div className="dv2-empty" role="alert">{err}</div>}

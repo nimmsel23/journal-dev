@@ -13,11 +13,22 @@ import { InstallPromptHandler } from "./components/InstallPromptHandler.jsx";
 import { useHashRoute } from "./lib/useHashRoute.js";
 import { watchAuth, signIn, signOut, getUid } from "@journal-db";
 // Initialize Firebase (sets window.__firebaseAuth, window.__firebaseDb, etc.)
-import "./lib/firebase.js";
+import { db as firestore } from "./lib/firebase.js";
+import { startBackgroundSync, track } from "./lib/offline.js";
+import { waitForPendingWrites } from "firebase/firestore";
+
+// Schreibzugriffe aus früheren Sitzungen, die noch beim Server anstehen, zählen als „offen“;
+// Taskwarrior-Outbox wird im Hintergrund geleert (Start, online, Tab sichtbar, alle 60 s).
+track(waitForPendingWrites(firestore));
+startBackgroundSync(async () => {
+  const tc = await import("./lib/door/taskchampion.js");
+  if (await tc.getConfig()) await tc.flush();
+});
 
 import UpdateManager from "./components/UpdateManager.jsx";
 
-const qc = new QueryClient();
+// offlineFirst: Queries laufen auch ohne Netz (lokaler Firestore-Cache/IndexedDB) statt zu pausieren
+const qc = new QueryClient({ defaultOptions: { queries: { networkMode: "offlineFirst" }, mutations: { networkMode: "offlineFirst" } } });
 
 if (typeof window !== "undefined") {
   window.journalDebug = {

@@ -61,6 +61,7 @@ function Step({ s, value, onChange }) {
 }
 function PauseStep({ s, label, value, onChange }) {
   const [left, setLeft] = useState(null);
+  const [show, setShow] = useState(true);
   useEffect(() => {
     if (left == null) return undefined;
     if (left <= 0) { setLeft(null); onChange(true); return undefined; }
@@ -70,11 +71,11 @@ function PauseStep({ s, label, value, onChange }) {
   return (
     <div className="gv2-step">{label}
       <div className="dv2-qs">
-        <button type="button" aria-pressed={!!value} disabled={left != null} onClick={() => (s.seconds ? setLeft(s.seconds) : onChange(true))}>
+        <button type="button" aria-pressed={!!value} disabled={left != null} onClick={() => (s.seconds ? (setShow(true), setLeft(s.seconds)) : onChange(true))}>
           {value ? "✓ erledigt" : left != null ? `${left} s …` : s.seconds ? `Pause starten (${s.seconds} s)` : "Erledigt"}
         </button>
       </div>
-      {left != null && <Mandelbrot seconds={s.seconds} />}
+      {left != null && show && <Mandelbrot seconds={s.seconds} left={left} onClose={() => setShow(false)} />}
     </div>
   );
 }

@@ -1,10 +1,11 @@
 // PauseViz — Vollbild-Visualisierung für die 30-s-Atem-Pause der Voice-Session.
-// Fünf Modi (Mandelbrot, Julia, Flow, Mandelbrot-Baum, Atemkreis) plus optionaler Atemring als Ebene darüber.
+// Sechs Modi (Buddhabrot, Mandelbrot, Julia, Flow, Mandelbrot-Baum, Atemkreis) plus optionaler Atemring als Ebene darüber.
 // Alles Canvas, kein Netzwerk, keine Abhängigkeit. Fraktale rendern klein und werden per CSS skaliert,
 // Flow/Baum/Atemkreis in Bildschirmauflösung. Tippen schließt (die Pause läuft weiter).
 import { useEffect, useRef } from "react";
 
 export const VIZ = [
+  { id: "buddha", label: "Buddhabrot" },
   { id: "mandelbrot", label: "Mandelbrot" },
   { id: "julia", label: "Julia" },
   { id: "flow", label: "Flow" },
@@ -170,7 +171,59 @@ function setupTree(canvas, vw, vh) {
   } };
 }
 
-const SETUP = { mandelbrot: lowRes(mandelbrot), julia: lowRes(julia), flow: setupFlow, tree: setupTree, breath: setupBreath };
+// Buddhabrot (Nebulabrot, RGB = Fluchtzeit <=30 / <=120 / <=480): statt "entkommt ein Punkt?" werden die Bahnen
+// aller entkommenden Punkte c aufsummiert. Um 90° gedreht sitzt eine meditierende Buddha-Figur im Bild; sie
+// baut sich über die Dauer der Pause aus dem Rauschen auf. Symmetrie an der reellen Achse: jede Bahn wird gespiegelt.
+function setupBuddha(canvas, vw, vh) {
+  const k = 260 / Math.min(vw, vh);
+  const w = Math.max(2, Math.round(vw * k)), h = Math.max(2, Math.round(vh * k));
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  const img = ctx.createImageData(w, h);
+  const N = w * h;
+  const R = new Uint32Array(N), G = new Uint32Array(N), B = new Uint32Array(N);
+  const MAX = 480, MIN = 10, L0 = 30, L1 = 120; // MIN: Schnellflüchter tragen nur Dunst bei
+  const ox = new Float32Array(MAX), oy = new Float32Array(MAX);
+  const inv = Math.min(w, h) / 2.9; // px je Einheit
+  let seed = (Math.random() * 4294967295) >>> 0 || 1;
+  const rand = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 4294967296; };
+  const sample = () => {
+    const cx = -2.1 + 2.8 * rand(), cy = 1.3 * rand();
+    const q = (cx - 0.25) * (cx - 0.25) + cy * cy;
+    if (q * (q + cx - 0.25) <= 0.25 * cy * cy) return;     // Hauptkardioide: entkommt nie
+    if ((cx + 1) * (cx + 1) + cy * cy <= 0.0625) return;   // Periode-2-Knospe
+    let x = 0, y = 0, n = 0;
+    while (n < MAX) {
+      const xt = x * x - y * y + cx; y = 2 * x * y + cy; x = xt;
+      ox[n] = x; oy[n] = y; n++;
+      if (x * x + y * y > 4) break;
+    }
+    if (n < MIN || x * x + y * y <= 4) return;              // nicht oder zu schnell entkommen -> verwerfen
+    for (let i = 0; i < n; i++) {
+      const py = Math.round(h / 2 + (ox[i] + 0.5) * inv);
+      if (py < 0 || py >= h) continue;
+      const dx = oy[i] * inv;
+      const a = Math.round(w / 2 + dx), b = Math.round(w / 2 - dx);
+      const add = (px) => { if (px < 0 || px >= w) return; const j = py * w + px; if (n <= L0) R[j]++; if (n <= L1) G[j]++; B[j]++; };
+      add(a); add(b);
+    }
+  };
+  const d = img.data;
+  return { interval: 33, frame: () => {
+    const t1 = performance.now() + 14;
+    do { for (let i = 0; i < 200; i++) sample(); } while (performance.now() < t1);
+    let mr = 1, mg = 1, mb = 1;
+    for (let i = 0; i < N; i++) { if (R[i] > mr) mr = R[i]; if (G[i] > mg) mg = G[i]; if (B[i] > mb) mb = B[i]; }
+    const sr = 1 / (mr * 0.45), sg = 1 / (mg * 0.45), sb = 1 / (mb * 0.45);
+    const br = mr * 0.03, bg = mg * 0.03, bb = mb * 0.03; // Schwarzpunkt gegen den Dunst
+    for (let i = 0, o = 0; i < N; i++, o += 4) {
+      d[o] = 255 * Math.sqrt(Math.min(1, Math.max(0, R[i] - br) * sr)); d[o + 1] = 255 * Math.sqrt(Math.min(1, Math.max(0, G[i] - bg) * sg)); d[o + 2] = 255 * Math.sqrt(Math.min(1, Math.max(0, B[i] - bb) * sb)); d[o + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  } };
+}
+
+const SETUP = {  buddha: setupBuddha, mandelbrot: lowRes(mandelbrot), julia: lowRes(julia), flow: setupFlow, tree: setupTree, breath: setupBreath };
 
 export default function PauseViz({ viz = "mandelbrot", ring = false, seconds, left, onClose }) {
   const ref = useRef(null);
@@ -192,7 +245,7 @@ export default function PauseViz({ viz = "mandelbrot", ring = false, seconds, le
     };
     if (still) {
       // Standbild: Flow bekommt vorab ein paar Schritte, damit Spuren sichtbar sind
-      for (let i = 0; i < (viz === "flow" ? 120 : 1); i++) draw(0.8 * seconds + i / 30);
+      for (let i = 0; i < (viz === "flow" ? 120 : viz === "buddha" ? 40 : 1); i++) draw(0.8 * seconds + i / 30);
       return undefined;
     }
     const loop = (now) => {

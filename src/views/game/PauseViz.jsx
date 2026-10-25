@@ -1,5 +1,5 @@
 // PauseViz — Vollbild-Visualisierung für die 30-s-Atem-Pause der Voice-Session.
-// Fünf Modi (Mandelbrot, Julia, Flow, Baum, Atemkreis) plus optionaler Atemring als Ebene darüber.
+// Fünf Modi (Mandelbrot, Julia, Flow, Mandelbrot-Baum, Atemkreis) plus optionaler Atemring als Ebene darüber.
 // Alles Canvas, kein Netzwerk, keine Abhängigkeit. Fraktale rendern klein und werden per CSS skaliert,
 // Flow/Baum/Atemkreis in Bildschirmauflösung. Tippen schließt (die Pause läuft weiter).
 import { useEffect, useRef } from "react";
@@ -134,38 +134,39 @@ function setupFlow(canvas, vw, vh) {
   } };
 }
 
-// Fraktaler Baum: wächst über die Dauer der Pause von der Wurzel bis in die Krone
+// Mandelbrot-Baum (Benoît Mandelbrot, "Fractal Geometry of Nature"): jede Gabelung hat links und rechts
+// eigenen Winkel und eigenes Streckenverhältnis -> schief, luftig, windgeformt statt symmetrischer Dom.
+// Er wächst über die Dauer der Pause von der Wurzel bis in die Spitzen.
 const rnd = (s) => { const v = Math.sin(s * 12.9898) * 43758.5453; return v - Math.floor(v); };
+const TREE = { depth: 12, left: { ang: -0.6, ratio: 0.62 }, right: { ang: 0.15, ratio: 0.8 } };
 function setupTree(canvas, vw, vh) {
   const { ctx, w, h, u } = fullRes(canvas, vw, vh);
-  const DEPTH = 10;
+  const { depth: DEPTH, left: L, right: R } = TREE;
   return { interval: 33, frame: (p, t) => {
     const g = ctx.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#0b1226"); g.addColorStop(1, "#1d2a3f");
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     ctx.lineCap = "round";
-    const grow = clamp(p * 1.15) * (DEPTH + 1);
+    const grow = clamp(p * 1.1) * (DEPTH + 1);
     const branch = (x, y, len, ang, depth, seed) => {
       const lv = clamp(grow - depth);
       if (lv <= 0) return;
-      const sway = Math.sin(t * 0.8 + depth * 0.6 + seed) * 0.025 * (depth / DEPTH);
+      const sway = Math.sin(t * 0.7 + depth * 0.5 + seed) * 0.02 * (depth / DEPTH);
       const a = ang + sway, l = len * lv;
       const x2 = x + Math.sin(a) * l, y2 = y - Math.cos(a) * l;
       const k = depth / DEPTH;
-      ctx.strokeStyle = `rgb(${Math.round(110 - 40 * k)},${Math.round(80 + 90 * k)},${Math.round(60 + 20 * k)})`;
-      ctx.lineWidth = Math.max(1, (DEPTH - depth + 1) * 1.6 * u);
+      ctx.strokeStyle = `rgb(${Math.round(150 - 70 * k)},${Math.round(105 + 85 * k)},${Math.round(75 + 10 * k)})`;
+      ctx.lineWidth = Math.max(0.8 * u, (DEPTH - depth) * 1.1 * u);
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke();
-      if (depth >= DEPTH - 1 && lv >= 1) {
-        ctx.fillStyle = `hsla(${330 + 20 * rnd(seed)},70%,${70 + 15 * rnd(seed + 1)}%,0.8)`;
-        ctx.beginPath(); ctx.arc(x2, y2, 3.2 * u, 0, TAU); ctx.fill();
+      if (depth >= DEPTH || len * L.ratio < 1.2 * u) {
+        if (lv >= 1) { ctx.fillStyle = `hsla(${335 + 25 * rnd(seed)},70%,75%,0.7)`; ctx.beginPath(); ctx.arc(x2, y2, 2.2 * u, 0, TAU); ctx.fill(); }
+        return;
       }
-      if (depth < DEPTH) {
-        const spread = 0.32 + 0.22 * rnd(seed + 2);
-        branch(x2, y2, len * (0.74 + 0.08 * rnd(seed + 3)), a - spread, depth + 1, seed * 2 + 1);
-        branch(x2, y2, len * (0.74 + 0.08 * rnd(seed + 4)), a + spread, depth + 1, seed * 2 + 2);
-      }
+      const j = (n) => (rnd(seed + n) - 0.5) * 0.12;
+      branch(x2, y2, len * L.ratio, a + L.ang + j(1), depth + 1, seed * 2 + 1);
+      branch(x2, y2, len * R.ratio, a + R.ang + j(2), depth + 1, seed * 2 + 2);
     };
-    branch(w / 2, h - 12 * u, Math.min(h * 0.17, w * 0.2), 0, 0, 1);
+    branch(w * 0.55, h - 10 * u, Math.min(h * 0.2, w * 0.25), 0, 0, 1);
   } };
 }
 

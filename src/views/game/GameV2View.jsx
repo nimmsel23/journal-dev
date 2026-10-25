@@ -9,8 +9,10 @@ import "./game-v2.css";
 const MODES = [["fire", "Fire"], ["focus", "Focus"], ["freedom", "Freedom"], ["frame", "Frame"], ["voice", "Voice"]];
 const SUB = { ...Object.fromEntries(Object.entries(MAPS).map(([k, v]) => [k, v.sub])), voice: "Stop · Submit · Struggle · Strike" };
 
-export default function GameV2View({ user, mode = "fire", onModeChange = () => {} }) {
+// embedded: in der VitalOS-Shell – kein Papier-Vollbild auf html/body, keine Journal-/Door-Links.
+export default function GameV2View({ user, mode = "fire", onModeChange = () => {}, embedded = false }) {
   useEffect(() => {
+    if (embedded) return undefined;
     const paper = "#f6f6f2";
     const meta = document.querySelector('meta[name="theme-color"]');
     const prev = { meta: meta?.getAttribute("content"), html: document.documentElement.style.background, body: document.body.style.background };
@@ -22,7 +24,7 @@ export default function GameV2View({ user, mode = "fire", onModeChange = () => {
       document.documentElement.style.background = prev.html;
       document.body.style.background = prev.body;
     };
-  }, []);
+  }, [embedded]);
   const current = SUB[mode] ? mode : "fire";
   const idx = MODES.findIndex(([k]) => k === current);
   return (
@@ -41,10 +43,12 @@ export default function GameV2View({ user, mode = "fire", onModeChange = () => {
           </div>
         </div>
         {current === "voice" ? <VoicePanel user={user} /> : <GameMapPanel key={current} map={current} uid={user?.uid ?? null} />}
-        <div className="dv2-foot">
-          <a href="#door2">Door →</a>
-          <a href="#v2">← Journal</a>
-        </div>
+        {!embedded && (
+          <div className="dv2-foot">
+            <a href="#door2">Door →</a>
+            <a href="#v2">← Journal</a>
+          </div>
+        )}
       </article>
     </div>
   );

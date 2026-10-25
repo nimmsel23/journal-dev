@@ -13,9 +13,11 @@ import "./door-v2.css";
 const MODES = [["potential", "Potential"], ["plan", "Plan"], ["production", "Production"], ["profit", "Profit"]];
 const PANELS = { potential: PotentialPanel, plan: PlanPanel, production: ProductionPanel, profit: ProfitPanel };
 
-export default function DoorV2View({ user, mode = "potential", onModeChange = () => {} }) {
+// embedded: in der VitalOS-Shell – kein Papier-Vollbild auf html/body, kein Journal-Link.
+export default function DoorV2View({ user, mode = "potential", onModeChange = () => {}, embedded = false }) {
   // Vollbild: Seitenhintergrund + Statusleiste papierfarben, solange Door v2 offen ist
   useEffect(() => {
+    if (embedded) return undefined;
     const paper = "#f6f6f2";
     const meta = document.querySelector('meta[name="theme-color"]');
     const prev = { meta: meta?.getAttribute("content"), html: document.documentElement.style.background, body: document.body.style.background };
@@ -27,7 +29,7 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
       document.documentElement.style.background = prev.html;
       document.body.style.background = prev.body;
     };
-  }, []);
+  }, [embedded]);
 
   const [source, setSrc] = useState(getSource);
   const [, bump] = useState(0);
@@ -109,10 +111,12 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
             Nicht angemeldet. <button type="button" className="dv2-link" onClick={() => db.signIn()}>Cloud Login</button>
           </div>
         )}
-        <div className="dv2-foot">
-          <a href="#v2">← Journal</a>
-          <span>Door v2 · Raster</span>
-        </div>
+        {!embedded && (
+          <div className="dv2-foot">
+            <a href="#v2">← Journal</a>
+            <span>Door v2 · Raster</span>
+          </div>
+        )}
       </article>
     </div>
   );

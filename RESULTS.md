@@ -1,3 +1,16 @@
+## 2026-10-25 — Voice-Pause-Visualisierungen gemerged, dev gepusht, Release nach vitalos
+
+`pnpm-workspace.yaml` bereinigt, den Remote-Branch `origin/claude/blissful-sagan-lrk7u7` in `dev` gemerged und
+`journal` über `journal-release --yes` nach vitalos veröffentlicht.
+
+- **`pnpm-workspace.yaml`:** toter Eintrag `better-sqlite3: true` aus `allowBuilds` entfernt (nirgends mehr referenziert, seit Fastify/SQLite raus sind); Punkt aus `NEXT.md` gestrichen (`1f95077`).
+- **Merge `855e2c6`:** sechs Voice-Commits mit den Pause-Visualisierungen (Mandelbrot-Zoom, Julia, Flow, Mandelbrot-Baum, Atemkreis/Atemring, Buddhabrot; Auswahl pro Tag, Zufall wiederholt nie die letzte) ohne Konflikte in `dev`. Betroffen: `src/views/game/PauseViz.jsx` (neu), `VoicePanel.jsx`, `game-v2.css`.
+- **Release:** `dev` nach `origin/dev` gepusht (`690509c..855e2c6`); `journal-app` auf `vitalos` per Fast-Forward von `47654c6` auf `855e2c6` (enthält auch Offline-First für Game/Voice/Tent samt SyncBadge), vitalos-Pointer-Bump `1697008` auf `master`.
+
+Validierung: `vite build --mode firebase` nach dem Merge grün. `pnpm test` lief nicht, die Visualisierungen sind nicht im Browser angesehen, ob die CI das Ergebnis deployt hat ist nicht geprüft.
+
+---
+
 ## 2026-10-24 — Aufräumen: Dependencies, Hash-Routing, Docs
 
 fuel-dev-Reste entfernt: 24 ungenutzte Dependencies (Fastify, SQLite, FullCalendar, zod, react-hook-form,

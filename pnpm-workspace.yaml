@@ -1,7 +1,6 @@
 # Standalone Journal dependency settings.
 allowBuilds:
   '@firebase/util': true
-  better-sqlite3: true
   esbuild: true
   protobufjs: true
 overrides:

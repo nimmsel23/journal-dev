@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { saveJournal } from "../../lib/db/journal.js";
 import { VOICE_STAGES } from "./voiceData.js";
-import Mandelbrot from "./Mandelbrot.jsx";
+import PauseViz, { VIZ } from "./PauseViz.jsx";
+import { asBool, useSetting } from "../../lib/useSetting.js";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
 const key = (stage, suffix = "") => `gv2:voice:${today()}:${stage}${suffix}`;
@@ -62,6 +63,13 @@ function Step({ s, value, onChange }) {
 function PauseStep({ s, label, value, onChange }) {
   const [left, setLeft] = useState(null);
   const [show, setShow] = useState(true);
+  const [pick, setPick] = useSetting("gv2:voice:viz", "random", (v) => (v === "random" || VIZ.some((x) => x.id === v) ? v : undefined));
+  const [ring, setRing] = useSetting("gv2:voice:ring", false, asBool);
+  const [active, setActive] = useState("mandelbrot");
+  const start = () => {
+    setActive(pick === "random" ? VIZ[Math.floor(Math.random() * VIZ.length)].id : pick);
+    setShow(true); setLeft(s.seconds);
+  };
   useEffect(() => {
     if (left == null) return undefined;
     if (left <= 0) { setLeft(null); onChange(true); return undefined; }
@@ -71,11 +79,19 @@ function PauseStep({ s, label, value, onChange }) {
   return (
     <div className="gv2-step">{label}
       <div className="dv2-qs">
-        <button type="button" aria-pressed={!!value} disabled={left != null} onClick={() => (s.seconds ? (setShow(true), setLeft(s.seconds)) : onChange(true))}>
+        <button type="button" aria-pressed={!!value} disabled={left != null} onClick={() => (s.seconds ? start() : onChange(true))}>
           {value ? "✓ erledigt" : left != null ? `${left} s …` : s.seconds ? `Pause starten (${s.seconds} s)` : "Erledigt"}
         </button>
       </div>
-      {left != null && show && <Mandelbrot seconds={s.seconds} left={left} onClose={() => setShow(false)} />}
+      {s.seconds > 0 && !value && left == null && (
+        <div className="dv2-qs" role="group" aria-label="Visualisierung">
+          {[{ id: "random", label: "Zufall" }, ...VIZ].map((x) => (
+            <button key={x.id} type="button" aria-pressed={pick === x.id} onClick={() => setPick(x.id)}>{x.label}</button>
+          ))}
+          <button type="button" aria-pressed={ring} onClick={() => setRing(!ring)}>Atemring</button>
+        </div>
+      )}
+      {left != null && show && <PauseViz viz={active} ring={ring} seconds={s.seconds} left={left} onClose={() => setShow(false)} />}
     </div>
   );
 }

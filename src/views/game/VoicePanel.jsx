@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { saveJournal } from "../../lib/db/journal.js";
 import { VOICE_STAGES } from "./voiceData.js";
+import Mandelbrot from "./Mandelbrot.jsx";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
 const key = (stage, suffix = "") => `gv2:voice:${today()}:${stage}${suffix}`;
@@ -73,6 +74,7 @@ function PauseStep({ s, label, value, onChange }) {
           {value ? "✓ erledigt" : left != null ? `${left} s …` : s.seconds ? `Pause starten (${s.seconds} s)` : "Erledigt"}
         </button>
       </div>
+      {left != null && <Mandelbrot seconds={s.seconds} />}
     </div>
   );
 }

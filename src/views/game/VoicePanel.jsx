@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { saveJournal } from "../../lib/db/journal.js";
 import { VOICE_STAGES } from "./voiceData.js";
 import PauseViz, { VIZ } from "./PauseViz.jsx";
-import { asBool, useSetting } from "../../lib/useSetting.js";
+import { asBool, readSetting, useSetting, writeSetting } from "../../lib/useSetting.js";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
 const key = (stage, suffix = "") => `gv2:voice:${today()}:${stage}${suffix}`;
@@ -63,11 +63,20 @@ function Step({ s, value, onChange }) {
 function PauseStep({ s, label, value, onChange }) {
   const [left, setLeft] = useState(null);
   const [show, setShow] = useState(true);
-  const [pick, setPick] = useSetting("gv2:voice:viz", "random", (v) => (v === "random" || VIZ.some((x) => x.id === v) ? v : undefined));
+  // Auswahl gilt nur für heute: morgen startet sie wieder bei "Zufall" und man wählt neu.
+  const pickKey = `gv2:voice:viz:${today()}`;
+  const validViz = (v) => (v === "random" || VIZ.some((x) => x.id === v) ? v : undefined);
+  const [pick, setPickState] = useState(() => readSetting(pickKey, "random", validViz));
+  const setPick = (v) => { setPickState(v); writeSetting(pickKey, v); };
   const [ring, setRing] = useSetting("gv2:voice:ring", false, asBool);
   const [active, setActive] = useState("mandelbrot");
   const start = () => {
-    setActive(pick === "random" ? VIZ[Math.floor(Math.random() * VIZ.length)].id : pick);
+    // Zufall: nie dieselbe wie beim letzten Mal
+    const last = readSetting("gv2:voice:viz:last", "", validViz);
+    const pool = VIZ.filter((x) => x.id !== last);
+    const id = pick === "random" ? pool[Math.floor(Math.random() * pool.length)].id : pick;
+    writeSetting("gv2:voice:viz:last", id);
+    setActive(id);
     setShow(true); setLeft(s.seconds);
   };
   useEffect(() => {
@@ -83,7 +92,7 @@ function PauseStep({ s, label, value, onChange }) {
           {value ? "✓ erledigt" : left != null ? `${left} s …` : s.seconds ? `Pause starten (${s.seconds} s)` : "Erledigt"}
         </button>
       </div>
-      {s.seconds > 0 && !value && left == null && (
+      {s.seconds > 0 && left == null && (
         <div className="dv2-qs" role="group" aria-label="Visualisierung">
           {[{ id: "random", label: "Zufall" }, ...VIZ].map((x) => (
             <button key={x.id} type="button" aria-pressed={pick === x.id} onClick={() => setPick(x.id)}>{x.label}</button>

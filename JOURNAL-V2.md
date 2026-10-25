@@ -279,4 +279,5 @@ Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste 
 - **Hintergrund-Sync**: `startBackgroundSync` (main.jsx) leert die Outbox beim Start, bei `online`, beim Sichtbarwerden und alle 60 s. Echtes Background-Sync bei geschlossener App (SW) gibt es nicht.
 - **Kalender (Fire Map)**: letzter Stand der Woche liegt in localStorage und bleibt offline sichtbar.
 - **SyncBadge** (GameV2View) zeigt Offline-Status, offene Änderungen und Schreibfehler.
+- **Tent**: Habits (`watchHabits`) und die Tent-Einträge der Woche (`watchJournalRange`) kommen per Listener cache-first; der Wochenabschluss ist lokal sofort gespeichert, die Taskwarrior-Scores rechnen sich bei Replik-Änderungen neu. Entwurf lag schon in localStorage.
 - Grenze: die allererste Taskwarrior-Replik und Google-Login/Kalender-Token brauchen einmal Netz.

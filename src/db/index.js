@@ -1,5 +1,5 @@
 // Journal-owned database facade. No sibling repositories are required.
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { collection, getDocs, onSnapshot, orderBy, query, where } from "firebase/firestore";
 
 import { db } from "../lib/firebase.js";
 import { getUid, localToday } from "../lib/db/core.js";
@@ -38,6 +38,30 @@ export async function getHabits(days = 28) {
       hasRecord: (date) => habitRecords.some((record) => record.date === date && record.completion === "DONE"),
     };
   });
+}
+
+const withRecords = (habitDocs, recordDocs) => {
+  const habits = habitDocs.map((d) => ({ uuid: d.id, ...d.data() }));
+  const allRecords = recordDocs.map((d) => d.data());
+  return habits.map((habit) => {
+    const habitRecords = allRecords.filter((record) => record.habitId === habit.uuid);
+    return { ...habit, records: habitRecords, hasRecord: (date) => habitRecords.some((r) => r.date === date && r.completion === "DONE") };
+  });
+};
+
+/** Wie getHabits, aber cache-first mit Listenern: sofort lokaler Stand (offline), Änderungen vom Server im Hintergrund. */
+export function watchHabits(days, onNext, onError) {
+  const today = localToday();
+  const startDate = new Date(`${today}T12:00:00`);
+  startDate.setDate(startDate.getDate() - (days - 1));
+  const start = startDate.toISOString().slice(0, 10);
+  const uid = getUid();
+  let h; let r;
+  const emit = () => { if (h && r) onNext(withRecords(h, r)); };
+  const offH = onSnapshot(collection(db, "fitness", uid, "habits"), (s) => { h = s.docs; emit(); }, onError);
+  const offR = onSnapshot(query(collection(db, "fitness", uid, "habitRecords"), where("date", ">=", start), where("date", "<=", today), orderBy("date", "desc")),
+    (s) => { r = s.docs; emit(); }, onError);
+  return () => { offH(); offR(); };
 }
 
 export async function getSessionHistory(days = 28) {

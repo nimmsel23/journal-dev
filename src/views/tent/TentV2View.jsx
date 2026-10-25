@@ -7,7 +7,9 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, endOfISOWeek, format, getISOWeek, getISOWeekYear, startOfISOWeek } from "date-fns";
 import * as db from "@journal-db";
-import { getJournalRange, saveJournal } from "../../lib/db/journal.js";
+import { saveJournal, watchJournalRange } from "../../lib/db/journal.js";
+import { useLiveSnap } from "../../lib/useLiveSnap.js";
+import SyncBadge from "../../components/SyncBadge.jsx";
 import * as tc from "../../lib/door/taskchampion.js";
 import "../door/v2/door-v2.css";
 import "../game/game-v2.css";
@@ -24,10 +26,11 @@ const FIELDS = [
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
 
 function useScores(uid, from, to, enabled) {
-  const habits = useQuery({
-    queryKey: ["tv2-habits", uid], enabled: !!uid,
-    queryFn: async () => { try { return (await db.getHabits(120)).filter((h) => !h.deleted); } catch { return []; } },
-  });
+  // Habits cache-first per Listener (offline: lokaler Stand)
+  const habits = useLiveSnap(!!uid, (next, fail) => db.watchHabits(120, (hs) => next(hs.filter((h) => !h.deleted)), fail), [uid]);
+  const qc = useQueryClient();
+  // Hintergrund-Sync der Taskwarrior-Replik → Scores neu rechnen
+  useEffect(() => tc.onChange(() => qc.invalidateQueries({ queryKey: ["tv2-tw"] })), [qc]);
   const tw = useQuery({
     queryKey: ["tv2-tw", uid, iso(from)], enabled,
     queryFn: async () => (await tc.getConfig()) ? tc.tasks() : null,
@@ -43,7 +46,7 @@ function useScores(uid, from, to, enabled) {
   const hitsOpen = all.filter((t) => t.status === "pending" && has(t, "hit") && inWeek(t, "due")).length;
   const doors = all.filter((t) => t.status === "completed" && has(t, "door") && inWeek(t, "end")).map((t) => t.description);
   return {
-    loading: habits.isLoading, twOn: tw.data != null,
+    loading: !habits.ready, twOn: tw.data != null,
     rows: [
       ["Habits", habitDone, hs.length * 7],
       ...(tw.data != null ? [["Fire", fireDone, fireDone + fireOpen], ["Hits", hitsDone, hitsDone + hitsOpen]] : []),
@@ -77,7 +80,8 @@ export default function TentV2View({ user, date, onDateChange = () => {} }) {
     };
   }, []);
 
-  const entries = useQuery({ queryKey: ["tv2-entries", uid, wk], enabled: !!uid, queryFn: () => getJournalRange(iso(from), iso(addDays(to, 2))) });
+  const fromIso = iso(from), toIso = iso(addDays(to, 2));
+  const entries = useLiveSnap(!!uid, (next, fail) => watchJournalRange(fromIso, toIso, next, fail), [uid, fromIso, toIso]);
   const closed = (entries.data || []).find((e) => (e.tags || []).includes("tent") && (e.tags || []).includes(wk));
   const sc = useScores(uid, from, to, !!uid);
 
@@ -94,7 +98,6 @@ export default function TentV2View({ user, date, onDateChange = () => {} }) {
     try {
       const entryDay = new Date() <= to ? new Date() : to; // laufende Woche: heute, sonst Sonntag
       await saveJournal(iso(entryDay), body(), { tags: ["tent", wk] });
-      qc.invalidateQueries({ queryKey: ["tv2-entries"] });
       qc.invalidateQueries({ queryKey: ["jv2-range"] });
     } catch (e) { setErr(e?.message || "Speichern fehlgeschlagen"); }
     setBusy(false);
@@ -117,6 +120,7 @@ export default function TentV2View({ user, date, onDateChange = () => {} }) {
           <button type="button" className="dv2-link" onClick={() => shift(1)}>Nächste →</button>
           {!sc.twOn && <a className="dv2-link" href="#fire">Taskwarrior verbinden</a>}
         </div>
+        <SyncBadge />
         {!uid && <div className="dv2-empty">Nicht angemeldet. <button type="button" className="dv2-link" onClick={() => db.signIn()}>Cloud Login</button></div>}
         <h4 className="dv2-sec">Return and Report</h4>
         {sc.rows.map(([label, done, total]) => (

@@ -16,7 +16,7 @@ import { db, auth } from "../firebase.js";
 import { track } from "../offline.js";
 import {
   collection, doc, setDoc, getDoc, getDocs, deleteDoc,
-  query, where, orderBy, limit as fbLimit, serverTimestamp,
+  query, where, orderBy, limit as fbLimit, serverTimestamp, onSnapshot,
 } from "firebase/firestore";
 
 async function uid() {
@@ -106,6 +106,18 @@ export async function getJournalRange(startDate, endDate) {
     console.error("Error fetching journal range:", error);
     return [];
   }
+}
+
+/** Cache-first: sofort der lokale Stand (auch offline), danach Server-Änderungen. Gibt die Abmeldung zurück. */
+export function watchJournalRange(startDate, endDate, onNext, onError) {
+  let off = () => {};
+  let dead = false;
+  uid().then((userId) => {
+    if (dead) return;
+    const q = query(journalCol(userId), where("date", ">=", startDate), where("date", "<=", endDate), orderBy("date", "desc"));
+    off = onSnapshot(q, (snap) => onNext(snap.docs.map(normalizeEntry).filter((e) => e.text)), onError);
+  }).catch((e) => onError?.(e));
+  return () => { dead = true; off(); };
 }
 
 export async function getJournalHistory(limitCount = 50) {

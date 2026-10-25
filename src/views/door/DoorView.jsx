@@ -13,8 +13,15 @@ const SUB_TABS = [
   { key: "profit", label: "Profit", Icon: Trophy, View: ProfitView },
 ];
 
-export default function DoorView() {
-  const [subTab, setSubTab] = useState("potential");
+// subTab/onSubTab optional: die VitalOS-Shell steuert die Phase von außen (Hash, Kontextmenü);
+// ohne Props verwaltet die Ansicht den Tab selbst.
+export default function DoorView({ subTab: controlledTab, onSubTab }) {
+  const [localTab, setLocalTab] = useState("potential");
+  const subTab = controlledTab ?? localTab;
+  const setSubTab = (key) => {
+    setLocalTab(key);
+    onSubTab?.(key);
+  };
   const active = SUB_TABS.find((tab) => tab.key === subTab) ?? SUB_TABS[0];
   const ActiveView = active.View;
 

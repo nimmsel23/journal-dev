@@ -43,6 +43,7 @@ export const loadRemoteSource = async (uid) => {
 const backend = {
   fetchHotlist: pot.fetchHotlist, addHotlistItem: pot.addHotlistItem,
   completeHotlistItem: pot.completeHotlistItem, deleteHotlistItem: pot.deleteHotlistItem,
+  addNote: pot.addNote, fetchNote: pot.fetchHotlistNote,
   fetchDoorWar: plan.fetchDoorWar, selectWeeklyDoor: plan.selectWeeklyDoor, assignQuadrant: plan.assignQuadrant,
   fetchDailyWeek: prod.fetchDailyWeek, toggleDailyHit: prod.toggleDailyHit, fetchHitsWeek: prod.fetchHitsWeek,
   fetchProfitWeek: profit.fetchProfitWeek, fetchCompletedWarstacks: profit.fetchCompletedWarstacks,

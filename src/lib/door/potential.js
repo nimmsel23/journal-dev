@@ -20,4 +20,11 @@ export const completeHotlistItem = (...args) => backend().completeHotlistItem(..
 export const deleteHotlistItem = (...args) => backend().deleteHotlistItem(...args);
 export const fetchHotlistNote = (...args) => backend().fetchHotlistNote(...args);
 export const saveHotlistNote = (...args) => backend().saveHotlistNote(...args);
+/** Notiz anhängen (das Backend kennt ein Notizfeld je Item): alte Notiz lesen, neue darunter speichern. */
+export async function addNote(selector, text) {
+  const note = String(text || "").trim();
+  if (!note) throw new Error("answer_required");
+  const old = String((await fetchHotlistNote(selector)) || "").trim();
+  return saveHotlistNote(selector, [old, note].filter(Boolean).join("\n"));
+}
 export const isPotentialCloudMode = isCloudHost;

@@ -58,6 +58,13 @@ export const addHotlistItem = (text) => {
   if (!title) throw new Error("title_required");
   return insertTask(LIST_POTENTIAL, { title });
 };
+/** Notiz hängt unter die Marker-Zeile an (Quadrant/Door bleiben erhalten). */
+export async function addNote(id, text) {
+  const note = String(text || "").trim();
+  if (!note) throw new Error("answer_required");
+  const n = parseNotes((await currentTask(id)).notes);
+  return patchTask(LIST_POTENTIAL, id, { notes: buildNotes({ quadrant: n.quadrant, doorWeek: n.doorWeek, rest: [n.rest, note].filter(Boolean).join("\n") }) });
+}
 export const completeHotlistItem = (id) => patchTask(LIST_POTENTIAL, id, { status: "completed" });
 export const deleteHotlistItem = (id) => deleteTask(LIST_POTENTIAL, id);
 

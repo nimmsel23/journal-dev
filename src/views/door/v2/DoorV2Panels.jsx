@@ -1,10 +1,11 @@
 // Die vier Phasen-Panels von Door v2. Query-Keys tragen die uid, damit ein
 // Nutzerwechsel keine fremden Daten aus dem Cache zeigt.
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { door } from "../../../lib/door/source.js";
 import WarstackWizard from "./DoorV2Warstack.jsx";
+import ContextMenu from "./DoorV2ContextMenu.jsx";
 import * as twDoor from "../../../lib/door/taskwarrior.door.js";
 import { fetchProfitGtasks } from "../../../lib/door/gtasks.door.js";
 import { fetchProfitReviews } from "../../../lib/door/profitFromJournal.js";
@@ -37,7 +38,7 @@ function State({ q, children, empty }) {
 const SWIPE_SHORT = 56, SWIPE_LONG = 130;
 const swipeTarget = (d) => (d <= -SWIPE_LONG ? 1 : d <= -SWIPE_SHORT ? 2 : d >= SWIPE_LONG ? 4 : d >= SWIPE_SHORT ? 3 : null);
 
-function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, D, source, uid, onChanged }) {
+function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, onMenu, D, source, uid, onChanged }) {
   const [dx, setDx] = useState(0);
   const st = useRef(null);
   const dxRef = useRef(0);
@@ -77,6 +78,14 @@ function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, D, source, 
           if (s.moved) move(Math.max(-220, Math.min(220, d)));
         }}
         onPointerUp={end} onPointerCancel={end}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          st.current = null; move(0); // ein halb begonnener Wisch gilt nicht mehr
+          // Menü-Taste/Umschalt+F10 liefern clientX/Y = 0: dann an der Zeile öffnen
+          const r = e.currentTarget.getBoundingClientRect();
+          const kb = e.clientX === 0 && e.clientY === 0;
+          onMenu(sel, item, kb ? r.left + 16 : e.clientX, kb ? r.bottom : e.clientY);
+        }}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
       >
         <div className="dv2-text">
@@ -116,6 +125,8 @@ export function PotentialPanel({ uid, source = "backend" }) {
   const [draft, setDraft] = useState("");
   const [openId, setOpenId] = useState(null);
   const [err, setErr] = useState("");
+  const [menu, setMenu] = useState(null); // { sel, item, x, y }
+  const closeMenu = useCallback(() => setMenu(null), []);
   const q = useQuery({ queryKey: key, queryFn: () => D.fetchHotlist("active"), staleTime: 15_000 });
   const refresh = () => qc.invalidateQueries({ queryKey: key });
   const run = async (fn) => {
@@ -134,19 +145,34 @@ export function PotentialPanel({ uid, source = "backend" }) {
     qc.setQueryData(key, (d) => (d || []).map((i) => (selectorFor(i) === sel ? { ...i, quadrant: n } : i)));
     run(() => D.assignQuadrant(sel, n));
   };
+  // Erledigt/Löschen: Zeile sofort aus dem Cache nehmen, dann speichern (Fehler → Refetch holt sie zurück)
+  const finish = (sel, fn) => {
+    qc.setQueryData(key, (d) => (d || []).filter((i) => selectorFor(i) !== sel));
+    setOpenId((o) => (o === sel ? null : o));
+    run(() => fn(sel));
+  };
+  const menuItems = (sel, item) => [
+    ...[1, 2, 3, 4].map((n) => ({ label: `Quadrant Q${n}`, checked: item.quadrant === n, onSelect: () => setQuadrant(sel, n) })),
+    "-",
+    { label: openId === sel ? "Notiz / War Stack schließen" : "Notiz / War Stack öffnen", onSelect: () => setOpenId(openId === sel ? null : sel) },
+    { label: "Erledigt", disabled: !D.completeHotlistItem, onSelect: () => finish(sel, D.completeHotlistItem) },
+    { label: "Löschen", danger: true, disabled: !D.deleteHotlistItem, onSelect: () => finish(sel, D.deleteHotlistItem) },
+  ];
   return (
     <>
-      <div className="dv2-none dv2-swipehelp">Wischen: ‹ Q2 · « Q1 · › Q3 · » Q4 – Antippen: Notiz / War Stack</div>
+      <div className="dv2-none dv2-swipehelp">Wischen: ‹ Q2 · « Q1 · › Q3 · » Q4 – Antippen: Notiz / War Stack – Rechtsklick: Menü</div>
       <State q={q} empty={!q.isLoading && !q.isError && items.length === 0 ? "Hot List leer." : null}>
         {items.map((i) => {
           const sel = selectorFor(i);
           return (
             <PotentialRow key={sel || i.title} item={i} sel={sel} busy={false} open={openId === sel}
               onToggle={() => setOpenId(openId === sel ? null : sel)} onQuadrant={setQuadrant}
+              onMenu={(s, it, x, y) => setMenu({ sel: s, item: it, x, y })}
               D={D} source={source} uid={uid} onChanged={refresh} />
           );
         })}
       </State>
+      {menu && <ContextMenu x={menu.x} y={menu.y} label={menu.item.title} items={menuItems(menu.sel, menu.item)} onClose={closeMenu} />}
       {err && <div className="dv2-empty" role="alert">{err}</div>}
       <form className="dv2-compose" onSubmit={submit}>
         <input aria-label="Neues Hot-List-Item" placeholder="Neue Idee …" value={draft} onChange={(e) => setDraft(e.target.value)} />

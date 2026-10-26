@@ -1,3 +1,21 @@
+## 2026-10-26 — Door v2: Rechtsklick-Menüs und Notizfeld, Journal v2: Jahr-Ansicht und Eintrag bearbeiten
+
+Rechtsklick-Menüs in allen vier Door-v2-Phasen, Notizfeld in Potential für alle Datenquellen, zweizeiliger
+Journal-v2-Header mit Jahr-Ansicht und Bearbeiten von Tageseinträgen. Alles auf `dev` committed und mit
+`journal-release --yes` nach vitalos veröffentlicht (Deploy Journal PWA und Deploy VitalOS Shell grün); beim
+letzten Release (`3813407`) blockierte die Auto-Mode-Prüfung den Aufruf aus Claude heraus, der Nutzer startete ihn selbst.
+
+- **`src/views/door/v2/DoorV2ContextMenu.jsx` (neu):** Menü per `contextmenu`-Event (Rechtsklick, Menü-Taste, Umschalt+F10, Langdruck), Pfeiltasten, Esc und Klick daneben schließen; Rollen `menuitem`/`menuitemradio` (aktueller Quadrant mit ✓); `useContextMenu`-Hook, CSS `.dv2-menu` in `door-v2.css`.
+- **`DoorV2Panels.jsx`:** Potential: Quadrant Q1–Q4, Notiz/War Stack öffnen bzw. schließen, „Entfernen“ (rot, Zeile verschwindet sofort, Refetch holt sie bei Fehler zurück); „Erledigt“ gibt es in Potential nicht (`585f613`, `b12e7cf`, `973f302`, `44ad2d8`, `bc2948f`). Plan: Q1–Q4 und „Als Door der Woche“, die Door-Logik aus dem Drag-and-drop steckt jetzt in `setDoor`. Production: „Erledigt“/„Wieder öffnen“ und „Text kopieren“. Profit: Menü je Zeile (`a81900f`).
+- **`src/lib/door/{source,potential,gtasks.door}.js`:** Notizfeld in Potential für Backend, Google Tasks und Taskwarrior (bisher nur Taskwarrior), vorhandene Notiz wird angezeigt (`cb441d3`).
+- **`src/views/v2/JournalV2View.jsx`, `JournalV2Range.jsx`, `journal-v2.css`:** Header zweizeilig: Zeile 1 Tag/Woche/Monat/Jahr, Zeile 2 Habits plus Sprünge zu Door (unter Woche), Focus (unter Monat) und Game (unter Jahr); neue Jahr-Ansicht mit zwölf Mini-Monaten, heute markiert (`9fcbb94`).
+- **`src/lib/hashRoute.js`, `tests/hash-route.test.mjs`:** Modus `jahr` für `#v2/jahr` ergänzt, Test angepasst.
+- **`JournalV2View.jsx`, `journal-v2.css`:** Tageseinträge bearbeiten: ✎ neben dem ×, Text und `+tags` im Textfeld, Strg/Cmd+Enter oder „Speichern“ sichert, Esc/„Abbrechen“ verwirft; Zeitraum und Uhrzeit bleiben, leerer Text wird mit Fehlermeldung abgelehnt, danach laden Tages-, Wochen- und Monatsliste neu (`3813407`).
+
+Validierung: 27/27 Node-Tests (`node --test tests/*.test.mjs`) und `vite build --mode firebase` bei jedem Commit grün. Das Notizfeld wurde in Thorium headless mit gemockten Daten und der echten `PotentialPanel` geprüft (`<textarea>` vorhanden, nicht readOnly, fokussierbar; Tippen nicht simuliert), Header und Jahr-Ansicht per Screenshot. Rechtsklick-Menüs, Header-Sprünge und Bearbeiten wurden nicht im Browser angeklickt, Notiz und Bearbeiten nicht gegen echte Firestore-/Backend-Daten getestet.
+
+---
+
 ## 2026-10-25 — Voice-Pause-Visualisierungen gemerged, dev gepusht, Release nach vitalos
 
 `pnpm-workspace.yaml` bereinigt, den Remote-Branch `origin/claude/blissful-sagan-lrk7u7` in `dev` gemerged und

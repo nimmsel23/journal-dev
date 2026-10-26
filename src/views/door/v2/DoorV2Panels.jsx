@@ -145,18 +145,17 @@ export function PotentialPanel({ uid, source = "backend" }) {
     qc.setQueryData(key, (d) => (d || []).map((i) => (selectorFor(i) === sel ? { ...i, quadrant: n } : i)));
     run(() => D.assignQuadrant(sel, n));
   };
-  // Erledigt/Löschen: Zeile sofort aus dem Cache nehmen, dann speichern (Fehler → Refetch holt sie zurück)
-  const finish = (sel, fn) => {
+  // Löschen: Zeile sofort aus dem Cache nehmen, dann speichern (Fehler → Refetch holt sie zurück)
+  const remove = (sel) => {
     qc.setQueryData(key, (d) => (d || []).filter((i) => selectorFor(i) !== sel));
     setOpenId((o) => (o === sel ? null : o));
-    run(() => fn(sel));
+    run(() => D.deleteHotlistItem(sel));
   };
   const menuItems = (sel, item) => [
     ...[1, 2, 3, 4].map((n) => ({ label: `Quadrant Q${n}`, checked: item.quadrant === n, onSelect: () => setQuadrant(sel, n) })),
     "-",
     { label: openId === sel ? "Notiz / War Stack schließen" : "Notiz / War Stack öffnen", onSelect: () => setOpenId(openId === sel ? null : sel) },
-    { label: "Erledigt", disabled: !D.completeHotlistItem, onSelect: () => finish(sel, D.completeHotlistItem) },
-    { label: "Löschen", danger: true, disabled: !D.deleteHotlistItem, onSelect: () => finish(sel, D.deleteHotlistItem) },
+    { label: "Löschen", danger: true, disabled: !D.deleteHotlistItem, onSelect: () => remove(sel) },
   ];
   return (
     <>

@@ -122,17 +122,20 @@
   .jv2-mcell { aspect-ratio: 1 / .8; padding: 8px 10px; }
   .jv2-mkw { font-size: 11px; }
   .jv2-mhead span { font-size: 12px; }
-  .jv2-modes button { padding: 14px 4px; font-size: 13px; }
+  .jv2-modes button, .jv2-modes a { padding: 14px 4px; font-size: 13px; }
 }
 
 /* ── Moduswechsel ── */
 .jv2-modes { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 2px solid var(--ink); }
-.jv2-modes button {
+.jv2-modes button, .jv2-modes a {
   all: unset; cursor: pointer; text-align: center; padding: 8px 4px; border-right: 1px solid var(--ink);
   font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
 }
-.jv2-modes button:last-child { border-right: 0; }
-.jv2-modes button[aria-selected="true"] { background: var(--ink); color: var(--p); }
+.jv2-modes button:last-child, .jv2-modes a:last-child { border-right: 0; }
+.jv2-modes button[aria-selected="true"], .jv2-modes button[aria-pressed="true"] { background: var(--ink); color: var(--p); }
+.jv2-modes a:hover { background: var(--soft); }
+.jv2-modes a:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.jv2-modes1 { border-bottom-width: 1px; }
 .jv2-rangeno { font-size: 96px; }
 
 /* ── Woche ── */
@@ -342,3 +345,33 @@
 .jv2-heditor label { font: 11px var(--mono); margin-top: 6px; }
 .jv2-hweekdays small { flex-basis: 100%; }
 @media (min-width: 700px) { .jv2-hstrip { grid-template-columns: repeat(14, minmax(0, 1fr)); } }
+
+/* ── Jahr ── */
+.jv2-year { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid var(--ink); }
+.jv2-ymonth { padding: 8px 6px 10px; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); min-width: 0; }
+.jv2-ymonth:nth-child(3n) { border-right: 0; }
+.jv2-yhead {
+  all: unset; box-sizing: border-box; cursor: pointer; display: flex; justify-content: space-between; align-items: baseline; width: 100%;
+  margin-bottom: 6px; font-family: var(--mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+}
+.jv2-yhead em { font-style: normal; font-weight: 400; opacity: .6; }
+.jv2-yhead:hover span { text-decoration: underline; }
+.jv2-yhead:focus-visible { outline: 3px solid var(--sig); outline-offset: 2px; }
+.jv2-ydays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.jv2-yday {
+  all: unset; box-sizing: border-box; cursor: pointer; display: grid; place-items: center; aspect-ratio: 1; min-width: 0;
+  font-family: var(--mono); font-size: 8px; background: var(--soft);
+}
+.jv2-yday[data-n="1"] { background: color-mix(in srgb, var(--sig) 35%, var(--p)); }
+.jv2-yday[data-n="2"] { background: color-mix(in srgb, var(--sig) 65%, var(--p)); color: #fff; }
+.jv2-yday[data-n="3"] { background: var(--ink); color: var(--p); }
+.jv2-yday.today { outline: 2px solid var(--sig); outline-offset: -1px; }
+.jv2-yday:hover { filter: brightness(.92); }
+.jv2-yday:focus-visible { outline: 3px solid var(--sig); outline-offset: 1px; }
+@media (min-width: 700px) {
+  .jv2-year { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .jv2-ymonth:nth-child(3n) { border-right: 1px solid var(--ink); }
+  .jv2-ymonth:nth-child(4n) { border-right: 0; }
+  .jv2-yday { font-size: 10px; }
+  .jv2-yhead { font-size: 13px; }
+}

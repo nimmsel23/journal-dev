@@ -8,7 +8,7 @@ const router = makeRouter({ tabs: TABS, defaultTab: "journal", today: () => TODA
 
 // ── Referenz: die bisherigen Funktionen aus main.jsx (unverändert übernommen) ──
 const HASH_ALIASES = { v2: "journal-v2", door2: "door-v2", game2: "game-v2", tent2: "tent-v2" };
-const V2_MODES = ["tag", "woche", "monat", "habits"];
+const V2_MODES = ["tag", "woche", "monat", "jahr", "habits"];
 const DOOR_MODES = ["potential", "plan", "production", "profit"];
 const GAME_DEFAULT = "fire";
 const GAME_MODES = ["fire", "focus", "freedom", "frame", "voice"];
@@ -43,7 +43,7 @@ const oldBuild = (rawTab, date, mode = "tag") => {
 
 const URLS = [
   "", "#", "#/", "#journal", "#journal/2026-10-17", "#journal/today", "#journal/quatsch",
-  "#v2", "#v2/today", "#v2/2026-10-17", "#v2/woche", "#v2/monat/2026-10-17", "#v2/habits/today", "#v2/unbekannt",
+  "#v2", "#v2/today", "#v2/2026-10-17", "#v2/woche", "#v2/jahr", "#v2/jahr/2026-10-17", "#v2/monat/2026-10-17", "#v2/habits/today", "#v2/unbekannt",
   "#door2", "#door2/plan", "#door2/profit/2026-10-17", "#door2/quatsch",
   "#game2", "#game2/focus", "#game2/voice", "#fire", "#focus", "#frame/2026-10-17", "#game-v2/freedom",
   "#tent2", "#tent2/today", "#tent2/2026-10-17", "#tent-v2/2026-10-17",

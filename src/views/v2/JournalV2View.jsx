@@ -4,13 +4,13 @@
 // aber nur: Journal-Einträge (addDoc) und Habit-Records (recordHabit).
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addDays, addMonths, addWeeks, format, getDayOfYear, getISOWeek, isLeapYear, parseISO } from "date-fns";
+import { addDays, addMonths, addWeeks, addYears, format, getDayOfYear, getISOWeek, isLeapYear, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import * as db from "@journal-db";
 // Journal-CRUD direkt aus journal-dev: @journal-db liefert dafür evtl. die
 // fitness-dev-Variante (andere saveJournal-Signatur, kein getJournalRange).
 import { getJournal, getJournalRange, saveJournal, deleteJournal, setJournalTime } from "../../lib/db/journal.js";
-import { MonthView, WeekView, rangeFor } from "./JournalV2Range.jsx";
+import { MonthView, WeekView, YearView, rangeFor } from "./JournalV2Range.jsx";
 import HabitsView from "./JournalV2Habits.jsx";
 import { TimelineOverlay, useTimelineDrag, hhmm } from "./TimelineDrag.jsx";
 import { analyzeSmartJournal } from "../../lib/smartJournalLogger.js";
@@ -40,7 +40,9 @@ function splitEntry(text) {
   return { title: null, body: text };
 }
 
-const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["habits", "Habits"]];
+// Kopfzeile: oben die Zeitraum-Ansichten, darunter Habits und die Sprünge in Door (unter Woche), Focus (unter Monat), Game (unter Jahr)
+const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["jahr", "Jahr"]];
+const LINKS = [["#door2", "Door"], ["#game2/focus", "Focus"], ["#game2", "Game"]];
 
 export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal }) {
   const qc = useQueryClient();
@@ -110,10 +112,11 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
 
   const [rangeFrom, rangeTo] = rangeFor(mode === "monat" ? "monat" : "woche", day);
-  const rangeKey = [iso(rangeFrom), iso(rangeTo)];
+  const [loadFrom, loadTo] = mode === "jahr" ? rangeFor("jahr", day) : [rangeFrom, rangeTo];
+  const rangeKey = [iso(loadFrom), iso(loadTo)];
   const range = useQuery({
     queryKey: ["jv2-range", uid, ...rangeKey],
-    enabled: !!uid && (mode === "woche" || mode === "monat"),
+    enabled: !!uid && (mode === "woche" || mode === "monat" || mode === "jahr"),
     queryFn: () => getJournalRange(rangeKey[0], rangeKey[1]),
   });
 
@@ -131,7 +134,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const evTo = mode === "tag" ? day : rangeTo;
   const events = useQuery({
     queryKey: ["jv2-cal", uid, iso(evFrom), iso(evTo), calAll],
-    enabled: !!uid && calOn && mode !== "habits",
+    enabled: !!uid && calOn && mode !== "habits" && mode !== "jahr",
     retry: false,
     queryFn: async () => {
       try {
@@ -250,7 +253,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
 
   const shift = (n) => {
-    const next = mode === "monat" ? addMonths(day, n) : mode === "woche" ? addWeeks(day, n) : mode === "habits" ? addDays(day, 7 * n) : addDays(day, n);
+    const next = mode === "jahr" ? addYears(day, n) : mode === "monat" ? addMonths(day, n) : mode === "woche" ? addWeeks(day, n) : mode === "habits" ? addDays(day, 7 * n) : addDays(day, n);
     onDateChange(iso(next));
   };
   const pick = (d) => { onDateChange(d); onModeChange("tag"); };
@@ -258,6 +261,12 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const allHabits = (habits.data || []).filter((h) => !h.deleted);
   const habitList = allHabits.slice(0, HABIT_LIMIT); // Streifen in Tag/Woche/Monat
   const doneToday = allHabits.filter((h) => h.hasRecord(date)).length;
+  const head = {
+    woche: { no: getISOWeek(day), kw: "KW", title: `${format(rangeFrom, "d. MMM", { locale: de })} – ${format(rangeTo, "d. MMM", { locale: de })}`, sub: format(rangeFrom, "yyyy") },
+    habits: { no: `${doneToday}/${allHabits.length}`, kw: "Habits", title: format(day, "EEE d. MMM", { locale: de }), sub: "letzte 28 Tage" },
+    jahr: { no: format(day, "yy"), kw: "Jahr", title: format(day, "yyyy"), sub: `${(range.data || []).length} Einträge` },
+    monat: { no: format(day, "MM"), kw: "Monat", title: format(day, "MMMM", { locale: de }), sub: format(day, "yyyy") },
+  }[mode];
   const addNew = (fields) => habitAction(() => addHabit(fields));
   const editHabit = (habit, fields) => habitAction(() => updateHabit(habit.uuid, fields));
   const archive = (habit) => habitAction(() => setHabitArchived(habit.uuid, true));
@@ -266,20 +275,24 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   return (
     <div className="jv2-page">
       <article className="jv2" aria-label="Journal v2">
-        <div className="jv2-modes" role="tablist" aria-label="Ansicht">
+        <div className="jv2-modes jv2-modes1" role="tablist" aria-label="Ansicht">
           {MODES.map(([key, label]) => (
             <button key={key} type="button" role="tab" aria-selected={mode === key} onClick={() => onModeChange(key)}>{label}</button>
           ))}
         </div>
-        {mode !== "tag" && (
+        <div className="jv2-modes" role="group" aria-label="Habits und Sprünge">
+          <button type="button" aria-pressed={mode === "habits"} onClick={() => onModeChange("habits")}>Habits</button>
+          {LINKS.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
+        </div>
+        {mode !== "tag" && head && (
           <div className="jv2-top">
-            <div className="jv2-dayno jv2-rangeno">{mode === "woche" ? getISOWeek(day) : mode === "habits" ? `${doneToday}/${allHabits.length}` : format(day, "MM")}</div>
+            <div className="jv2-dayno jv2-rangeno">{head.no}</div>
             <div className="jv2-meta">
-              <span className="jv2-kw">{mode === "woche" ? "KW" : mode === "habits" ? "Habits" : "Monat"}</span>
+              <span className="jv2-kw">{head.kw}</span>
               <span>
-                <b>{mode === "woche" ? `${format(rangeFrom, "d. MMM", { locale: de })} – ${format(rangeTo, "d. MMM", { locale: de })}` : mode === "habits" ? format(day, "EEE d. MMM", { locale: de }) : format(day, "MMMM", { locale: de })}</b>
+                <b>{head.title}</b>
                 <br />
-                {mode === "habits" ? "letzte 28 Tage" : format(mode === "woche" ? rangeFrom : day, "yyyy")}
+                {head.sub}
               </span>
               <span className="jv2-nav">
                 <button type="button" onClick={() => shift(-1)} aria-label="Zurück">←</button>
@@ -292,6 +305,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {mode === "woche" && <WeekView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
         {mode === "habits" && uid && <HabitsView date={date} today={db.localToday()} habits={habits.data || []} onToggle={toggleHabit} onAdd={addNew} onUpdate={editHabit} onArchive={archive} onRestore={restore} pending={habitPending} loading={habits.isPending} error={habitError || (habits.isError ? "Habits konnten nicht geladen werden." : "")} onRetry={() => { habitMutation.reset(); habits.refetch(); }} />}
         {mode !== "habits" && (habitError || habits.isError) && <div className="jv2-empty" role="alert">{habitError || "Habits konnten nicht geladen werden."} <button type="button" className="jv2-link" onClick={() => { habitMutation.reset(); habits.refetch(); }}>Erneut laden</button></div>}
+        {mode === "jahr" && <YearView day={day} entries={range.data || []} onPick={pick} onPickMonth={(d) => { onDateChange(d); onModeChange("monat"); }} />}
         {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
         {!uid && mode !== "tag" && (
           <div className="jv2-empty">

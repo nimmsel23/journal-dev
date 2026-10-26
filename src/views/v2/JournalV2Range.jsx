@@ -1,8 +1,8 @@
 // Wochen- und Monatsansicht für Journal v2 (Design "Raster").
 // Reine Darstellung: Daten kommen als Props aus JournalV2View.
 import {
-  addDays, eachDayOfInterval, endOfMonth, endOfISOWeek, format, getISOWeek,
-  isSameMonth, startOfMonth, startOfISOWeek,
+  addDays, eachDayOfInterval, endOfMonth, endOfISOWeek, endOfYear, format, getISODay, getISOWeek,
+  isSameMonth, startOfMonth, startOfISOWeek, startOfYear,
 } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -23,6 +23,7 @@ function firstLine(text) {
 
 export function rangeFor(mode, day) {
   if (mode === "woche") return [startOfISOWeek(day), endOfISOWeek(day)];
+  if (mode === "jahr") return [startOfYear(day), endOfYear(day)];
   // Monat inkl. Randtage, damit das Raster volle Wochen zeigt
   return [startOfISOWeek(startOfMonth(day)), endOfISOWeek(endOfMonth(day))];
 }
@@ -101,6 +102,41 @@ export function MonthView({ day, entries, habits, events = new Map(), onPick }) 
           })}
         </div>
       ))}
+    </div>
+  );
+}
+
+// Jahresübersicht: zwölf Mini-Monate, jeder Tag ein Feld nach Zahl der Einträge (0 / 1 / 2 / 3+).
+export function YearView({ day, entries, onPick, onPickMonth }) {
+  const byDate = groupByDate(entries);
+  const today = iso(new Date());
+  const year = day.getFullYear();
+  return (
+    <div className="jv2-year">
+      {Array.from({ length: 12 }, (_, m) => {
+        const first = new Date(year, m, 1);
+        const days = eachDayOfInterval({ start: first, end: endOfMonth(first) });
+        const total = days.reduce((n, d) => n + (byDate.get(iso(d))?.length || 0), 0);
+        return (
+          <section className="jv2-ymonth" key={m}>
+            <button type="button" className="jv2-yhead" onClick={() => onPickMonth(iso(first))} aria-label={`${format(first, "MMMM", { locale: de })}: ${total} Einträge`}>
+              <span>{format(first, "MMM", { locale: de })}</span>
+              {total > 0 && <em>{total}</em>}
+            </button>
+            <div className="jv2-ydays">
+              {Array.from({ length: getISODay(first) - 1 }, (_, i) => <span key={`o${i}`} aria-hidden="true" />)}
+              {days.map((d) => {
+                const key = iso(d);
+                const n = (byDate.get(key) || []).length;
+                return (
+                  <button key={key} type="button" className={`jv2-yday${key === today ? " today" : ""}`} data-n={Math.min(n, 3)}
+                    onClick={() => onPick(key)} aria-label={`${format(d, "d. MMMM", { locale: de })}: ${n} Einträge`}>{format(d, "d")}</button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

@@ -1,11 +1,11 @@
 // hashRoute — URL-Hash als einzige Quelle für Tab, Modus und Datum (rein, ohne React/DOM).
-//   #v2 · #v2/woche · #v2/woche/2026-10-17 · #v2/today · #door2/plan · #game2/focus (Kurzform #focus) · #tent2/2026-10-17
+//   #v2 · #v2/woche · #v2/jahr · #v2/woche/2026-10-17 · #v2/today · #door2/plan · #game2/focus (Kurzform #focus) · #tent2/2026-10-17
 // Funktioniert offline: der Hash wird ausschließlich im Browser ausgewertet.
 
 // Pro Tab: Kurz-Alias, Modi (erster Eintrag = Standard, sofern kein defaultMode) und ob das Datum im Hash steht.
 export function routeMeta({ gameDefault = "fire" } = {}) {
   return {
-    "journal-v2": { alias: "v2", modes: ["tag", "woche", "monat", "habits"], defaultMode: "tag", hasDate: true },
+    "journal-v2": { alias: "v2", modes: ["tag", "woche", "monat", "jahr", "habits"], defaultMode: "tag", hasDate: true },
     "door-v2": { alias: "door2", modes: ["potential", "plan", "production", "profit"], defaultMode: "potential", hasDate: false },
     "game-v2": { alias: "game2", modes: ["fire", "focus", "freedom", "frame", "voice"], defaultMode: gameDefault, hasDate: false, shortForm: true },
     "tent-v2": { alias: "tent2", modes: [], hasDate: true },

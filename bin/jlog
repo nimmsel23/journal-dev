@@ -14,7 +14,8 @@
 //
 // Env: JOURNAL_UID (Standard: Daniels Account), JOURNAL_SA (Service-Account-JSON, Standard ~/.env/firebase-fitness.json),
 //      JLOG_ADMIN (Pfad zu firebase-admin, Standard ~/vitalos/node_modules/firebase-admin).
-// Hinweis: +hot / +profit / +review lösen nur in der PWA die Door-Weiterleitung aus, nicht hier.
+// Door-Tags wie in der PWA: +hot/+potential/+door → Door › Potential (fitness/{uid}/hotlist, nur Quelle "backend"),
+//                           +p/+profit/+review → Door › Profit (journal/{uid}/profit/{id}).
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
@@ -29,6 +30,9 @@ const OUT = join(STATE, "outbox");
 const SENT = join(STATE, "sent");
 const LOCK = join(STATE, "flush.lock");
 const SEND_TIMEOUT_MS = 15000;
+const HOT_TAGS = ["hot", "potential", "door"];
+const PROFIT_TAGS = ["p", "profit", "review"];
+const hasAny = (tags, set) => (tags || []).some((t) => set.includes(t));
 
 // Gleiche Tag-Syntax wie die PWA (src/components/Journal/journalUtils.js)
 const TAG_RE = /(?:^|\s)\+([a-z0-9][a-z0-9_-]*)\b/gi;
@@ -49,6 +53,18 @@ function resolveDay(v) {
   if (/^-\d+$/.test(v)) { d.setDate(d.getDate() + Number(v)); return isoDay(d); }
   if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
   die(`Datum '${v}' — erwartet heute|gestern|-N|YYYY-MM-DD`);
+}
+// ISO-Kalenderwoche, identisch zu weekKey() in src/lib/door/warstack.js
+function weekKey(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return `${d.getUTCFullYear()}-W${pad(Math.ceil(((d - yearStart) / 86400000 + 1) / 7))}`;
+}
+// Titel wie hotTitle(): erste nicht-leere Zeile ohne +tags
+function hotTitle(text) {
+  const line = String(text || "").split("\n").map((l) => l.trim()).find(Boolean) || "";
+  return line.replace(/(^|\s)\+[\p{L}\p{N}_-]+/gu, " ").replace(/\s+/g, " ").trim().slice(0, 200);
 }
 function die(msg) { console.error(`jlog: ${msg}`); process.exit(1); }
 
@@ -84,12 +100,30 @@ async function flush() {
     const sa = JSON.parse(readFileSync(process.env.JOURNAL_SA || join(HOME, ".env/firebase-fitness.json"), "utf8"));
     admin.initializeApp({ credential: admin.credential.cert(sa) });
     const col = admin.firestore().collection("fitness").doc(process.env.JOURNAL_UID || UID_DEFAULT).collection("journal");
+    const uid = process.env.JOURNAL_UID || UID_DEFAULT;
+    const fs = admin.firestore();
+    const FV = admin.firestore.FieldValue;
+    let doorSource; // lazy: Door-Quelle aus journal/{uid}/settings/door
     for (const f of files) {
       const e = JSON.parse(readFileSync(join(OUT, f), "utf8"));
       const data = { date: e.date, text: e.text, tags: e.tags, time: e.time, created_at: admin.firestore.FieldValue.serverTimestamp(), source: "jlog" };
       try {
+        const job = async () => {
+          await col.doc(e.id).set(data);
+          if (hasAny(e.tags, HOT_TAGS) && hotTitle(e.text)) {
+            doorSource ??= (await fs.doc(`journal/${uid}/settings/door`).get()).data()?.source || "backend";
+            if (doorSource === "backend") {
+              await fs.doc(`fitness/${uid}/hotlist/${e.id}`).set({ title: hotTitle(e.text), description: "", status: "active", source: "firestore", created_at: FV.serverTimestamp() });
+              await col.doc(e.id).set({ hot_potential: true }, { merge: true });
+            } else console.error(`jlog: +hot übersprungen — Door-Quelle "${doorSource}" wird nur in der PWA unterstützt`);
+          }
+          if (hasAny(e.tags, PROFIT_TAGS)) {
+            const [y, m, d] = e.date.split("-").map(Number);
+            await fs.doc(`journal/${uid}/profit/${e.id}`).set({ title: hotTitle(e.text), text: e.text, date: e.date, week: weekKey(new Date(y, m - 1, d, 12)), tags: e.tags, updated: FV.serverTimestamp() }, { merge: true });
+          }
+        };
         await Promise.race([
-          col.doc(e.id).set(data),
+          job(),
           new Promise((_, rej) => setTimeout(() => rej(new Error("timeout (offline?)")), SEND_TIMEOUT_MS)),
         ]);
         renameSync(join(OUT, f), join(SENT, f));

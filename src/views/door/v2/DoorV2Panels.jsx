@@ -163,7 +163,7 @@ export function PotentialPanel({ uid, source = "backend" }) {
     ...[1, 2, 3, 4].map((n) => ({ label: `Quadrant Q${n}`, checked: item.quadrant === n, onSelect: () => setQuadrant(sel, n) })),
     "-",
     { label: openId === sel ? "Notiz / War Stack schließen" : "Notiz / War Stack öffnen", onSelect: () => setOpenId(openId === sel ? null : sel) },
-    { label: "Entfernen", disabled: !D.deleteHotlistItem, onSelect: () => remove(sel) },
+    { label: "Entfernen", danger: true, disabled: !D.deleteHotlistItem, onSelect: () => remove(sel) },
   ];
   return (
     <>

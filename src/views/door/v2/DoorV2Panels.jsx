@@ -153,10 +153,17 @@ export function PotentialPanel({ uid, source = "backend" }) {
     qc.setQueryData(key, (d) => (d || []).map((i) => (selectorFor(i) === sel ? { ...i, quadrant: n } : i)));
     run(() => D.assignQuadrant(sel, n));
   };
+  // Entfernen: Zeile sofort aus dem Cache nehmen, dann speichern (Fehler → Refetch holt sie zurück)
+  const remove = (sel) => {
+    qc.setQueryData(key, (d) => (d || []).filter((i) => selectorFor(i) !== sel));
+    setOpenId((o) => (o === sel ? null : o));
+    run(() => D.deleteHotlistItem(sel));
+  };
   const menuItems = (sel, item) => [
     ...[1, 2, 3, 4].map((n) => ({ label: `Quadrant Q${n}`, checked: item.quadrant === n, onSelect: () => setQuadrant(sel, n) })),
     "-",
     { label: openId === sel ? "Notiz / War Stack schließen" : "Notiz / War Stack öffnen", onSelect: () => setOpenId(openId === sel ? null : sel) },
+    { label: "Entfernen", disabled: !D.deleteHotlistItem, onSelect: () => remove(sel) },
   ];
   return (
     <>

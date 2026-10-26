@@ -1,0 +1,155 @@
+#!/usr/bin/env node
+// jlog — Journal-Eintrag vom Terminal nach Firestore (fitness/{uid}/journal), offline-first, fire & forget.
+//
+//   jlog "Heute Legs gemacht +body"        Eintrag anlegen
+//   jlog -d gestern -t 21:30 "Spät notiert"  Datum/Uhrzeit setzen (heute|gestern|-N|YYYY-MM-DD, HH:MM)
+//   echo "Text" | jlog                      Text per stdin
+//   jlog --status                           offene (noch nicht gesendete) Einträge zeigen
+//   jlog --flush                            Outbox jetzt senden (läuft sonst automatisch im Hintergrund)
+//
+// Ablauf: Eintrag landet sofort als Datei in der lokalen Outbox (~/.local/state/jlog/outbox) und der Befehl
+// kehrt zurück. Ein losgelöster Hintergrundprozess sendet die Outbox per Admin-SDK. Ohne Netz bleibt alles liegen
+// und geht beim nächsten Aufruf (oder `jlog --flush`) raus. Die Doc-ID wird beim Anlegen vergeben, Wiederholungen
+// sind also idempotent (kein Doppel-Eintrag).
+//
+// Env: JOURNAL_UID (Standard: Daniels Account), JOURNAL_SA (Service-Account-JSON, Standard ~/.env/firebase-fitness.json),
+//      JLOG_ADMIN (Pfad zu firebase-admin, Standard ~/vitalos/node_modules/firebase-admin).
+// Hinweis: +hot / +profit / +review lösen nur in der PWA die Door-Weiterleitung aus, nicht hier.
+import { createRequire } from "node:module";
+import { spawn } from "node:child_process";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { mkdirSync, writeFileSync, readFileSync, readdirSync, renameSync, rmSync, statSync, existsSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+
+const HOME = homedir();
+const UID_DEFAULT = "59ole36uNpNwml5H6VDYCXyCME92"; // nimmsel23@gmail.com
+const STATE = join(process.env.XDG_STATE_HOME || join(HOME, ".local/state"), "jlog");
+const OUT = join(STATE, "outbox");
+const SENT = join(STATE, "sent");
+const LOCK = join(STATE, "flush.lock");
+const SEND_TIMEOUT_MS = 15000;
+
+// Gleiche Tag-Syntax wie die PWA (src/components/Journal/journalUtils.js)
+const TAG_RE = /(?:^|\s)\+([a-z0-9][a-z0-9_-]*)\b/gi;
+function extractTags(raw) {
+  const tags = [], seen = new Set();
+  const text = String(raw || "")
+    .replace(TAG_RE, (_, t) => { const n = t.toLowerCase(); if (!seen.has(n)) { seen.add(n); tags.push(n); } return ""; })
+    .replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  return { text, tags };
+}
+
+const pad = (n) => String(n).padStart(2, "0");
+const isoDay = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+function resolveDay(v) {
+  const d = new Date();
+  if (!v || v === "heute") return isoDay(d);
+  if (v === "gestern") { d.setDate(d.getDate() - 1); return isoDay(d); }
+  if (/^-\d+$/.test(v)) { d.setDate(d.getDate() + Number(v)); return isoDay(d); }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  die(`Datum '${v}' — erwartet heute|gestern|-N|YYYY-MM-DD`);
+}
+function die(msg) { console.error(`jlog: ${msg}`); process.exit(1); }
+
+// Firestore-Auto-ID (20 Zeichen, wie die SDKs)
+function autoId() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from(randomBytes(20), (b) => chars[b % chars.length]).join("");
+}
+
+function pending() {
+  if (!existsSync(OUT)) return [];
+  return readdirSync(OUT).filter((f) => f.endsWith(".json")).sort();
+}
+
+function flushInBackground() {
+  const child = spawn(process.execPath, [new URL(import.meta.url).pathname, "--flush-worker"], {
+    detached: true, stdio: "ignore",
+  });
+  child.unref();
+}
+
+async function flush() {
+  mkdirSync(SENT, { recursive: true });
+  // Ein Worker gleichzeitig; verwaiste Locks (>2 min) werden übernommen
+  try { if (Date.now() - statSync(LOCK).mtimeMs > 120000) rmSync(LOCK, { recursive: true }); } catch {}
+  try { mkdirSync(LOCK); } catch { return 0; }
+  let sent = 0;
+  try {
+    const files = pending();
+    if (!files.length) return 0;
+    const require = createRequire(import.meta.url);
+    const admin = require(process.env.JLOG_ADMIN || join(HOME, "vitalos/node_modules/firebase-admin"));
+    const sa = JSON.parse(readFileSync(process.env.JOURNAL_SA || join(HOME, ".env/firebase-fitness.json"), "utf8"));
+    admin.initializeApp({ credential: admin.credential.cert(sa) });
+    const col = admin.firestore().collection("fitness").doc(process.env.JOURNAL_UID || UID_DEFAULT).collection("journal");
+    for (const f of files) {
+      const e = JSON.parse(readFileSync(join(OUT, f), "utf8"));
+      const data = { date: e.date, text: e.text, tags: e.tags, time: e.time, created_at: admin.firestore.FieldValue.serverTimestamp(), source: "jlog" };
+      try {
+        await Promise.race([
+          col.doc(e.id).set(data),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("timeout (offline?)")), SEND_TIMEOUT_MS)),
+        ]);
+        renameSync(join(OUT, f), join(SENT, f));
+        sent++;
+      } catch (err) {
+        console.error(`jlog: ${f} nicht gesendet: ${err.message}`);
+        break; // offline/Fehler: Rest bleibt liegen, nächster Lauf versucht es erneut
+      }
+    }
+  } finally {
+    rmSync(LOCK, { recursive: true, force: true });
+  }
+  return sent;
+}
+
+// ── CLI ───────────────────────────────────────────────────────────────────────
+const args = process.argv.slice(2);
+let day, clock, mode = "add";
+const words = [];
+for (let i = 0; i < args.length; i++) {
+  const a = args[i];
+  if (a === "--flush-worker") mode = "worker";
+  else if (a === "--flush") mode = "flush";
+  else if (a === "--status") mode = "status";
+  else if (a === "-h" || a === "--help") mode = "help";
+  else if (a === "-d" || a === "--date") day = args[++i];
+  else if (a === "-t" || a === "--time") clock = args[++i];
+  else words.push(a);
+}
+
+if (mode === "help") {
+  console.log(readFileSync(new URL(import.meta.url).pathname, "utf8").split("\n").filter((l) => l.startsWith("//")).slice(0, 12).map((l) => l.slice(3)).join("\n"));
+} else if (mode === "worker") {
+  await flush().catch(() => {});
+} else if (mode === "flush") {
+  const n = await flush().catch((e) => die(e.message));
+  console.log(`${n} gesendet, ${pending().length} offen`);
+} else if (mode === "status") {
+  const files = pending();
+  console.log(files.length ? `${files.length} offen:` : "Outbox leer");
+  for (const f of files) { const e = JSON.parse(readFileSync(join(OUT, f), "utf8")); console.log(`  ${e.date} ${e.text.split("\n")[0].slice(0, 70)}`); }
+} else {
+  let raw = words.join(" ");
+  if (!raw && !process.stdin.isTTY) raw = readFileSync(0, "utf8");
+  const { text, tags } = extractTags(raw);
+  if (!text) { if (pending().length) { flushInBackground(); process.exit(0); } die('Text fehlt — jlog "Dein Eintrag +tag"'); }
+  const date = resolveDay(day);
+  const now = new Date();
+  let time = now.toISOString();
+  if (clock) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(clock);
+    if (!m) die(`Uhrzeit '${clock}' — erwartet HH:MM`);
+    const [y, mo, d] = date.split("-").map(Number);
+    time = new Date(y, mo - 1, d, Number(m[1]), Number(m[2])).toISOString();
+  }
+  const id = autoId();
+  mkdirSync(OUT, { recursive: true });
+  const file = join(OUT, `${Date.now()}-${id}.json`);
+  writeFileSync(file + ".tmp", JSON.stringify({ id, date, text, tags, time }));
+  renameSync(file + ".tmp", file); // atomar: Worker sieht nie halbe Dateien
+  flushInBackground();
+  console.log(`✓ ${date}${tags.length ? "  " + tags.map((t) => "+" + t).join(" ") : ""}  (Sync läuft im Hintergrund)`);
+}

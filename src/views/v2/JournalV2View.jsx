@@ -9,7 +9,7 @@ import { de } from "date-fns/locale";
 import * as db from "@journal-db";
 // Journal-CRUD direkt aus journal-dev: @journal-db liefert dafür evtl. die
 // fitness-dev-Variante (andere saveJournal-Signatur, kein getJournalRange).
-import { getJournal, getJournalRange, saveJournal, deleteJournal, setJournalTime } from "../../lib/db/journal.js";
+import { getJournal, getJournalRange, saveJournal, updateJournal, deleteJournal, setJournalTime } from "../../lib/db/journal.js";
 import { MonthView, WeekView, YearView, rangeFor } from "./JournalV2Range.jsx";
 import HabitsView from "./JournalV2Habits.jsx";
 import { TimelineOverlay, useTimelineDrag, hhmm } from "./TimelineDrag.jsx";
@@ -247,6 +247,27 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
   const timeline = useTimelineDrag({ grain, setGrain, onMove: moveEntry, minutesOf });
 
+  // Eintrag bearbeiten: Text + „+tag“-Zeile in einem Feld (wie beim Anlegen), Speichern über updateJournal
+  const [edit, setEdit] = useState(null); // { id, text, err }
+  const startEdit = (e) => setEdit({ id: e.id, text: [String(e.text || "").trimEnd(), (e.tags || []).map((t) => `+${t}`).join(" ")].filter(Boolean).join("\n"), err: "" });
+  const saveEdit = async (e) => {
+    const { text, tags } = extractTags(edit.text);
+    if (!text) { setEdit({ ...edit, err: "Text darf nicht leer sein." }); return; }
+    if (busy) return;
+    setBusy(true);
+    try {
+      await updateJournal(e.id, text, { tags, startDate: e.startDate, endDate: e.endDate });
+      setEdit(null);
+      await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
+      qc.invalidateQueries({ queryKey: ["jv2-range"] });
+    } catch (error) {
+      console.error("Eintrag ändern fehlgeschlagen:", error);
+      setEdit((cur) => cur && { ...cur, err: error?.message || "Speichern fehlgeschlagen." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const remove = async (id) => {
     await deleteJournal(id);
     qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
@@ -378,12 +399,33 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           return (
             <div key={e.id} className={`jv2-entry${tags.includes("offen") ? " open" : ""}`}>
               <button type="button" className="jv2-thandle" {...timeline.handleProps(e)} aria-label={`Uhrzeit ${hhmm(minutesOf(e))}: ziehen oder Pfeiltasten hoch/runter verschiebt den Eintrag`}>{hhmm(minutesOf(e))}</button>
-              <div className="jv2-body">
-                {title && <h3>{title}</h3>}
-                {body && <p>{body}</p>}
-                {tags.map((t) => <span key={t} className="jv2-tag">{t}</span>)}
-              </div>
-              <button type="button" className="jv2-del" aria-label="Eintrag löschen" onClick={() => remove(e.id)}>×</button>
+              {edit?.id === e.id ? (
+                <div className="jv2-body jv2-edit">
+                  <textarea
+                    autoFocus rows={4} aria-label="Eintrag bearbeiten" value={edit.text}
+                    onChange={(ev) => setEdit({ ...edit, text: ev.target.value, err: "" })}
+                    onKeyDown={(ev) => {
+                      if (ev.key === "Escape") setEdit(null);
+                      else if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); saveEdit(e); }
+                    }}
+                  />
+                  {edit.err && <div role="alert" className="jv2-eerr">{edit.err}</div>}
+                  <div className="jv2-eact">
+                    <button type="button" onClick={() => saveEdit(e)} disabled={busy || !edit.text.trim()}>Speichern</button>
+                    <button type="button" className="ghost" onClick={() => setEdit(null)}>Abbrechen</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="jv2-body">
+                    {title && <h3>{title}</h3>}
+                    {body && <p>{body}</p>}
+                    {tags.map((t) => <span key={t} className="jv2-tag">{t}</span>)}
+                  </div>
+                  <button type="button" className="jv2-editbtn" aria-label="Eintrag bearbeiten" onClick={() => startEdit(e)}>✎</button>
+                  <button type="button" className="jv2-del" aria-label="Eintrag löschen" onClick={() => remove(e.id)}>×</button>
+                </>
+              )}
             </div>
           );
         })}

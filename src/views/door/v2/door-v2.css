@@ -198,3 +198,5 @@
 .dv2-menu button.danger:hover:not(:disabled), .dv2-menu button.danger:focus-visible { background: #c00; color: #fff; }
 .dv2-menu button:disabled { opacity: .4; cursor: default; }
 .dv2-menu hr { margin: 4px 0; border: 0; border-top: 1px solid var(--ink); }
+.dv2-oldnote { margin: 0; padding: 8px 10px; border-left: 3px solid var(--ink); font-size: 14px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
+.dv2-note textarea:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }

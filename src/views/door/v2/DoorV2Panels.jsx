@@ -5,7 +5,7 @@ import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, u
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { door } from "../../../lib/door/source.js";
 import WarstackWizard from "./DoorV2Warstack.jsx";
-import ContextMenu from "./DoorV2ContextMenu.jsx";
+import ContextMenu, { copyText, menuPos, useContextMenu } from "./DoorV2ContextMenu.jsx";
 import * as twDoor from "../../../lib/door/taskwarrior.door.js";
 import { fetchProfitGtasks } from "../../../lib/door/gtasks.door.js";
 import { fetchProfitReviews } from "../../../lib/door/profitFromJournal.js";
@@ -45,6 +45,11 @@ function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, onMenu, D, 
   const [note, setNote] = useState("");
   const [ws, setWs] = useState(false);
   const [msgText, setMsgText] = useState("");
+  const qc = useQueryClient();
+  // vorhandene Notiz anzeigen: Backend lädt sie je Item, Google Tasks bringt sie als description mit
+  const noteKey = ["dv2-note", uid, source, sel];
+  const noteQ = useQuery({ queryKey: noteKey, enabled: open && !!D.fetchNote, queryFn: () => D.fetchNote(sel), staleTime: 15_000 });
+  const oldNote = String((D.fetchNote ? noteQ.data : item.description) || "").trim();
   const move = (v) => { dxRef.current = v; setDx(v); };
   const target = swipeTarget(dx);
   const end = (e) => {
@@ -57,7 +62,11 @@ function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, onMenu, D, 
   };
   const saveNote = async () => {
     setMsgText("");
-    try { await D.addNote(sel, note); setNote(""); setMsgText("Notiz gespeichert – in taskopen verfügbar."); onChanged(); }
+    try {
+      await D.addNote(sel, note); setNote("");
+      setMsgText(source === "taskwarrior" ? "Notiz gespeichert – in taskopen verfügbar." : "Notiz gespeichert.");
+      qc.invalidateQueries({ queryKey: noteKey }); onChanged();
+    }
     catch (e) { setMsgText(msg(e)); }
   };
   const wsApi = source === "taskwarrior" ? twDoor : undefined;
@@ -81,10 +90,8 @@ function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, onMenu, D, 
         onContextMenu={(e) => {
           e.preventDefault();
           st.current = null; move(0); // ein halb begonnener Wisch gilt nicht mehr
-          // Menü-Taste/Umschalt+F10 liefern clientX/Y = 0: dann an der Zeile öffnen
-          const r = e.currentTarget.getBoundingClientRect();
-          const kb = e.clientX === 0 && e.clientY === 0;
-          onMenu(sel, item, kb ? r.left + 16 : e.clientX, kb ? r.bottom : e.clientY);
+          const { x, y } = menuPos(e);
+          onMenu(sel, item, x, y);
         }}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
       >
@@ -102,7 +109,8 @@ function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, onMenu, D, 
           </div>
           {D.addNote && (
             <div className="dv2-note">
-              <textarea aria-label="Notiz" rows={3} placeholder="Notiz – wird als Annotation am Task gespeichert (taskopen)" value={note} onChange={(e) => setNote(e.target.value)} />
+              {oldNote && <p className="dv2-oldnote">{oldNote}</p>}
+              <textarea aria-label="Notiz" rows={3} placeholder={source === "taskwarrior" ? "Notiz – wird als Annotation am Task gespeichert (taskopen)" : "Notiz zu diesem Eintrag …"} value={note} onChange={(e) => setNote(e.target.value)} />
               <button type="button" disabled={!note.trim()} onClick={saveNote}>Notiz speichern</button>
             </div>
           )}
@@ -177,10 +185,15 @@ export function PotentialPanel({ uid, source = "backend" }) {
 /* ── Plan: Door War ── */
 const QLABEL = { 1: "Q1 · Dringend + Wichtig", 2: "Q2 · Wichtig, nicht dringend", 3: "Q3 · Dringend, nicht wichtig", 4: "Q4 · Weder noch" };
 /* Plan-Board: Items per Griff (⠿) in Quadranten oder auf „Door der Woche“ ziehen (dnd-kit) */
-function PlanItem({ k, item, isDoor, busy, canDrag, onQuadrant, onDoor }) {
+function PlanItem({ k, item, isDoor, busy, canDrag, onQuadrant, onDoor, bind }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: k, disabled: !canDrag });
   return (
-    <div ref={setNodeRef} className={`dv2-row dv2-plan${isDoor ? " door" : ""}${isDragging ? " dragging" : ""}`}>
+    <div ref={setNodeRef} className={`dv2-row dv2-plan${isDoor ? " door" : ""}${isDragging ? " dragging" : ""}`}
+      onContextMenu={bind([
+        ...[1, 2, 3, 4].map((n) => ({ label: `Quadrant Q${n}`, checked: item.quadrant === n, disabled: busy, onSelect: () => onQuadrant(k, n) })),
+        "-",
+        { label: isDoor ? "Ist Door der Woche" : "Als Door der Woche", disabled: busy || isDoor, onSelect: () => onDoor(k) },
+      ], item.title)}>
       {canDrag && <button type="button" className="dv2-grip" aria-label={`${item.title} verschieben`} {...listeners} {...attributes}>⠿</button>}
       <div className="dv2-text">
         <h3>{item.title}</h3>
@@ -207,6 +220,7 @@ export function PlanPanel({ uid, source = "backend" }) {
   const key = ["dv2-plan", uid, source];
   const [err, setErr] = useState("");
   const [dragId, setDragId] = useState(null);
+  const [bind, menuNode] = useContextMenu();
   const q = useQuery({ queryKey: key, queryFn: D.fetchDoorWar, staleTime: 15_000 });
   const act = useMutation({
     mutationFn: (fn) => fn(),
@@ -231,23 +245,26 @@ export function PlanPanel({ uid, source = "backend" }) {
     return { ...d, board: b, candidates: d.candidates.map((c) => (keyFor(c) === k ? { ...c, quadrant: n } : c)) };
   });
   const setQuadrant = (k, n) => { moveLocal(k, n); act.mutate(() => D.assignQuadrant(k, n)); };
-  const setDoor = (k) => act.mutate(() => D.selectWeeklyDoor(k));
+  // Door der Woche: liegt das Item nicht in Q2, wandert es zuerst dorthin
+  const setDoor = (k) => {
+    if (selected === k) return;
+    const item = byKey.get(k);
+    if (item?.quadrant !== 2) moveLocal(k, 2);
+    act.mutate(async () => { if (item?.quadrant !== 2) await D.assignQuadrant(k, 2); await D.selectWeeklyDoor(k); });
+  };
   const onDragEnd = ({ active, over }) => {
     setDragId(null);
     if (!over) return;
     const k = String(active.id);
     const item = byKey.get(k);
-    if (over.id === "door") {
-      if (selected === k) return;
-      if (item?.quadrant !== 2) moveLocal(k, 2);
-      act.mutate(async () => { if (item?.quadrant !== 2) await D.assignQuadrant(k, 2); await D.selectWeeklyDoor(k); });
-    } else if (String(over.id).startsWith("q")) {
+    if (over.id === "door") setDoor(k);
+    else if (String(over.id).startsWith("q")) {
       const n = Number(String(over.id).slice(1));
       if (item?.quadrant !== n) setQuadrant(k, n);
     }
   };
   const row = (k) => byKey.get(k) && (
-    <PlanItem key={k} k={k} item={byKey.get(k)} isDoor={selected === k} busy={act.isPending} canDrag={canDrag} onQuadrant={setQuadrant} onDoor={setDoor} />
+    <PlanItem key={k} k={k} item={byKey.get(k)} isDoor={selected === k} busy={act.isPending} canDrag={canDrag} onQuadrant={setQuadrant} onDoor={setDoor} bind={bind} />
   );
   return (
     <State q={q} empty={!q.isLoading && !q.isError && total === 0 ? "Keine Kandidaten. Erst Items in Potential anlegen." : null}>
@@ -277,6 +294,7 @@ export function PlanPanel({ uid, source = "backend" }) {
         )}
         <DragOverlay>{dragId && byKey.get(dragId) ? <div className="dv2-row dv2-plan dv2-ghost"><div className="dv2-text"><h3>{byKey.get(dragId).title}</h3></div></div> : null}</DragOverlay>
       </DndContext>
+      {menuNode}
     </State>
   );
 }
@@ -294,6 +312,7 @@ export function ProductionPanel({ uid, source = "backend" }) {
     onSuccess: () => { setErr(""); qc.invalidateQueries({ queryKey: ["dv2-prod", uid, source] }); qc.invalidateQueries({ queryKey: ["dv2-prod-sum", uid, source] }); },
     onError: (e) => setErr(msg(e)),
   });
+  const [bind, menuNode] = useContextMenu();
   const [draft, setDraft] = useState("");
   const [day, setDay] = useState(() => DAYS[Math.min(6, (new Date().getDay() + 6) % 7)][0]);
   const add = useMutation({
@@ -327,7 +346,11 @@ export function ProductionPanel({ uid, source = "backend" }) {
                 <h4>{label}</h4>
                 {items.length === 0 && <span className="dv2-none">–</span>}
                 {items.map((it) => (
-                  <button key={it.id} type="button" className={`dv2-hit${it.done ? " done" : ""}${it.kind === "big" ? " big" : ""}`} aria-pressed={!!it.done} disabled={tog.isPending} onClick={() => tog.mutate(it.id)}>
+                  <button key={it.id} type="button" className={`dv2-hit${it.done ? " done" : ""}${it.kind === "big" ? " big" : ""}`} aria-pressed={!!it.done} disabled={tog.isPending} onClick={() => tog.mutate(it.id)}
+                    onContextMenu={bind([
+                      { label: it.done ? "Wieder öffnen" : "Erledigt", disabled: tog.isPending, onSelect: () => tog.mutate(it.id) },
+                      { label: "Text kopieren", onSelect: () => copyText(it.label || it.fact) },
+                    ], it.label || it.fact)}>
                     <i>{it.done ? "✓" : ""}</i>
                     <span>{it.label || it.fact || "— leer —"}</span>
                   </button>
@@ -337,6 +360,7 @@ export function ProductionPanel({ uid, source = "backend" }) {
           })}
         </div>
       </State>
+      {menuNode}
     </>
   );
 }
@@ -344,6 +368,16 @@ export function ProductionPanel({ uid, source = "backend" }) {
 /* ── Profit: Auswertung (nur lesen) ── */
 export function ProfitPanel({ uid, source = "backend" }) {
   return source === "gtasks" || source === "taskwarrior" ? <ProfitGtasks uid={uid} source={source} /> : <ProfitBackend uid={uid} source={source} />;
+}
+
+/* Profit-Zeile (nur lesen): Rechtsklick kopiert den Text */
+function CopyRow({ text, children }) {
+  const [bind, node] = useContextMenu();
+  return (
+    <div className="dv2-row" onContextMenu={bind([{ label: "Text kopieren", onSelect: () => copyText(text) }], "Zeile")}>
+      {children}{node}
+    </div>
+  );
 }
 
 /* Quelle Google Tasks: Wochen-Auswertung aus erledigten Tasks, keine Reflexionen */
@@ -355,11 +389,11 @@ function ProfitGtasks({ uid, source }) {
     <State q={q}>
       <h4 className="dv2-sec">Erledigt pro Woche <span>{weeks.length}</span></h4>
       {weeks.map((w) => (
-        <div key={w.week} className="dv2-row"><div className="dv2-text"><h3>{w.week}</h3><p>{w.potential} Potential · {w.hits} Hits</p></div></div>
+        <CopyRow key={w.week} text={`${w.week}: ${w.potential} Potential · ${w.hits} Hits`}><div className="dv2-text"><h3>{w.week}</h3><p>{w.potential} Potential · {w.hits} Hits</p></div></CopyRow>
       ))}
       <h4 className="dv2-sec">Erledigte Wochen-Doors <span>{doors.length}</span></h4>
       {doors.length === 0 ? <div className="dv2-empty">Noch keine erledigte Door.</div> : doors.map((x) => (
-        <div key={x.id} className="dv2-row"><div className="dv2-text"><h3>{x.door_title}</h3><p>{x.week}</p></div></div>
+        <CopyRow key={x.id} text={x.door_title}><div className="dv2-text"><h3>{x.door_title}</h3><p>{x.week}</p></div></CopyRow>
       ))}
       <ProfitReviews uid={uid} />
     </State>
@@ -376,10 +410,10 @@ function ProfitReviews({ uid }) {
       {q.isError ? <div className="dv2-empty" role="alert">{msg(q.error)}</div>
         : list.length === 0 ? <div className="dv2-empty">{q.isLoading ? "Lade …" : "Noch keine. Im Journal mit +review, +profit oder +p taggen."}</div>
         : list.map((x) => (
-          <div key={x.id} className="dv2-row"><div className="dv2-text">
+          <CopyRow key={x.id} text={String(x.text || x.title || "").trim()}><div className="dv2-text">
             <h3>{x.title || "—"}</h3>
             <p>{x.week} · {x.date}{String(x.text || "").trim().split("\n").length > 1 ? ` — ${String(x.text).trim().split("\n").slice(1).join(" ").slice(0, 240)}` : ""}</p>
-          </div></div>
+          </div></CopyRow>
         ))}
     </>
   );
@@ -402,23 +436,23 @@ function ProfitBackend({ uid, source }) {
           <span>{title ? `Door: ${title}` : "Keine Door gewählt"}{ws?.opened ? " · geöffnet" : ""}{w.data?.week ? ` · ${w.data.week}` : ""}</span>
         </div>
         {ws ? (ws.hits || []).map((h) => (
-          <div key={h.id} className="dv2-row">
+          <CopyRow key={h.id} text={h.fact}>
             <span className={`dv2-check static${h.done ? " done" : ""}`}><i>{h.done ? "✓" : ""}</i></span>
             <div className="dv2-text"><h3>{h.fact || "— leer —"}</h3></div>
-          </div>
+          </CopyRow>
         )) : <div className="dv2-empty">Noch kein War Stack für diese Woche.</div>}
       </State>
       <h4 className="dv2-sec">Abgeschlossene War Stacks <span>{done.length}</span></h4>
       {c.isError ? <div className="dv2-empty" role="alert">{msg(c.error)}</div>
         : done.length === 0 ? <div className="dv2-empty">{c.isLoading ? "Lade …" : "Noch keine abgeschlossenen War Stacks."}</div>
         : done.map((x) => (
-          <div key={x.id} className="dv2-row"><div className="dv2-text"><h3>{x.door_title}</h3><p>{x.week} · {x.hit_count} Hits</p></div></div>
+          <CopyRow key={x.id} text={x.door_title}><div className="dv2-text"><h3>{x.door_title}</h3><p>{x.week} · {x.hit_count} Hits</p></div></CopyRow>
         ))}
       <h4 className="dv2-sec">Reflexionen <span>{refl.length}</span></h4>
       {r.isError ? <div className="dv2-empty" role="alert">{msg(r.error)}</div>
         : refl.length === 0 ? <div className="dv2-empty">{r.isLoading ? "Lade …" : "Keine Reflexionen."}</div>
         : refl.map((x) => (
-          <div key={x.id || x.path} className="dv2-row"><div className="dv2-text"><h3>{x.door_title || "—"}</h3><p>{x.reflection || ""}</p></div></div>
+          <CopyRow key={x.id || x.path} text={[x.door_title, x.reflection].filter(Boolean).join("\n")}><div className="dv2-text"><h3>{x.door_title || "—"}</h3><p>{x.reflection || ""}</p></div></CopyRow>
         ))}
       <ProfitReviews uid={uid} />
     </>

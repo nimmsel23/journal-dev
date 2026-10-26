@@ -1,7 +1,7 @@
 // Rechtsklick-Menü für Door v2. Öffnet per contextmenu-Event (Rechtsklick, Menü-Taste,
 // Umschalt+F10, Langdruck auf Android) an der Zeigerposition; Pfeiltasten, Esc und Klick daneben schließen.
 // Items: { label, onSelect, checked?, danger?, disabled? } oder "-" als Trenner.
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export default function ContextMenu({ x, y, items, label = "Aktionen", onClose }) {
   const ref = useRef(null);
@@ -55,3 +55,20 @@ export default function ContextMenu({ x, y, items, label = "Aktionen", onClose }
     </div>
   );
 }
+
+/** Position aus einem contextmenu-Event. Menü-Taste/Umschalt+F10 liefern clientX/Y = 0: dann an der Zeile öffnen. */
+export function menuPos(e) {
+  if (e.clientX !== 0 || e.clientY !== 0) return { x: e.clientX, y: e.clientY };
+  const r = e.currentTarget.getBoundingClientRect();
+  return { x: r.left + 16, y: r.bottom };
+}
+
+/** [bind, node]: `bind(items, label)` liefert einen onContextMenu-Handler, `node` ins JSX des Panels/der Zeile setzen. */
+export function useContextMenu() {
+  const [m, setM] = useState(null);
+  const close = useCallback(() => setM(null), []);
+  const bind = (items, label) => (e) => { e.preventDefault(); setM({ ...menuPos(e), items, label }); };
+  return [bind, m && <ContextMenu x={m.x} y={m.y} label={m.label} items={m.items} onClose={close} />];
+}
+
+export const copyText = (t) => { try { navigator.clipboard?.writeText(String(t || "")).catch(() => {}); } catch {} };

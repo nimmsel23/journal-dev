@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trophy, Check } from "lucide-react";
 
-import { fetchProfitWeek, fetchCompletedWarstacks, saveReflection, fetchReflections, isProfitCloudMode } from "../../lib/door/profit.js";
+import { fetchProfitWeek, fetchCompletedWarstacks, saveReflection, fetchReflections, toggleWarstackHit } from "../../lib/door/v1.js";
 
 export default function ProfitView() {
   const qc = useQueryClient();
@@ -36,6 +36,15 @@ export default function ProfitView() {
     onError: (err) => setError(err?.message || "Reflexion speichern fehlgeschlagen."),
   });
 
+  const hitMutation = useMutation({
+    mutationFn: ({ warstackId, hitId }) => toggleWarstackHit(warstackId, hitId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["door-profit-week"] });
+      qc.invalidateQueries({ queryKey: ["door-profit-completed"] });
+    },
+    onError: (err) => setError(err?.message || "Hit konnte nicht gespeichert werden."),
+  });
+
   function submitReflection(event) {
     event.preventDefault();
     const text = reflectionText.trim();
@@ -48,7 +57,7 @@ export default function ProfitView() {
     <div className="space-y-6">
       <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/40 px-5 py-3 text-xs text-slate-400">
         <span className="inline-flex items-center gap-2"><Trophy className="h-3.5 w-3.5" /> Wochenabschluss</span>
-        <span>{isProfitCloudMode() ? "Cloud-Modus (Firestore)" : "Lokal über Door-Server (:6400)"}</span>
+        <span>Google Tasks · Notes in „Door · Profit“</span>
       </div>
 
       {error ? (
@@ -73,9 +82,17 @@ export default function ProfitView() {
               </p>
               <ul className="mt-3 space-y-1.5">
                 {(week.warstack.hits || []).map((hit) => (
-                  <li key={hit.id} className="flex items-center gap-2 text-xs text-slate-300">
-                    {hit.done ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <span className="h-3.5 w-3.5" />}
-                    {hit.fact || <span className="text-slate-600">— leer —</span>}
+                  <li key={hit.id}>
+                    <button
+                      type="button"
+                      onClick={() => hitMutation.mutate({ warstackId: week.warstack.id, hitId: hit.id })}
+                      disabled={hitMutation.isPending}
+                      title="Hit abhaken"
+                      className="flex w-full items-center gap-2 text-left text-xs text-slate-300 hover:text-white disabled:opacity-60"
+                    >
+                      {hit.done ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <span className="h-3.5 w-3.5 rounded border border-slate-600" />}
+                      {hit.fact || <span className="text-slate-600">— leer —</span>}
+                    </button>
                   </li>
                 ))}
               </ul>

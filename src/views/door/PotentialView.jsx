@@ -10,13 +10,12 @@ import {
   deleteHotlistItem,
   fetchHotlistNote,
   saveHotlistNote,
-  isPotentialCloudMode,
-} from "../../lib/door/potential.js";
+} from "../../lib/door/v1.js";
+import { googleErrorText } from "../../lib/google/tokens.js";
 
 const MODES = [
   { key: "active", label: "Aktiv" },
   { key: "done", label: "Erledigt" },
-  { key: "deleted", label: "Gelöscht" },
   { key: "all", label: "Alle" },
 ];
 
@@ -26,7 +25,11 @@ function selectorFor(item) {
 
 function formatCreatedAt(value) {
   if (!value) return "";
-  // Taskwarrior-Format: 20260417T044548Z
+  // Google Tasks liefert ISO-Zeit (2026-10-28T17:23:52.000Z)
+  const iso = new Date(value);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(String(value)) && !Number.isNaN(iso.getTime())) {
+    return iso.toLocaleString("de-AT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
   const match = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?$/.exec(String(value));
   if (!match) return String(value);
   const [, y, m, d, hh, mm] = match;
@@ -156,9 +159,7 @@ export default function PotentialView() {
           </div>
         </div>
         <p className="text-sm text-rose-300/80 md:max-w-md md:text-right">
-          {isPotentialCloudMode()
-            ? "Cloud-Modus: eigenständige Firestore Hot List (kein lokaler aos server erreichbar)."
-            : "Taskwarrior-basierte Hot List aus aos/door — gelesen und geschrieben über den aos server (:7001)."}
+          Hot List in Google Tasks — Liste „Door · Potential“, gelesen und geschrieben direkt über dein Google-Konto.
         </p>
       </header>
 
@@ -209,7 +210,7 @@ export default function PotentialView() {
           <div className="py-10 text-center text-sm text-slate-500 animate-pulse">Lädt Hot List…</div>
         ) : isError ? (
           <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-4 text-sm text-rose-200">
-            Hot List nicht erreichbar ({error?.message || "unbekannter Fehler"}). Läuft der aos server (:7001)?
+            Hot List nicht erreichbar ({googleErrorText(error)}).
             <button onClick={() => refetch()} className="ml-3 underline hover:text-white">
               Erneut versuchen
             </button>

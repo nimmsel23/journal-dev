@@ -6,15 +6,17 @@
 // Voraussetzung: Tasks API im GCP-Projekt aktiviert (fitness-aos: ja) und der Scope
 // https://www.googleapis.com/auth/tasks im OAuth-Zustimmungsbildschirm.
 //
-// Sicherheitsrahmen: Es werden nur die beiden Listen "Door · Potential" und
-// "Door · Production" angefasst (find-or-create über den Titel); andere Listen
-// werden nie gelesen oder verändert.
+// Sicherheitsrahmen: Es werden nur die vier Door-Listen ("Door · Potential",
+// "Door · Production", "Door · War Stacks", "Door · Profit") angefasst (find-or-create
+// über den Titel); andere Listen werden nie gelesen oder verändert.
 import { google } from "../google/auth.js";
 
 const API = "https://tasks.googleapis.com/tasks/v1";
 
 export const LIST_POTENTIAL = "Door · Potential";
 export const LIST_PRODUCTION = "Door · Production";
+export const LIST_WARSTACK = "Door · War Stacks"; // Door v1: je War Stack ein Task, Inhalt in den Notes
+export const LIST_PROFIT = "Door · Profit";       // Door v1: je Wochen-Reflexion ein Task, Text in den Notes
 
 async function api(method, path, { params, body } = {}) {
   const qs = params ? `?${new URLSearchParams(params)}` : "";
@@ -49,7 +51,7 @@ export async function ensureList(title) {
   return found.id;
 }
 
-// ── Tasks (immer nur in einer der beiden Door-Listen) ──
+// ── Tasks (immer nur in einer der Door-Listen) ──
 const enc = encodeURIComponent;
 
 /** opts: { showCompleted, dueMin, dueMax, completedMin } — paginiert, gibt alle zurück. */
@@ -67,6 +69,11 @@ export async function listTasks(listTitle, opts = {}) {
     pageToken = data.nextPageToken;
   } while (pageToken);
   return out;
+}
+
+export async function getTask(listTitle, id) {
+  const listId = await ensureList(listTitle);
+  return api("GET", `/lists/${enc(listId)}/tasks/${enc(id)}`);
 }
 
 export async function insertTask(listTitle, task, previous) {

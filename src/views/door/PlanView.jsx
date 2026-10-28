@@ -9,13 +9,12 @@ import {
   fetchWarstacks,
   startWarstack,
   answerWarstack,
-  isPlanCloudMode,
-} from "../../lib/door/plan.js";
+} from "../../lib/door/v1.js";
 
 // Alle Lenses teilen sich dieselbe Datenbasis (Quadrant 1-4 im Door War,
 // identisch zu Eisenhower gespeichert) — nur Labels/Hints/Gruppierung pro
 // Lens unterscheiden sich. Die Quadrant-Zuordnung selbst bleibt immer 1-4,
-// "Door der Woche" bleibt an Quadrant 2 gebunden (Backend-Vorgabe).
+// "Door der Woche" bleibt an Quadrant 2 gebunden (Door-Regel).
 const LENSES = {
   eisenhower: {
     label: "Eisenhower",
@@ -173,7 +172,7 @@ export default function PlanView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/40 px-5 py-3 text-xs text-slate-400">
         <span className="inline-flex items-center gap-2"><LayoutGrid className="h-3.5 w-3.5" /> Priorisierungs-Board</span>
-        <span>{isPlanCloudMode() ? "Cloud-Modus (Firestore)" : "Lokal über Door-Server (:6400)"}</span>
+        <span>Google Tasks · „Door · Potential“ / „Door · War Stacks“</span>
       </div>
 
       <div className="flex flex-wrap gap-2">

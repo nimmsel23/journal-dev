@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Hammer, Check } from "lucide-react";
 
-import { fetchDailyWeek, toggleDailyHit, fetchHitsWeek, isProductionCloudMode } from "../../lib/door/production.js";
+import { fetchDailyWeek, toggleDailyHit, addDailyHit, fetchHitsWeek } from "../../lib/door/v1.js";
 
 const DAY_LABELS = { mon: "Montag", tue: "Dienstag", wed: "Mittwoch", thu: "Donnerstag", fri: "Freitag" };
 
@@ -28,15 +29,39 @@ export default function ProductionView() {
     },
   });
 
+  const [drafts, setDrafts] = useState({});
+  const [error, setError] = useState("");
+  const addMutation = useMutation({
+    mutationFn: ({ day, text }) => addDailyHit(day, text),
+    onSuccess: (_, { day }) => {
+      setDrafts((prev) => ({ ...prev, [day]: "" }));
+      qc.invalidateQueries({ queryKey: ["door-production"] });
+      qc.invalidateQueries({ queryKey: ["door-production-summary"] });
+    },
+    onError: (err) => setError(err?.message || "Hit konnte nicht angelegt werden."),
+  });
+
+  function submitHit(event, day) {
+    event.preventDefault();
+    const text = (drafts[day] || "").trim();
+    if (!text) return;
+    setError("");
+    addMutation.mutate({ day, text });
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/40 px-5 py-3 text-xs text-slate-400">
         <span className="inline-flex items-center gap-2"><Hammer className="h-3.5 w-3.5" /> Daily Hits · {plan?.week || "…"}</span>
-        <span>{isProductionCloudMode() ? "Cloud-Modus (Firestore)" : "Lokal über Door-Server (:6400)"}</span>
+        <span>Google Tasks · „Door · Production“</span>
         {summary ? (
           <span>{summary.completed_hits}/{summary.total_hits} Hits erledigt ({Math.round((summary.completion_rate || 0) * 100)}%)</span>
         ) : null}
       </div>
+
+      {error ? (
+        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>
+      ) : null}
 
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-500 animate-pulse">Lädt Production…</div>
@@ -81,6 +106,15 @@ export default function ProductionView() {
                   <li className="rounded-xl border border-dashed border-white/10 p-2.5 text-center text-[11px] text-slate-600">leer</li>
                 ) : null}
               </ul>
+              <form onSubmit={(event) => submitHit(event, day)} className="mt-3">
+                <input
+                  value={drafts[day] || ""}
+                  onChange={(event) => setDrafts((prev) => ({ ...prev, [day]: event.target.value }))}
+                  placeholder="+ Hit"
+                  aria-label={`Neuer Hit ${DAY_LABELS[day] || day}`}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:border-amber-500 focus:outline-none"
+                />
+              </form>
             </div>
           ))}
         </div>

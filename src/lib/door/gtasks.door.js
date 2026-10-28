@@ -25,7 +25,7 @@ const PROFIT_WEEKS = 8;
 
 // ── Notes-Marker ──
 const MARK_RE = /^Door:\s*(.*)$/;
-function parseNotes(notes = "") {
+export function parseNotes(notes = "") {
   const [first = "", ...rest] = notes.split("\n");
   const m = first.match(MARK_RE);
   if (!m) return { quadrant: null, doorWeek: "", rest: notes };
@@ -33,13 +33,13 @@ function parseNotes(notes = "") {
   const w = m[1].match(/Door (\d{4}-W\d{2})/);
   return { quadrant: q ? Number(q[1]) : null, doorWeek: w ? w[1] : "", rest: rest.join("\n") };
 }
-function buildNotes({ quadrant, doorWeek, rest }) {
+export function buildNotes({ quadrant, doorWeek, rest }) {
   const parts = [quadrant ? `Q${quadrant}` : "", doorWeek ? `Door ${doorWeek}` : ""].filter(Boolean);
   const head = parts.length ? `Door: ${parts.join(" · ")}` : "";
   return [head, rest].filter((s) => s !== "" && s != null).join("\n");
 }
 
-function toItem(t) {
+export function toItem(t) {
   const n = parseNotes(t.notes);
   return {
     id: t.id, selector: t.id, title: t.title || "Untitled", description: n.rest, source: "gtasks",

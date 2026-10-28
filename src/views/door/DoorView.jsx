@@ -1,6 +1,8 @@
 import { lazy, Suspense, useState } from "react";
 import { DoorOpen, Flame, LayoutGrid, Hammer, Trophy } from "lucide-react";
 
+import { useGoogle } from "../../lib/google/useGoogle.js";
+
 const PotentialView = lazy(() => import("./PotentialView.jsx"));
 const PlanView = lazy(() => import("./PlanView.jsx"));
 const ProductionView = lazy(() => import("./ProductionView.jsx"));
@@ -17,6 +19,8 @@ const SUB_TABS = [
 // ohne Props verwaltet die Ansicht den Tab selbst.
 export default function DoorView({ subTab: controlledTab, onSubTab }) {
   const [localTab, setLocalTab] = useState("potential");
+  // Door v1 liegt komplett in Google Tasks — ohne Verbindung gibt es keine Daten
+  const g = useGoogle();
   const subTab = controlledTab ?? localTab;
   const setSubTab = (key) => {
     setLocalTab(key);
@@ -33,7 +37,7 @@ export default function DoorView({ subTab: controlledTab, onSubTab }) {
             <DoorOpen className="h-5 w-5" />
           </div>
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-amber-400">aos/door</div>
+            <div className="text-xs uppercase tracking-[0.2em] text-amber-400">Door · Google Tasks</div>
             <h2 className="text-lg font-semibold text-slate-100">The Door Framework</h2>
           </div>
         </div>
@@ -56,9 +60,35 @@ export default function DoorView({ subTab: controlledTab, onSubTab }) {
         </nav>
       </header>
 
-      <Suspense fallback={<div className="py-10 text-center text-sm text-slate-500 animate-pulse">Lädt {active.label}…</div>}>
-        <ActiveView />
-      </Suspense>
+      {g.error ? (
+        <div role="alert" className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{g.error}</div>
+      ) : null}
+
+      {g.connected ? (
+        <>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+            <span>Google Tasks verbunden{g.mode === "popup" ? " (gilt ca. 1 h – dauerhafte Anbindung nicht eingerichtet)" : ""}</span>
+            <button type="button" onClick={g.disconnect} className="underline hover:text-slate-300">Trennen</button>
+          </div>
+          <Suspense fallback={<div className="py-10 text-center text-sm text-slate-500 animate-pulse">Lädt {active.label}…</div>}>
+            <ActiveView />
+          </Suspense>
+        </>
+      ) : (
+        <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 p-6 text-center shadow-glow">
+          <p className="text-sm text-slate-300">
+            Die Door-Daten liegen in deinem Google-Konto (Listen „Door · Potential“, „Door · Production“, „Door · War Stacks“, „Door · Profit“).
+          </p>
+          <button
+            type="button"
+            disabled={g.busy}
+            onClick={g.connect}
+            className="mt-4 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 disabled:opacity-50"
+          >
+            {g.busy ? "Verbinde…" : "Google Tasks verbinden"}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

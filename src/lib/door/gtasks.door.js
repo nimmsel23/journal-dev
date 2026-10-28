@@ -10,7 +10,9 @@
 //    "Q1–Q4" = Quadrant, "Door <Woche>" = Door der Woche (höchstens ein Task je
 //    Kalenderwoche). Weitere Zeilen in notes bleiben unangetastet. Die Marker bleiben
 //    nach dem Erledigen stehen → daraus ergibt sich im Profit die Liste erledigter Doors.
-//    (Sortierung per tasks.move ist nicht umgesetzt.)
+//    Google Tasks kennt keine Priorität: sie wird zusätzlich als Reihenfolge der Liste
+//    abgebildet (Q1 oben … Q4, danach Tasks ohne Quadrant), damit sie auch in der
+//    Google-Tasks-App sichtbar ist (tasks.move beim Zuordnen).
 //  Production = Liste "Door · Production": ein Task je Daily Hit, `due` = Tag der
 //    Woche; Toggle = status completed ↔ needsAction; Quote = erledigt/gesamt der Woche.
 //  Profit    = nur lesend, aus `completed`-Zeitstempeln der letzten Wochen: je Woche
@@ -18,7 +20,7 @@
 //    Reflexionen gibt es in dieser Quelle nicht (UI blendet sie aus).
 import { addDays, format, startOfWeek } from "date-fns";
 import { weekKey } from "./warstack.js";
-import { LIST_POTENTIAL, LIST_PRODUCTION, listTasks, insertTask, patchTask, deleteTask } from "./gtasks.js";
+import { LIST_POTENTIAL, LIST_PRODUCTION, listTasks, insertTask, patchTask, deleteTask, moveTask } from "./gtasks.js";
 
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const PROFIT_WEEKS = 8;
@@ -92,7 +94,18 @@ export async function assignQuadrant(id, quadrant) {
   const n = parseNotes(t.notes);
   // Door-Markierung nur auf Q2-Tasks
   const doorWeek = Number(quadrant) === 2 ? n.doorWeek : "";
-  return patchTask(LIST_POTENTIAL, id, { notes: buildNotes({ quadrant: Number(quadrant), doorWeek, rest: n.rest }) });
+  const patched = await patchTask(LIST_POTENTIAL, id, { notes: buildNotes({ quadrant: Number(quadrant), doorWeek, rest: n.rest }) });
+  await placeByPriority(id, Number(quadrant));
+  return patched;
+}
+
+/** Task hinter den letzten Task mit gleicher oder höherer Priorität schieben (Listenreihenfolge = Priorität). */
+async function placeByPriority(id, quadrant) {
+  const rank = (q) => q || 5; // ohne Quadrant ans Ende
+  const others = (await listTasks(LIST_POTENTIAL, { showCompleted: false })).filter((t) => t.id !== id);
+  let previous;
+  for (const t of others) if (rank(parseNotes(t.notes).quadrant) <= rank(quadrant)) previous = t.id;
+  return moveTask(LIST_POTENTIAL, id, previous);
 }
 
 export async function selectWeeklyDoor(id) {

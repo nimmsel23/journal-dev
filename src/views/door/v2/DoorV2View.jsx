@@ -6,6 +6,7 @@ import * as db from "@journal-db";
 import { PotentialPanel, PlanPanel, ProductionPanel, ProfitPanel } from "./DoorV2Panels.jsx";
 import { SOURCES, getSource, setSource, loadRemoteSource } from "../../../lib/door/source.js";
 import { useGoogle } from "../../../lib/google/useGoogle.js";
+import { useJournalPushNotifications } from "../../../hooks/useJournalPushNotifications.js";
 import * as tc from "../../../lib/door/taskchampion.js";
 import { useQueryClient } from "@tanstack/react-query";
 import "./door-v2.css";
@@ -41,6 +42,9 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
   const isG = source === "gtasks";
   const g = useGoogle({ prepare: isG }); // gemeinsame Google-Verbindung (Tasks + Kalender)
   const isConn = isG && g.connected;
+  // Erinnerung an offene Daily Hits (Google Tasks kennt nur das Datum): tägliche Push-Nachricht
+  // zur gewählten Uhrzeit, versendet von der Cloud Function scheduledDoorReminders
+  const push = useJournalPushNotifications(user?.uid ? user : null, "door");
   // Taskwarrior (TaskChampion-Sync): Konfiguration liegt nur in der IndexedDB dieses Browsers
   const qc = useQueryClient();
   const isT = source === "taskwarrior";
@@ -85,6 +89,22 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
           {isConn && <button type="button" className="dv2-link" onClick={g.disconnect}>Trennen</button>}
           {isConn && g.mode === "popup" && <span>Verbindung gilt ca. 1 h (dauerhafte Anbindung nicht eingerichtet)</span>}
         </div>
+        {push.settings && (
+          <div className="dv2-src">
+            <span>Erinnerung offene Hits</span>
+            {push.settings.enabled ? (
+              <>
+                <input type="time" aria-label="Uhrzeit der Erinnerung" value={push.settings.reminderTime} onChange={(e) => e.target.value && push.updateReminderTime(e.target.value)} />
+                <button type="button" className="dv2-link" onClick={push.disable}>Aus</button>
+                {!(g.connected && g.mode !== "popup") && <span>Braucht die dauerhafte Google-Verbindung (Google Tasks verbinden).</span>}
+              </>
+            ) : (
+              <button type="button" className="dv2-link" disabled={push.busy || push.permission === "denied" || push.permission === "unsupported"}
+                onClick={() => push.enable().catch((e) => setGerr(e?.message || "Push konnte nicht eingeschaltet werden."))}>Einschalten</button>
+            )}
+            {push.permission === "denied" && <span>Benachrichtigungen sind im Browser blockiert.</span>}
+          </div>
+        )}
         {isT && tcCfg && (
           <div className="dv2-src">
             <button type="button" className="dv2-link" disabled={tcBusy} onClick={tcSync}>{tcBusy ? "Sync …" : "Sync"}</button>

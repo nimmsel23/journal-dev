@@ -8,31 +8,33 @@ const PUSH_SW_URL = "/journal-messaging-sw.js";
 const PUSH_SW_SCOPE = "/journal-push/";
 const pushRef = (uid) => doc(db, "fitness", uid, "settings", "push");
 
-function normalize(data = {}) {
+// app: "journal" (Standard) oder "door" — beide teilen sich Service Worker und Push-Token,
+// nur Einstellungen (apps.<app>) und Standard-Uhrzeit unterscheiden sich.
+function normalize(data = {}, app = "journal") {
   const tokens = Array.from(new Set([...(Array.isArray(data.tokens) ? data.tokens : []), data.token].filter(Boolean)));
-  return { enabled: false, reminderTime: "18:00", ...data, token: tokens[0] || null, tokens };
+  return { enabled: false, reminderTime: app === "door" ? "08:00" : "18:00", ...data, token: tokens[0] || null, tokens };
 }
 
-export function useJournalPushNotifications(user) {
+export function useJournalPushNotifications(user, app = "journal") {
   const [settings, setSettings] = useState(null);
   const [permission, setPermission] = useState(() => typeof Notification === "undefined" ? "unsupported" : Notification.permission);
   const [busy, setBusy] = useState(false);
 
   const save = useCallback(async (next) => {
     if (!user?.uid) return;
-    const normalized = normalize(next);
-    await setDoc(pushRef(user.uid), { apps: { journal: normalized } }, { merge: true });
+    const normalized = normalize(next, app);
+    await setDoc(pushRef(user.uid), { apps: { [app]: normalized } }, { merge: true });
     setSettings(normalized);
-  }, [user?.uid]);
+  }, [user?.uid, app]);
 
   useEffect(() => {
     if (!user?.uid) { setSettings(null); return; }
     let active = true;
     getDoc(pushRef(user.uid)).then((snap) => {
-      if (active) setSettings(normalize(snap.data()?.apps?.journal || {}));
-    }).catch(() => { if (active) setSettings(normalize()); });
+      if (active) setSettings(normalize(snap.data()?.apps?.[app] || {}, app));
+    }).catch(() => { if (active) setSettings(normalize({}, app)); });
     return () => { active = false; };
-  }, [user?.uid]);
+  }, [user?.uid, app]);
 
   useEffect(() => {
     if (!user?.uid || permission !== "granted" || !settings?.enabled) return;

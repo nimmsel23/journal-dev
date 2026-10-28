@@ -326,3 +326,18 @@ Journal v2 gab es schon (`gcal.js`), sie wird wiederverwendet.
 Ohne diese Schritte läuft alles im Popup-Modus (~1 h), wie zuvor.
 
 **Ungetestet (braucht echten Google-Login im Browser):** GIS-Code-Popup, Token-Tausch und Erneuerung gegen Google, Cloud-Function-Deploy, Verhalten von `googleLinkConfig` bei fehlender Function (Fehlercode-Zuordnung in `auth.js` `call()` ist aus der SDK-Doku abgeleitet), Popup-Blocker auf iOS.
+
+## Door-Erinnerungen (offene Daily Hits, 2026-10-28)
+
+Google Tasks speichert nur das Fälligkeits-**Datum**, keine Uhrzeit und keine Erinnerung. Deshalb gibt es
+eine **tägliche Erinnerung** statt Zeiten je Task:
+
+- Door v2 → Zeile „Erinnerung offene Hits“: einschalten, Uhrzeit wählen (Standard 08:00). Gespeichert in
+  `fitness/{uid}/settings/push` unter `apps.door` (Token wird mit dem Journal-Push geteilt).
+- Cloud Function `scheduledDoorReminders` (alle 5 Min., `functions/index.js`, Logik in `functions/door-reminders.js`)
+  holt mit dem gespeicherten Refresh-Token (`googleTokens/{uid}`) die offenen Tasks der Liste „Door · Production“
+  mit Fälligkeit heute oder früher und sendet eine FCM-Datennachricht `app: "door"`.
+- `public/journal-messaging-sw.js` zeigt sie an (Tag `door-reminder`, Klick → `/#door2/production`).
+- Voraussetzung: **dauerhafte** Google-Verbindung (nicht der 1-h-Popup-Rückfall) und Functions-Deploy
+  (`firebase deploy --only functions:scheduledDoorReminders`, Secret `GOOGLE_OAUTH_CLIENT_SECRET` wie bei den Google-Functions).
+- Ohne offene Hits wird nichts gesendet. Test: `tests/door-reminders.test.mjs`.

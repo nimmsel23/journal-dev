@@ -13,11 +13,13 @@ firebase.initializeApp({
 
 firebase.messaging().onBackgroundMessage((payload) => {
   const data = payload?.data || {};
-  if (data.app !== "journal") return;
-  self.registration.showNotification(data.title || "VitalOS Journal", {
-    body: data.body || "Zeit für deinen Journal-Eintrag.",
+  if (data.app !== "journal" && data.app !== "door") return;
+  const door = data.app === "door";
+  self.registration.showNotification(data.title || (door ? "Door · Production" : "VitalOS Journal"), {
+    body: data.body || (door ? "Offene Hits für heute." : "Zeit für deinen Journal-Eintrag."),
     icon: "/icons/icon-192.png",
     badge: "/icons/icon-192.png",
+    tag: data.tag || `${data.app}-reminder`,
     data: { link: data.link || "/" },
   });
 });

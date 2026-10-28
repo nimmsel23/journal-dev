@@ -8,8 +8,24 @@ admin.initializeApp();
 //   firebase functions:secrets:set GOOGLE_OAUTH_CLIENT_SECRET   ·   GOOGLE_OAUTH_CLIENT_ID (beim Deploy abgefragt)
 const { defineSecret, defineString } = require("firebase-functions/params");
 const { createGoogleHandlers } = require("./google");
+const { buildDoorReminder, fetchDueTasks } = require("./door-reminders");
 const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_OAUTH_CLIENT_SECRET");
 const GOOGLE_CLIENT_ID = defineString("GOOGLE_OAUTH_CLIENT_ID", { default: "" });
+
+const makeGoogleHandlers = () => {
+  const col = admin.firestore().collection("googleTokens");
+  return createGoogleHandlers({
+    fetchImpl: fetch,
+    store: {
+      get: async (uid) => (await col.doc(uid).get()).data() || null,
+      set: (uid, value) => col.doc(uid).set(value),
+      delete: (uid) => col.doc(uid).delete(),
+    },
+    clientId: GOOGLE_CLIENT_ID.value(),
+    clientSecret: GOOGLE_CLIENT_SECRET.value(),
+    HttpsError: functions.https.HttpsError,
+  });
+};
 
 const googleCall = (fn) =>
   functions
@@ -17,19 +33,7 @@ const googleCall = (fn) =>
     .runWith({ secrets: [GOOGLE_CLIENT_SECRET] })
     .https.onCall(async (data, context) => {
       if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
-      const col = admin.firestore().collection("googleTokens");
-      const handlers = createGoogleHandlers({
-        fetchImpl: fetch,
-        store: {
-          get: async (uid) => (await col.doc(uid).get()).data() || null,
-          set: (uid, value) => col.doc(uid).set(value),
-          delete: (uid) => col.doc(uid).delete(),
-        },
-        clientId: GOOGLE_CLIENT_ID.value(),
-        clientSecret: GOOGLE_CLIENT_SECRET.value(),
-        HttpsError: functions.https.HttpsError,
-      });
-      return fn(handlers, context.auth.uid, data || {});
+      return fn(makeGoogleHandlers(), context.auth.uid, data || {});
     });
 
 exports.googleLinkConfig = googleCall((h) => h.linkConfig());
@@ -79,17 +83,17 @@ function normalizeTokens(data = {}) {
   ].filter(Boolean)));
 }
 
-async function sendReminder(uid, tokens, title, body, link) {
+async function sendReminder(uid, tokens, title, body, link, app = "journal") {
   if (!tokens || tokens.length === 0) return { sentCount: 0, failureCount: 0 };
 
   try {
     const message = {
       data: {
-        app: "journal",
+        app,
         title,
         body,
         link: link || "/",
-        tag: "journal-reminder",
+        tag: `${app}-reminder`,
       },
       tokens,
     };
@@ -145,6 +149,48 @@ exports.scheduledJournalPushReminders = functions
       return { sentCount, failureCount };
     } catch (error) {
       console.error("Error in scheduledPushReminders:", error);
+      return { error: error.message };
+    }
+  });
+
+// Door: täglich zur eingestellten Zeit die offenen Daily Hits (Google Tasks) als Push melden.
+// Braucht die dauerhafte Google-Verbindung (googleTokens/{uid}) und apps.door in fitness/{uid}/settings/push.
+exports.scheduledDoorReminders = functions
+  .region("europe-west1")
+  .runWith({ secrets: [GOOGLE_CLIENT_SECRET] })
+  .pubsub.schedule("every 5 minutes")
+  .timeZone(TIME_ZONE)
+  .onRun(async () => {
+    const { date, minutes } = getLocalDateParts();
+    const db = admin.firestore();
+    const handlers = makeGoogleHandlers();
+    let sentCount = 0;
+    let failureCount = 0;
+    try {
+      const users = await db.collection("fitness").listDocuments();
+      for (const user of users) {
+        const doc = await user.collection("settings").doc("push").get();
+        const data = doc.exists ? (doc.data() || {}).apps?.door || {} : {};
+        if (!data.enabled) continue;
+        const tokens = normalizeTokens(data);
+        if (tokens.length === 0 || !isReminderDue(data.reminderTime, minutes)) continue;
+        try {
+          const { accessToken } = await handlers.accessToken(user.id);
+          const reminder = buildDoorReminder(await fetchDueTasks({ fetchImpl: fetch, accessToken, today: date }), date);
+          if (!reminder) continue;
+          const result = await sendReminder(user.id, tokens, reminder.title, reminder.body, "/#door2/production", "door");
+          sentCount += result.sentCount || 0;
+          failureCount += result.failureCount || 0;
+        } catch (error) {
+          // nicht verbunden / Google gerade nicht erreichbar: dieser Nutzer wartet bis zum nächsten Tag
+          failureCount += 1;
+          console.warn(`Door reminder skipped for ${user.id}: ${error.message}`);
+        }
+      }
+      console.log(`Door reminders: ${sentCount} sent, ${failureCount} failed`);
+      return { sentCount, failureCount };
+    } catch (error) {
+      console.error("Error in scheduledDoorReminders:", error);
       return { error: error.message };
     }
   });

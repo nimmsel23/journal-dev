@@ -46,6 +46,7 @@ src/
 │   ├── useHashRoute.js    Hook: { tab, mode, date, setDate, setMode, navigate }
 │   ├── useSetting.js      useState mit localStorage-Persistenz (JSON, normalize)
 │   ├── firebase.js        Firebase-Init + Auth
+│   ├── google/            gemeinsamer Google-Token-Dienst (Tasks + Calendar): tokens.js (rein), auth.js, useGoogle.js
 │   ├── db/                Firestore-Zugriff (core.js, journal.js, firestore/*)
 │   └── door/              Door-Datenquellen (Backend/Google Tasks/Taskwarrior)
 ├── db/index.js            @journal-db: Journal-eigene DB-Fassade
@@ -92,11 +93,19 @@ Details zu v2, Door, Game, Tent und Taskwarrior-Sync: [`JOURNAL-V2.md`](JOURNAL-
 OK. Entwickelt wird auf `dev`; nach jeder fertigen Änderung committen. Tests (`pnpm test`) und ein Build müssen vorher
 grün sein.
 
+## Google Tasks / Calendar
+
+Eine gemeinsame Verbindung (`src/lib/google/`, Hook `useGoogle`) für Door v2 (Google Tasks), Journal v2 und Game → Fire
+(Kalender). Dauerhaft nur mit der Cloud Function `functions/google.js` (Refresh-Token serverseitig, `googleTokens/{uid}`
+ohne Rule); ohne sie Rückfall auf das Firebase-Popup (~1 h). Einrichtung und Begründung: `JOURNAL-V2.md` → „Google dauerhaft
+verbinden“. Neue Google-Aufrufe immer über `google.authFetch`, nie eigene Tokens halten.
+
 ## Tests
 
 `tests/*.test.mjs` (Node-Testrunner, kein Browser): `habits-v2` (Serien/Quoten), `hash-route` (Parser gegen das alte
 Verhalten), `use-setting` (Speicher, Abwärtskompatibilität), `standalone` (keine Symlinks/Imports außerhalb des Repos,
-keine undeklarierten Abhängigkeiten), `journal-push-startup`. UI-Verhalten ist nicht automatisiert getestet.
+keine undeklarierten Abhängigkeiten), `journal-push-startup`, `google-tokens` (Token-Ablauf/Erneuerung/401-Retry/Modi),
+`google-function` (`functions/google.js`: Code-Tausch, Refresh, Widerruf, mit gefälschtem fetch/Speicher). UI-Verhalten ist nicht automatisiert getestet.
 
 ## Weitere Doku
 

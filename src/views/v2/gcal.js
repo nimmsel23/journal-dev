@@ -1,64 +1,17 @@
-// gcal.js — Google-Calendar-Lesezugriff für Journal v2 (Review von Terminen).
-// Direkt aus dem Browser: Firebase-Google-Login wird per reauthenticateWithPopup
-// um den Scope calendar.readonly erweitert. Der Access-Token lebt ~1 h, wird nur
-// in sessionStorage gehalten und nie nach Firestore geschrieben.
+// gcal.js — Google-Calendar-Lesezugriff (Journal v2 Review, Game v2 → Fire).
+// Auth und Token liegen im gemeinsamen Dienst src/lib/google/ (derselbe wie für Google Tasks):
+// dauerhafte Verknüpfung über die Cloud Function, Rückfall Firebase-Popup (~1 h). Hier nur REST.
+// Fehler: "google-expired" (neu verbinden), "google-offline" (Verbindung bleibt) – siehe tokens.js.
 //
 // Voraussetzung (Google Cloud, Projekt hinter firebase.config.js): Google
 // Calendar API aktiviert + Scope calendar.readonly im OAuth-Consent-Screen.
-import { GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
 import { addDays, eachDayOfInterval, format, isBefore, parseISO } from "date-fns";
-import { auth } from "../../lib/firebase.js";
+import { google } from "../../lib/google/auth.js";
 
-const SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 const API = "https://www.googleapis.com/calendar/v3";
-const STORE_KEY = "jv2:gcal-token";
-
-function readStored() {
-  try {
-    const raw = sessionStorage.getItem(STORE_KEY);
-    if (!raw) return null;
-    const { token, exp } = JSON.parse(raw);
-    return exp > Date.now() ? token : null;
-  } catch {
-    return null;
-  }
-}
-
-function store(token) {
-  try {
-    // Google-Tokens halten 3600 s; 5 min Puffer
-    sessionStorage.setItem(STORE_KEY, JSON.stringify({ token, exp: Date.now() + 55 * 60 * 1000 }));
-  } catch {}
-}
-
-export function clearCalendarToken() {
-  try { sessionStorage.removeItem(STORE_KEY); } catch {}
-}
-
-export function calendarConnected() {
-  return !!readStored();
-}
-
-export async function connectCalendar() {
-  if (!auth?.currentUser) throw new Error("not authenticated");
-  const provider = new GoogleAuthProvider();
-  provider.addScope(SCOPE);
-  const result = await reauthenticateWithPopup(auth.currentUser, provider);
-  const token = GoogleAuthProvider.credentialFromResult(result)?.accessToken;
-  if (!token) throw new Error("kein Calendar-Token erhalten");
-  store(token);
-  return token;
-}
 
 async function api(path, params) {
-  const token = readStored();
-  if (!token) throw new Error("calendar-expired");
-  const url = `${API}${path}?${new URLSearchParams(params)}`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (res.status === 401) {
-    clearCalendarToken();
-    throw new Error("calendar-expired");
-  }
+  const res = await google.authFetch(`${API}${path}?${new URLSearchParams(params)}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body?.error?.message || `calendar ${res.status}`);

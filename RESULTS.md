@@ -1,3 +1,18 @@
+## 2026-10-28 — Google Tasks/Calendar: dauerhafte Verbindung, gemeinsamer Token-Dienst, Calendar in Fire
+
+Ursache des ständigen Ablaufens: Firebase-`reauthenticateWithPopup` liefert nur einen ~1-h-Access-Token ohne Refresh-Token, abgelegt in
+`sessionStorage` (Tasks und Kalender je getrennt). Jetzt ein gemeinsamer Dienst mit serverseitigem Refresh-Token (Cloud Function) und
+Popup-Rückfall, solange die Function nicht eingerichtet ist.
+
+- **`src/lib/google/{tokens,auth,useGoogle}.js` (neu):** Token-Speicher in `localStorage`, Erneuerung 2 min vor Ablauf (geteilt bei parallelen Aufrufen), 401 → einmal mit frischem Token wiederholen, Fehler `google-expired`/`google-offline`; Hook für alle Oberflächen.
+- **`functions/google.js`, `functions/index.js`:** `googleLinkConfig`, `googleLink`, `googleAccessToken`, `googleUnlink`; Refresh-Token in `googleTokens/{uid}` (keine Client-Rule). Keine neuen Pakete.
+- **`gcal.js`, `gtasks.js`:** nur noch REST über `google.authFetch`. **`DoorV2View.jsx`, `DoorV2Panels.jsx`, `JournalV2View.jsx`, `GameMapPanel.jsx` (Fire), `firebase.js` (`app` exportiert):** auf den Hook umgestellt; Fire zeigt „Heute“ und hat den Umschalter „Alle Kalender“ (`jv2:cal-all`).
+- **Tests:** `tests/google-tokens.test.mjs`, `tests/google-function.test.mjs`.
+
+Offen/manuell: OAuth-Client (Ursprünge), Zustimmungsbildschirm auf „In Produktion“ (sonst Refresh-Token nach 7 Tagen weg), Secret setzen und Functions deployen – Schritte in `JOURNAL-V2.md`. Echter Google-Login im Browser nicht getestet.
+
+---
+
 ## 2026-10-26 — Door v2: Rechtsklick-Menüs und Notizfeld, Journal v2: Jahr-Ansicht und Eintrag bearbeiten
 
 Rechtsklick-Menüs in allen vier Door-v2-Phasen, Notizfeld in Potential für alle Datenquellen, zweizeiliger

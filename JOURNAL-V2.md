@@ -281,3 +281,48 @@ Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste 
 - **SyncBadge** (GameV2View) zeigt Offline-Status, offene Änderungen und Schreibfehler.
 - **Tent**: Habits (`watchHabits`) und die Tent-Einträge der Woche (`watchJournalRange`) kommen per Listener cache-first; der Wochenabschluss ist lokal sofort gespeichert, die Taskwarrior-Scores rechnen sich bei Replik-Änderungen neu. Entwurf lag schon in localStorage.
 - Grenze: die allererste Taskwarrior-Replik und Google-Login/Kalender-Token brauchen einmal Netz.
+
+## Google dauerhaft verbinden (Tasks + Calendar, 2026-10-28)
+
+**Ursache des Ablaufens:** `reauthenticateWithPopup` (Firebase) liefert nur einen Google-Access-Token (~1 h) und nie einen
+Refresh-Token. Er lag in `sessionStorage` (weg beim Schließen von Tab/PWA) und wurde nach 55 min verworfen; danach half nur
+ein neues Popup. Das galt für `gcal.js` (Kalender) und `gtasks.js` (Door v2) getrennt, jeweils mit eigenem Token.
+(Die älteren Abschnitte oben zu `sessionStorage`/„1 h“ beschreiben diesen Stand; er gilt nur noch als Rückfall.)
+
+**Gewählte Lösung:** ein gemeinsamer Token-Dienst `src/lib/google/` für Tasks, Journal-Kalender und Game → Fire.
+Zwei Betriebsarten, die der Dienst selbst wählt:
+
+| Art | Wann | Laufzeit |
+|---|---|---|
+| `server` | Cloud Function eingerichtet | dauerhaft: Refresh-Token liegt serverseitig, der Browser holt bei Bedarf (2 min vor Ablauf, bei 401) einen frischen Access-Token |
+| `popup` | Function nicht eingerichtet/erreichbar | wie bisher ~1 h (Footer/Leiste zeigt „Verbindung ca. 1 h“), Token jetzt im `localStorage` und übersteht Reload/PWA-Neustart innerhalb der Stunde |
+
+Begründung: Ein reiner Browser-Weg kann keine dauerhafte Verbindung liefern. GIS-Token-Client mit stillem Re-Request ist
+Popup-/Cookie-abhängig und scheitert ohne Nutzergeste (iOS/PWA); Firebase-Auth gibt keinen Refresh-Token heraus. Der einzige
+robuste Weg ist der Code-Flow mit serverseitigem Refresh-Token. `functions/` gab es schon (Region `europe-west1`), neue Pakete
+sind nicht nötig (Node-22-`fetch`). Der Refresh-Token verlässt den Server nie: Firestore `googleTokens/{uid}` hat **keine**
+Rule (Standard = verboten für Clients), nur das Admin-SDK der Function liest/schreibt.
+
+**Dateien:**
+- `src/lib/google/tokens.js` – reiner Dienst (Speicher, Ablauf, geteilte Erneuerung, 401-Retry, Modi); getestet in `tests/google-tokens.test.mjs`.
+- `src/lib/google/auth.js` – Browser-Glue: Cloud-Function-Aufrufe (`firebase/functions`, erst beim Verbinden/Erneuern nachgeladen), Google-Identity-Services-Skript (wird erst beim Verbinden-Vorladen geholt, nie beim Start), Firebase-Popup-Rückfall. Beide Scopes (`calendar.readonly`, `tasks`) in einer Einwilligung.
+- `src/lib/google/useGoogle.js` – Hook `{ connected, mode, busy, error, connect, disconnect }`; eine Verbindung gilt in Door v2, Journal v2 und Fire.
+- `functions/google.js` (+ Export in `functions/index.js`) – `googleLinkConfig`, `googleLink` (Code → Refresh-Token), `googleAccessToken`, `googleUnlink`; getestet in `tests/google-function.test.mjs`.
+- `gcal.js`/`gtasks.js` rufen nur noch `google.authFetch` auf (Fehler: `google-expired` → „neu verbinden“, `google-offline` → Verbindung bleibt, Hinweis).
+
+**Offline:** Beim Start/Navigation kein Google-Zugriff. Ist der Token abgelaufen und das Netz weg, wirft der Dienst `google-offline`
+(Verbindung bleibt gespeichert, kein Crash); Fire zeigt dann den zuletzt geladenen Wochenstand (`gv2:cal:…`).
+
+**Game → Fire:** `FireCalendar` (in `GameMapPanel.jsx`) nutzt denselben Dienst; Termine der Woche, „Heute“ hervorgehoben,
+Umschalter „Alle Kalender“/„Nur Fire Map“ (gleiche Einstellung `jv2:cal-all` wie Journal v2). Die Kalender-Anbindung in
+Journal v2 gab es schon (`gcal.js`), sie wird wiederverwendet.
+
+**Einrichtung für die dauerhafte Verbindung (manuell, nicht von Claude erledigt):**
+1. Google Cloud Console, Projekt `fitness-aos` → APIs & Dienste → Anmeldedaten: OAuth-Client-ID „Webanwendung“ (der von Firebase angelegte Web-Client kann genutzt werden). **Autorisierte JavaScript-Ursprünge:** alle Hosting-Domains (`https://vos-journal.web.app`, `https://vos-door.web.app`, die Game/Tent/Voice-Sites, ggf. `http://127.0.0.1:9001`). Weiterleitungs-URIs nicht nötig (Popup-Flow, `postmessage`).
+2. Zustimmungsbildschirm: Scopes `calendar.readonly` und `tasks` eintragen. **Status auf „In Produktion“ stellen**: im Status „Testing“ laufen Refresh-Tokens nach 7 Tagen ab (dann `google-expired` → neu verbinden). Für Scopes ohne Prüfung (nur eigener Account, <100 Nutzer) reicht „nicht verifiziert“ mit Warnhinweis beim Verbinden.
+3. `firebase functions:secrets:set GOOGLE_OAUTH_CLIENT_SECRET` (Client-Secret), Client-ID beim Deploy als Parameter `GOOGLE_OAUTH_CLIENT_ID` angeben (oder in `functions/.env.fitness-aos`), dann `firebase deploy --only functions:journal`.
+4. Im Browser einmal „verbinden“. Bekommt Google keinen Refresh-Token geliefert (Zugriff war schon erteilt), Meldung `google-no-refresh-token`: unter myaccount.google.com/permissions den Zugriff der App entfernen und neu verbinden.
+
+Ohne diese Schritte läuft alles im Popup-Modus (~1 h), wie zuvor.
+
+**Ungetestet (braucht echten Google-Login im Browser):** GIS-Code-Popup, Token-Tausch und Erneuerung gegen Google, Cloud-Function-Deploy, Verhalten von `googleLinkConfig` bei fehlender Function (Fehlercode-Zuordnung in `auth.js` `call()` ist aus der SDK-Doku abgeleitet), Popup-Blocker auf iOS.

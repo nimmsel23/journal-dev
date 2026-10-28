@@ -12,7 +12,8 @@ import { fetchProfitReviews } from "../../../lib/door/profitFromJournal.js";
 import { fetchProfitTw } from "../../../lib/door/taskwarrior.door.js";
 
 const MSGS = {
-  "gtasks-expired": "Google-Tasks-Sitzung abgelaufen – oben neu verbinden.",
+  "google-expired": "Google-Verbindung abgelaufen – oben neu verbinden.",
+  "google-offline": "Google gerade nicht erreichbar (offline?). Die Verbindung bleibt bestehen.",
   "tc-conflict": "Sync-Konflikt – bitte „Sync“ drücken und erneut versuchen.",
   "tc-unconfigured": "Taskwarrior ist nicht eingerichtet.",
   "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.",

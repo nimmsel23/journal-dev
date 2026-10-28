@@ -18,7 +18,9 @@ import { applySmartAnalysis } from "../../lib/smartJournalApply.js";
 import { addHabit, getHabitsRange, setHabitArchived, updateHabit } from "./habitsDb.js";
 import { extractTags, timeStr } from "../../components/Journal/journalUtils";
 import { asBool, useSetting } from "../../lib/useSetting.js";
-import { calendarConnected, clearCalendarToken, connectCalendar, fetchEvents } from "./gcal.js";
+import { fetchEvents } from "./gcal.js";
+import { useGoogle } from "../../lib/google/useGoogle.js";
+import { googleErrorText } from "../../lib/google/tokens.js";
 import "./journal-v2.css";
 
 const HABIT_LIMIT = 5;
@@ -120,8 +122,9 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     queryFn: () => getJournalRange(rangeKey[0], rangeKey[1]),
   });
 
-  // Google Calendar (nur lesen): Termine zum Reviewen, Token nur in sessionStorage
-  const [calOn, setCalOn] = useState(() => calendarConnected());
+  // Google Calendar (nur lesen): Termine zum Reviewen. Verbindung gemeinsam mit Google Tasks (lib/google)
+  const google = useGoogle();
+  const calOn = google.connected;
   const [calMsg, setCalMsg] = useState("");
   // Standard: nur Fire Map; „alle“ zeigt jeden in Google ausgewählten Kalender
   const [calAll, setCalAll] = useSetting("jv2:cal-all", false, asBool);
@@ -133,34 +136,26 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const evFrom = mode === "tag" ? day : rangeFrom;
   const evTo = mode === "tag" ? day : rangeTo;
   const events = useQuery({
-    queryKey: ["jv2-cal", uid, iso(evFrom), iso(evTo), calAll],
+    queryKey: ["jv2-cal", uid, iso(evFrom), iso(evTo), calAll, calOn],
     enabled: !!uid && calOn && mode !== "habits" && mode !== "jahr",
     retry: false,
     queryFn: async () => {
       try {
+        setCalMsg("");
         return await fetchEvents(evFrom, evTo, { all: calAll });
       } catch (error) {
-        if (error.message === "calendar-expired") {
-          setCalOn(false);
-          setCalMsg("Kalender-Zugriff abgelaufen. Bitte neu verbinden.");
-          return [];
-        }
-        setCalMsg(error.message === "fire-calendar-missing" ? "Kalender „Fire Map“ nicht gefunden. Unten auf „Alle Kalender“ umschalten." : error.message);
+        // google-expired: der Dienst hat die Verbindung schon verworfen (calOn wird false) → Knopf „verbinden“
+        setCalMsg(error.message === "fire-calendar-missing" ? "Kalender „Fire Map“ nicht gefunden. Unten auf „Alle Kalender“ umschalten." : googleErrorText(error));
         return [];
       }
     },
   });
   const connect = async () => {
     setCalMsg("");
-    try {
-      await connectCalendar();
-      setCalOn(true);
-      qc.invalidateQueries({ queryKey: ["jv2-cal"] });
-    } catch (error) {
-      setCalMsg(error.code === "auth/popup-closed-by-user" ? "" : error.message);
-    }
+    await google.connect();
+    qc.invalidateQueries({ queryKey: ["jv2-cal"] });
   };
-  const disconnect = () => { clearCalendarToken(); setCalOn(false); };
+  const disconnect = () => google.disconnect();
   // Review: Termin als Journal-Eintrag beginnen (Tag +termin, Titel vorbelegt)
   const review = (ev) => {
     setDraft(`+termin ${ev.title}: `);
@@ -479,15 +474,16 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
 
         </>}
 
-        {calMsg && <div className="jv2-empty" role="alert">{calMsg}</div>}
+        {(calMsg || google.error) && <div className="jv2-empty" role="alert">{calMsg || google.error}</div>}
         <div className="jv2-foot">
           <span>Journal v2 · Raster</span>
           {uid && (calOn
             ? <>
                 <button type="button" className="jv2-link" onClick={toggleCalAll}>{calAll ? "Nur Fire Map" : "Alle Kalender"}</button>
                 <button type="button" className="jv2-link" onClick={disconnect}>Kalender trennen</button>
+                {google.mode === "popup" && <span>Verbindung ca. 1 h</span>}
               </>
-            : <button type="button" className="jv2-link" onClick={connect}>Kalender verbinden</button>)}
+            : <button type="button" className="jv2-link" disabled={google.busy} onClick={connect}>Kalender verbinden</button>)}
           <a href="#door2" onClick={(event) => { if (onNavigateJournal) { event.preventDefault(); onNavigateJournal("door-v2"); } }}>Door →</a>
           <a href="#journal" onClick={(event) => { if (onNavigateJournal) { event.preventDefault(); onNavigateJournal("journal"); } }}>← v1</a>
         </div>

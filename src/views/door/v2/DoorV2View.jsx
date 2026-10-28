@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import * as db from "@journal-db";
 import { PotentialPanel, PlanPanel, ProductionPanel, ProfitPanel } from "./DoorV2Panels.jsx";
 import { SOURCES, getSource, setSource, loadRemoteSource } from "../../../lib/door/source.js";
-import * as gtasks from "../../../lib/door/gtasks.js";
+import { useGoogle } from "../../../lib/google/useGoogle.js";
 import * as tc from "../../../lib/door/taskchampion.js";
 import { useQueryClient } from "@tanstack/react-query";
 import "./door-v2.css";
@@ -32,7 +32,6 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
   }, [embedded]);
 
   const [source, setSrc] = useState(getSource);
-  const [, bump] = useState(0);
   const [gerr, setGerr] = useState("");
   const pick = (s) => { setSource(s, user?.uid); setSrc(s); setGerr(""); };
   // Quelle ist nutzerspezifisch: gespeicherte Wahl aus Firestore übernehmen
@@ -40,12 +39,8 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
     if (user?.uid) loadRemoteSource(user.uid).then((s) => s && setSrc(s));
   }, [user?.uid]);
   const isG = source === "gtasks";
-  const isConn = isG && gtasks.connected();
-  const connect = async () => {
-    setGerr("");
-    try { await gtasks.connect(); } catch (e) { setGerr(e?.message || "Verbinden fehlgeschlagen"); }
-    bump((n) => n + 1);
-  };
+  const g = useGoogle({ prepare: isG }); // gemeinsame Google-Verbindung (Tasks + Kalender)
+  const isConn = isG && g.connected;
   // Taskwarrior (TaskChampion-Sync): Konfiguration liegt nur in der IndexedDB dieses Browsers
   const qc = useQueryClient();
   const isT = source === "taskwarrior";
@@ -86,8 +81,9 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
           <label>Quelle <select value={source} onChange={(e) => pick(e.target.value)}>
             {SOURCES.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
           </select></label>
-          {isG && <button type="button" className="dv2-link" onClick={connect}>{isConn ? "Neu verbinden" : "Google Tasks verbinden"}</button>}
-          {isConn && <button type="button" className="dv2-link" onClick={() => { gtasks.disconnect(); bump((n) => n + 1); }}>Trennen</button>}
+          {isG && <button type="button" className="dv2-link" disabled={g.busy} onClick={g.connect}>{isConn ? "Neu verbinden" : "Google Tasks verbinden"}</button>}
+          {isConn && <button type="button" className="dv2-link" onClick={g.disconnect}>Trennen</button>}
+          {isConn && g.mode === "popup" && <span>Verbindung gilt ca. 1 h (dauerhafte Anbindung nicht eingerichtet)</span>}
         </div>
         {isT && tcCfg && (
           <div className="dv2-src">
@@ -96,7 +92,7 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
             <button type="button" className="dv2-link" onClick={async () => { await tc.clearConfig(); setTcCfg(null); }}>Trennen</button>
           </div>
         )}
-        {gerr && <div className="dv2-empty" role="alert">{gerr}</div>}
+        {(gerr || (isG && g.error)) && <div className="dv2-empty" role="alert">{gerr || g.error}</div>}
         {isT && tcCfg === null ? (
           <form className="dv2-compose" onSubmit={tcSave} style={{ flexWrap: "wrap" }}>
             <input aria-label="Server-URL" placeholder="Server-URL (https://…)" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
@@ -105,7 +101,7 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
             <button type="submit" disabled={tcBusy || !form.url || !form.clientId || !form.secret}>{tcBusy ? "Prüfe …" : "Verbinden"}</button>
           </form>
         ) : isT && tcCfg === undefined ? null : isG && !isConn ? (
-          <div className="dv2-empty">Google Tasks ist nicht verbunden (oder die Sitzung ist abgelaufen). Oben „Google Tasks verbinden“ wählen.</div>
+          <div className="dv2-empty">Google Tasks ist nicht verbunden (oder die Verbindung ist abgelaufen). Oben „Google Tasks verbinden“ wählen.</div>
         ) : uid ? <Panel key={source} uid={uid} source={source} /> : (
           <div className="dv2-empty">
             Nicht angemeldet. <button type="button" className="dv2-link" onClick={() => db.signIn()}>Cloud Login</button>

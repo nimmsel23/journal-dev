@@ -6,7 +6,7 @@ import { getMessaging, isSupported as isMessagingSupported } from "firebase/mess
 import { firebaseConfig } from "./firebase.config.js";
 
 const alreadyInit = getApps().length > 0;
-const app = alreadyInit ? getApp() : initializeApp(firebaseConfig);
+export const app = alreadyInit ? getApp() : initializeApp(firebaseConfig);
 let vertexAIInstance = undefined;
 
 export function getVertexAI() {

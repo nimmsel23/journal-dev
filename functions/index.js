@@ -3,6 +3,40 @@ const admin = require("firebase-admin");
 
 admin.initializeApp();
 
+// ── Google (Tasks + Calendar) dauerhaft verbinden ──
+// Einrichtung: JOURNAL-V2.md, Abschnitt „Google dauerhaft verbinden“. Secret/Parameter:
+//   firebase functions:secrets:set GOOGLE_OAUTH_CLIENT_SECRET   ·   GOOGLE_OAUTH_CLIENT_ID (beim Deploy abgefragt)
+const { defineSecret, defineString } = require("firebase-functions/params");
+const { createGoogleHandlers } = require("./google");
+const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_OAUTH_CLIENT_SECRET");
+const GOOGLE_CLIENT_ID = defineString("GOOGLE_OAUTH_CLIENT_ID", { default: "" });
+
+const googleCall = (fn) =>
+  functions
+    .region("europe-west1")
+    .runWith({ secrets: [GOOGLE_CLIENT_SECRET] })
+    .https.onCall(async (data, context) => {
+      if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
+      const col = admin.firestore().collection("googleTokens");
+      const handlers = createGoogleHandlers({
+        fetchImpl: fetch,
+        store: {
+          get: async (uid) => (await col.doc(uid).get()).data() || null,
+          set: (uid, value) => col.doc(uid).set(value),
+          delete: (uid) => col.doc(uid).delete(),
+        },
+        clientId: GOOGLE_CLIENT_ID.value(),
+        clientSecret: GOOGLE_CLIENT_SECRET.value(),
+        HttpsError: functions.https.HttpsError,
+      });
+      return fn(handlers, context.auth.uid, data || {});
+    });
+
+exports.googleLinkConfig = googleCall((h) => h.linkConfig());
+exports.googleLink = googleCall((h, uid, data) => h.link(uid, data.code));
+exports.googleAccessToken = googleCall((h, uid) => h.accessToken(uid));
+exports.googleUnlink = googleCall((h, uid) => h.unlink(uid));
+
 const TIME_ZONE = "Europe/Berlin";
 const REMINDER_WINDOW_MINUTES = 5;
 

@@ -1,70 +1,28 @@
-// gtasks.js — Google Tasks im Browser (Auth + REST) für Door v2 "Quelle: Google Tasks".
-// Muster wie views/v2/gcal.js: Firebase-Google-Login wird per reauthenticateWithPopup
-// um den Scope `tasks` erweitert; der Access-Token (~1 h) lebt nur in sessionStorage.
-// 401 → Token verworfen, Fehler "gtasks-expired".
+// gtasks.js — Google Tasks im Browser (REST) für Door v2 "Quelle: Google Tasks".
+// Auth und Token liegen im gemeinsamen Dienst src/lib/google/ (derselbe wie für Google Calendar):
+// dauerhafte Verknüpfung über die Cloud Function, Rückfall Firebase-Popup (~1 h); 401 wird dort
+// einmal mit frischem Token wiederholt. Fehler: "google-expired" (neu verbinden), "google-offline".
 //
 // Voraussetzung: Tasks API im GCP-Projekt aktiviert (fitness-aos: ja) und der Scope
-// https://www.googleapis.com/auth/tasks im OAuth-Zustimmungsbildschirm (oder Testnutzer).
+// https://www.googleapis.com/auth/tasks im OAuth-Zustimmungsbildschirm.
 //
 // Sicherheitsrahmen: Es werden nur die beiden Listen "Door · Potential" und
 // "Door · Production" angefasst (find-or-create über den Titel); andere Listen
 // werden nie gelesen oder verändert.
-import { GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
-import { auth } from "../firebase.js";
+import { google } from "../google/auth.js";
 
-const SCOPE = "https://www.googleapis.com/auth/tasks";
 const API = "https://tasks.googleapis.com/tasks/v1";
-const STORE_KEY = "dv2:gtasks-token";
 
 export const LIST_POTENTIAL = "Door · Potential";
 export const LIST_PRODUCTION = "Door · Production";
 
-function readStored() {
-  try {
-    const raw = sessionStorage.getItem(STORE_KEY);
-    if (!raw) return null;
-    const { token, exp } = JSON.parse(raw);
-    return exp > Date.now() ? token : null;
-  } catch {
-    return null;
-  }
-}
-
-function store(token) {
-  try { sessionStorage.setItem(STORE_KEY, JSON.stringify({ token, exp: Date.now() + 55 * 60 * 1000 })); } catch {}
-}
-
-export function disconnect() {
-  try { sessionStorage.removeItem(STORE_KEY); } catch {}
-  listIds.clear();
-}
-
-export const connected = () => !!readStored();
-
-export async function connect() {
-  if (!auth?.currentUser) throw new Error("not authenticated");
-  const provider = new GoogleAuthProvider();
-  provider.addScope(SCOPE);
-  const result = await reauthenticateWithPopup(auth.currentUser, provider);
-  const token = GoogleAuthProvider.credentialFromResult(result)?.accessToken;
-  if (!token) throw new Error("kein Tasks-Token erhalten");
-  store(token);
-  return token;
-}
-
 async function api(method, path, { params, body } = {}) {
-  const token = readStored();
-  if (!token) throw new Error("gtasks-expired");
   const qs = params ? `?${new URLSearchParams(params)}` : "";
-  const res = await fetch(`${API}${path}${qs}`, {
+  const res = await google.authFetch(`${API}${path}${qs}`, {
     method,
-    headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+    headers: body ? { "Content-Type": "application/json" } : {},
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (res.status === 401) {
-    disconnect();
-    throw new Error("gtasks-expired");
-  }
   if (res.status === 204) return null;
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.error?.message || `tasks ${res.status}`);
@@ -73,6 +31,8 @@ async function api(method, path, { params, body } = {}) {
 
 // ── Listen ──
 const listIds = new Map(); // Titel → id (pro Sitzung)
+// Konto getrennt (oder gewechselt): gemerkte Listen-IDs gehören dann nicht mehr dazu
+google.subscribe(() => { if (google.snapshot() === "off") listIds.clear(); });
 
 /** Id der Liste mit diesem Titel; wird beim ersten Zugriff angelegt, falls sie fehlt. */
 export async function ensureList(title) {

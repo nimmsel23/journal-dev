@@ -1,0 +1,46 @@
+# Check für Journal: Test + Build auf jedem PR/dev-Push, ohne Deploy und ohne Firebase-Secrets.
+#
+# Gleicher Aufbau wie preview-dev.yml (Journal baut standalone, kein vitalos-Checkout),
+# aber ohne Pfadfilter und ohne Preview (Muster aus fitness-dev/check.yml).
+
+name: Check (Journal)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [vitalos, master, dev]
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Journal
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.3.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Journal
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build Journal
+        run: pnpm run build:firebase

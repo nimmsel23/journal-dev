@@ -55,11 +55,13 @@ export async function fetchHotlist() {
   const tasks = await listTasks(LIST_POTENTIAL, { showCompleted: false });
   return tasks.filter((t) => (t.title || "").trim()).map(toItem);
 }
-export const addHotlistItem = (text) => {
+/** Potential legt den Task an — ans Ende der Liste (noch ohne Quadrant), nicht über die priorisierten. */
+export async function addHotlistItem(text) {
   const title = String(text || "").trim();
   if (!title) throw new Error("title_required");
-  return insertTask(LIST_POTENTIAL, { title });
-};
+  const open = await listTasks(LIST_POTENTIAL, { showCompleted: false });
+  return insertTask(LIST_POTENTIAL, { title }, open.at(-1)?.id);
+}
 /** Notiz hängt unter die Marker-Zeile an (Quadrant/Door bleiben erhalten). */
 export async function addNote(id, text) {
   const note = String(text || "").trim();

@@ -1,28 +1,31 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Hammer, Check } from "lucide-react";
+import { addWeeks } from "date-fns";
+import { Hammer, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
-import { fetchDailyWeek, toggleDailyHit, addDailyHit, fetchHitsWeek } from "../../lib/door/v1.js";
+import { fetchDailyWeek, toggleDailyHit, addHitOnDate, fetchHitsWeek } from "../../lib/door/v1.js";
 
 const DAY_LABELS = { mon: "Montag", tue: "Dienstag", wed: "Mittwoch", thu: "Donnerstag", fri: "Freitag" };
 
 export default function ProductionView() {
   const qc = useQueryClient();
+  const [weekOffset, setWeekOffset] = useState(0);
+  const base = addWeeks(new Date(), weekOffset);
 
   const { data: plan, isLoading, isError, refetch } = useQuery({
-    queryKey: ["door-production"],
-    queryFn: () => fetchDailyWeek(),
+    queryKey: ["door-production", weekOffset],
+    queryFn: () => fetchDailyWeek(base),
     staleTime: 15_000,
   });
 
   const { data: summary } = useQuery({
-    queryKey: ["door-production-summary"],
-    queryFn: fetchHitsWeek,
+    queryKey: ["door-production-summary", weekOffset],
+    queryFn: () => fetchHitsWeek(base),
     staleTime: 15_000,
   });
 
   const toggleMutation = useMutation({
-    mutationFn: (id) => toggleDailyHit(id),
+    mutationFn: (id) => toggleDailyHit(id, base),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["door-production"] });
       qc.invalidateQueries({ queryKey: ["door-production-summary"] });
@@ -32,7 +35,7 @@ export default function ProductionView() {
   const [drafts, setDrafts] = useState({});
   const [error, setError] = useState("");
   const addMutation = useMutation({
-    mutationFn: ({ day, text }) => addDailyHit(day, text),
+    mutationFn: ({ day, text }) => addHitOnDate(plan?.dates?.[day], text),
     onSuccess: (_, { day }) => {
       setDrafts((prev) => ({ ...prev, [day]: "" }));
       qc.invalidateQueries({ queryKey: ["door-production"] });
@@ -52,7 +55,12 @@ export default function ProductionView() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/40 px-5 py-3 text-xs text-slate-400">
-        <span className="inline-flex items-center gap-2"><Hammer className="h-3.5 w-3.5" /> Daily Hits · {plan?.week || "…"}</span>
+        <span className="inline-flex items-center gap-2">
+          <Hammer className="h-3.5 w-3.5" /> Daily Hits · {plan?.week || "…"}
+          <button type="button" onClick={() => setWeekOffset((w) => w - 1)} title="Vorherige Woche" className="rounded p-0.5 hover:bg-white/10"><ChevronLeft className="h-3.5 w-3.5" /></button>
+          {weekOffset !== 0 ? <button type="button" onClick={() => setWeekOffset(0)} className="underline hover:text-white">heute</button> : null}
+          <button type="button" onClick={() => setWeekOffset((w) => w + 1)} title="Nächste Woche" className="rounded p-0.5 hover:bg-white/10"><ChevronRight className="h-3.5 w-3.5" /></button>
+        </span>
         <span>Google Tasks · „Door · Production“</span>
         {summary ? (
           <span>{summary.completed_hits}/{summary.total_hits} Hits erledigt ({Math.round((summary.completion_rate || 0) * 100)}%)</span>
@@ -74,7 +82,10 @@ export default function ProductionView() {
         <div className="grid gap-4 md:grid-cols-5">
           {Object.entries(plan?.days || {}).map(([day, items]) => (
             <div key={day} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <h3 className="mb-3 text-sm font-semibold text-slate-100">{DAY_LABELS[day] || day}</h3>
+              <h3 className="mb-3 text-sm font-semibold text-slate-100">
+                {DAY_LABELS[day] || day}
+                {plan?.dates?.[day] ? <span className="ml-2 text-xs font-normal text-slate-500">{plan.dates[day].slice(8, 10)}.{plan.dates[day].slice(5, 7)}.</span> : null}
+              </h3>
               <ul className="space-y-2">
                 {items.map((item) => (
                   <li
@@ -110,7 +121,7 @@ export default function ProductionView() {
                 <input
                   value={drafts[day] || ""}
                   onChange={(event) => setDrafts((prev) => ({ ...prev, [day]: event.target.value }))}
-                  placeholder="+ Hit"
+                  placeholder="+ Hit für diesen Tag"
                   aria-label={`Neuer Hit ${DAY_LABELS[day] || day}`}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:border-amber-500 focus:outline-none"
                 />

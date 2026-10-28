@@ -144,7 +144,7 @@ export async function toggleWarstackHit(warstackId, hitId) {
 // ── Production ──
 export const fetchDailyWeek = gt.fetchDailyWeek;
 export const toggleDailyHit = gt.toggleDailyHit;
-export const addDailyHit = gt.addDailyHit;
+export const addHitOnDate = gt.addHitOnDate;
 export const fetchHitsWeek = gt.fetchHitsWeek;
 
 // ── Profit ──

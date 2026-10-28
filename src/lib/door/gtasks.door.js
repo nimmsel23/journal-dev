@@ -131,25 +131,28 @@ const weekDates = (base = new Date()) => {
   const mon = startOfWeek(base, { weekStartsOn: 1 });
   return DAY_KEYS.map((k, i) => [k, format(addDays(mon, i), "yyyy-MM-dd")]);
 };
-async function weekHits() {
-  const dates = weekDates();
+// react-query reicht als queryFn-Argument ein Kontextobjekt durch → nur echte Datumswerte als Basis zulassen
+const asBase = (b) => (b instanceof Date && !Number.isNaN(b.getTime()) ? b : new Date());
+async function weekHits(base) {
+  base = asBase(base);
+  const dates = weekDates(base);
   const tasks = await listTasks(LIST_PRODUCTION, {
     showCompleted: true, dueMin: dueOf(dates[0][1]), dueMax: dueOf(format(addDays(new Date(`${dates[6][1]}T00:00:00Z`), 1), "yyyy-MM-dd")),
   });
   return { dates, tasks };
 }
 
-export async function fetchDailyWeek() {
-  const { dates, tasks } = await weekHits();
+export async function fetchDailyWeek(base = new Date()) {
+  const { dates, tasks } = await weekHits(base);
   const days = Object.fromEntries(DAY_KEYS.map((k) => [k, []]));
   for (const t of tasks) {
     const day = dates.find(([, d]) => d === (t.due || "").slice(0, 10));
     if (day) days[day[0]].push({ id: t.id, label: t.title || "", done: t.status === "completed", kind: "little" });
   }
-  return { week: weekKey(), days };
+  return { week: weekKey(asBase(base)), days, dates: Object.fromEntries(dates) };
 }
-export async function toggleDailyHit(id) {
-  const { tasks } = await weekHits();
+export async function toggleDailyHit(id, base = new Date()) {
+  const { tasks } = await weekHits(base);
   const t = tasks.find((x) => x.id === id);
   if (!t) throw new Error("daily_hit_not_found");
   return patchTask(LIST_PRODUCTION, id, t.status === "completed" ? { status: "needsAction", completed: null } : { status: "completed" });
@@ -160,10 +163,16 @@ export async function addDailyHit(dayKey, text) {
   if (!title || !date) throw new Error("title_required");
   return insertTask(LIST_PRODUCTION, { title, due: dueOf(date) });
 }
-export async function fetchHitsWeek() {
-  const { tasks } = await weekHits();
+/** Hit mit Fälligkeitsdatum (yyyy-MM-dd) anlegen — Google Tasks speichert nur das Datum, keine Uhrzeit. */
+export async function addHitOnDate(date, text) {
+  const title = String(text || "").trim();
+  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date || "")) throw new Error("title_required");
+  return insertTask(LIST_PRODUCTION, { title, due: dueOf(date) });
+}
+export async function fetchHitsWeek(base = new Date()) {
+  const { tasks } = await weekHits(base);
   const done = tasks.filter((t) => t.status === "completed").length;
-  return { week: weekKey(), total_hits: tasks.length, completed_hits: done, open_hits: tasks.length - done, completion_rate: tasks.length ? done / tasks.length : 0 };
+  return { week: weekKey(asBase(base)), total_hits: tasks.length, completed_hits: done, open_hits: tasks.length - done, completion_rate: tasks.length ? done / tasks.length : 0 };
 }
 
 // ── Profit (nur lesend) ──

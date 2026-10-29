@@ -123,3 +123,6 @@ Kein echter Release ausgeführt.
 
 - Journal push reminders now use the `apps.journal` lane in the shared push settings document. The Journal client registers its own `/journal-messaging-sw.js` worker at `/journal-push/`, and its reminder function queries only enabled Journal settings and tags outgoing messages with `app: journal`.
 - Added Journal reminder enable/disable controls and reminder time to Journal settings. Legacy shared tokens are not adopted as Journal tokens.
+
+## 2026-10-29
+- **TaskChampion CORS:** `journal-dev/scripts/tc-cors-proxy.mjs` erlaubt jetzt zusätzlich `https://vitalos.web.app`, damit Game/Fire innerhalb der VitalOS-Shell den TaskChampion-Sync über denselben Proxy verwenden kann.

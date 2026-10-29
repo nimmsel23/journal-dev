@@ -174,11 +174,12 @@
 .dv2-swipe .dv2-row { border-bottom: 0; background: var(--p); position: relative; touch-action: pan-y; user-select: none; cursor: grab; }
 .dv2-swhint { position: absolute; inset: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 18px;
   background: var(--sig); color: #fff; font-family: var(--mono); font-size: 22px; font-weight: 700; }
+/* Der Wisch-Hinweis deckt den ganzen Container ab; Notiz und Sheet müssen darüber liegen (positionierte Elemente werden über unpositionierten gemalt) */
+.dv2-swipe > .dv2-note, .dv2-swipe > .dv2-sheet { position: relative; }
 .dv2-qbadge { align-self: center; margin-right: 14px; font-family: var(--mono); font-size: 12px; padding: 2px 7px; border: 1px solid var(--ink); opacity: .45; }
 .dv2-qbadge.set { opacity: 1; background: var(--ink); color: var(--p); }
 .dv2-sheet { display: grid; gap: 10px; padding: 12px 14px 16px; background: var(--soft); border-top: 1px solid var(--ink); }
 .dv2-note { display: grid; gap: 8px; }
-.dv2-note-inline { padding: 8px 14px 12px; background: var(--soft); border-top: 1px solid var(--ink); }
 .dv2-note textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 10px 12px; border: 2px solid var(--ink); background: #fff; color: var(--ink); border-radius: 0; }
 .dv2-note button { justify-self: start; min-height: 44px; padding: 0 14px; border: 2px solid var(--ink); background: var(--p); font-family: var(--mono); text-transform: uppercase; cursor: pointer; }
 .dv2-swipehelp { padding: 8px 14px; font-size: 11px; border-bottom: 1px solid var(--ink); }

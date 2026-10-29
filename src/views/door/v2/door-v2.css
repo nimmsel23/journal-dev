@@ -174,6 +174,8 @@
 .dv2-swipe .dv2-row { border-bottom: 0; background: var(--p); position: relative; touch-action: pan-y; user-select: none; cursor: grab; }
 .dv2-swhint { position: absolute; inset: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 18px;
   background: var(--sig); color: #fff; font-family: var(--mono); font-size: 22px; font-weight: 700; }
+/* Der Wisch-Hinweis deckt den ganzen Container ab; Notiz und Sheet müssen darüber liegen (positionierte Elemente werden über unpositionierten gemalt) */
+.dv2-swipe > .dv2-note, .dv2-swipe > .dv2-sheet { position: relative; }
 .dv2-qbadge { align-self: center; margin-right: 14px; font-family: var(--mono); font-size: 12px; padding: 2px 7px; border: 1px solid var(--ink); opacity: .45; }
 .dv2-qbadge.set { opacity: 1; background: var(--ink); color: var(--p); }
 .dv2-sheet { display: grid; gap: 10px; padding: 12px 14px 16px; background: var(--soft); border-top: 1px solid var(--ink); }

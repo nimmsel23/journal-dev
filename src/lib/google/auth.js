@@ -3,6 +3,7 @@
 // functions/google.js), Google Identity Services (Code-Popup) und der Firebase-Popup-Rückfall.
 // Beim App-Start passiert hier nichts im Netz; erst Verbinden bzw. ein API-Aufruf braucht es.
 import { GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { app, auth } from "../firebase.js";
 import { createGoogleTokens, KEY } from "./tokens.js";
 
@@ -17,7 +18,6 @@ const GIS_SRC = "https://accounts.google.com/gsi/client";
 const fail = (message, code) => Object.assign(new Error(message), code ? { code } : {});
 
 async function call(name, data) {
-  const { getFunctions, httpsCallable } = await import("firebase/functions");
   try {
     return (await httpsCallable(getFunctions(app, REGION), name)(data || {})).data;
   } catch (e) {

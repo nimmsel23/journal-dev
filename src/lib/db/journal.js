@@ -14,6 +14,8 @@
 import { localToday } from "./core.js";
 import { db, auth } from "../firebase.js";
 import { track } from "../offline.js";
+import { hasHotTag, addToPotential } from "../door/hotFromJournal.js";
+import * as profitFromJournal from "../door/profitFromJournal.js";
 import {
   collection, doc, setDoc, getDoc, getDocs, deleteDoc,
   query, where, orderBy, limit as fbLimit, serverTimestamp, onSnapshot,
@@ -49,7 +51,6 @@ function journalCol(userId) {
 // und der nächste Speichervorgang des Eintrags versucht es erneut. Journal-Speichern bleibt unberührt.
 async function hotToPotential(userId, id, text, tags) {
   try {
-    const { hasHotTag, addToPotential } = await import("../door/hotFromJournal.js");
     if (!hasHotTag(tags)) return;
     const ref = doc(journalCol(userId), id);
     if ((await getDoc(ref)).data()?.hot_potential) return;
@@ -62,7 +63,7 @@ async function hotToPotential(userId, id, text, tags) {
 // +p / +profit / +review im Journal → Door › Profit (Reviews). Doc-ID = Eintrags-ID, daher idempotent.
 async function profitReview(userId, id, text, tags, date) {
   try {
-    const m = await import("../door/profitFromJournal.js");
+    const m = profitFromJournal;
     if (!m.hasProfitTag(tags)) return;
     let d = date;
     if (!d) d = (await getDoc(doc(journalCol(userId), id))).data()?.date;
@@ -183,7 +184,7 @@ export async function deleteJournal(id) {
   const userId = await uid();
   const synced = track(deleteDoc(doc(journalCol(userId), id)));
   // zugehörige Profit-Review (+profit/+review/+p) mit entfernen – best effort
-  import("../door/profitFromJournal.js").then((m) => m.removeProfitReview(userId, id)).catch(() => {});
+  Promise.resolve().then(() => profitFromJournal.removeProfitReview(userId, id)).catch(() => {});
   return { ok: true, id, synced };
 }
 

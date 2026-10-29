@@ -3,6 +3,8 @@
 - [ ] Pause-Visualisierungen der Voice-Ansicht (`PauseViz.jsx`) im Browser ansehen und `pnpm test` laufen lassen (nach dem Merge nur der Build geprüft); ob die CI den Release vom 2026-10-25 deployt hat, ist nicht kontrolliert.
 - [ ] Release dev → master → vitalos (`journal-release`) nur nach ausdrücklichem OK.
 - [ ] Door v2 und Journal v2 vom 2026-10-26 im Browser ausprobieren: Rechtsklick-Menüs in Potential/Plan/Production/Profit, Notizfeld in Potential (Tippen und Speichern je Quelle, vorher nur bei Taskwarrior vorhanden), Header-Sprünge Door/Focus/Game, Jahr-Ansicht und ✎-Bearbeiten eines Tageseintrags gegen echte Daten.
+- [ ] Door v2 Potential im Browser prüfen, ob Notizfeld, Quadrant-Buttons und War Stack nach dem Overlay-Fix (`a0b7bac`, live seit 2026-10-29) im aufgeklappten Eintrag sichtbar und bedienbar sind (ggf. zweiter Reload wegen Service Worker); der Fix beruht nur auf den CSS-Malregeln. Gleiches Muster beim Wisch-Hinweis in Plan/Production/Profit prüfen.
+- [ ] vitalos-Shell mit dem Door-v2-Fix aktualisieren (`vos-release journal`): Standalone-Targets sind live, die Shell steht noch auf dem alten Stand; nur nach ausdrücklichem OK.
 
 **Gemini-Review (potenzielle blinde Flecken, 2026-10-24):**
 *   **`pnpm-lock.yaml` Tracking:** Die Dokumentation wurde aktualisiert, um zu sagen, dass `pnpm-lock.yaml` getrackt wird, aber es wurde nicht explizit geprüft oder gezeigt, dass die `.gitignore`-Datei entsprechend angepasst wurde.
@@ -18,3 +20,8 @@
 *   **Interaktions- und UI-Flüsse ungetestet:** Die Rechtsklick-Menüs, Header-Navigation (Door, Focus, Game) und die Bearbeitungsfunktion für Journaleinträge wurden nicht manuell im Browser getestet.
 *   **Backend-Persistenz ungetestet:** Das Notizfeld in Door v2 Potential und die Bearbeitungsfunktion für Journaleinträge wurden nicht gegen echte Firestore-/Backend-Daten getestet.
 *   **Fehlerbehandlung ungetestet:** Die Fehlermeldung bei leerem Journaleintragstext während des Bearbeitens wurde implementiert, aber nicht explizit getestet.
+
+**Gemini-Review (potenzielle blinde Flecken, 2026-10-29):**
+*   **Unberücksichtigte Lernkurve bei Tool-Nutzung:** Die Zusammenfassung verschweigt, dass Claude zweimal vom System wegen unzulässiger `sleep`-Befehle blockiert wurde, bevor es korrekt auf `Monitor` umstellte – ein relevanter Aspekt der eigenen Problemlösungseffizienz.
+*   **Ungeprüfte Annahme zur Cache-Invalidierung:** Die Empfehlung eines zweiten Reloads für den Service Worker ist eine Annahme, die nicht die Möglichkeit tieferer Cache-Probleme oder fehlgeschlagener Service-Worker-Updates berücksichtigt, die den Fix weiterhin blockieren könnten.
+*   **Fehlende End-to-End-Verifikation für visuellen Fehler:** Obwohl das Problem ein

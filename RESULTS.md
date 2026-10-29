@@ -1,3 +1,15 @@
+## 2026-10-29 — Door v2 Potential: Notizfeld und Sheet lagen unter dem Wisch-Hinweis, Release nach master
+
+Das „fehlende“ Notizfeld in Door v2 Potential lag nicht am Markup, sondern an der Überdeckung: `.dv2-swhint` (Wisch-Hinweis) ist `position: absolute; inset: 0` und deckt den ganzen Eintrag ab, nur die Zeile ist `position: relative`. Notizfeld und Sheet (Quadrant-Buttons, War Stack) waren unpositioniert und wurden deshalb unter der Farbfläche gemalt. Vermutlich bestand das seit `2599095` (18.10.). Der Fix steht auf `dev`, der Release-PR nach `master` ist gemergt und der Live-Deploy der Standalone-Targets lief grün.
+
+- **`src/views/door/v2/door-v2.css`:** `.dv2-swipe > .dv2-note, .dv2-swipe > .dv2-sheet { position: relative; }`, damit beide in DOM-Reihenfolge über dem Hinweis liegen (`a0b7bac`).
+- **Revert von `03d67bf` (`8ec4a24`):** Das dauerhaft sichtbare Notizfeld unter jedem Eintrag war nur ein Workaround für das Overlay-Problem und wurde zurückgenommen; das Feld steht wieder nur im aufgeklappten Sheet.
+- **Release:** `dev` gepusht, Release-PR [#4](https://github.com/nimmsel23/journal-dev/pull/4) per `vos-release-pr journal` (dev → master) gemergt, Live-Deploy (`deploy-master.yml`, Run 40894437472) erfolgreich. Die vitalos-Shell (`vos-release journal`) wurde **nicht** ausgelöst.
+
+Validierung: 51 Node-Tests (`node --test tests/*.test.mjs`) und `vite build --mode firebase` grün. Die Behebung beruht auf den CSS-Malregeln und wurde nicht im Browser angesehen; wegen des Service Workers kann ein zweiter Reload nötig sein.
+
+---
+
 ## 2026-10-28 — Google Tasks/Calendar: dauerhafte Verbindung, gemeinsamer Token-Dienst, Calendar in Fire
 
 Ursache des ständigen Ablaufens: Firebase-`reauthenticateWithPopup` liefert nur einen ~1-h-Access-Token ohne Refresh-Token, abgelegt in

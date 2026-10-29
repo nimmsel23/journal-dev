@@ -101,13 +101,6 @@ function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, onMenu, D, 
         </div>
         <span className={`dv2-qbadge${item.quadrant ? " set" : ""}`}>{item.quadrant ? `Q${item.quadrant}` : "–"}</span>
       </div>
-      {D.addNote && (
-        <div className="dv2-note dv2-note-inline">
-          {open && oldNote && <p className="dv2-oldnote">{oldNote}</p>}
-          <textarea aria-label="Notiz" rows={open ? 3 : 2} placeholder={source === "taskwarrior" ? "Notiz – wird als Annotation am Task gespeichert (taskopen)" : "Notiz zu diesem Eintrag …"} value={note} onChange={(e) => setNote(e.target.value)} />
-          {note.trim() && <button type="button" onClick={saveNote}>Notiz speichern</button>}
-        </div>
-      )}
       {open && (
         <div className="dv2-sheet">
           <div className="dv2-qs" role="group" aria-label="Quadrant">
@@ -115,6 +108,13 @@ function PotentialRow({ item, sel, busy, open, onToggle, onQuadrant, onMenu, D, 
               <button key={n} type="button" aria-pressed={item.quadrant === n} disabled={busy} onClick={() => onQuadrant(sel, n)}>Q{n}</button>
             ))}
           </div>
+          {D.addNote && (
+            <div className="dv2-note">
+              {oldNote && <p className="dv2-oldnote">{oldNote}</p>}
+              <textarea aria-label="Notiz" rows={3} placeholder={source === "taskwarrior" ? "Notiz – wird als Annotation am Task gespeichert (taskopen)" : "Notiz zu diesem Eintrag …"} value={note} onChange={(e) => setNote(e.target.value)} />
+              <button type="button" disabled={!note.trim()} onClick={saveNote}>Notiz speichern</button>
+            </div>
+          )}
           {msgText && <div className="dv2-none" role="status">{msgText}</div>}
           {(source === "backend" || source === "taskwarrior") && (
             ws

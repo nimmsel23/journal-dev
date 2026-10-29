@@ -180,7 +180,6 @@
 .dv2-qbadge.set { opacity: 1; background: var(--ink); color: var(--p); }
 .dv2-sheet { display: grid; gap: 10px; padding: 12px 14px 16px; background: var(--soft); border-top: 1px solid var(--ink); }
 .dv2-note { display: grid; gap: 8px; }
-.dv2-note-inline { padding: 8px 14px 12px; background: var(--soft); border-top: 1px solid var(--ink); }
 .dv2-note textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 10px 12px; border: 2px solid var(--ink); background: #fff; color: var(--ink); border-radius: 0; }
 .dv2-note button { justify-self: start; min-height: 44px; padding: 0 14px; border: 2px solid var(--ink); background: var(--p); font-family: var(--mono); text-transform: uppercase; cursor: pointer; }
 .dv2-swipehelp { padding: 8px 14px; font-size: 11px; border-bottom: 1px solid var(--ink); }

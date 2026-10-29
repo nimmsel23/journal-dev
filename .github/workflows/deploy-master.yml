@@ -1,74 +1,59 @@
-# Standalone Journal build: no VitalOS checkout or submodules.
+# Standalone-Prod Journal: Push auf master deployt live (nur CI). Gleiche Schritte wie das frühere
+# Meta-Repo-Workflow deploy-journal.yml; das Meta-Repo liefert nur die Nachbar-Repos (Cross-Repo-Aliase),
+# journal-app wird auf den ausgelösten Commit gesetzt.
 
 name: Live Deploy (Journal master)
-
-on:
-  workflow_dispatch:
+'on':
+  workflow_dispatch: null
   push:
-    branches: [master]
-    paths:
-      - 'src/**'
-      - 'public/**'
-      - 'tests/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'vite.config.cjs'
-      - 'index.html'
-      - 'firebase.json'
-      - '.firebaserc'
-      - '.github/workflows/deploy-master.yml'
-
+    branches:
+    - master
+concurrency:
+  group: live-journal-master
+  cancel-in-progress: false
+permissions:
+  contents: read
 jobs:
-  deploy_live:
-    permissions:
-      contents: read
-      checks: write
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Journal
-        uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.3.0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install Journal
-        run: pnpm install --frozen-lockfile
-
-      - name: Test
-        run: pnpm test
-
-      - name: Build Journal (Live)
-        run: pnpm run build:cloud
-
-      - name: Deploy Live
-        id: firebase_deploy
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FITNESS_AOS || secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: fitness-aos
-          entryPoint: .
-          target: journal
-          channelId: live
-
-      - name: Telegram-Benachrichtigung senden
-        if: success()
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            🚀 Journal ist LIVE deployed (master)!
-
-            🔗 Live-URL: https://fitness-aos.web.app
-            (oder eine verknüpfte Domain)
-
-            Commit: ${{ github.event.head_commit.message }}
-
+    - name: Checkout vitalos (Meta-Repo, liefert Nachbar-Repos)
+      uses: actions/checkout@v4
+      with:
+        repository: nimmsel23/vitalos
+        ref: master
+    - name: Private Skills submodule access
+      uses: ./.github/actions/skills-submodule-auth
+      with:
+        deploy-key: ${{ secrets.SKILLS_DEPLOY_KEY }}
+    - name: Submodules via HTTPS + Token
+      run: |
+        git config --global url."https://x-access-token:${{ secrets.GH_SUBMODULE_TOKEN || secrets.GITHUB_TOKEN }}@github.com/".insteadOf "git@github.com:"
+        git submodule sync
+        git submodule update --init --recursive
+    - name: journal-app auf den ausgelösten Commit setzen
+      run: |
+        cd journal-app
+        SHA="${{ github.sha }}"
+        git fetch origin "$SHA"
+        git checkout "$SHA"
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 11.3.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: pnpm
+    - name: Install (Workspaces)
+      run: pnpm install --no-frozen-lockfile
+    - name: Generate fitness KB data (transitive dependency via @fitness-db/@habits)
+      run: pnpm --filter ./fitness-app run build:kb-data
+    - name: Build Journal
+      run: pnpm --filter ./journal-app run deploy:all:build
+    - name: Deploy Journal to Firebase Hosting
+      run: |
+        cd journal-app
+        echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_FITNESS_AOS }}' > /tmp/sa.json
+        GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json \
+          npx firebase-tools@latest deploy --only hosting:journal,hosting:v2,hosting:door,hosting:voice,hosting:game,hosting:tent \
+          --project fitness-aos --non-interactive

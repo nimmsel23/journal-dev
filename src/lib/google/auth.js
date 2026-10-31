@@ -59,7 +59,9 @@ export function prepareGoogleConnect() {
       await loadGis();
       prep = { status: "ready", clientId: cfg.clientId };
     } catch (e) {
-      if (e?.code === "unavailable") prep = { status: "unavailable" };
+      // Function nicht deployt: Google antwortet 404 ohne CORS-Header, der Browser blockiert das und das SDK
+      // meldet "functions/internal" statt "not-found" → online wie "nicht eingerichtet" behandeln (Popup-Rückfall)
+      if (e?.code === "unavailable" || (e?.code === "functions/internal" && navigator.onLine !== false)) prep = { status: "unavailable" };
       // sonst (offline, Skript blockiert): später erneut versuchen
     } finally {
       prepPromise = null;

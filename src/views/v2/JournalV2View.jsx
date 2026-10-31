@@ -18,6 +18,8 @@ import { applySmartAnalysis } from "../../lib/smartJournalApply.js";
 import { addHabit, getHabitsRange, setHabitArchived, updateHabit } from "./habitsDb.js";
 import { extractTags, timeStr } from "../../components/Journal/journalUtils";
 import { asBool, useSetting } from "../../lib/useSetting.js";
+import { usePersistedText } from "../../lib/useAutosaveField.js";
+import { draftStore } from "../../lib/draftStore.js";
 import { fetchEvents } from "./gcal.js";
 import { useGoogle } from "../../lib/google/useGoogle.js";
 import { googleErrorText } from "../../lib/google/tokens.js";
@@ -62,7 +64,6 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       document.body.style.background = prev.body;
     };
   }, []);
-  const [draft, setDraft] = useState("");
   // Timeline-Raster (Drag auf die versteckte Timeline): 60 / 30 / 15 Minuten
   const [grain, setGrain] = useSetting("jv2:grain", 30, (v) => ([60, 30, 15].includes(Number(v)) ? Number(v) : undefined));
   // Smart Logger: Freitext → Vertex-Analyse → Vorschau → Übernehmen (Journal, Mahlzeiten, Wasser, Habits)
@@ -72,12 +73,15 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const [busy, setBusy] = useState(false);
   const day = parseISO(date);
   const uid = user?.uid ?? null;
+  // Eingabe-Entwurf (Journal/Smart Logger) übersteht Reload und Absturz; nach dem Speichern wird er geleert
+  const [draft, setDraft] = usePersistedText(`${uid}:jv2:compose`);
 
   const entries = useQuery({
     queryKey: ["jv2-entries", uid, date],
     enabled: !!uid,
+    // cache-first: lokaler Stand sofort, Server-Stand kommt im Hintergrund nach (siehe lib/db/fastDocs.js)
     queryFn: async () => {
-      const list = await getJournal(date);
+      const list = await getJournal(date, (late) => qc.setQueryData(["jv2-entries", uid, date], [...late].sort(byMinutes)));
       return [...list].sort(byMinutes);
     },
   });
@@ -93,12 +97,11 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     onSuccess: () => qc.invalidateQueries({ queryKey: ["jv2-habits", uid] }),
   });
   const habitPending = habitMutation.isPending;
-  const habitError = habitMutation.isError ? (habitMutation.error?.message || "Habit konnte nicht gespeichert werden.") : "";
   const habits = useQuery({
     queryKey: habitKey,
     enabled: !!uid,
     retry: false,
-    queryFn: () => getHabitsRange(habitFrom, habitTo),
+    queryFn: () => getHabitsRange(habitFrom, habitTo, (late) => qc.setQueryData(habitKey, late)),
   });
   const habitAction = async (action) => {
     if (!uid || habitLock.current) return false;
@@ -119,7 +122,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const range = useQuery({
     queryKey: ["jv2-range", uid, ...rangeKey],
     enabled: !!uid && (mode === "woche" || mode === "monat" || mode === "jahr"),
-    queryFn: () => getJournalRange(rangeKey[0], rangeKey[1]),
+    queryFn: () => getJournalRange(rangeKey[0], rangeKey[1], (late) => qc.setQueryData(["jv2-range", uid, ...rangeKey], late)),
   });
 
   // Google Calendar (nur lesen): Termine zum Reviewen. Verbindung gemeinsam mit Google Tasks (lib/google)
@@ -145,7 +148,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         return await fetchEvents(evFrom, evTo, { all: calAll });
       } catch (error) {
         // google-expired: der Dienst hat die Verbindung schon verworfen (calOn wird false) → Knopf „verbinden“
-        setCalMsg(error.message === "fire-calendar-missing" ? "Kalender „Fire Map“ nicht gefunden. Unten auf „Alle Kalender“ umschalten." : googleErrorText(error));
+        // Netzprobleme (google-offline) bleiben still; nur Hinweise, die eine Handlung brauchen
+        setCalMsg(error.message === "fire-calendar-missing" ? "Kalender „Fire Map“ nicht gefunden. Unten auf „Alle Kalender“ umschalten." : error.message === "google-offline" ? "" : googleErrorText(error));
         return [];
       }
     },
@@ -244,7 +248,10 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
 
   // Eintrag bearbeiten: Text + „+tag“-Zeile in einem Feld (wie beim Anlegen), Speichern über updateJournal
   const [edit, setEdit] = useState(null); // { id, text, err }
-  const startEdit = (e) => setEdit({ id: e.id, text: [String(e.text || "").trimEnd(), (e.tags || []).map((t) => `+${t}`).join(" ")].filter(Boolean).join("\n"), err: "" });
+  const editKey = (id) => `${uid}:jv2:edit:${id}`;
+  // Entwurf der Bearbeitung bleibt im localStorage, bis gespeichert oder verworfen wird (Reload/Absturz)
+  const startEdit = (e) => setEdit({ id: e.id, text: draftStore().get(editKey(e.id)) ?? [String(e.text || "").trimEnd(), (e.tags || []).map((t) => `+${t}`).join(" ")].filter(Boolean).join("\n"), err: "" });
+  const closeEdit = (id) => { draftStore().remove(editKey(id)); setEdit(null); };
   const saveEdit = async (e) => {
     const { text, tags } = extractTags(edit.text);
     if (!text) { setEdit({ ...edit, err: "Text darf nicht leer sein." }); return; }
@@ -252,7 +259,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     setBusy(true);
     try {
       await updateJournal(e.id, text, { tags, startDate: e.startDate, endDate: e.endDate });
-      setEdit(null);
+      closeEdit(e.id);
       await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
       qc.invalidateQueries({ queryKey: ["jv2-range"] });
     } catch (error) {
@@ -319,8 +326,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           </div>
         )}
         {mode === "woche" && <WeekView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
-        {mode === "habits" && uid && <HabitsView date={date} today={db.localToday()} habits={habits.data || []} onToggle={toggleHabit} onAdd={addNew} onUpdate={editHabit} onArchive={archive} onRestore={restore} pending={habitPending} loading={habits.isPending} error={habitError || (habits.isError ? "Habits konnten nicht geladen werden." : "")} onRetry={() => { habitMutation.reset(); habits.refetch(); }} />}
-        {mode !== "habits" && (habitError || habits.isError) && <div className="jv2-empty" role="alert">{habitError || "Habits konnten nicht geladen werden."} <button type="button" className="jv2-link" onClick={() => { habitMutation.reset(); habits.refetch(); }}>Erneut laden</button></div>}
+        {mode === "habits" && uid && <HabitsView date={date} today={db.localToday()} habits={habits.data || []} onToggle={toggleHabit} onAdd={addNew} onUpdate={editHabit} onArchive={archive} onRestore={restore} pending={habitPending} loading={habits.isPending} error={habits.isError && !habits.data ? "Habits konnten nicht geladen werden." : ""} onRetry={() => { habitMutation.reset(); habits.refetch(); }} />}
         {mode === "jahr" && <YearView day={day} entries={range.data || []} onPick={pick} onPickMonth={(d) => { onDateChange(d); onModeChange("monat"); }} />}
         {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
         {!uid && mode !== "tag" && (
@@ -398,16 +404,16 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
                 <div className="jv2-body jv2-edit">
                   <textarea
                     autoFocus rows={4} aria-label="Eintrag bearbeiten" value={edit.text}
-                    onChange={(ev) => setEdit({ ...edit, text: ev.target.value, err: "" })}
+                    onChange={(ev) => { draftStore().set(editKey(edit.id), ev.target.value); setEdit({ ...edit, text: ev.target.value, err: "" }); }}
                     onKeyDown={(ev) => {
-                      if (ev.key === "Escape") setEdit(null);
+                      if (ev.key === "Escape") closeEdit(edit.id);
                       else if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); saveEdit(e); }
                     }}
                   />
                   {edit.err && <div role="alert" className="jv2-eerr">{edit.err}</div>}
                   <div className="jv2-eact">
                     <button type="button" onClick={() => saveEdit(e)} disabled={busy || !edit.text.trim()}>Speichern</button>
-                    <button type="button" className="ghost" onClick={() => setEdit(null)}>Abbrechen</button>
+                    <button type="button" className="ghost" onClick={() => closeEdit(edit.id)}>Abbrechen</button>
                   </div>
                 </div>
               ) : (

@@ -1,15 +1,20 @@
 // Journal-owned access to the shared Habits schema. Never replace unrelated
 // icon/order/metadata when editing or archiving a habit.
-import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
+import { collection, doc, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
 import { getUid } from '../../lib/db/core.js';
 import { habitFields } from './habitsModel.js';
+import { track } from '../../lib/offline.js';
+import { getDocsFast } from '../../lib/db/fastDocs.js';
 
-export async function getHabitsRange(from, to) {
+// cache-first (fastDocs.js): bei schlechter Verbindung sofort der lokale Stand; `onLate(habits)` liefert den Serverstand nach.
+export async function getHabitsRange(from, to, onLate) {
   const uid = getUid();
+  let again = null;
+  if (onLate) { let fired = false; again = () => { if (fired) return; fired = true; getHabitsRange(from, to).then(onLate, () => {}); }; }
   const [habitSnap, recordSnap] = await Promise.all([
-    getDocs(collection(db, 'fitness', uid, 'habits')),
-    getDocs(query(collection(db, 'fitness', uid, 'habitRecords'), where('date', '>=', from), where('date', '<=', to))),
+    getDocsFast(collection(db, 'fitness', uid, 'habits'), again),
+    getDocsFast(query(collection(db, 'fitness', uid, 'habitRecords'), where('date', '>=', from), where('date', '<=', to)), again),
   ]);
   const byHabit = new Map();
   for (const snap of recordSnap.docs) {
@@ -25,14 +30,16 @@ export async function getHabitsRange(from, to) {
 
 export async function addHabit(draft) {
   const fields = habitFields(typeof draft === 'string' ? { name: draft } : draft);
-  const ref = await addDoc(collection(db, 'fitness', getUid(), 'habits'), { ...fields, icon: 'Activity', created_at: serverTimestamp() });
+  // lokal sofort fertig (ID wird clientseitig vergeben), Abgleich im Hintergrund – nie auf den Server warten
+  const ref = doc(collection(db, 'fitness', getUid(), 'habits'));
+  track(setDoc(ref, { ...fields, icon: 'Activity', created_at: serverTimestamp() }));
   return ref.id;
 }
 
 export async function updateHabit(uuid, draft) {
-  await setDoc(doc(db, 'fitness', getUid(), 'habits', uuid), { ...habitFields(draft), updated_at: serverTimestamp() }, { merge: true });
+  track(setDoc(doc(db, 'fitness', getUid(), 'habits', uuid), { ...habitFields(draft), updated_at: serverTimestamp() }, { merge: true }));
 }
 
 export async function setHabitArchived(uuid, deleted) {
-  await setDoc(doc(db, 'fitness', getUid(), 'habits', uuid), { deleted, updated_at: serverTimestamp() }, { merge: true });
+  track(setDoc(doc(db, 'fitness', getUid(), 'habits', uuid), { deleted, updated_at: serverTimestamp() }, { merge: true }));
 }

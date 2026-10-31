@@ -6,7 +6,7 @@
 //  Plan       = dieselben Tasks; Quadrant aus priority (H=Q1, M=Q2, L=Q3, leer=Q4), Door der Woche = +door
 //  Production = Tasks mit +hit und `due` in dieser Woche; erledigt = status completed
 //  Profit     = erledigte Tasks (`end`) der letzten 8 Wochen: +hot/+potential und +hit; Doors = erledigte +door
-import { addDays, format, startOfWeek } from "date-fns";
+import { addDays, format, getISOWeek, startOfWeek } from "date-fns";
 import { WARSTACK_STEPS, buildWarStackHits, weekKey } from "./warstack.js";
 import { tasks, commit, editOps, tagProps, newTaskOps, nowSecs } from "./taskchampion.js";
 import { weekDoor } from "./weekDoor.js";
@@ -80,15 +80,19 @@ export async function assignQuadrant(id, quadrant) {
   for (const n of [1, 2, 3, 4]) if (has(t, `q${n}`)) props = { ...props, ...tagProps({ ...t, ...props }, `q${n}`, false) };
   await commit(editOps(t, { ...props, modified: nowSecs() }));
 }
-// Eine Door pro Woche: +door von anderen offenen Tasks entfernen, am gewählten setzen
+// Door der Woche setzen, ohne andere Doors anzutasten: +door bleibt überall erhalten (jede +door ist eine Door mit
+// eigenen Hits/Profit). Die Woche markiert der Tag kw<NN> (Rückfall in weekDoor.js): er wandert vom bisherigen
+// Wochen-Task zum gewählten. Hängen schon Hits dieser Woche an einer anderen Door, gewinnt weiterhin diese.
 export async function selectWeeklyDoor(id) {
   const all = await tasks({ force: true });
   const t = all.find((x) => x.uuid === id);
   if (!t) throw new Error("task_not_found");
   const now = nowSecs();
+  const kw = `kw${String(getISOWeek(new Date())).padStart(2, "0")}`;
   const ops = [];
-  for (const o of all) if (o.uuid !== id && o.status === "pending" && has(o, "door")) ops.push(...editOps(o, { ...tagProps(o, "door", false), modified: now }));
-  ops.push(...editOps(t, { ...tagProps(t, "door", true), modified: now }));
+  for (const o of all) if (o.uuid !== id && o.status === "pending" && has(o, kw)) ops.push(...editOps(o, { ...tagProps(o, kw, false), modified: now }));
+  const withDoor = has(t, "door") ? {} : tagProps(t, "door", true);
+  ops.push(...editOps(t, { ...withDoor, ...tagProps({ ...t, ...withDoor }, kw, true), modified: now }));
   await commit(ops);
 }
 

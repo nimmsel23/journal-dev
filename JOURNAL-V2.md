@@ -323,6 +323,28 @@ Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste 
 - **Tent**: Habits (`watchHabits`) und die Tent-Einträge der Woche (`watchJournalRange`) kommen per Listener cache-first; der Wochenabschluss ist lokal sofort gespeichert, die Taskwarrior-Scores rechnen sich bei Replik-Änderungen neu. Entwurf lag schon in localStorage.
 - Grenze: die allererste Taskwarrior-Replik und Google-Login/Kalender-Token brauchen einmal Netz.
 
+## Autosave und Entwürfe (Game, Journal v2, Habits · 2026-10-31)
+
+Frame/Focus/Freedom speicherten bisher erst bei `onBlur`; wer die PWA beendete oder neu lud, bevor das Feld den Fokus verlor, verlor den Text.
+Außerdem baute `key={…${antwort}}` das Feld bei jeder gespeicherten Änderung neu auf (Entwurf weg, Cursor springt).
+
+- **Bausteine**: `src/lib/draftStore.js` (rein, getestet in `tests/draft-store.test.mjs`: Entwurfsspeicher mit Speicher-Rückfall, `createAutosaver`) und
+  `src/lib/useAutosaveField.js` (Hook `useAutosaveField`, `usePersistedText`). Komponente `views/game/AutosaveArea.jsx`.
+- **Ablauf je Feld**: jede Eingabe → Entwurf sofort in `localStorage` (`draft:v1:<uid>:<pfad>`) → entprellt (700 ms) lokal speichern (`saveFrameAnswer`/`saveMapAnswer`,
+  `track()`, nie awaiten; Abgleich im Hintergrund). Sofort speichern bei Blur, `visibilitychange`→hidden, `pagehide`, `beforeunload`, Unmount/Ansichtswechsel.
+- **Stabil beim Tippen**: das Feld ist kontrolliert und wird nicht mehr per `key` neu aufgebaut. Eingehende Stände (Cache/Server/Echo) überschreiben das Feld nur,
+  wenn nichts Ungesendetes getippt ist (Dirty-Regel); sonst gewinnt der lokale Text (letzter Schreiber gewinnt). Der Entwurf wird erst gelöscht, wenn Stand = Text (Echo).
+- **Wiederherstellung**: beim Start wird ein vom Stand abweichender Entwurf angezeigt und sofort nachgespeichert. Vor dem Laden des Stands wird nichts gespeichert (Entwurf wartet);
+  schlägt der Listener fehl, gilt das Feld trotzdem als bereit.
+- **Eingabezeilen mit Entwurf** (`usePersistedText`): Fire „Neuer Strike“ und Hit-Slots, Journal v2 Eingabe/Smart Logger (`<uid>:jv2:compose`), Bearbeiten-Feld eines Eintrags (`<uid>:jv2:edit:<id>`, bis Speichern/Verwerfen).
+- **Keine Warnhinweise mehr** in Frame/Maps (Permission-/Listener-Texte), Fire (Netzfehler der Replik, Kalender „offline“), Journal v2 (Habits-Ladefehler nur noch, wenn gar nichts da ist; Kalender „offline“).
+- **Lesen cache-first** (`src/lib/db/fastDocs.js`, getestet in `tests/fast-docs.test.mjs`): `getJournal`, `getJournalRange`, `getHabitsRange` antworten innerhalb von 1,2 s mit dem Serverstand, sonst sofort mit dem lokalen Stand (IndexedDB);
+  der Serverstand kommt per `onLate` nach. Ist der Cache leer und das Netz da, wird wie bisher auf den Server gewartet.
+- **Habit-Schreiben ohne Warten**: `recordHabit`/`unrecordHabit` (`src/db/index.js`) und `addHabit`/`updateHabit`/`setHabitArchived` (`habitsDb.js`) awaiten nicht mehr die Server-Bestätigung (`track()`); vorher hing das Abhaken offline ewig und
+  `habitLock` sperrte danach alle weiteren Habit-Aktionen. Neue Habits bekommen die ID clientseitig.
+- **Tent v2** war bereits sauber (Entwurf je Tastendruck in `tv2:<woche>`, Listener cache-first, Abschluss lokal sofort); unverändert.
+- **Nicht getestet**: Verhalten im Browser (Tippen, Cursor, Flugmodus, PWA-Kill), nur die reine Logik per Node-Tests.
+
 ## Google dauerhaft verbinden (Tasks + Calendar, 2026-10-28)
 
 **Ursache des Ablaufens:** `reauthenticateWithPopup` (Firebase) liefert nur einen Google-Access-Token (~1 h) und nie einen

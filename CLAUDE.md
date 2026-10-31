@@ -19,6 +19,7 @@ beim Start oder für die Navigation voraussetzen; Routing läuft deshalb rein ü
 Hintergrund, es gibt keine Warnhinweise und keine Wartezeiten wegen Netz. Door-Daten aus Google Tasks: lokaler Store + Outbox in
 `localStorage` (`src/lib/door/gtasks.{store,model,sync,local}.js`, Details in `JOURNAL-V2.md` → „Door v2 · Offline-first“); die
 Ansichten rufen Google nie direkt auf. Firestore-Schreibzugriffe nie awaiten (`track()`).
+Textfelder: Entwurf je Tastendruck in `localStorage` + entprelltes Autosave (`src/lib/draftStore.js`, `useAutosaveField.js`, Komponente `views/game/AutosaveArea.jsx`), kein Speichern nur bei `onBlur`; Lesen cache-first (`src/lib/db/fastDocs.js`).
 
 **v1 bleibt unverändert** (`src/components/Journal/`, `src/views/JournalVosView.jsx`, `public/index.html`).
 Umbauten betreffen v2, Door, Game, Tent und die gemeinsame Infrastruktur.

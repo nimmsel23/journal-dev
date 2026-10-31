@@ -1,3 +1,15 @@
+## 2026-10-31 — Autosave und Entwürfe: Game v2 (Frame/Focus/Freedom), Journal v2, Habits offline-first
+
+Frame/Focus/Freedom speicherten nur bei `onBlur` und bauten das Feld per `key={…antwort}` neu auf: Beenden/Neuladen vor dem Verlassen des Feldes verlor den Text. Jetzt Autosave mit Entwurf im localStorage.
+
+- **Neu:** `src/lib/draftStore.js` (rein; Entwurf, Entprellen, Dirty-Regel, Wiederherstellung), `src/lib/useAutosaveField.js`, `src/views/game/AutosaveArea.jsx`, `src/lib/db/fastDocs.js` (cache-first Lesen). Tests: `draft-store` (18), `fast-docs` (6).
+- **Game v2:** `GameMapPanel.jsx` (Frame, Fire-Strike/Hit-Slots), `MapDocsPanel.jsx` (Focus/Freedom, alle Perioden). Permission-/Listener-/Netz-Warntexte entfernt.
+- **Journal v2/Habits:** Eingabe- und Bearbeiten-Entwurf; `getJournal`/`getJournalRange`/`getHabitsRange` cache-first; `recordHabit`/`unrecordHabit`/`addHabit`/`updateHabit`/`setHabitArchived` awaiten die Server-Bestätigung nicht mehr (offline hing das Abhaken ewig und `habitLock` sperrte weitere Aktionen).
+- **Tent v2:** geprüft, bereits sauber (Entwurf je Tastendruck, Listener cache-first, Abschluss lokal sofort), unverändert. Journal v1 unberührt.
+- **Nicht getestet:** Browser, Flugmodus, PWA-Kill, Cursor-Verhalten; nur Node-Tests und beide Builds (Journal, Door-Flavor).
+
+---
+
 ## 2026-10-31 — Door v2 komplett offline-first (Google Tasks: lokaler Store + Outbox + stiller Abgleich)
 
 Anforderung des Users: Apps müssen offline-first sein — keine Lags, keine Warnhinweise, nichts geht verloren; lokaler Speicher ist die Wahrheit, Abgleich still im Hintergrund. Bisher las und schrieb Door v2 „Google Tasks“ direkt per REST (nach Reload offline leer, Schreiben ging verloren, „Failed to fetch“/„offline?“-Texte, großer „nicht verbunden“-Block bei abgelaufenem Token).

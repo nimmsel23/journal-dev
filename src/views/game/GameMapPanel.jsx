@@ -10,6 +10,8 @@ import { addDays, endOfISOWeek, format, startOfDay, startOfISOWeek } from "date-
 import { de } from "date-fns/locale";
 import * as tc from "../../lib/door/taskchampion.js";
 import TcSetup, { tcError } from "./TcSetup.jsx";
+import AutosaveArea from "./AutosaveArea.jsx";
+import { usePersistedText } from "../../lib/useAutosaveField.js";
 import MapDocsPanel from "./MapDocsPanel.jsx";
 import { FRAME_DOMAINS, FRAME_QUESTIONS, saveFrameAnswer, watchFrames } from "./frameDb.js";
 import { useLiveSnap } from "../../lib/useLiveSnap.js";
@@ -108,7 +110,9 @@ function FireCalendar() {
   });
   const events = q.data ?? cached();
   const expired = q.error?.message === "google-expired";
-  const err = q.error && !expired ? (q.error.message === "fire-calendar-missing" ? "Kalender „Fire Map“ nicht gefunden. Oben „Alle Kalender“ wählen." : googleErrorText(q.error)) : google.error;
+  // Netzprobleme bleiben still (der zuletzt geladene Stand bleibt sichtbar); nur Hinweise, die eine Handlung brauchen
+  const quiet = (m) => (m === googleErrorText({ message: "google-offline" }) ? "" : m);
+  const err = q.error && !expired ? (q.error.message === "fire-calendar-missing" ? "Kalender „Fire Map“ nicht gefunden. Oben „Alle Kalender“ wählen." : quiet(googleErrorText(q.error))) : quiet(google.error);
   const evs = (events || []).filter((e) => !e.title.startsWith("[TW "));
   const mirrored = (events || []).length - evs.length;
   const days = [...new Set(evs.map((e) => e.date))];
@@ -140,18 +144,16 @@ function FireCalendar() {
   );
 }
 
-/* Frame: je Domain die fünf Fragen (journal/{uid}/frame/{domain}), speichert beim Verlassen des Feldes. */
+/* Frame: je Domain die fünf Fragen (journal/{uid}/frame/{domain}). Autosave beim Tippen (Entwurf im localStorage,
+   entprellt lokal gespeichert, sofort bei Blur/Seite verlassen) – siehe AutosaveArea. */
 function FrameCards({ uid }) {
   const live = useLiveSnap(!!uid, (next, fail) => watchFrames(uid, next, fail), [uid]);
   if (!uid) return <div className="dv2-empty">Frame speichern braucht den Cloud-Login.</div>;
-  // lokal speichern, Abgleich im Hintergrund (Fehler zeigt die SyncBadge)
-  const save = (domain, key, value, old) => {
-    if (value.trim() !== (old || "").trim()) saveFrameAnswer(uid, domain, key, value.trim());
-  };
+  // lokal speichern, Abgleich im Hintergrund (nie awaiten); Fehler nur in der Konsole
+  const save = (domain, key, value) => { saveFrameAnswer(uid, domain, key, value); };
   return (
     <section>
       <h4 className="dv2-sec">Frame Map</h4>
-      {live.error && <div className="dv2-empty" role="alert">{live.error.code === "permission-denied" ? "Keine Berechtigung für journal/… – Firestore-Rules noch nicht deployt." : live.error.message}</div>}
       {FRAME_DOMAINS.map((d) => {
         const ans = live.data?.[d]?.questions || {};
         const filled = FRAME_QUESTIONS.filter(([k]) => (ans[k] || "").trim()).length;
@@ -159,8 +161,8 @@ function FrameCards({ uid }) {
           <details key={d} className="gv2-frame">
             <summary><b>{d[0].toUpperCase() + d.slice(1)}</b> <span>{filled}/{FRAME_QUESTIONS.length}</span></summary>
             {FRAME_QUESTIONS.map(([k, label]) => (
-              <label key={`${d}-${k}-${ans[k] || ""}`} className="gv2-step"><b className="gv2-q">{label}</b>
-                <textarea rows={3} defaultValue={ans[k] || ""} onBlur={(e) => save(d, k, e.target.value, ans[k])} />
+              <label key={`${d}-${k}`} className="gv2-step"><b className="gv2-q">{label}</b>
+                <AutosaveArea rows={3} ready={live.ready || !!live.error} remote={ans[k] || ""} storageKey={`${uid}:frame:${d}:${k}`} onSave={(v) => save(d, k, v)} />
               </label>
             ))}
           </details>
@@ -179,12 +181,22 @@ function HitRow({ t, busy, onToggle }) {
   );
 }
 
+/* Leerer Hit-Slot: Eingabe mit Entwurf im localStorage, verschwindet erst beim Anlegen */
+function HitSlotForm({ uid, n, busy, onAdd }) {
+  const [text, setText] = usePersistedText(`${uid}:fire:hit${n}`);
+  return (
+    <form className="dv2-compose" onSubmit={(e) => { e.preventDefault(); if (!text.trim()) return; onAdd(text); setText(""); }}>
+      <input aria-label={`Hit ${n}`} placeholder={`Hit ${n} …`} value={text} onChange={(e) => setText(e.target.value)} />
+      <button type="submit" disabled={!text.trim() || busy}>Add</button>
+    </form>
+  );
+}
+
 export default function GameMapPanel({ map, uid }) {
   const spec = MAPS[map];
   const qc = useQueryClient();
   const [cfg, setCfg] = useState(undefined);
-  const [draft, setDraft] = useState("");
-  const [slotDraft, setSlotDraft] = useState({});
+  const [draft, setDraft] = usePersistedText(`${uid}:fire:strike`); // Entwurf übersteht Reload/Absturz
   const [err, setErr] = useState("");
   useQuery({ queryKey: ["gv2-cfg"], queryFn: async () => { const c = await tc.getConfig(); setCfg(c || null); return c || null; }, staleTime: Infinity });
   const q = useQuery({ queryKey: ["gv2-tasks", map], queryFn: () => tc.tasks(), enabled: !!cfg && map === "fire", staleTime: 15_000 });
@@ -194,7 +206,7 @@ export default function GameMapPanel({ map, uid }) {
   const act = useMutation({
     mutationFn: (fn) => fn(),
     onSuccess: () => { setErr(""); refresh(); },
-    onError: (e) => { setErr(tcError(e)); refresh(); },
+    onError: (e) => { setErr(e?.message === "tc-network" ? "" : tcError(e)); refresh(); }, // Netzfehler bleiben still (Outbox sendet später)
   });
   const toggle = (t) => act.mutate(async () => {
     const fresh = (await tc.tasks()).find((x) => x.uuid === t.uuid);
@@ -210,10 +222,9 @@ export default function GameMapPanel({ map, uid }) {
     setDraft("");
     act.mutate(() => tc.commit(tc.newTaskOps(text, { tags: [spec.tag], props: { due: todayDue() } }).ops));
   };
-  const addHit = (n, door) => {
-    const text = (slotDraft[n] || "").trim();
+  const addHit = (n, door, raw) => {
+    const text = (raw || "").trim();
     if (!text) return;
-    setSlotDraft((d) => ({ ...d, [n]: "" }));
     act.mutate(() => tc.commit(tc.newTaskOps(text, {
       tags: ["hit"],
       props: { alphatype: "bigrock", hit_number: String(n), due: todayDue(), ...(door?.domain ? { domain: door.domain } : {}), ...(door ? { domino_door: door.domino_door || door.description } : {}) },
@@ -237,7 +248,6 @@ export default function GameMapPanel({ map, uid }) {
         {q.isFetching && <span>lädt …</span>}
       </div>
       {err && <div className="dv2-empty" role="alert">{err}</div>}
-      {q.isError && <div className="dv2-empty" role="alert">{tcError(q.error)}</div>}
       <section>
         <h4 className="dv2-sec">Door der Woche <span>{door?.domain || ""}</span></h4>
         {door
@@ -249,10 +259,7 @@ export default function GameMapPanel({ map, uid }) {
         {slots.map((t, i) => t
           ? <HitRow key={t.uuid} t={t} busy={act.isPending} onToggle={toggle} />
           : (
-            <form key={`slot-${i}`} className="dv2-compose" onSubmit={(e) => { e.preventDefault(); addHit(i + 1, door); }}>
-              <input aria-label={`Hit ${i + 1}`} placeholder={`Hit ${i + 1} …`} value={slotDraft[i + 1] || ""} onChange={(e) => setSlotDraft((d) => ({ ...d, [i + 1]: e.target.value }))} />
-              <button type="submit" disabled={!(slotDraft[i + 1] || "").trim() || act.isPending}>Add</button>
-            </form>
+            <HitSlotForm key={`slot-${i}`} uid={uid} n={i + 1} busy={act.isPending} onAdd={(text) => addHit(i + 1, door, text)} />
           ))}
         {extra.length > 0 && <h4 className="dv2-sec">Weitere Hits <span>{extra.length}</span></h4>}
         {extra.map((t) => <HitRow key={t.uuid} t={t} busy={act.isPending} onToggle={toggle} />)}

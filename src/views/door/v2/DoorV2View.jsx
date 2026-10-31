@@ -1,13 +1,14 @@
 // DoorV2View — Door-Framework (Potential → Plan → Production → Profit) im
 // Design "Raster" (siehe views/v2/journal-v2.css). Hash: #door2 bzw. #door2/<modus>.
 // Datenquellen: bestehende src/lib/door/* (REST lokal, Firestore in der Cloud).
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import * as db from "@journal-db";
 import { PotentialPanel, PlanPanel, ProductionPanel, ProfitPanel } from "./DoorV2Panels.jsx";
 import { SOURCES, getSource, setSource, loadRemoteSource } from "../../../lib/door/source.js";
 import { useGoogle } from "../../../lib/google/useGoogle.js";
 import { useJournalPushNotifications } from "../../../hooks/useJournalPushNotifications.js";
 import * as tc from "../../../lib/door/taskchampion.js";
+import { subscribeLocal, hasLocalData, pendingCount } from "../../../lib/door/gtasks.local.js";
 import { useQueryClient } from "@tanstack/react-query";
 import "./door-v2.css";
 
@@ -47,6 +48,13 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
   const push = useJournalPushNotifications(user?.uid ? user : null, "door");
   // Taskwarrior (TaskChampion-Sync): Konfiguration liegt nur in der IndexedDB dieses Browsers
   const qc = useQueryClient();
+  // Offline-first: die Ansichten lesen den lokalen Store. Hat der stille Hintergrund-Abgleich ihn geändert
+  // (Pull, id-Mapping, anderer Tab), werden die dv2-Abfragen neu aus dem Store gelesen (lokal, ohne Netz).
+  useEffect(() => subscribeLocal((origin) => {
+    if (origin === "remote") qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("dv2-") });
+  }), [qc]);
+  const waiting = useSyncExternalStore(subscribeLocal, () => (isG ? pendingCount() : 0), () => 0); // noch nicht abgeglichene Änderungen
+  const hasLocal = isG && hasLocalData();
   const isT = source === "taskwarrior";
   const [tcCfg, setTcCfg] = useState(undefined); // undefined = lädt, null = nicht eingerichtet
   const [form, setForm] = useState({ url: "", clientId: "", secret: "" });
@@ -87,7 +95,7 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
           </select></label>
           {isG && <button type="button" className="dv2-link" disabled={g.busy} onClick={g.connect}>{isConn ? "Neu verbinden" : "Google Tasks verbinden"}</button>}
           {isConn && <button type="button" className="dv2-link" onClick={g.disconnect}>Trennen</button>}
-          {isConn && g.mode === "popup" && <span>Verbindung gilt ca. 1 h (dauerhafte Anbindung nicht eingerichtet)</span>}
+          {isG && waiting > 0 && <span className="dv2-sync" title="Lokal gespeichert, wird im Hintergrund abgeglichen">↻ {waiting}</span>}
         </div>
         {push.settings && (
           <div className="dv2-src">
@@ -120,8 +128,9 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
             <input aria-label="Secret" type="password" placeholder="sync.encryption_secret" autoComplete="off" value={form.secret} onChange={(e) => setForm({ ...form, secret: e.target.value })} />
             <button type="submit" disabled={tcBusy || !form.url || !form.clientId || !form.secret}>{tcBusy ? "Prüfe …" : "Verbinden"}</button>
           </form>
-        ) : isT && tcCfg === undefined ? null : isG && !isConn ? (
-          <div className="dv2-empty">Google Tasks ist nicht verbunden (oder die Verbindung ist abgelaufen). Oben „Google Tasks verbinden“ wählen.</div>
+        ) : isT && tcCfg === undefined ? null : isG && !isConn && !hasLocal ? (
+          // erst wenn es weder eine Verbindung noch lokale Daten gibt (Erstverwendung); sonst arbeitet die Ansicht lokal weiter
+          <div className="dv2-empty">Google Tasks ist noch nicht verbunden. Oben „Google Tasks verbinden“ wählen.</div>
         ) : uid ? <Panel key={source} uid={uid} source={source} /> : (
           <div className="dv2-empty">
             Nicht angemeldet. <button type="button" className="dv2-link" onClick={() => db.signIn()}>Cloud Login</button>

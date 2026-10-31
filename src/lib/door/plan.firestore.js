@@ -14,6 +14,7 @@ import {
   collection, doc, setDoc, getDoc, getDocs, deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase.js";
+import { track } from "../offline.js";
 import { getUid } from "../db/core.js";
 import { fetchHotlist as fetchPotentialItems } from "./potential.firestore.js";
 import { WARSTACK_STEPS, buildWarStackHits, weekKey } from "./warstack.js";
@@ -45,7 +46,7 @@ async function loadPlan() {
 }
 
 async function savePlan(plan) {
-  await setDoc(planDoc(), plan, { merge: false });
+  track(setDoc(planDoc(), plan, { merge: false }));
   return plan;
 }
 
@@ -120,7 +121,7 @@ export async function startWarstack(doorTitle, selector = "") {
     hits: buildWarStackHits(),
     created_at: new Date().toISOString(),
   };
-  await setDoc(doc(sessionsCol(), sessionId), session);
+  track(setDoc(doc(sessionsCol(), sessionId), session));
   const step = WARSTACK_STEPS[0];
   return { sessionId, step: step.key, question: step.question };
 }
@@ -146,7 +147,7 @@ export async function answerWarstack(sessionId, step, { answer, hits } = {}) {
 
   const next = WARSTACK_STEPS[session.step_index];
   if (next) {
-    await setDoc(ref, session, { merge: false });
+    track(setDoc(ref, session, { merge: false }));
     return { sessionId, step: next.key, question: next.question, hits: next.key === "hits" ? session.hits : null, done: false };
   }
 
@@ -161,8 +162,8 @@ export async function answerWarstack(sessionId, step, { answer, hits } = {}) {
     week: weekKey(),
     created_at: createdAt,
   };
-  await setDoc(doc(warstacksCol(), warstack.id), warstack);
-  await deleteDoc(ref);
+  track(setDoc(doc(warstacksCol(), warstack.id), warstack));
+  track(deleteDoc(ref));
   return { sessionId, step: null, question: null, done: true, warstack };
 }
 

@@ -156,20 +156,61 @@ entfernt; ob der `vitalos`-Stand sie noch braucht, ist ungeprüft),
 
 ## Door v2 · Google Tasks
 
-Umschalter „Quelle“ in der Door-v2-Shell (`localStorage` `dv2:source` = `backend` | `gtasks`, Default `backend`; v1 unberührt).
-Module: `src/lib/door/gtasks.js` (Auth + REST), `gtasks.door.js` (Adapter mit denselben Rückgabeformen wie die Backend-Module),
-`source.js` (Umschaltung). Auth wie `gcal.js`: `reauthenticateWithPopup` mit Scope `https://www.googleapis.com/auth/tasks`,
-Token nur in `sessionStorage` (`dv2:gtasks-token`), 401 → „abgelaufen“, Knopf „Google Tasks verbinden/Neu verbinden“.
+Umschalter „Quelle“ in der Door-v2-Shell (`localStorage` `dv2:source` = `backend` | `gtasks` | `taskwarrior`, Default `backend`; v1 unberührt).
+**Offline-first** (Stand 2026-10-31, Abschnitt unten): die Oberfläche liest und schreibt nur einen lokalen Store, Google Tasks wird
+still im Hintergrund abgeglichen. Module: `gtasks.store.js` (Store + Outbox), `gtasks.model.js` (Door-Funktionen auf dem Store),
+`gtasks.sync.js` (Abgleich), `gtasks.lists.js` (Listenauflösung), `gtasks.local.js` (Verdrahtung), `gtasks.door.js` (Adapter mit den
+Rückgabeformen der Backend-Module), `gtasks.js` (nur noch REST für den Abgleich und Door v1), `source.js` (Umschaltung).
+Auth und Token über den gemeinsamen Dienst `src/lib/google/` (siehe „Google dauerhaft verbinden“).
 Angefasst werden ausschließlich die Listen „Door · Potential“ und „Door · Production“ (werden bei Bedarf angelegt).
 
 - **Potential**: Task in „Door · Potential“; erledigen = `status: completed`, löschen = DELETE.
 - **Plan**: dieselben Tasks; Priorität in der ersten Zeile von `notes`: `Door: Q2 · Door 2026-W42` (Quadrant + Wochen-Door,
-  nur auf Q2; eine Door pro Woche). Restliche Notizzeilen bleiben erhalten, der Titel bleibt sauber. Sortierung per `move` nicht umgesetzt.
+  nur auf Q2; eine Door pro Woche). Restliche Notizzeilen bleiben erhalten, der Titel bleibt sauber. Die Priorität ist zusätzlich die Reihenfolge der Liste (`move`).
 - **Production**: Tasks in „Door · Production“, `due` = Tag der Woche (Mo–So); Toggle completed ↔ needsAction; Quote = erledigt/gesamt.
   Hits werden im Panel selbst angelegt (Tag + Text).
 - **Profit** (nur lesend): letzte 8 Wochen, erledigte Potential-Tasks und Hits je Woche (nach `completed`), Liste erledigter Wochen-Doors. Keine Reflexionen.
 
 Voraussetzung: Tasks API im GCP-Projekt aktiviert (fitness-aos: ja); der Scope `tasks` muss im OAuth-Zustimmungsbildschirm stehen (oder der Nutzer Testnutzer sein).
+
+## Door v2 · Offline-first (Google Tasks, 2026-10-31)
+
+Anforderung: die App darf sich von fehlendem oder schlechtem Netz nicht stören lassen — keine Lags, keine Warnhinweise,
+nichts geht verloren. Deshalb ist der lokale Store die Wahrheit und Google Tasks nur noch das Ziel des stillen Abgleichs.
+
+- **Store** (`gtasks.store.js`): Listen („Door · Potential“ offen + letzte 8 Wochen erledigt, „Door · Production“ −8 bis +6 Wochen)
+  und Outbox als JSON in `localStorage`, Schlüssel `dv2:lf:gtasks:v1:<uid>` (je Firebase-uid und Quelle; jede Origin hat ihren
+  eigenen Speicher). Gesperrter/voller Speicher → läuft im Arbeitsspeicher weiter. Mehrere Tabs derselben Origin: vor jeder
+  Änderung wird der gespeicherte Stand neu gelesen, den Abgleich sperrt ein Web Lock (`navigator.locks`).
+- **Lesen** (`gtasks.model.js`): `fetchHotlist`, `fetchDoorWar`, `fetchDailyWeek`, `fetchHitsWeek`, `fetchProfitGtasks` rechnen aus dem Store,
+  nie aus dem Netz. `peek.*` sind die synchronen Kerne; die Panels nutzen sie als react-query-`initialData` → kein „Lade …“.
+- **Schreiben**: wirkt sofort lokal (optimistisch) und landet in der Outbox. Offline angelegte Tasks haben die id `tmp:…`; beim
+  Senden wird sie auf die echte id gemappt (`aliases`, damit eine Ansicht mit der alten id weiterarbeitet). Ops werden zusammengefasst
+  (Patches eines Tasks → eine Op, Löschen eines nie gesendeten Tasks → keine Anfrage).
+- **Abgleich** (`gtasks.sync.js`): Outbox der Reihe nach senden, danach Pull der Listen und **Rebase** (Serverstand + offene Outbox
+  obenauf). Auslöser: Start, `online`, Sichtbarwerden, 60-s-Intervall (`startBackgroundSync`), Verbinden, 0,7 s nach einem Schreibzugriff.
+  Pull höchstens alle 30 s, außer nach gesendeten Ops. Anfragen haben 20 s Timeout.
+- **Fehler sind still**: Netz weg, Timeout, 5xx, 429, abgelaufener Token (`google-offline`/`google-expired`) → Durchgang bricht ab, Outbox
+  bleibt, Backoff 4 s … 5 min (`online` setzt zurück). Nur endgültig abgelehnte Ops (400/404/409/410/412/422) werden verworfen, damit
+  eine kaputte Op die Warteschlange nie blockiert. Ein Insert mit verlorener Antwort wird beim Wiederholen gegen die offene Liste
+  geprüft und adoptiert statt doppelt angelegt.
+- **UI**: keine Warntexte („Google gerade nicht erreichbar“, „Failed to fetch“, Tasks-/Sync-Server nicht erreichbar) — `msg()` in
+  `DoorV2Panels.jsx` ist dafür leer. `State` blendet vorhandene Daten bei Fehlern nie aus. Die Panels rendern auch ohne aktive
+  Google-Verbindung mit den lokalen Daten; der Hinweis „noch nicht verbunden“ erscheint nur, wenn es weder Verbindung noch lokale
+  Daten gibt. Offene Änderungen zeigt ein dezentes „↻ n“; ist die Verbindung abgelaufen, bleibt nur der Knopf „Google Tasks verbinden“.
+- **Mehrere Origins/Geräte** (journal, v2, door, vitalos-Shell …): je Origin eigener Store, eigene Outbox, eigener Google-Token; alle
+  syncen unabhängig gegen dieselben Listen. Gesendet werden nur geänderte Felder (PATCH); der Pull-Rebase hält lokale offene Änderungen
+  obenauf → last-write-wins pro Task und Feld. Grenze: Quadrant, Door-Woche und Notiz liegen im selben Google-Feld `notes`; ändern
+  zwei Geräte gleichzeitig offline dieselbe Notiz, gewinnt das zuletzt sendende. Änderungen an einem inzwischen gelöschten Task gehen ins Leere.
+- **Listen** (`gtasks.lists.js`): „Door · …“ wird nur angelegt, wenn der vollständig paginierte Abruf erfolgreich keine fand. Mehrere
+  Treffer → lexikografisch kleinste id; nach dem Anlegen wird einmal neu gelesen (zwei Clients, die gleichzeitig anlegen, landen
+  auf derselben Liste). Doppelte Listen werden nie gelöscht.
+- **Backend (Firestore)**: Schreibzugriffe in `potential/plan/production/profit.firestore.js` und `useJournalPushNotifications` awaiten
+  die Server-Bestätigung nicht mehr (`track()`); Lesen kommt aus dem Firestore-Cache. **Taskwarrior**: lokale Replik + Outbox (unverändert).
+- **Hosting/PWA** (`dist-door`): Service Worker mit Precache aller 39 JS-Chunks + `index.html` (`navigateFallback`), ~1,5 MiB;
+  `firebase.json` Target `door`: `sw.js`, `index.html`, `manifest.webmanifest`, `journal-messaging-sw.js` mit `no-cache`, `*.js|css|woff2` immutable.
+- Tests: `gtasks-store`, `gtasks-model`, `gtasks-sync` (inkl. zwei Clients gegen dasselbe Konto), `gtasks-lists` (Node, ohne Browser).
+  **Nicht automatisiert getestet:** Verhalten im Browser, Flugmodus, echter Google-Login/-Abgleich, Web Locks, mehrere Tabs real.
 
 ## Geplant / offen
 
@@ -282,6 +323,28 @@ Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste 
 - **Tent**: Habits (`watchHabits`) und die Tent-Einträge der Woche (`watchJournalRange`) kommen per Listener cache-first; der Wochenabschluss ist lokal sofort gespeichert, die Taskwarrior-Scores rechnen sich bei Replik-Änderungen neu. Entwurf lag schon in localStorage.
 - Grenze: die allererste Taskwarrior-Replik und Google-Login/Kalender-Token brauchen einmal Netz.
 
+## Autosave und Entwürfe (Game, Journal v2, Habits · 2026-10-31)
+
+Frame/Focus/Freedom speicherten bisher erst bei `onBlur`; wer die PWA beendete oder neu lud, bevor das Feld den Fokus verlor, verlor den Text.
+Außerdem baute `key={…${antwort}}` das Feld bei jeder gespeicherten Änderung neu auf (Entwurf weg, Cursor springt).
+
+- **Bausteine**: `src/lib/draftStore.js` (rein, getestet in `tests/draft-store.test.mjs`: Entwurfsspeicher mit Speicher-Rückfall, `createAutosaver`) und
+  `src/lib/useAutosaveField.js` (Hook `useAutosaveField`, `usePersistedText`). Komponente `views/game/AutosaveArea.jsx`.
+- **Ablauf je Feld**: jede Eingabe → Entwurf sofort in `localStorage` (`draft:v1:<uid>:<pfad>`) → entprellt (700 ms) lokal speichern (`saveFrameAnswer`/`saveMapAnswer`,
+  `track()`, nie awaiten; Abgleich im Hintergrund). Sofort speichern bei Blur, `visibilitychange`→hidden, `pagehide`, `beforeunload`, Unmount/Ansichtswechsel.
+- **Stabil beim Tippen**: das Feld ist kontrolliert und wird nicht mehr per `key` neu aufgebaut. Eingehende Stände (Cache/Server/Echo) überschreiben das Feld nur,
+  wenn nichts Ungesendetes getippt ist (Dirty-Regel); sonst gewinnt der lokale Text (letzter Schreiber gewinnt). Der Entwurf wird erst gelöscht, wenn Stand = Text (Echo).
+- **Wiederherstellung**: beim Start wird ein vom Stand abweichender Entwurf angezeigt und sofort nachgespeichert. Vor dem Laden des Stands wird nichts gespeichert (Entwurf wartet);
+  schlägt der Listener fehl, gilt das Feld trotzdem als bereit.
+- **Eingabezeilen mit Entwurf** (`usePersistedText`): Fire „Neuer Strike“ und Hit-Slots, Journal v2 Eingabe/Smart Logger (`<uid>:jv2:compose`), Bearbeiten-Feld eines Eintrags (`<uid>:jv2:edit:<id>`, bis Speichern/Verwerfen).
+- **Keine Warnhinweise mehr** in Frame/Maps (Permission-/Listener-Texte), Fire (Netzfehler der Replik, Kalender „offline“), Journal v2 (Habits-Ladefehler nur noch, wenn gar nichts da ist; Kalender „offline“).
+- **Lesen cache-first** (`src/lib/db/fastDocs.js`, getestet in `tests/fast-docs.test.mjs`): `getJournal`, `getJournalRange`, `getHabitsRange` antworten innerhalb von 1,2 s mit dem Serverstand, sonst sofort mit dem lokalen Stand (IndexedDB);
+  der Serverstand kommt per `onLate` nach. Ist der Cache leer und das Netz da, wird wie bisher auf den Server gewartet.
+- **Habit-Schreiben ohne Warten**: `recordHabit`/`unrecordHabit` (`src/db/index.js`) und `addHabit`/`updateHabit`/`setHabitArchived` (`habitsDb.js`) awaiten nicht mehr die Server-Bestätigung (`track()`); vorher hing das Abhaken offline ewig und
+  `habitLock` sperrte danach alle weiteren Habit-Aktionen. Neue Habits bekommen die ID clientseitig.
+- **Tent v2** war bereits sauber (Entwurf je Tastendruck in `tv2:<woche>`, Listener cache-first, Abschluss lokal sofort); unverändert.
+- **Nicht getestet**: Verhalten im Browser (Tippen, Cursor, Flugmodus, PWA-Kill), nur die reine Logik per Node-Tests.
+
 ## Google dauerhaft verbinden (Tasks + Calendar, 2026-10-28)
 
 **Ursache des Ablaufens:** `reauthenticateWithPopup` (Firebase) liefert nur einen Google-Access-Token (~1 h) und nie einen
@@ -325,7 +388,18 @@ Journal v2 gab es schon (`gcal.js`), sie wird wiederverwendet.
 
 Ohne diese Schritte läuft alles im Popup-Modus (~1 h), wie zuvor.
 
-**Ungetestet (braucht echten Google-Login im Browser):** GIS-Code-Popup, Token-Tausch und Erneuerung gegen Google, Cloud-Function-Deploy, Verhalten von `googleLinkConfig` bei fehlender Function (Fehlercode-Zuordnung in `auth.js` `call()` ist aus der SDK-Doku abgeleitet), Popup-Blocker auf iOS.
+**Stand 2026-10-31: Schritte 1–3 sind noch nicht erledigt.** In `fitness-aos` sind `googleLinkConfig`, `googleLink`,
+`googleAccessToken`, `googleUnlink` und `scheduledDoorReminders` nicht deployt (`firebase functions:list`), das Secret
+`GOOGLE_OAUTH_CLIENT_SECRET` existiert nicht. Prüfen: `firebase functions:list --project fitness-aos` und
+`firebase functions:secrets:get GOOGLE_OAUTH_CLIENT_SECRET --project fitness-aos` (404 = nicht gesetzt). Deploy läuft über die
+Codebase `journal` (`firebase.json`), nicht über einzelne Functions von Hand; andere App-Sender dürfen nicht überschrieben werden
+(siehe `RESULTS.md`, 2026-10-22, `deploy-push-functions.yml` in vitalos).
+
+**Fehlercode bei fehlender Function:** Eine nicht deployte Callable liefert 404 ohne CORS-Header; der Browser blockiert die
+Antwort, das SDK meldet `functions/internal` (nicht `functions/not-found`). `prepareGoogleConnect` in `auth.js` behandelt das
+online als „nicht eingerichtet“ und fällt auf das Popup zurück. Ohne Netz bleibt es bei `google-offline`.
+
+**Ungetestet (braucht echten Google-Login im Browser):** GIS-Code-Popup, Token-Tausch und Erneuerung gegen Google, Cloud-Function-Deploy, Popup-Rückfall bei fehlender Function (`functions/internal`, per `curl` auf 404 ohne CORS geprüft, nicht im Browser), Popup-Blocker auf iOS.
 
 ## Door-Erinnerungen (offene Daily Hits, 2026-10-28)
 

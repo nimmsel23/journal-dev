@@ -29,20 +29,20 @@
           ]
         },
         {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
           "source": "**/*.@(js|css|woff2)",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
             }
           ]
         },
@@ -82,20 +82,20 @@
           ]
         },
         {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
           "source": "**/*.@(js|css|woff2)",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
             }
           ]
         },
@@ -135,6 +135,15 @@
           ]
         },
         {
+          "source": "**/*.@(js|css|woff2)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
           "source": "/sw.js",
           "headers": [
             {
@@ -144,11 +153,29 @@
           ]
         },
         {
-          "source": "**/*.@(js|css|woff2)",
+          "source": "/index.html",
           "headers": [
             {
               "key": "Cache-Control",
-              "value": "max-age=31536000, immutable"
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/manifest.webmanifest",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/journal-messaging-sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
             }
           ]
         }
@@ -179,20 +206,20 @@
           ]
         },
         {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
           "source": "**/*.@(js|css|woff2)",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
             }
           ]
         }
@@ -223,20 +250,20 @@
           ]
         },
         {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
           "source": "**/*.@(js|css|woff2)",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
             }
           ]
         }
@@ -267,20 +294,20 @@
           ]
         },
         {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
           "source": "**/*.@(js|css|woff2)",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
             }
           ]
         }

@@ -202,3 +202,6 @@
 .dv2-menu hr { margin: 4px 0; border: 0; border-top: 1px solid var(--ink); }
 .dv2-oldnote { margin: 0; padding: 8px 10px; border-left: 3px solid var(--ink); font-size: 14px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
 .dv2-note textarea:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+
+/* Offline-first: dezenter Hinweis, dass lokale Änderungen noch im Hintergrund abgeglichen werden (keine Warnung) */
+.dv2-sync { opacity: .45; font-size: 12px; font-variant-numeric: tabular-nums; }

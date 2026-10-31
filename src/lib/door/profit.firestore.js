@@ -4,8 +4,9 @@
  *
  * Shape: fitness/{uid}/door-reflections/{id}
  */
-import { collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase.js";
+import { track } from "../offline.js";
 import { getUid } from "../db/core.js";
 import { weekKey } from "./warstack.js";
 import { fetchDoorWar, fetchWarstacks } from "./plan.firestore.js";
@@ -47,12 +48,13 @@ export async function fetchCompletedWarstacks() {
 }
 
 export async function saveReflection(fields) {
-  const ref = await addDoc(reflectionsCol(), {
+  const ref = doc(reflectionsCol()); // Id lokal erzeugen, kein Netz
+  track(setDoc(ref, {
     door_title: fields.door_title || fields.title || "",
     reflection: fields.reflection || fields.text || fields.body || "",
     week: fields.week || weekKey(),
     created_at: serverTimestamp(),
-  });
+  }));
   return ref.id;
 }
 

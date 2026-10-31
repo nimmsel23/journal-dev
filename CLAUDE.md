@@ -15,6 +15,12 @@ steht davon noch etwas irgendwo, ist es ein Rest und kann weg.
 **Muss offline funktionieren** (Service Worker + Firestore-Persistenz). Neue Features dürfen keinen Netzwerkzugriff
 beim Start oder für die Navigation voraussetzen; Routing läuft deshalb rein über den URL-Hash.
 
+**Offline-first ist Grundanforderung** (alle Apps/Targets): Die Oberfläche liest und schreibt nur lokal, der Abgleich läuft still im
+Hintergrund, es gibt keine Warnhinweise und keine Wartezeiten wegen Netz. Door-Daten aus Google Tasks: lokaler Store + Outbox in
+`localStorage` (`src/lib/door/gtasks.{store,model,sync,local}.js`, Details in `JOURNAL-V2.md` → „Door v2 · Offline-first“); die
+Ansichten rufen Google nie direkt auf. Firestore-Schreibzugriffe nie awaiten (`track()`).
+Textfelder: Entwurf je Tastendruck in `localStorage` + entprelltes Autosave (`src/lib/draftStore.js`, `useAutosaveField.js`, Komponente `views/game/AutosaveArea.jsx`), kein Speichern nur bei `onBlur`; Lesen cache-first (`src/lib/db/fastDocs.js`).
+
 **v1 bleibt unverändert** (`src/components/Journal/`, `src/views/JournalVosView.jsx`, `public/index.html`).
 Umbauten betreffen v2, Door, Game, Tent und die gemeinsame Infrastruktur.
 
@@ -105,7 +111,7 @@ verbinden“. Neue Google-Aufrufe immer über `google.authFetch`, nie eigene Tok
 `tests/*.test.mjs` (Node-Testrunner, kein Browser): `habits-v2` (Serien/Quoten), `hash-route` (Parser gegen das alte
 Verhalten), `use-setting` (Speicher, Abwärtskompatibilität), `standalone` (keine Symlinks/Imports außerhalb des Repos,
 keine undeklarierten Abhängigkeiten), `journal-push-startup`, `google-tokens` (Token-Ablauf/Erneuerung/401-Retry/Modi),
-`google-function` (`functions/google.js`: Code-Tausch, Refresh, Widerruf, mit gefälschtem fetch/Speicher). UI-Verhalten ist nicht automatisiert getestet.
+`google-function` (`functions/google.js`: Code-Tausch, Refresh, Widerruf, mit gefälschtem fetch/Speicher), `gtasks-store`/`gtasks-model`/`gtasks-sync`/`gtasks-lists` (Door-Offline-first: Outbox, Rebase, zwei Clients, Listenauflösung). UI-Verhalten ist nicht automatisiert getestet.
 
 ## Weitere Doku
 

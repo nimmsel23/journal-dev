@@ -14,6 +14,7 @@
 import { localToday } from "./core.js";
 import { db, auth } from "../firebase.js";
 import { track } from "../offline.js";
+import { getDocsFast } from "./fastDocs.js";
 import { hasHotTag, addToPotential } from "../door/hotFromJournal.js";
 import * as profitFromJournal from "../door/profitFromJournal.js";
 import {
@@ -75,22 +76,24 @@ async function profitReview(userId, id, text, tags, date) {
 
 // ── Journal ───────────────────────────────────────────────────────────────────
 
-export async function getJournal(date = localToday()) {
+// Lesen ist cache-first (fastDocs.js): bei schlechter Verbindung sofort der lokale Stand; `onLate(list)` liefert
+// den Serverstand nach, falls er erst später eintrifft.
+export async function getJournal(date = localToday(), onLate) {
   try {
     const userId = await uid();
     const q = query(journalCol(userId), where("date", "==", date));
-    const snap = await getDocs(q);
-    return snap.docs
+    const build = (snap) => snap.docs
       .map(normalizeEntry)
       .filter((e) => e.text)
       .sort((a, b) => (b.time || "").localeCompare(a.time || ""));
+    return build(await getDocsFast(q, onLate && ((snap) => onLate(build(snap)))));
   } catch {
     return [];
   }
 }
 
 // Range-Query: get journal entries within date range (for UI display)
-export async function getJournalRange(startDate, endDate) {
+export async function getJournalRange(startDate, endDate, onLate) {
   try {
     const userId = await uid();
     const q = query(
@@ -99,12 +102,10 @@ export async function getJournalRange(startDate, endDate) {
       where("date", "<=", endDate),
       orderBy("date", "desc")
     );
-    const snap = await getDocs(q);
-    return snap.docs
-      .map(normalizeEntry)
-      .filter((e) => e.text);
+    const build = (snap) => snap.docs.map(normalizeEntry).filter((e) => e.text);
+    return build(await getDocsFast(q, onLate && ((snap) => onLate(build(snap)))));
   } catch (error) {
-    console.error("Error fetching journal range:", error);
+    console.warn("Journal-Bereich nicht ladbar:", error?.message || error);
     return [];
   }
 }

@@ -1,3 +1,16 @@
+## 2026-10-31 — Door v2 Plan (Quelle Taskwarrior): „Als Door der Woche“ entfernt +door nicht mehr von anderen Doors, Release bis in die Shell
+
+Offene Frage aus dem Vorlauf: `selectWeeklyDoor` entfernte `+door` von allen anderen offenen Tasks und zerstörte damit Doors samt Hits und Profit. Auf Entscheidung des Users entschärft (statt den Button auszublenden).
+
+- **`src/lib/door/taskwarrior.door.js` (`fde6b31`):** `selectWeeklyDoor` lässt `+door` überall stehen; die Woche markiert der Tag `kw<NN>` (ISO-Woche, aktuell `kw44`), den `weekDoor.js` schon als Rückfall liest. Der Tag wandert vom bisherigen Wochen-Task zum gewählten Task, der gewählte bekommt zusätzlich `+door`, falls er es noch nicht hatte. Import `getISOWeek` aus `date-fns`.
+- **Verhalten:** Hängen schon Hits dieser Woche an einer anderen Door, gewinnt weiterhin diese (Hits haben Vorrang vor dem Tag); der Button ändert die angezeigte Door der Woche dann erst, wenn die Hits umgehängt sind. So gewollt.
+- **Release:** `dev` gepusht, Release-PR [#11](https://github.com/nimmsel23/journal-dev/pull/11) (dev → master) per `vos-release-pr journal` gemergt, Checks grün, Live-Deploy per CI. Danach `journal-release --yes` (ohne `--yes` bricht das Skript ab, weil `gum confirm` kein TTY hat): vitalos-Shell auf `aad3d62`.
+- **Kein Test:** `selectWeeklyDoor` ruft `tasks()`/`commit()` direkt gegen die TaskChampion-Replik, dafür gibt es keine Test-Attrappe.
+
+Validierung: 119/119 Node-Tests grün. `pnpm run build:firebase` brach mit einem pnpm-Fehler ab (Install-Check, siehe CLAUDE.md), stattdessen `npx vite build --mode firebase` grün. Nicht im Browser und nicht gegen echte Taskwarrior-Daten ausprobiert.
+
+---
+
 ## 2026-10-31 — Autosave und Entwürfe: Game v2 (Frame/Focus/Freedom), Journal v2, Habits offline-first
 
 Frame/Focus/Freedom speicherten nur bei `onBlur` und bauten das Feld per `key={…antwort}` neu auf: Beenden/Neuladen vor dem Verlassen des Feldes verlor den Text. Jetzt Autosave mit Entwurf im localStorage.

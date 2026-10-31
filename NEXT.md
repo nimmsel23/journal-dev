@@ -1,3 +1,4 @@
+- [ ] „Als Door der Woche“ (Plan, Quelle Taskwarrior) im Browser gegen echte Daten prüfen (`fde6b31`, live seit 2026-10-31): Tag `kw<NN>` wandert zum gewählten Task, andere `+door` bleiben; bei vorhandenen Hits der Woche an anderer Door ändert sich die Anzeige bewusst nicht. Dafür gibt es keinen Node-Test (TaskChampion-Replik nicht gefälscht).
 - [ ] Klick-Navigation im Browser prüfen (Tabs, Modi, Datum-Pfeile, `pick` in der Monatsansicht), dazu Offline-Reload und Habit-Doppelklick; bisher nur Headless-Laden der Hash-URLs getestet.
 - [ ] Weitere Vereinfachung in v2 (vorgeschlagen, nicht begonnen): Door-Datenquellen (`lib/door/`, REST-Zweig vermutlich tot, erst verifizieren) und `JournalV2View.jsx` (463 Zeilen, mehrere Aufgaben in einer Komponente).
 - [ ] Pause-Visualisierungen der Voice-Ansicht (`PauseViz.jsx`) im Browser ansehen und `pnpm test` laufen lassen (nach dem Merge nur der Build geprüft); ob die CI den Release vom 2026-10-25 deployt hat, ist nicht kontrolliert.
@@ -25,3 +26,8 @@
 *   **Unberücksichtigte Lernkurve bei Tool-Nutzung:** Die Zusammenfassung verschweigt, dass Claude zweimal vom System wegen unzulässiger `sleep`-Befehle blockiert wurde, bevor es korrekt auf `Monitor` umstellte – ein relevanter Aspekt der eigenen Problemlösungseffizienz.
 *   **Ungeprüfte Annahme zur Cache-Invalidierung:** Die Empfehlung eines zweiten Reloads für den Service Worker ist eine Annahme, die nicht die Möglichkeit tieferer Cache-Probleme oder fehlgeschlagener Service-Worker-Updates berücksichtigt, die den Fix weiterhin blockieren könnten.
 *   **Fehlende End-to-End-Verifikation für visuellen Fehler:** Obwohl das Problem ein
+
+**Gemini-Review (potenzielle blinde Flecken, 2026-10-31):**
+*   Die Session zeigt nicht die Implementierung oder detaillierte Verifikation der spezifischen Codeänderungen an `selectWeeklyDoor` durch Claude selbst; der anfängliche `git diff` ist gekürzt, und die Beschreibung der Änderung erfolgt primär über den Commit-Text.
+*   Es wird nicht explizit überprüft, ob `npx vite build --mode firebase` ein funktional äquivalenter Ersatz für das fehlgeschlagene `pnpm run build:firebase` ist, insbesondere da der `pnpm`-Fehler einen "Install-Check" betraf, was auf tiefere Abhängigkeitsprobleme hindeuten könnte.
+*   Obwohl Claude es selbst berichtet, bleibt die zentrale Funktionalität der `selectWeeklyDoor`-Änderung (Interaktion mit Taskwarrior-Daten und das resultierende UI-Verhalten) ungetestet im Browser und gegen echte Taskwarrior-Daten, was eine wesentliche "sollte funktionieren"-Behauptung unbestätigt lässt.

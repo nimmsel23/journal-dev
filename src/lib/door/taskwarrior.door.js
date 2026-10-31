@@ -9,6 +9,7 @@
 import { addDays, format, startOfWeek } from "date-fns";
 import { WARSTACK_STEPS, buildWarStackHits, weekKey } from "./warstack.js";
 import { tasks, commit, editOps, tagProps, newTaskOps, nowSecs } from "./taskchampion.js";
+import { weekDoor } from "./weekDoor.js";
 
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const PROFIT_WEEKS = 8;
@@ -60,13 +61,14 @@ export const deleteHotlistItem = (id) => edit(id, { status: "deleted", end: nowS
 
 // ── Plan ──
 export async function fetchDoorWar() {
-  const items = await fetchHotlist();
+  const [items, all] = await Promise.all([fetchHotlist(), tasks()]);
   const wk = weekKey();
+  // Door der Woche = die +door, von der die Hits dieser Woche abhängen (siehe weekDoor.js); nicht "irgendeine" +door
+  const { door } = weekDoor(all);
+  const candidates = items.map((i) => ({ ...i, doorWeek: i.id === door?.uuid ? wk : "", war_uuid: i.id }));
   const board = { 1: [], 2: [], 3: [], 4: [], unsorted: [] };
-  const candidates = items.map((i) => ({ ...i, war_uuid: i.id }));
   for (const i of items) (board[i.quadrant] || board.unsorted).push(i.id);
-  const door = items.find((i) => i.doorWeek === wk);
-  const selected = { selector: door?.id || "", uuid: door?.id || "", week: door ? wk : "" };
+  const selected = { selector: door?.uuid || "", uuid: door?.uuid || "", week: door ? wk : "" };
   return { doorWar: { selected }, candidates, board, selected };
 }
 const PRIO_OF = { 1: "H", 2: "M", 3: "L", 4: null };

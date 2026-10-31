@@ -1,8 +1,9 @@
 // Journal-owned database facade. No sibling repositories are required.
-import { collection, getDocs, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 
 import { db } from "../lib/firebase.js";
 import { getUid, localToday } from "../lib/db/core.js";
+import { track } from "../lib/offline.js";
 export { deleteJournal } from "../lib/db/journal.js";
 
 export * from "../lib/db/core.js";
@@ -98,27 +99,27 @@ export async function getHabitRecordsForDate(date = localToday()) {
   return recordsSnap.docs.map((docSnap) => docSnap.data().habitId);
 }
 
+// Habit-Records: lokal sofort fertig, Abgleich im Hintergrund (track) – nie auf die Server-Bestätigung warten,
+// sonst hängt das Abhaken offline ewig.
 export async function recordHabit(uuid, date = localToday()) {
-  const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
   const ref = doc(db, "fitness", getUid(), "habitRecords", `${uuid}_${date}`);
-  await setDoc(ref, {
+  track(setDoc(ref, {
     habitId: uuid,
     date,
     completion: "DONE",
     recorded_at: serverTimestamp(),
-  });
+  }));
   return { ok: true };
 }
 
 export async function unrecordHabit(uuid, date = localToday()) {
-  const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
   const ref = doc(db, "fitness", getUid(), "habitRecords", `${uuid}_${date}`);
-  await setDoc(ref, {
+  track(setDoc(ref, {
     habitId: uuid,
     date,
     completion: "MISSED",
     recorded_at: serverTimestamp(),
-  }, { merge: true });
+  }, { merge: true }));
   return { ok: true };
 }
 

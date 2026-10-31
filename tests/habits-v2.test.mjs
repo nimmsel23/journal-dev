@@ -49,6 +49,8 @@ function fakeDb() {
         : { docs: [{ data: () => ({ habitId: 'existing', date: '2025-01-03', completion: 'DONE' }) }] };
     },
   };
+  fake.getDocsFast = (ref) => fake.getDocs(ref); // cache-first-Lesen (lib/db/fastDocs.js) – hier gegen den Fake
+  fake.track = (promise) => promise; // Schreiben wird nicht abgewartet (lib/offline.js)
   const api = runInNewContext(`${dbSource}\n({getHabitsRange,addHabit,updateHabit,setHabitArchived})`, fake);
   return { api, writes, reads };
 }
@@ -64,6 +66,7 @@ test('editing and archive/restore merge without overwriting icon, order or recor
   await api.updateHabit('existing', { name: 'Read more', category: 'business' });
   await api.setHabitArchived('existing', true);
   await api.setHabitArchived('existing', false);
+  await Promise.resolve();
   assert.ok(writes.every(([path, , options]) => path === 'fitness/isolated-test-user/habits/existing' && options.merge));
   assert.ok(writes.every(([, fields]) => !('icon' in fields) && !('order' in fields) && !('records' in fields)));
   assert.equal(writes[1][1].deleted, true);

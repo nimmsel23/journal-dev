@@ -11,27 +11,31 @@ import { fetchProfitGtasks } from "../../../lib/door/gtasks.door.js";
 import { fetchProfitReviews } from "../../../lib/door/profitFromJournal.js";
 import { fetchProfitTw } from "../../../lib/door/taskwarrior.door.js";
 
+// Offline-first: Verbindungsprobleme (Netz weg, schlechte Verbindung, abgelaufene Google-Verbindung) sind KEINE
+// Meldung — die Ansichten arbeiten mit den lokalen Daten, der Abgleich läuft still im Hintergrund. "" = nichts zeigen.
+const SILENT = new Set(["google-expired", "google-offline", "tc-network", "tc-body", "timeout", "Failed to fetch", "Load failed", "NetworkError when attempting to fetch resource."]);
 const MSGS = {
-  "google-expired": "Google-Verbindung abgelaufen – oben neu verbinden.",
-  "google-offline": "Google gerade nicht erreichbar (offline?). Die Verbindung bleibt bestehen.",
   "tc-conflict": "Sync-Konflikt – bitte „Sync“ drücken und erneut versuchen.",
   "tc-unconfigured": "Taskwarrior ist nicht eingerichtet.",
   "tc-decrypt": "Entschlüsselung fehlgeschlagen – Client-ID oder Secret falsch.",
   "tc-body": "Antwort des Sync-Servers brach ab oder war nicht lesbar (Netz/Proxy).",
   "tc-format": "Unerwartetes Datenformat vom Sync-Server.",
-  "tc-network": "Sync-Server nicht erreichbar (offline, CORS oder Proxy).",
 };
-const msg = (e) => MSGS[e?.message] || e?.message || "Fehler";
+const msg = (e) => (SILENT.has(e?.message) || e?.code === "unavailable" ? "" : MSGS[e?.message] || e?.message || "Fehler");
 const selectorFor = (i) => i?.id || i?.task_uuid || i?.tw_uuid || i?.selector || "";
 const keyFor = (i) => i.war_uuid || i.id || i.task_uuid || "";
 
+// Vorhandene Daten werden bei einem Fehler nie ausgeblendet; ein Fehler ohne Daten und ohne Meldungstext
+// (Verbindungsproblem) zeigt einfach den leeren Zustand statt einer Warnung.
 function State({ q, children, empty }) {
-  if (q.isLoading) return <div className="dv2-empty">Lade …</div>;
-  if (q.isError) {
+  if (q.isLoading && q.data === undefined) return <div className="dv2-empty">Lade …</div>;
+  if (q.isError && q.data === undefined && msg(q.error)) {
     return <div className="dv2-empty" role="alert">{msg(q.error)} <button type="button" className="dv2-link" onClick={() => q.refetch()}>Erneut versuchen</button></div>;
   }
   return empty ? <div className="dv2-empty">{empty}</div> : children;
 }
+// Startwert aus dem lokalen Store (nur Quelle "gtasks"): Ansicht erscheint sofort, ohne "Lade …"
+const initial = (D, name, ...args) => (D.peek?.[name] ? { initialData: () => D.peek[name](...args) } : {});
 
 /* ── Potential: Hot List ── */
 /* Potential: Wischen legt den Plan-Quadranten fest   Q1 «  Q2 ‹  Eintrag  › Q3  » Q4
@@ -136,7 +140,7 @@ export function PotentialPanel({ uid, source = "backend" }) {
   const [err, setErr] = useState("");
   const [menu, setMenu] = useState(null); // { sel, item, x, y }
   const closeMenu = useCallback(() => setMenu(null), []);
-  const q = useQuery({ queryKey: key, queryFn: () => D.fetchHotlist("active"), staleTime: 15_000 });
+  const q = useQuery({ queryKey: key, queryFn: () => D.fetchHotlist("active"), staleTime: 15_000, ...initial(D, "hotlist") });
   const refresh = () => qc.invalidateQueries({ queryKey: key });
   const run = async (fn) => {
     setErr("");
@@ -169,7 +173,7 @@ export function PotentialPanel({ uid, source = "backend" }) {
   return (
     <>
       <div className="dv2-none dv2-swipehelp">Wischen: ‹ Q2 · « Q1 · › Q3 · » Q4 – Antippen: Notiz / War Stack – Rechtsklick: Menü</div>
-      <State q={q} empty={!q.isLoading && !q.isError && items.length === 0 ? "Hot List leer." : null}>
+      <State q={q} empty={!q.isLoading && items.length === 0 ? "Hot List leer." : null}>
         {items.map((i) => {
           const sel = selectorFor(i);
           return (
@@ -229,7 +233,7 @@ export function PlanPanel({ uid, source = "backend" }) {
   const [err, setErr] = useState("");
   const [dragId, setDragId] = useState(null);
   const [bind, menuNode] = useContextMenu();
-  const q = useQuery({ queryKey: key, queryFn: D.fetchDoorWar, staleTime: 15_000 });
+  const q = useQuery({ queryKey: key, queryFn: D.fetchDoorWar, staleTime: 15_000, ...initial(D, "doorWar") });
   const act = useMutation({
     mutationFn: (fn) => fn(),
     onSuccess: () => { setErr(""); qc.invalidateQueries({ queryKey: key }); },
@@ -275,7 +279,7 @@ export function PlanPanel({ uid, source = "backend" }) {
     <PlanItem key={k} k={k} item={byKey.get(k)} isDoor={selected === k} busy={act.isPending} canDrag={canDrag} onQuadrant={setQuadrant} onDoor={setDoor} bind={bind} />
   );
   return (
-    <State q={q} empty={!q.isLoading && !q.isError && total === 0 ? "Keine Kandidaten. Erst Items in Potential anlegen." : null}>
+    <State q={q} empty={!q.isLoading && total === 0 ? "Keine Kandidaten. Erst Items in Potential anlegen." : null}>
       {err && <div className="dv2-empty" role="alert">{err}</div>}
       {(source === "backend" || source === "taskwarrior") && (
         <WarstackWizard uid={uid} api={source === "taskwarrior" ? twDoor : undefined} scope={source} door={byKey.get(selected) ? { id: selected, title: byKey.get(selected).title } : null}
@@ -313,8 +317,8 @@ export function ProductionPanel({ uid, source = "backend" }) {
   const D = door(source);
   const qc = useQueryClient();
   const [err, setErr] = useState("");
-  const q = useQuery({ queryKey: ["dv2-prod", uid, source], queryFn: () => D.fetchDailyWeek(), staleTime: 15_000 });
-  const s = useQuery({ queryKey: ["dv2-prod-sum", uid, source], queryFn: D.fetchHitsWeek, staleTime: 15_000 });
+  const q = useQuery({ queryKey: ["dv2-prod", uid, source], queryFn: () => D.fetchDailyWeek(), staleTime: 15_000, ...initial(D, "dailyWeek") });
+  const s = useQuery({ queryKey: ["dv2-prod-sum", uid, source], queryFn: () => D.fetchHitsWeek(), staleTime: 15_000, ...initial(D, "hitsWeek") });
   const tog = useMutation({
     mutationFn: (id) => D.toggleDailyHit(id),
     onSuccess: () => { setErr(""); qc.invalidateQueries({ queryKey: ["dv2-prod", uid, source] }); qc.invalidateQueries({ queryKey: ["dv2-prod-sum", uid, source] }); },
@@ -329,7 +333,7 @@ export function ProductionPanel({ uid, source = "backend" }) {
     onError: (e) => setErr(msg(e)),
   });
   const days = q.data?.days || {};
-  const none = !q.isLoading && !q.isError && !DAYS.some(([d]) => (days[d] || []).length);
+  const none = !q.isLoading && !DAYS.some(([d]) => (days[d] || []).length);
   const sum = s.data;
   return (
     <>
@@ -390,7 +394,7 @@ function CopyRow({ text, children }) {
 
 /* Quelle Google Tasks: Wochen-Auswertung aus erledigten Tasks, keine Reflexionen */
 function ProfitGtasks({ uid, source }) {
-  const q = useQuery({ queryKey: ["dv2-profit-gt", uid, source], queryFn: source === "taskwarrior" ? fetchProfitTw : fetchProfitGtasks, staleTime: 15_000 });
+  const q = useQuery({ queryKey: ["dv2-profit-gt", uid, source], queryFn: source === "taskwarrior" ? fetchProfitTw : fetchProfitGtasks, staleTime: 15_000, ...(source === "gtasks" ? initial(door(source), "profit") : {}) });
   const weeks = q.data?.weeks || [];
   const doors = q.data?.doors || [];
   return (
@@ -415,7 +419,7 @@ function ProfitReviews({ uid }) {
   return (
     <>
       <h4 className="dv2-sec">Reviews aus dem Journal <span>{list.length}</span></h4>
-      {q.isError ? <div className="dv2-empty" role="alert">{msg(q.error)}</div>
+      {q.isError && msg(q.error) ? <div className="dv2-empty" role="alert">{msg(q.error)}</div>
         : list.length === 0 ? <div className="dv2-empty">{q.isLoading ? "Lade …" : "Noch keine. Im Journal mit +review, +profit oder +p taggen."}</div>
         : list.map((x) => (
           <CopyRow key={x.id} text={String(x.text || x.title || "").trim()}><div className="dv2-text">
@@ -451,13 +455,13 @@ function ProfitBackend({ uid, source }) {
         )) : <div className="dv2-empty">Noch kein War Stack für diese Woche.</div>}
       </State>
       <h4 className="dv2-sec">Abgeschlossene War Stacks <span>{done.length}</span></h4>
-      {c.isError ? <div className="dv2-empty" role="alert">{msg(c.error)}</div>
+      {c.isError && msg(c.error) ? <div className="dv2-empty" role="alert">{msg(c.error)}</div>
         : done.length === 0 ? <div className="dv2-empty">{c.isLoading ? "Lade …" : "Noch keine abgeschlossenen War Stacks."}</div>
         : done.map((x) => (
           <CopyRow key={x.id} text={x.door_title}><div className="dv2-text"><h3>{x.door_title}</h3><p>{x.week} · {x.hit_count} Hits</p></div></CopyRow>
         ))}
       <h4 className="dv2-sec">Reflexionen <span>{refl.length}</span></h4>
-      {r.isError ? <div className="dv2-empty" role="alert">{msg(r.error)}</div>
+      {r.isError && msg(r.error) ? <div className="dv2-empty" role="alert">{msg(r.error)}</div>
         : refl.length === 0 ? <div className="dv2-empty">{r.isLoading ? "Lade …" : "Keine Reflexionen."}</div>
         : refl.map((x) => (
           <CopyRow key={x.id || x.path} text={[x.door_title, x.reflection].filter(Boolean).join("\n")}><div className="dv2-text"><h3>{x.door_title || "—"}</h3><p>{x.reflection || ""}</p></div></CopyRow>

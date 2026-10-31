@@ -23,8 +23,8 @@ export function useJournalPushNotifications(user, app = "journal") {
   const save = useCallback(async (next) => {
     if (!user?.uid) return;
     const normalized = normalize(next, app);
-    await setDoc(pushRef(user.uid), { apps: { [app]: normalized } }, { merge: true });
-    setSettings(normalized);
+    setSettings(normalized); // Offline-first: sofort lokal; Firestore hält den Schreibzugriff in der Warteschlange (nie awaiten)
+    setDoc(pushRef(user.uid), { apps: { [app]: normalized } }, { merge: true }).catch(() => {});
   }, [user?.uid, app]);
 
   useEffect(() => {

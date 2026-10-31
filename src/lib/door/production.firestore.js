@@ -7,6 +7,7 @@
  */
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase.js";
+import { track } from "../offline.js";
 import { getUid } from "../db/core.js";
 import { weekKey } from "./warstack.js";
 import { fetchDoorWar, fetchWarstacks } from "./plan.firestore.js";
@@ -53,7 +54,7 @@ async function ensurePlan(week) {
     plan.days[day] = all.slice(i, i + 4);
     i += 4;
   }
-  await setDoc(planRef(week), plan);
+  track(setDoc(planRef(week), plan));
   return plan;
 }
 
@@ -73,7 +74,7 @@ export async function toggleDailyHit(id, week = "") {
   if (!found) throw new Error("daily_hit_not_found");
   found.done = !found.done;
   found.completed_at = found.done ? new Date().toISOString() : null;
-  await setDoc(planRef(w), plan);
+  track(setDoc(planRef(w), plan));
   return { plan, hit: found };
 }
 

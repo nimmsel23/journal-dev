@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, endOfISOWeek, format, startOfDay, startOfISOWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import * as tc from "../../lib/door/taskchampion.js";
+import { weekDoor } from "../../lib/door/weekDoor.js";
 import TcSetup, { tcError } from "./TcSetup.jsx";
 import AutosaveArea from "./AutosaveArea.jsx";
 import { usePersistedText } from "../../lib/useAutosaveField.js";
@@ -53,21 +54,7 @@ export function groupsFor(map, all) {
   return [];
 }
 
-/** Door der Woche (+door) und die bis zu 4 Hits der Woche (+hit bzw. alphatype bigrock; Platz = hit_number). */
-export function weekDoor(all) {
-  const from = startOfISOWeek(new Date()), to = addDays(endOfISOWeek(new Date()), 1);
-  const inW = (t, f) => { const d = secs(t[f]); return d && d >= from && d <= to; };
-  const door = all.find((t) => open(t) && has(t, "door")) || null;
-  const hits = all.filter((t) => (t.status === "pending" || t.status === "completed") && (has(t, "hit") || t.alphatype === "bigrock")
-    && (inW(t, "due") || (t.status === "completed" && inW(t, "end"))))
-    .sort((a, b) => (Number(a.hit_number) || 99) - (Number(b.hit_number) || 99) || (secs(a.due) || 0) - (secs(b.due) || 0));
-  const slots = [null, null, null, null];
-  const rest = [];
-  for (const h of hits) { const n = Number(h.hit_number); if (n >= 1 && n <= 4 && !slots[n - 1]) slots[n - 1] = h; else rest.push(h); }
-  const extra = [];
-  for (const h of rest) { const i = slots.indexOf(null); if (i >= 0) slots[i] = h; else extra.push(h); }
-  return { door, slots, extra };
-}
+export { weekDoor };
 
 function Row({ t, busy, onToggle }) {
   const d = secs(t.due);
@@ -225,10 +212,15 @@ export default function GameMapPanel({ map, uid }) {
   const addHit = (n, door, raw) => {
     const text = (raw || "").trim();
     if (!text) return;
-    act.mutate(() => tc.commit(tc.newTaskOps(text, {
-      tags: ["hit"],
-      props: { alphatype: "bigrock", hit_number: String(n), due: todayDue(), ...(door?.domain ? { domain: door.domain } : {}), ...(door ? { domino_door: door.domino_door || door.description } : {}) },
-    }).ops));
+    act.mutate(async () => {
+      const { uuid, ops } = tc.newTaskOps(text, {
+        tags: ["hit"],
+        props: { alphatype: "bigrock", hit_number: String(n), due: todayDue(), ...(door?.domain ? { domain: door.domain } : {}), ...(door ? { domino_door: door.domino_door || door.description } : {}) },
+      });
+      // Hit gehört zur Door: sie hängt von ihm ab (`depends`), nur so ordnet ihn die Wochenansicht der Door zu
+      const fresh = door && (await tc.tasks()).find((x) => x.uuid === door.uuid);
+      await tc.commit(fresh ? [...ops, ...tc.editOps(fresh, { [`dep_${uuid}`]: "x", modified: tc.nowSecs() })] : ops);
+    });
   };
 
   if (map === "frame") return <FrameCards uid={uid} />; // Frame = Frame Map je Domain, keine Tasks

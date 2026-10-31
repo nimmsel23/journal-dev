@@ -1,3 +1,15 @@
+## 2026-10-31 — Door v2 Google Tasks: Functions nie deployt, Popup-Rückfall griff nicht
+
+Symptom in Door v2: „Google gerade nicht erreichbar (offline?)“ und „Google Tasks ist nicht verbunden“, „Google Tasks verbinden“ wirkungslos. Ursache: `googleLinkConfig`, `googleLink`, `googleAccessToken`, `googleUnlink` und `scheduledDoorReminders` sind in `fitness-aos` **nicht deployt** (`firebase functions:list`); Secret `GOOGLE_OAUTH_CLIENT_SECRET` existiert nicht, die Client-ID ist nicht hinterlegt. Eine nicht deployte Callable antwortet mit 404 ohne CORS-Header, der Browser blockiert das, das SDK meldet `functions/internal` statt `functions/not-found`. Der Rückfall in `auth.js` wartete nur auf `not-found` und endete deshalb bei `google-offline`.
+
+- **`src/lib/google/auth.js` (`1643ebe`):** `prepareGoogleConnect` wertet `functions/internal` bei bestehender Verbindung als „nicht eingerichtet“ → Firebase-Popup (~1 h). Nicht im Browser getestet; ein Node-Test ist nicht möglich (`auth.js` importiert Firebase).
+- **Offen (braucht Daniel):** OAuth-Client + Ursprünge, Zustimmungsbildschirm „In Produktion“, `firebase functions:secrets:set GOOGLE_OAUTH_CLIENT_SECRET`, Client-ID als `GOOGLE_OAUTH_CLIENT_ID`, dann Deploy der Codebase `journal` (`functions:journal`, siehe `JOURNAL-V2.md`). Das OK zum Deploy liegt vor, es fehlen Secret und Client-ID. Ob `deploy-push-functions.yml` in vitalos die Google-Functions mitnimmt, ist nicht geprüft.
+- Bis dahin gibt es keine Door-Erinnerung (`scheduledDoorReminders` fehlt) und nur die 1-h-Verbindung. Der Fix steht auf `dev`, nicht auf `master`/live.
+
+Validierung: 51 Node-Tests und `vite build --mode firebase` grün.
+
+---
+
 ## 2026-10-29 — Door v2 Potential: Notizfeld und Sheet lagen unter dem Wisch-Hinweis, Release nach master
 
 Das „fehlende“ Notizfeld in Door v2 Potential lag nicht am Markup, sondern an der Überdeckung: `.dv2-swhint` (Wisch-Hinweis) ist `position: absolute; inset: 0` und deckt den ganzen Eintrag ab, nur die Zeile ist `position: relative`. Notizfeld und Sheet (Quadrant-Buttons, War Stack) waren unpositioniert und wurden deshalb unter der Farbfläche gemalt. Vermutlich bestand das seit `2599095` (18.10.). Der Fix steht auf `dev`, der Release-PR nach `master` ist gemergt und der Live-Deploy der Standalone-Targets lief grün.

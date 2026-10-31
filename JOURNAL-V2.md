@@ -325,7 +325,18 @@ Journal v2 gab es schon (`gcal.js`), sie wird wiederverwendet.
 
 Ohne diese Schritte läuft alles im Popup-Modus (~1 h), wie zuvor.
 
-**Ungetestet (braucht echten Google-Login im Browser):** GIS-Code-Popup, Token-Tausch und Erneuerung gegen Google, Cloud-Function-Deploy, Verhalten von `googleLinkConfig` bei fehlender Function (Fehlercode-Zuordnung in `auth.js` `call()` ist aus der SDK-Doku abgeleitet), Popup-Blocker auf iOS.
+**Stand 2026-10-31: Schritte 1–3 sind noch nicht erledigt.** In `fitness-aos` sind `googleLinkConfig`, `googleLink`,
+`googleAccessToken`, `googleUnlink` und `scheduledDoorReminders` nicht deployt (`firebase functions:list`), das Secret
+`GOOGLE_OAUTH_CLIENT_SECRET` existiert nicht. Prüfen: `firebase functions:list --project fitness-aos` und
+`firebase functions:secrets:get GOOGLE_OAUTH_CLIENT_SECRET --project fitness-aos` (404 = nicht gesetzt). Deploy läuft über die
+Codebase `journal` (`firebase.json`), nicht über einzelne Functions von Hand; andere App-Sender dürfen nicht überschrieben werden
+(siehe `RESULTS.md`, 2026-10-22, `deploy-push-functions.yml` in vitalos).
+
+**Fehlercode bei fehlender Function:** Eine nicht deployte Callable liefert 404 ohne CORS-Header; der Browser blockiert die
+Antwort, das SDK meldet `functions/internal` (nicht `functions/not-found`). `prepareGoogleConnect` in `auth.js` behandelt das
+online als „nicht eingerichtet“ und fällt auf das Popup zurück. Ohne Netz bleibt es bei `google-offline`.
+
+**Ungetestet (braucht echten Google-Login im Browser):** GIS-Code-Popup, Token-Tausch und Erneuerung gegen Google, Cloud-Function-Deploy, Popup-Rückfall bei fehlender Function (`functions/internal`, per `curl` auf 404 ohne CORS geprüft, nicht im Browser), Popup-Blocker auf iOS.
 
 ## Door-Erinnerungen (offene Daily Hits, 2026-10-28)
 

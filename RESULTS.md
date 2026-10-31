@@ -1,3 +1,29 @@
+## 2026-10-31 — Door v2 komplett offline-first (Google Tasks: lokaler Store + Outbox + stiller Abgleich)
+
+Anforderung des Users: Apps müssen offline-first sein — keine Lags, keine Warnhinweise, nichts geht verloren; lokaler Speicher ist die Wahrheit, Abgleich still im Hintergrund. Bisher las und schrieb Door v2 „Google Tasks“ direkt per REST (nach Reload offline leer, Schreiben ging verloren, „Failed to fetch“/„offline?“-Texte, großer „nicht verbunden“-Block bei abgelaufenem Token).
+
+- **Neu `src/lib/door/gtasks.{store,model,sync,lists,local}.js`:** Store (localStorage `dv2:lf:gtasks:v1:<uid>`) mit Outbox, temp-ids (`tmp:…` → echte id, Alias-Tabelle), Zusammenfassen von Ops; Door-Modell, das alle Funktionen aus dem Store rechnet (`peek.*` synchron); Sync-Engine (Outbox → Pull → Rebase, Backoff, Timeouts, 404 &c. verwerfen, verlorene Insert-Antworten adoptieren); Listenauflösung (nie doppelt anlegen, kleinste id, nie löschen); Verdrahtung (Web Lock, `startBackgroundSync`, online/visibility/storage). `gtasks.door.js` ist nur noch Adapter, `gtasks.js` liefert REST für den Abgleich (Status am Fehler, 20-s-Timeout, `ensureList` über `gtasks.lists.js`).
+- **UI:** `DoorV2Panels.jsx` — `msg()` still bei Verbindungsfehlern, `State` blendet Daten nie aus, `initialData` aus `peek` (kein „Lade …“). `DoorV2View.jsx` — Panels laufen ohne Verbindung mit lokalen Daten, Hinweis „nicht verbunden“ nur bei Erstverwendung, dezentes „↻ n“ für offene Änderungen, Queries werden nach Pull/id-Mapping neu aus dem Store gelesen. Popup-Hinweis „gilt ca. 1 h“ entfernt.
+- **Backend/Push:** `*.firestore.js` und `useJournalPushNotifications` awaiten keine Server-Bestätigung mehr (`track()`/optimistisch), sonst hängt das Schreiben offline.
+- **Hosting `door`:** `firebase.json` ergänzt um `no-cache` für `/index.html`, `/manifest.webmanifest`, `/journal-messaging-sw.js` (Letzteres fiel sonst unter die 1-Jahr-immutable-Regel für `*.js`). Door-Build geprüft: Precache 60 Einträge/~1,5 MiB, alle 39 JS-Chunks, `index.html`, Fallback `/index.html`, Door-Icons.
+- **Tests (neu, Node):** `gtasks-store`, `gtasks-model`, `gtasks-sync` (Offline-Write → Outbox → Sync mit id-Mapping, stille Fehler + Backoff, Rebase, atomarer Pull, verlorene Antwort, zwei Clients gegen dasselbe Konto), `gtasks-lists`; Hilfen in `tests/helpers/fake-google.mjs`. Gesamt 84/84 grün, `vite build` (Journal und Flavor `door`) grün.
+- **Grenzen:** Notiz/Quadrant/Door-Woche teilen sich das Google-Feld `notes` → bei gleichzeitiger Offline-Änderung zweier Geräte gewinnt der zuletzt Sendende. Door v1 (`v1.js`) schreibt Notizen/Updates weiter direkt per REST. Backend-Quelle liest per `getDocs` (Cache, aber bei schlechtem Netz evtl. Wartezeit). Ein Konto-/Google-Wechsel leert die Outbox nicht. Ohne deployte Functions (siehe Eintrag oben) gilt weiter der 1-h-Popup-Token: Abgleich pausiert danach still bis „Google Tasks verbinden“, die App arbeitet lokal weiter.
+- **Nicht getestet:** Verhalten im Browser/Flugmodus, echter Google-Login und -Abgleich, Web Locks und mehrere Tabs real, iOS-PWA. Kein Deploy.
+
+---
+
+## 2026-10-31 — Door v2 Google Tasks: Functions nie deployt, Popup-Rückfall griff nicht
+
+Symptom in Door v2: „Google gerade nicht erreichbar (offline?)“ und „Google Tasks ist nicht verbunden“, „Google Tasks verbinden“ wirkungslos. Ursache: `googleLinkConfig`, `googleLink`, `googleAccessToken`, `googleUnlink` und `scheduledDoorReminders` sind in `fitness-aos` **nicht deployt** (`firebase functions:list`); Secret `GOOGLE_OAUTH_CLIENT_SECRET` existiert nicht, die Client-ID ist nicht hinterlegt. Eine nicht deployte Callable antwortet mit 404 ohne CORS-Header, der Browser blockiert das, das SDK meldet `functions/internal` statt `functions/not-found`. Der Rückfall in `auth.js` wartete nur auf `not-found` und endete deshalb bei `google-offline`.
+
+- **`src/lib/google/auth.js` (`1643ebe`):** `prepareGoogleConnect` wertet `functions/internal` bei bestehender Verbindung als „nicht eingerichtet“ → Firebase-Popup (~1 h). Nicht im Browser getestet; ein Node-Test ist nicht möglich (`auth.js` importiert Firebase).
+- **Offen (braucht Daniel):** OAuth-Client + Ursprünge, Zustimmungsbildschirm „In Produktion“, `firebase functions:secrets:set GOOGLE_OAUTH_CLIENT_SECRET`, Client-ID als `GOOGLE_OAUTH_CLIENT_ID`, dann Deploy der Codebase `journal` (`functions:journal`, siehe `JOURNAL-V2.md`). Das OK zum Deploy liegt vor, es fehlen Secret und Client-ID. Ob `deploy-push-functions.yml` in vitalos die Google-Functions mitnimmt, ist nicht geprüft.
+- Bis dahin gibt es keine Door-Erinnerung (`scheduledDoorReminders` fehlt) und nur die 1-h-Verbindung. Der Fix steht auf `dev`, nicht auf `master`/live.
+
+Validierung: 51 Node-Tests und `vite build --mode firebase` grün.
+
+---
+
 ## 2026-10-29 — Door v2 Potential: Notizfeld und Sheet lagen unter dem Wisch-Hinweis, Release nach master
 
 Das „fehlende“ Notizfeld in Door v2 Potential lag nicht am Markup, sondern an der Überdeckung: `.dv2-swhint` (Wisch-Hinweis) ist `position: absolute; inset: 0` und deckt den ganzen Eintrag ab, nur die Zeile ist `position: relative`. Notizfeld und Sheet (Quadrant-Buttons, War Stack) waren unpositioniert und wurden deshalb unter der Farbfläche gemalt. Vermutlich bestand das seit `2599095` (18.10.). Der Fix steht auf `dev`, der Release-PR nach `master` ist gemergt und der Live-Deploy der Standalone-Targets lief grün.

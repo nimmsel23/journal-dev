@@ -16,6 +16,8 @@ import {
   query, orderBy, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase.js";
+import { track } from "../offline.js";
+
 import { getUid } from "../db/core.js";
 
 function hotlistCol() {
@@ -52,27 +54,28 @@ export async function fetchHotlist(mode = "active") {
 export async function addHotlistItem(text) {
   const title = String(text || "").trim();
   if (!title) throw new Error("title_required");
-  const ref = await addDoc(hotlistCol(), {
+  const ref = doc(hotlistCol()); // Id lokal erzeugen, kein Netz
+  track(setDoc(ref, {
     title,
     description: "",
     status: "active",
     source: "firestore",
     created_at: serverTimestamp(),
-  });
-  const snap = await getDoc(ref);
+  }));
+  const snap = await getDoc(ref); // aus dem lokalen Cache (inkl. ausstehendem Schreibzugriff)
   return normalize(snap);
 }
 
 export async function updateHotlistItem(selector, title) {
   const ref = doc(hotlistCol(), selector);
-  await setDoc(ref, { title: String(title || "").trim(), updated_at: serverTimestamp() }, { merge: true });
+  track(setDoc(ref, { title: String(title || "").trim(), updated_at: serverTimestamp() }, { merge: true }));
   const snap = await getDoc(ref);
   return normalize(snap);
 }
 
 export async function completeHotlistItem(selector) {
   const ref = doc(hotlistCol(), selector);
-  await setDoc(ref, { status: "done", updated_at: serverTimestamp() }, { merge: true });
+  track(setDoc(ref, { status: "done", updated_at: serverTimestamp() }, { merge: true }));
   const snap = await getDoc(ref);
   return normalize(snap);
 }
@@ -81,7 +84,7 @@ export async function deleteHotlistItem(selector) {
   // Soft-Delete — identisch zum Taskwarrior-Verhalten (status bleibt
   // sichtbar im "Gelöscht"-Filter, kein Hard-Remove).
   const ref = doc(hotlistCol(), selector);
-  await setDoc(ref, { status: "deleted", updated_at: serverTimestamp() }, { merge: true });
+  track(setDoc(ref, { status: "deleted", updated_at: serverTimestamp() }, { merge: true }));
   const snap = await getDoc(ref);
   return normalize(snap);
 }
@@ -93,6 +96,6 @@ export async function fetchHotlistNote(selector) {
 
 export async function saveHotlistNote(selector, note) {
   const ref = doc(hotlistCol(), selector);
-  await setDoc(ref, { note: String(note || "").trim(), updated_at: serverTimestamp() }, { merge: true });
+  track(setDoc(ref, { note: String(note || "").trim(), updated_at: serverTimestamp() }, { merge: true }));
   return String(note || "").trim();
 }

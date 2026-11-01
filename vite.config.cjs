@@ -2,7 +2,17 @@ const { defineConfig, loadEnv } = require("vite");
 const react = require("@vitejs/plugin-react");
 const { VitePWA } = require("vite-plugin-pwa");
 const path = require("path");
-const APP_VERSION = require("./package.json").version;
+const { execFileSync } = require("node:child_process");
+const PACKAGE_VERSION = require("./package.json").version;
+let BUILD_REVISION = process.env.GITHUB_SHA || process.env.GIT_COMMIT || "";
+if (!BUILD_REVISION) {
+  try {
+    BUILD_REVISION = execFileSync("git", ["rev-parse", "--short=7", "HEAD"], { encoding: "utf8" }).trim();
+  } catch {
+    BUILD_REVISION = "local";
+  }
+}
+const APP_VERSION = `${PACKAGE_VERSION}+${BUILD_REVISION.slice(0, 7)}`;
 
 module.exports = defineConfig(async ({ mode }) => {
   const { vosChangelog } = await import("./scripts/vos-changelog/vos-changelog-vite.mjs");

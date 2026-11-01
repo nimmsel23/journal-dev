@@ -198,3 +198,5 @@ Kein echter Release ausgeführt.
 - Door zeigt den Helfer im Gastmodus und lässt die lokalen Taskwarrior-Daten sowie bereits lokal verfügbare Google-Tasks weiterlaufen. Backend-Daten benötigen weiterhin Journal-Login.
 - Zunächst im temporären Branch `vos-tent-dev` vorbereitet, danach in `journal-dev/dev` integriert (Commit `8683de3`). Game v2 zeigt den Helfer zusätzlich bei Fire/Focus/Freedom/Frame; Voice nutzt denselben Helfer in der Voice-Phase. Die Hosting-Flavors/Targets bleiben in Journal definiert.
 - Build-Prüfung war nicht möglich: pnpm scheiterte am schreibgeschützten Store-Lock; im Worktree gibt es kein lokales `node_modules/.bin/vite`.
+# 2026-11-01
+- **Build-Versionen:** Journal zeigt im Update-Dialog die Paketversion mit der gebauten Git-Revision statt dauerhaft `v0.1.1`; `pnpm release` startet den vorgesehenen `dev → master`-PR-Releaseweg statt lokal eine Patch-Version zu ändern und direkt zu deployen.

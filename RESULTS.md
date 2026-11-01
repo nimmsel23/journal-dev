@@ -196,5 +196,5 @@ Kein echter Release ausgeführt.
 
 - Wiederverwendbarer Google-Login-Helfer ergänzt. Tent- und Voice-Eingaben bleiben ohne Konto in ihrem bestehenden Browser-`localStorage`; Login ist optional und schaltet Cloud-Speicherung frei.
 - Door zeigt den Helfer im Gastmodus und lässt die lokalen Taskwarrior-Daten sowie bereits lokal verfügbare Google-Tasks weiterlaufen. Backend-Daten benötigen weiterhin Journal-Login.
-- Änderung liegt auf dem lokalen Branch `vos-tent-dev` im Worktree `.worktrees/vos-tent-dev`, von `journal-dev/dev` abgeleitet und daher direkt als Journal-Änderung integrierbar. Bestehende Hosting-Flavors/Targets `tent`, `voice` und `door` bleiben in journal-dev definiert.
+- Zunächst im temporären Branch `vos-tent-dev` vorbereitet, danach in `journal-dev/dev` integriert (Commit `8683de3`). Game v2 zeigt den Helfer zusätzlich bei Fire/Focus/Freedom/Frame; Voice nutzt denselben Helfer in der Voice-Phase. Die Hosting-Flavors/Targets bleiben in Journal definiert.
 - Build-Prüfung war nicht möglich: pnpm scheiterte am schreibgeschützten Store-Lock; im Worktree gibt es kein lokales `node_modules/.bin/vite`.

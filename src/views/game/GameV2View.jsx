@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import GameMapPanel, { MAPS } from "./GameMapPanel.jsx";
 import VoicePanel from "./VoicePanel.jsx";
 import SyncBadge from "../../components/SyncBadge.jsx";
+import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 import "../door/v2/door-v2.css";
 import "./game-v2.css";
 
@@ -44,6 +45,7 @@ export default function GameV2View({ user, mode = "fire", onModeChange = () => {
           </div>
         </div>
         <SyncBadge />
+        {!user && current !== "voice" && <AuthDemoHelper>Lokale Taskwarrior-Daten bleiben nutzbar. Für deine Cloud-Maps und geräteübergreifende Speicherung kannst du dich anmelden.</AuthDemoHelper>}
         {current === "voice" ? <VoicePanel user={user} /> : <GameMapPanel key={current} map={current} uid={user?.uid ?? null} />}
         {!embedded && (
           <div className="dv2-foot">

@@ -18,6 +18,12 @@ Derselbe Code, sechs Builds (`VITE_APP_FLAVOR`/`VITE_DEFAULT_TAB`), je ein Hosti
 | Game | vos-game.web.app | `#fire` |
 | Tent | vos-tent.web.app | `#tent2` |
 
+Die Tent-PWA kann eine eigene Firebase-Push-Erinnerung aktivieren. Sie nutzt
+eine separate Token-Lane (`apps.tent`), einen eigenen Service Worker und sendet
+sonntags zur gewählten Ortszeit, solange der aktuelle Tent noch offen ist
+(Standard 14:00, Zeitzone Europe/Vienna). Details stehen in `functions/index.js`
+und `src/hooks/useJournalPushNotifications.js`.
+
 Navigation ist der URL-Hash, zum Beispiel `#v2/woche/2026-10-17`, `#door2/plan`, `#focus`. Alle Hashes: [`JOURNAL-V2.md`](JOURNAL-V2.md).
 
 ## Entwickeln

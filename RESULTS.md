@@ -1,3 +1,16 @@
+## 2026-10-31 — Door v2 Plan (Quelle Taskwarrior): „Als Door der Woche“ entfernt +door nicht mehr von anderen Doors, Release bis in die Shell
+
+Offene Frage aus dem Vorlauf: `selectWeeklyDoor` entfernte `+door` von allen anderen offenen Tasks und zerstörte damit Doors samt Hits und Profit. Auf Entscheidung des Users entschärft (statt den Button auszublenden).
+
+- **`src/lib/door/taskwarrior.door.js` (`fde6b31`):** `selectWeeklyDoor` lässt `+door` überall stehen; die Woche markiert der Tag `kw<NN>` (ISO-Woche, aktuell `kw44`), den `weekDoor.js` schon als Rückfall liest. Der Tag wandert vom bisherigen Wochen-Task zum gewählten Task, der gewählte bekommt zusätzlich `+door`, falls er es noch nicht hatte. Import `getISOWeek` aus `date-fns`.
+- **Verhalten:** Hängen schon Hits dieser Woche an einer anderen Door, gewinnt weiterhin diese (Hits haben Vorrang vor dem Tag); der Button ändert die angezeigte Door der Woche dann erst, wenn die Hits umgehängt sind. So gewollt.
+- **Release:** `dev` gepusht, Release-PR [#11](https://github.com/nimmsel23/journal-dev/pull/11) (dev → master) per `vos-release-pr journal` gemergt, Checks grün, Live-Deploy per CI. Danach `journal-release --yes` (ohne `--yes` bricht das Skript ab, weil `gum confirm` kein TTY hat): vitalos-Shell auf `aad3d62`.
+- **Kein Test:** `selectWeeklyDoor` ruft `tasks()`/`commit()` direkt gegen die TaskChampion-Replik, dafür gibt es keine Test-Attrappe.
+
+Validierung: 119/119 Node-Tests grün. `pnpm run build:firebase` brach mit einem pnpm-Fehler ab (Install-Check, siehe CLAUDE.md), stattdessen `npx vite build --mode firebase` grün. Nicht im Browser und nicht gegen echte Taskwarrior-Daten ausprobiert.
+
+---
+
 ## 2026-10-31 — Autosave und Entwürfe: Game v2 (Frame/Focus/Freedom), Journal v2, Habits offline-first
 
 Frame/Focus/Freedom speicherten nur bei `onBlur` und bauten das Feld per `key={…antwort}` neu auf: Beenden/Neuladen vor dem Verlassen des Feldes verlor den Text. Jetzt Autosave mit Entwurf im localStorage.
@@ -150,6 +163,13 @@ journal/--yes, Weitergabe von --dry-run und unveränderte Fehlercodes.
 Kein echter Release ausgeführt.
 
 # Results
+
+## 2026-11-01 — Tent-Push in der installierten Tent-PWA
+
+- `TentV2View` bietet Push-Anmeldung und eine konfigurierbare Sonntagszeit (Standard 14:00, Europe/Vienna). `apps.tent` ist eine eigene Token-Lane; Registrierung verwendet `/tent-messaging-sw.js` unter `/tent-push/` und Pushdaten mit `app: tent`.
+- Die Journal-Cloud-Function prüft sonntags zur gespeicherten Zeit, ob diese Woche ein Journal-Eintrag mit `tent` und ISO-Wochen-Tag vorliegt. Bei offenem Tent sendet sie einen Link nach `/#tent2`; Journal-/Door-Payloads bleiben getrennt.
+- Verifiziert: `node --check functions/index.js`, gültiges `firebase.json`, `git diff --check` und Tent-Firebase-Build erfolgreich. pnpm selbst brach beim Install-Check ab, weil es interaktiv `node_modules` entfernen wollte; der vorhandene lokale Vite-Build lief direkt. Keine Tests, kein Deploy und keine Geräte-Zustellung ausgeführt.
+- Noch nicht veröffentlicht oder am Handy registriert. Der Termin für heute 14:00 kann daher erst nach dem freigegebenen Release und Aktivierung in der Tent-PWA live ankommen; siehe `NEXT.md`.
 
 ## 2026-10-21
 

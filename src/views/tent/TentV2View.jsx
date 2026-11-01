@@ -11,6 +11,7 @@ import { saveJournal, watchJournalRange } from "../../lib/db/journal.js";
 import { useLiveSnap } from "../../lib/useLiveSnap.js";
 import SyncBadge from "../../components/SyncBadge.jsx";
 import * as tc from "../../lib/door/taskchampion.js";
+import { useJournalPushNotifications } from "../../hooks/useJournalPushNotifications.js";
 import "../door/v2/door-v2.css";
 import "../game/game-v2.css";
 
@@ -58,6 +59,7 @@ function useScores(uid, from, to, enabled) {
 export default function TentV2View({ user, date, onDateChange = () => {} }) {
   const qc = useQueryClient();
   const uid = user?.uid ?? null;
+  const push = useJournalPushNotifications(user?.uid ? user : null, "tent");
   const base = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00`) : new Date();
   const from = startOfISOWeek(base), to = endOfISOWeek(base);
   const wk = weekKey(from);
@@ -65,6 +67,7 @@ export default function TentV2View({ user, date, onDateChange = () => {} }) {
   const [text, setText] = useState(() => read(draftKey));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [pushError, setPushError] = useState("");
   useEffect(() => { setText(read(draftKey)); setErr(""); }, [draftKey]);
   useEffect(() => {
     const paper = "#f6f6f2";
@@ -122,6 +125,19 @@ export default function TentV2View({ user, date, onDateChange = () => {} }) {
         </div>
         <SyncBadge />
         {!uid && <div className="dv2-empty">Nicht angemeldet. <button type="button" className="dv2-link" onClick={() => db.signIn()}>Cloud Login</button></div>}
+        {uid && push.settings && <div className="dv2-src" aria-label="Tent Push-Erinnerung">
+          <span>Sonntags-Erinnerung</span>
+          {push.settings.enabled ? <>
+            <input type="time" aria-label="Uhrzeit der Tent-Erinnerung" value={push.settings.reminderTime || "14:00"}
+              onChange={(e) => e.target.value && push.updateReminderTime(e.target.value)} />
+            <button type="button" className="dv2-link" onClick={push.disable}>Push aus</button>
+          </> : <button type="button" className="dv2-link" disabled={push.busy || push.permission === "denied" || push.permission === "unsupported"}
+            onClick={() => push.enable().catch((e) => setPushError(e?.message || "Push konnte nicht eingeschaltet werden."))}>
+            {push.busy ? "Wird eingerichtet …" : "Handy-Push für Sonntag 14:00 einschalten"}
+          </button>}
+          {push.permission === "denied" && <span>Benachrichtigungen sind im Browser blockiert.</span>}
+          {pushError && <span role="alert">{pushError}</span>}
+        </div>}
         <h4 className="dv2-sec">Return and Report</h4>
         {sc.rows.map(([label, done, total]) => (
           <div key={label} className="dv2-row"><div className="dv2-text"><h3>{label}</h3><p>{done} / {total}{total ? ` · ${Math.round((done / total) * 100)} %` : ""}</p></div></div>

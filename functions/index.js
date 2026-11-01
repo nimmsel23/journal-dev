@@ -76,6 +76,23 @@ function isReminderDue(reminderTime, currentMinutes) {
   return delta >= 0 && delta < REMINDER_WINDOW_MINUTES;
 }
 
+function isoWeekInfo(date) {
+  const [year, month, day] = date.split("-").map(Number);
+  const thursday = new Date(Date.UTC(year, month - 1, day));
+  const mondayIndex = (thursday.getUTCDay() + 6) % 7;
+  thursday.setUTCDate(thursday.getUTCDate() - mondayIndex + 3);
+  const isoYear = thursday.getUTCFullYear();
+  const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - ((firstThursday.getUTCDay() + 6) % 7) + 3);
+  const week = 1 + Math.round((thursday - firstThursday) / 604800000);
+  const start = new Date(thursday);
+  start.setUTCDate(start.getUTCDate() - 3);
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 6);
+  const ymd = (value) => value.toISOString().slice(0, 10);
+  return { key: `${isoYear}-W${String(week).padStart(2, "0")}`, start: ymd(start), end: ymd(end) };
+}
+
 function normalizeTokens(data = {}) {
   return Array.from(new Set([
     ...(Array.isArray(data.tokens) ? data.tokens : []),
@@ -113,7 +130,7 @@ exports.scheduledJournalPushReminders = functions
   .pubsub.schedule("every 5 minutes")
   .timeZone(TIME_ZONE)
   .onRun(async (context) => {
-    const { minutes } = getLocalDateParts();
+    const { date, minutes } = getLocalDateParts(new Date(), "Europe/Vienna");
     const db = admin.firestore();
     let sentCount = 0;
     let failureCount = 0;
@@ -143,6 +160,28 @@ exports.scheduledJournalPushReminders = functions
           sentCount += result.sentCount || 0;
           failureCount += result.failureCount || 0;
         }
+
+        const tent = stored.apps?.tent || {};
+        if (!tent.enabled || new Date(`${date}T12:00:00Z`).getUTCDay() !== 0
+          || !isReminderDue(tent.reminderTime || "14:00", minutes)) continue;
+        const week = isoWeekInfo(date);
+        const tentEntries = await user.collection("journal")
+          .where("date", ">=", week.start).where("date", "<=", week.end).get();
+        const alreadyClosed = tentEntries.docs.some((entry) => {
+          const tags = entry.data()?.tags || [];
+          return tags.includes("tent") && tags.includes(week.key);
+        });
+        if (alreadyClosed) continue;
+        const result = await sendReminder(
+          user.id,
+          normalizeTokens(tent),
+          "General's Tent",
+          `Dein Tent für ${week.key} ist noch offen. Zeit für Return & Report, Lessons Learned, Course Correction und New Targets.`,
+          "/#tent2",
+          "tent"
+        );
+        sentCount += result.sentCount || 0;
+        failureCount += result.failureCount || 0;
       }
 
       console.log(`Push reminders: ${sentCount} sent, ${failureCount} failed`);

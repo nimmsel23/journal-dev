@@ -168,8 +168,9 @@ Kein echter Release ausgeführt.
 
 - `TentV2View` bietet Push-Anmeldung und eine konfigurierbare Sonntagszeit (Standard 14:00, Europe/Vienna). `apps.tent` ist eine eigene Token-Lane; Registrierung verwendet `/tent-messaging-sw.js` unter `/tent-push/` und Pushdaten mit `app: tent`.
 - Die Journal-Cloud-Function prüft sonntags zur gespeicherten Zeit, ob diese Woche ein Journal-Eintrag mit `tent` und ISO-Wochen-Tag vorliegt. Bei offenem Tent sendet sie einen Link nach `/#tent2`; Journal-/Door-Payloads bleiben getrennt.
-- Verifiziert: `node --check functions/index.js`, gültiges `firebase.json`, `git diff --check` und Tent-Firebase-Build erfolgreich. pnpm selbst brach beim Install-Check ab, weil es interaktiv `node_modules` entfernen wollte; der vorhandene lokale Vite-Build lief direkt. Keine Tests, kein Deploy und keine Geräte-Zustellung ausgeführt.
-- Noch nicht veröffentlicht oder am Handy registriert. Der Termin für heute 14:00 kann daher erst nach dem freigegebenen Release und Aktivierung in der Tent-PWA live ankommen; siehe `NEXT.md`.
+- PR #15 wurde mit grünem CI nach `master` gemergt; `journal-release` aktualisierte `journal-app/vitalos` und den VitalOS-Pointer. Live-Deploy `41299163327` veröffentlichte die Hosting-Targets inklusive `tent` erfolgreich.
+- `scheduledJournalPushReminders` wurde anschließend direkt mit Firebase CLI für `fitness-aos` deployt. `firebase functions:list` bestätigt `scheduled` in `europe-west1`, `v1`, Node.js 22. Der separate CI-Functions-Workflow bleibt am fehlenden `secretmanager.secrets.get` des CI-Serviceaccounts hängen.
+- Live geprüft: `vos-tent.web.app/` liefert HTTP 200, der Tent-Bundle enthält den Push-Schalter und `/tent-messaging-sw.js` liefert HTTP 200 mit `Cache-Control: no-cache`. Empfang auf dem installierten Handy ist noch nicht geprüft; Push muss dort einmal eingeschaltet und erlaubt werden.
 
 ## 2026-10-21
 

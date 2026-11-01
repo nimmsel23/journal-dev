@@ -164,6 +164,13 @@ Kein echter Release ausgeführt.
 
 # Results
 
+## 2026-11-01 — Tent-Push in der installierten Tent-PWA
+
+- `TentV2View` bietet Push-Anmeldung und eine konfigurierbare Sonntagszeit (Standard 14:00, Europe/Vienna). `apps.tent` ist eine eigene Token-Lane; Registrierung verwendet `/tent-messaging-sw.js` unter `/tent-push/` und Pushdaten mit `app: tent`.
+- Die Journal-Cloud-Function prüft sonntags zur gespeicherten Zeit, ob diese Woche ein Journal-Eintrag mit `tent` und ISO-Wochen-Tag vorliegt. Bei offenem Tent sendet sie einen Link nach `/#tent2`; Journal-/Door-Payloads bleiben getrennt.
+- Verifiziert: `node --check functions/index.js`, gültiges `firebase.json`, `git diff --check` und Tent-Firebase-Build erfolgreich. pnpm selbst brach beim Install-Check ab, weil es interaktiv `node_modules` entfernen wollte; der vorhandene lokale Vite-Build lief direkt. Keine Tests, kein Deploy und keine Geräte-Zustellung ausgeführt.
+- Noch nicht veröffentlicht oder am Handy registriert. Der Termin für heute 14:00 kann daher erst nach dem freigegebenen Release und Aktivierung in der Tent-PWA live ankommen; siehe `NEXT.md`.
+
 ## 2026-10-21
 
 - Journal v1: Fitness/Fuel/Relax support right click, long tap and ContextMenu/Shift+F10 to choose tabs and nested views. Normal clicks retain their existing action. Explicit Fitness destinations are preserved through embedded Shell navigation; standalone destinations use their full URL/hash.

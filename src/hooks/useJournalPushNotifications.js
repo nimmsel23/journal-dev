@@ -55,7 +55,7 @@ export function useJournalPushNotifications(user, app = "journal") {
       } catch { /* Registration can be retried on the next app visit. */ }
     })();
     return () => { active = false; };
-  }, [user?.uid, permission, settings, save, worker.url, worker.scope]);
+  }, [user?.uid, permission, settings, worker.url, worker.scope, save]);
 
   const enable = useCallback(async () => {
     if (!user?.uid) return;

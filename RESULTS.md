@@ -185,3 +185,16 @@ Kein echter Release ausgeführt.
 
 ## 2026-10-29
 - **TaskChampion CORS:** `journal-dev/scripts/tc-cors-proxy.mjs` erlaubt jetzt zusätzlich `https://vitalos.web.app`, damit Game/Fire innerhalb der VitalOS-Shell den TaskChampion-Sync über denselben Proxy verwenden kann.
+
+## 2026-11-01 — lokaler vos-tent-dev und optionaler Login
+
+- `vos-tent-dev` als lokaler Branch mit eigenem Git-Worktree unter `.worktrees/vos-tent-dev` angelegt; keine Remote-Änderung.
+- Tent zeigt ohne Google-Konto den lokalen Demo-Modus samt Hinweis, dass Notizen im Browser bleiben, plus freiwilligen Google-Login mit Lade- und Fehlerstatus. Cloud-Abschluss und Push benötigen weiterhin ein Konto.
+- `pnpm run deploy:tent:build` konnte wegen eines schreibgeschützten pnpm-Store-Operation-Locks in der Sandbox nicht starten; kein Workaround am Store vorgenommen.
+
+## 2026-11-01 — optionale Anmeldung in Tent, Voice und Door
+
+- Wiederverwendbarer Google-Login-Helfer ergänzt. Tent- und Voice-Eingaben bleiben ohne Konto in ihrem bestehenden Browser-`localStorage`; Login ist optional und schaltet Cloud-Speicherung frei.
+- Door zeigt den Helfer im Gastmodus und lässt die lokalen Taskwarrior-Daten sowie bereits lokal verfügbare Google-Tasks weiterlaufen. Backend-Daten benötigen weiterhin Journal-Login.
+- Änderung liegt auf dem lokalen Branch `vos-tent-dev` im Worktree `.worktrees/vos-tent-dev`, von `journal-dev/dev` abgeleitet und daher direkt als Journal-Änderung integrierbar. Bestehende Hosting-Flavors/Targets `tent`, `voice` und `door` bleiben in journal-dev definiert.
+- Build-Prüfung war nicht möglich: pnpm scheiterte am schreibgeschützten Store-Lock; im Worktree gibt es kein lokales `node_modules/.bin/vite`.

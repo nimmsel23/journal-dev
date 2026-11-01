@@ -7,6 +7,7 @@ import { saveJournal } from "../../lib/db/journal.js";
 import { VOICE_STAGES } from "./voiceData.js";
 import PauseViz, { VIZ } from "./PauseViz.jsx";
 import { asBool, readSetting, useSetting, writeSetting } from "../../lib/useSetting.js";
+import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
 const key = (stage, suffix = "") => `gv2:voice:${today()}:${stage}${suffix}`;
@@ -137,7 +138,7 @@ export default function VoicePanel({ user }) {
       </div>
       <div className="dv2-sum"><b>{idx + 1}</b><span>{stage.name}</span></div>
       {stage.epigraph.map((l) => <p key={l} className="gv2-epi">{l}</p>)}
-      {!user && <div className="dv2-empty">Nicht angemeldet – Speichern braucht den Cloud-Login.</div>}
+      {!user && <AuthDemoHelper>Deine Voice-Antworten bleiben lokal im Browser. Zum Speichern als Journal-Eintrag kannst du dich anmelden.</AuthDemoHelper>}
       {stage.steps.map((s, i) => (
         <section key={s.key}>
           {s.group && s.group !== stage.steps[i - 1]?.group && <h4 className="dv2-sec">{s.group}</h4>}

@@ -23,7 +23,7 @@
     "deploy:v2": "pnpm run deploy:v2:build && firebase deploy --only hosting:v2 --project fitness-aos",
     "deploy:door:build": "VITE_APP_MODE=client VITE_APP_FLAVOR=door VITE_DEFAULT_TAB=door-v2 vite build --mode firebase --config vite.config.cjs --outDir dist-door",
     "deploy:door": "pnpm run deploy:door:build && firebase deploy --only hosting:door --project fitness-aos",
-    "deploy:voice:build": "VITE_APP_MODE=client VITE_APP_FLAVOR=voice VITE_DEFAULT_TAB=game-v2 VITE_DEFAULT_GAME_MODE=voice vite build --mode firebase --config vite.config.cjs --outDir dist-voice",
+    "deploy:voice:build": "VITE_APP_MODE=client VITE_APP_FLAVOR=voice VITE_DEFAULT_TAB=voice-v2 vite build --mode firebase --config vite.config.cjs --outDir dist-voice",
     "deploy:voice": "pnpm run deploy:voice:build && firebase deploy --only hosting:voice --project fitness-aos",
     "deploy:game:build": "VITE_APP_MODE=client VITE_APP_FLAVOR=game VITE_DEFAULT_TAB=game-v2 vite build --mode firebase --config vite.config.cjs --outDir dist-game",
     "deploy:game": "pnpm run deploy:game:build && firebase deploy --only hosting:game --project fitness-aos",

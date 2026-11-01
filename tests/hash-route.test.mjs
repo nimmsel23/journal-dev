@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { makeRouter, localToday } from "../src/lib/hashRoute.js";
 
-const TABS = ["journal", "journal-v2", "door-v2", "game-v2", "tent-v2", "ai-log", "door"];
+const TABS = ["journal", "journal-v2", "door-v2", "game-v2", "voice-v2", "tent-v2", "ai-log", "door"];
 const TODAY = "2026-10-24";
 const router = makeRouter({ tabs: TABS, defaultTab: "journal", today: () => TODAY });
 
@@ -11,12 +11,14 @@ const HASH_ALIASES = { v2: "journal-v2", door2: "door-v2", game2: "game-v2", ten
 const V2_MODES = ["tag", "woche", "monat", "jahr", "habits"];
 const DOOR_MODES = ["potential", "plan", "production", "profit"];
 const GAME_DEFAULT = "fire";
-const GAME_MODES = ["fire", "focus", "freedom", "frame", "voice"];
+const GAME_MODES = ["fire", "focus", "freedom", "frame"];
 const REVERSE = Object.fromEntries(Object.entries(HASH_ALIASES).map(([k, v]) => [v, k]));
 const oldParse = (hash) => {
   const raw = hash.replace(/^#\/?/, "");
   if (!raw) return { tab: null, date: null };
   const parts = raw.split("/");
+  if (parts[0] === "voice") return { tab: "voice-v2", date: null, mode: null };
+  if (parts[0] === "game2" && parts[1] === "voice") return { tab: "voice-v2", date: null, mode: null };
   if (GAME_MODES.includes(parts[0])) parts.unshift("game2");
   const rawTab = parts[0] || null;
   const tab = rawTab ? (HASH_ALIASES[rawTab] ?? rawTab) : null;
@@ -45,7 +47,7 @@ const URLS = [
   "", "#", "#/", "#journal", "#journal/2026-10-17", "#journal/today", "#journal/quatsch",
   "#v2", "#v2/today", "#v2/2026-10-17", "#v2/woche", "#v2/jahr", "#v2/jahr/2026-10-17", "#v2/monat/2026-10-17", "#v2/habits/today", "#v2/unbekannt",
   "#door2", "#door2/plan", "#door2/profit/2026-10-17", "#door2/quatsch",
-  "#game2", "#game2/focus", "#game2/voice", "#fire", "#focus", "#frame/2026-10-17", "#game-v2/freedom",
+  "#game2", "#game2/focus", "#game2/voice", "#voice", "#fire", "#focus", "#frame/2026-10-17", "#game-v2/freedom",
   "#tent2", "#tent2/today", "#tent2/2026-10-17", "#tent-v2/2026-10-17",
   "#ai-log", "#door", "#journal-v2/woche",
 ];
@@ -68,6 +70,8 @@ test("Standardmodus je Tab, wenn keiner im Hash steht", () => {
   assert.equal(router.parse("#v2").mode, "tag");
   assert.equal(router.parse("#door2").mode, "potential");
   assert.equal(router.parse("#game2").mode, "fire");
+  assert.deepEqual(router.parse("#voice"), { tab: "voice-v2", mode: null, date: null });
+  assert.deepEqual(router.parse("#game2/voice"), { tab: "voice-v2", mode: null, date: null });
   assert.equal(router.parse("#tent2").mode, null);
   assert.equal(router.parse("#journal").mode, null);
 });
@@ -91,7 +95,7 @@ test("Round-Trip: build → parse liefert denselben Zustand", () => {
     { tab: "journal-v2", mode: "woche", date: "2026-10-17" },
     { tab: "journal-v2", mode: "tag", date: TODAY },
     { tab: "door-v2", mode: "plan", date: null },
-    { tab: "game-v2", mode: "voice", date: null },
+    { tab: "voice-v2", mode: null, date: null },
     { tab: "tent-v2", mode: null, date: "2026-10-17" },
     { tab: "journal", mode: null, date: "2026-10-17" },
   ]) {
@@ -99,11 +103,9 @@ test("Round-Trip: build → parse liefert denselben Zustand", () => {
   }
 });
 
-test("gameDefault aus der Umgebung (Voice-Flavor) wird berücksichtigt", () => {
-  const voice = makeRouter({ tabs: TABS, defaultTab: "game-v2", gameDefault: "voice", today: () => TODAY });
-  assert.equal(voice.parse("").mode, "voice");
-  assert.equal(voice.build({ tab: "game-v2", mode: "voice" }), "#game2");
-  assert.equal(voice.build({ tab: "game-v2", mode: "fire" }), "#game2/fire");
+test("Voice ist eigener Pillar mit eigenem Hash", () => {
+  assert.equal(router.build({ tab: "voice-v2", mode: null, date: null }), "#voice");
+  assert.deepEqual(router.parse(router.build({ tab: "voice-v2", mode: null, date: null })), { tab: "voice-v2", mode: null, date: null });
 });
 
 test("localToday nutzt die lokale Zeit statt UTC", () => {

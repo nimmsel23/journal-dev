@@ -7,7 +7,8 @@ export function routeMeta({ gameDefault = "fire" } = {}) {
   return {
     "journal-v2": { alias: "v2", modes: ["tag", "woche", "monat", "jahr", "habits"], defaultMode: "tag", hasDate: true },
     "door-v2": { alias: "door2", modes: ["potential", "plan", "production", "profit"], defaultMode: "potential", hasDate: false },
-    "game-v2": { alias: "game2", modes: ["fire", "focus", "freedom", "frame", "voice"], defaultMode: gameDefault, hasDate: false, shortForm: true },
+    "game-v2": { alias: "game2", modes: ["fire", "focus", "freedom", "frame"], defaultMode: gameDefault, hasDate: false, shortForm: true },
+    "voice-v2": { alias: "voice", modes: [], hasDate: false },
     "tent-v2": { alias: "tent2", modes: [], hasDate: true },
   };
 }
@@ -29,6 +30,7 @@ export function makeRouter({ tabs, defaultTab, gameDefault = "fire", today = loc
   // → { tab, mode, date }; tab fällt auf defaultTab, mode auf den Standard des Tabs (sonst null), date auf null (= unverändert/heute)
   function parse(hash) {
     const parts = String(hash || "").replace(/^#\/?/, "").split("/");
+    if (parts[0] === "game2" && parts[1] === "voice") return { tab: known("voice-v2") ? "voice-v2" : defaultTab, mode: null, date: null };
     const short = shortModes.find(([mode]) => mode === parts[0]);
     if (short) parts.unshift(meta[short[1]].alias); // #focus → #game2/focus
     const head = parts[0] ? (byAlias[parts[0]] ?? parts[0]) : null;

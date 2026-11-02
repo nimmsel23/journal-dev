@@ -249,7 +249,7 @@ Dritte Quelle neben „Backend“ und „Google Tasks“ (Registry `SOURCES` in 
 - **Backend-Quelle (Firestore/REST):** Wizard `DoorV2Warstack.jsx` im Plan – 11 Schritte aus `WARSTACK_STEPS`, Start an der gewählten Door, offene Sessions lassen sich fortsetzen.
 - **Taskwarrior-Quelle:** gleiche Oberfläche, Entwurf in `localStorage` (`dv2:tw-ws:<uuid>`). Beim Abschluss: UDAs `domain`, `subdomain`, `domino_door` am +door-Task und das fertige Markdown als Annotation `WARSTACK\n<md>`. `~/.dotfiles/bin/door-taskopen` (Funktion `seed_warstack`) legt daraus beim ersten Öffnen `Vault/Door/War-Stacks/STACK_<slug>.md` an, danach öffnet taskopen die Datei wie gewohnt. Mit Test-Account gegen `task sync` verifiziert.
 
-## Game v2 (`#game2/<fire|focus|freedom|frame|voice>`, Kurzformen `#fire` …)
+## Game v2 (`#game2/<fire|focus|freedom|frame>`, Kurzformen `#fire` …)
 
 `src/views/game/`. Die Maps sind keine Tasklisten (außer Fire), sondern Dokumente je Domain (Body/Being/Balance/Business) im Firestore des Nutzers (`journal/{uid}/…`, Rule `journal/{uid}/**`); Fragen/Felder aus `~/aos/game` (`maps/store.py`, `freedom/model.py`, `frame/cli.py`), Antworten speichern beim Verlassen des Feldes.
 

@@ -168,8 +168,9 @@ Kein echter Release ausgeführt.
 
 - `TentV2View` bietet Push-Anmeldung und eine konfigurierbare Sonntagszeit (Standard 14:00, Europe/Vienna). `apps.tent` ist eine eigene Token-Lane; Registrierung verwendet `/tent-messaging-sw.js` unter `/tent-push/` und Pushdaten mit `app: tent`.
 - Die Journal-Cloud-Function prüft sonntags zur gespeicherten Zeit, ob diese Woche ein Journal-Eintrag mit `tent` und ISO-Wochen-Tag vorliegt. Bei offenem Tent sendet sie einen Link nach `/#tent2`; Journal-/Door-Payloads bleiben getrennt.
-- Verifiziert: `node --check functions/index.js`, gültiges `firebase.json`, `git diff --check` und Tent-Firebase-Build erfolgreich. pnpm selbst brach beim Install-Check ab, weil es interaktiv `node_modules` entfernen wollte; der vorhandene lokale Vite-Build lief direkt. Keine Tests, kein Deploy und keine Geräte-Zustellung ausgeführt.
-- Noch nicht veröffentlicht oder am Handy registriert. Der Termin für heute 14:00 kann daher erst nach dem freigegebenen Release und Aktivierung in der Tent-PWA live ankommen; siehe `NEXT.md`.
+- PR #15 wurde mit grünem CI nach `master` gemergt; `journal-release` aktualisierte `journal-app/vitalos` und den VitalOS-Pointer. Live-Deploy `41299163327` veröffentlichte die Hosting-Targets inklusive `tent` erfolgreich.
+- `scheduledJournalPushReminders` wurde anschließend direkt mit Firebase CLI für `fitness-aos` deployt. `firebase functions:list` bestätigt `scheduled` in `europe-west1`, `v1`, Node.js 22. Der separate CI-Functions-Workflow bleibt am fehlenden `secretmanager.secrets.get` des CI-Serviceaccounts hängen.
+- Live geprüft: `vos-tent.web.app/` liefert HTTP 200, der Tent-Bundle enthält den Push-Schalter und `/tent-messaging-sw.js` liefert HTTP 200 mit `Cache-Control: no-cache`. Empfang auf dem installierten Handy ist noch nicht geprüft; Push muss dort einmal eingeschaltet und erlaubt werden.
 
 ## 2026-10-21
 
@@ -188,3 +189,18 @@ Kein echter Release ausgeführt.
 ## 2026-10-31 — Dependabot
 
 Enabled Dependabot alerts and security updates. Configured weekly GitHub Actions and npm/pnpm updates; version updates target `dev`. Minor/patch updates are grouped; vendored mini-app-shell copies stay maintained at their source. Validated YAML, repository manifest paths and update targets.
+
+## 2026-11-01 — lokaler vos-tent-dev und optionaler Login
+
+- `vos-tent-dev` als lokaler Branch mit eigenem Git-Worktree unter `.worktrees/vos-tent-dev` angelegt; keine Remote-Änderung.
+- Tent zeigt ohne Google-Konto den lokalen Demo-Modus samt Hinweis, dass Notizen im Browser bleiben, plus freiwilligen Google-Login mit Lade- und Fehlerstatus. Cloud-Abschluss und Push benötigen weiterhin ein Konto.
+- `pnpm run deploy:tent:build` konnte wegen eines schreibgeschützten pnpm-Store-Operation-Locks in der Sandbox nicht starten; kein Workaround am Store vorgenommen.
+
+## 2026-11-01 — optionale Anmeldung in Tent, Voice und Door
+
+- Wiederverwendbarer Google-Login-Helfer ergänzt. Tent- und Voice-Eingaben bleiben ohne Konto in ihrem bestehenden Browser-`localStorage`; Login ist optional und schaltet Cloud-Speicherung frei.
+- Door zeigt den Helfer im Gastmodus und lässt die lokalen Taskwarrior-Daten sowie bereits lokal verfügbare Google-Tasks weiterlaufen. Backend-Daten benötigen weiterhin Journal-Login.
+- Zunächst im temporären Branch `vos-tent-dev` vorbereitet, danach in `journal-dev/dev` integriert (Commit `8683de3`). Game v2 zeigt den Helfer zusätzlich bei Fire/Focus/Freedom/Frame; Voice nutzt denselben Helfer in der Voice-Phase. Die Hosting-Flavors/Targets bleiben in Journal definiert.
+- Build-Prüfung war nicht möglich: pnpm scheiterte am schreibgeschützten Store-Lock; im Worktree gibt es kein lokales `node_modules/.bin/vite`.
+## 2026-11-01 — Build-Versionen
+- **Build-Versionen:** Journal zeigt im Update-Dialog die Paketversion mit der gebauten Git-Revision statt dauerhaft `v0.1.1`; `pnpm release` startet den vorgesehenen `dev → master`-PR-Releaseweg statt lokal eine Patch-Version zu ändern und direkt zu deployen.

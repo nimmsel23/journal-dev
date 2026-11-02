@@ -1,14 +1,14 @@
-// GameV2View — Raster-Oberflächen für Fire / Focus / Freedom / Frame (Taskwarrior via TaskChampion) und Voice.
-// Hash: #game2/<fire|focus|freedom|frame|voice>, Kurzformen #fire, #focus, #freedom, #frame, #voice.
+// GameV2View — Raster-Oberflächen für Fire / Focus / Freedom / Frame (Taskwarrior via TaskChampion).
+// Hash: #game2/<fire|focus|freedom|frame>, Kurzformen #fire, #focus, #freedom, #frame.
 import { useEffect } from "react";
 import GameMapPanel, { MAPS } from "./GameMapPanel.jsx";
-import VoicePanel from "./VoicePanel.jsx";
 import SyncBadge from "../../components/SyncBadge.jsx";
+import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 import "../door/v2/door-v2.css";
 import "./game-v2.css";
 
-const MODES = [["fire", "Fire"], ["focus", "Focus"], ["freedom", "Freedom"], ["frame", "Frame"], ["voice", "Voice"]];
-const SUB = { ...Object.fromEntries(Object.entries(MAPS).map(([k, v]) => [k, v.sub])), voice: "Stop · Submit · Struggle · Strike" };
+const MODES = [["fire", "Fire"], ["focus", "Focus"], ["freedom", "Freedom"], ["frame", "Frame"]];
+const SUB = Object.fromEntries(Object.entries(MAPS).map(([k, v]) => [k, v.sub]));
 
 // embedded: in der VitalOS-Shell – kein Papier-Vollbild auf html/body, keine Journal-/Door-Links.
 export default function GameV2View({ user, mode = "fire", onModeChange = () => {}, embedded = false }) {
@@ -44,7 +44,8 @@ export default function GameV2View({ user, mode = "fire", onModeChange = () => {
           </div>
         </div>
         <SyncBadge />
-        {current === "voice" ? <VoicePanel user={user} /> : <GameMapPanel key={current} map={current} uid={user?.uid ?? null} />}
+        {!user && <AuthDemoHelper>Lokale Taskwarrior-Daten bleiben nutzbar. Für deine Cloud-Maps und geräteübergreifende Speicherung kannst du dich anmelden.</AuthDemoHelper>}
+        <GameMapPanel key={current} map={current} uid={user?.uid ?? null} />
         {!embedded && (
           <div className="dv2-foot">
             <a href="#door2">Door →</a>

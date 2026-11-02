@@ -2,7 +2,6 @@
 // Design "Raster" (siehe views/v2/journal-v2.css). Hash: #door2 bzw. #door2/<modus>.
 // Datenquellen: bestehende src/lib/door/* (REST lokal, Firestore in der Cloud).
 import { useEffect, useState, useSyncExternalStore } from "react";
-import * as db from "@journal-db";
 import { PotentialPanel, PlanPanel, ProductionPanel, ProfitPanel } from "./DoorV2Panels.jsx";
 import { SOURCES, getSource, setSource, loadRemoteSource } from "../../../lib/door/source.js";
 import { useGoogle } from "../../../lib/google/useGoogle.js";
@@ -10,6 +9,7 @@ import { useJournalPushNotifications } from "../../../hooks/useJournalPushNotifi
 import * as tc from "../../../lib/door/taskchampion.js";
 import { subscribeLocal, hasLocalData, pendingCount } from "../../../lib/door/gtasks.local.js";
 import { useQueryClient } from "@tanstack/react-query";
+import AuthDemoHelper from "../../../components/AuthDemoHelper.jsx";
 import "./door-v2.css";
 
 const MODES = [["potential", "Potential"], ["plan", "Plan"], ["production", "Production"], ["profit", "Profit"]];
@@ -131,10 +131,8 @@ export default function DoorV2View({ user, mode = "potential", onModeChange = ()
         ) : isT && tcCfg === undefined ? null : isG && !isConn && !hasLocal ? (
           // erst wenn es weder eine Verbindung noch lokale Daten gibt (Erstverwendung); sonst arbeitet die Ansicht lokal weiter
           <div className="dv2-empty">Google Tasks ist noch nicht verbunden. Oben „Google Tasks verbinden“ wählen.</div>
-        ) : uid ? <Panel key={source} uid={uid} source={source} /> : (
-          <div className="dv2-empty">
-            Nicht angemeldet. <button type="button" className="dv2-link" onClick={() => db.signIn()}>Cloud Login</button>
-          </div>
+        ) : uid || isT || (isG && (isConn || hasLocal)) ? <Panel key={source} uid={uid} source={source} /> : (
+          <AuthDemoHelper>Lokale Taskwarrior-Daten und bereits lokal vorhandene Google-Tasks bleiben nutzbar. Für Backend-Daten und geräteübergreifende Einstellungen kannst du dich anmelden.</AuthDemoHelper>
         )}
         {!embedded && (
           <div className="dv2-foot">

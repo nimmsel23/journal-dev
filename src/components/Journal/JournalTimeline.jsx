@@ -12,6 +12,7 @@
 // kontextabhängiger Aliases, Theming über CSS-Tokens mit Fallbacks.
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import * as db from "@journal-db";
 import { Book, PenLine } from "lucide-react";
 import { localToday, formatRelativeDate, sessionInfo, getDailyPrompt, getCalendarMeta, extractTags } from "./journalUtils";
@@ -60,7 +61,7 @@ import HabitJournalModal from "./habits/HabitJournalModal.jsx";
 const CROSSOVER_URLS = {
   fitness: "https://fitness-aos.web.app",
   fuel: "https://fuel-vos.web.app",
-  relax: "https://vitalos.web.app",
+  relax: "https://relax-vos.web.app",
 };
 
 // Theme-Kontrakt: Im fitness-Kontext liefern dessen Themes die --*-Tokens,
@@ -76,6 +77,8 @@ const TOKENS = {
 };
 
 export default function JournalTimeline({ onOpenSession, onNavigateShell, user: userProp, showCrossover = false, enableJournalPush = false, date: controlledDate = null, onDateChange = null }) {
+  const reducedMotion = useReducedMotion();
+  const revealOnScroll = reducedMotion === false;
   // Host-Apps (vitalos JournalApp/RelaxApp, fuel) übergeben kein user-Prop —
   // dann selbst auf Auth subscriben, sonst bleibt die Timeline hinter dem
   // user?.uid-Guard dauerhaft leer. Prop gewinnt, Fallback nur ohne Prop.
@@ -697,16 +700,23 @@ export default function JournalTimeline({ onOpenSession, onNavigateShell, user: 
                   </div>
                   <div className="relative pl-6 sm:pl-8 border-l border-[var(--j-line)] space-y-6 mt-4">
                     {mainEntries.map((e, i) => (
-                      <JournalEntry
+                      <motion.div
                         key={e.id || i}
-                        e={e}
-                        habits={habits}
-                        setSelectedEntry={setSelectedEntry}
-                        onEdit={handleEdit}
-                        onOpenSession={onOpenSession}
-                        colorActivities={colorActivities}
-                        mediaEnabled={mediaEnabled}
-                      />
+                        initial={revealOnScroll ? { opacity: 0, y: 12 } : false}
+                        whileInView={revealOnScroll ? { opacity: 1, y: 0 } : undefined}
+                        viewport={{ once: true, amount: 0 }}
+                        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1], delay: Math.min(i * 0.035, 0.14) }}
+                      >
+                        <JournalEntry
+                          e={e}
+                          habits={habits}
+                          setSelectedEntry={setSelectedEntry}
+                          onEdit={handleEdit}
+                          onOpenSession={onOpenSession}
+                          colorActivities={colorActivities}
+                          mediaEnabled={mediaEnabled}
+                        />
+                      </motion.div>
                     ))}
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { NotebookPen, Sparkles, DoorOpen } from "lucide-react";
+import { NotebookPen, Sparkles, DoorOpen, Mic } from "lucide-react";
 
 export const TAB_CONFIG = [
   {
@@ -31,7 +31,7 @@ export const TAB_CONFIG = [
     getProps: (ctx) => ({ user: ctx.user, mode: ctx.mode, onModeChange: ctx.setMode }),
   },
   {
-    // Hash-Alias: #game2/<fire|focus|freedom|frame|voice> (Kurzformen #fire … #voice). Rendert ohne App-Header.
+    // Hash-Alias: #game2/<fire|focus|freedom|frame> (Kurzformen #fire … #frame). Rendert ohne App-Header.
     key: "game-v2",
     label: "Game v2",
     title: "Game v2",
@@ -39,6 +39,16 @@ export const TAB_CONFIG = [
     bare: true,
     View: lazy(() => import("./views/game/GameV2View.jsx")),
     getProps: (ctx) => ({ user: ctx.user, mode: ctx.mode, onModeChange: ctx.setMode }),
+  },
+  {
+    // Eigenständiger Pillar, mit eigenem Flavor unter #voice.
+    key: "voice-v2",
+    label: "Voice",
+    title: "Voice",
+    Icon: Mic,
+    bare: true,
+    View: lazy(() => import("./views/voice/VoiceV2View.jsx")),
+    getProps: (ctx) => ({ user: ctx.user }),
   },
   {
     // Hash-Alias: #tent2 (optional #tent2/<datum>). Rendert ohne App-Header.

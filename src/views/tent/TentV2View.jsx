@@ -10,6 +10,7 @@ import * as db from "@journal-db";
 import { saveJournal, watchJournalRange } from "../../lib/db/journal.js";
 import { useLiveSnap } from "../../lib/useLiveSnap.js";
 import SyncBadge from "../../components/SyncBadge.jsx";
+import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 import * as tc from "../../lib/door/taskchampion.js";
 import { useJournalPushNotifications } from "../../hooks/useJournalPushNotifications.js";
 import "../door/v2/door-v2.css";
@@ -124,7 +125,7 @@ export default function TentV2View({ user, date, onDateChange = () => {} }) {
           {!sc.twOn && <a className="dv2-link" href="#fire">Taskwarrior verbinden</a>}
         </div>
         <SyncBadge />
-        {!uid && <div className="dv2-empty">Nicht angemeldet. <button type="button" className="dv2-link" onClick={() => db.signIn()}>Cloud Login</button></div>}
+        {!uid && <AuthDemoHelper>Deine Tent-Notizen bleiben lokal im Browser. Für Cloud-Speicherung und Push kannst du dich anmelden.</AuthDemoHelper>}
         {uid && push.settings && <div className="dv2-src" aria-label="Tent Push-Erinnerung">
           <span>Sonntags-Erinnerung</span>
           {push.settings.enabled ? <>

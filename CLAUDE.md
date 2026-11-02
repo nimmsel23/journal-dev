@@ -59,7 +59,8 @@ src/
 ├── views/
 │   ├── v2/                Journal v2 (Raster)
 │   ├── door/v2/           Door v2   ·  views/door/ = v1-Ansichten
-│   ├── game/              Game v2 (Maps, Fire, Voice)
+│   ├── game/              Game v2 (Fire, Focus, Freedom, Frame)
+│   ├── voice/             Eigenständiger Voice-Pillar (Stop, Submit, Struggle, Strike)
 │   └── tent/              Tent v2
 └── components/            Updater, Install-Hinweise, TabContent, v1-Timeline (Journal/)
 ```
@@ -68,7 +69,7 @@ src/
 `@journal` → `src`. v2 importiert Journal-CRUD direkt aus `lib/db/journal.js`, nicht über `@journal-db`.
 
 **Routing**: Die URL ist die einzige Quelle für Tab, Modus und Datum.
-`#v2[/woche|monat|habits][/<datum|today>]`, `#door2[/plan|production|profit]`, `#game2/<fire|focus|freedom|frame|voice>`
+`#v2[/woche|monat|habits][/<datum|today>]`, `#door2[/plan|production|profit]`, `#game2/<fire|focus|freedom|frame>`, `#voice`
 (Kurzform `#fire` …), `#tent2[/<datum>]`. Tab-Metadaten (Alias, Modi, ob das Datum im Hash steht) stehen als Tabelle
 in `hashRoute.js`; ein neuer Tab mit Modus ist ein Eintrag dort plus einer in `routes.js`. Der Start-Tab eines Builds
 kommt aus `VITE_DEFAULT_TAB`, der Standard-Game-Modus aus `VITE_DEFAULT_GAME_MODE`. Views bekommen `mode`, `date`,

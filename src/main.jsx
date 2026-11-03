@@ -16,6 +16,7 @@ import { watchAuth, signIn, signOut, getUid } from "@journal-db";
 import { db as firestore } from "./lib/firebase.js";
 import { startBackgroundSync, track } from "./lib/offline.js";
 import { waitForPendingWrites } from "firebase/firestore";
+import { writeVoiceContext } from "./views/voice/voiceContext.js";
 
 // Schreibzugriffe aus früheren Sitzungen, die noch beim Server anstehen, zählen als „offen“;
 // Taskwarrior-Outbox wird im Hintergrund geleert (Start, online, Tab sichtbar, alle 60 s).
@@ -86,12 +87,13 @@ function App() {
   const startVoiceFromJournal = (entry) => {
     try {
       const sessionId = globalThis.crypto?.randomUUID?.() || `voice_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-      window.sessionStorage.setItem("vos:voice:context:v1", JSON.stringify({
+      writeVoiceContext(window.sessionStorage, {
+        ownerUid: user?.uid || null,
         sessionId,
         sourceJournalId: String(entry.id),
         sourceDate: String(entry.date),
         sourceText: String(entry.text || "").slice(0, 12000),
-      }));
+      });
     } catch (error) {
       console.warn("Voice-Kontext konnte nicht lokal bereitgestellt werden:", error?.message || error);
     }

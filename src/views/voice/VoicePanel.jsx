@@ -10,6 +10,7 @@ import { asBool, readSetting, useSetting, writeSetting } from "../../lib/useSett
 import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 import { createSmartCalendarEvent } from "../../lib/google/smartCalendar.js";
 import { useGoogle } from "../../lib/google/useGoogle.js";
+import { readVoiceContext, VOICE_CONTEXT_KEY } from "./voiceContext.js";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
 const key = (stage, suffix = "") => `gv2:voice:${today()}:${stage}${suffix}`;
@@ -18,15 +19,9 @@ const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 function newSessionId() {
   return globalThis.crypto?.randomUUID?.() || `voice_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
-function readVoiceContext() {
-  try {
-    const value = JSON.parse(window.sessionStorage.getItem("vos:voice:context:v1") || "null");
-    if (!value || typeof value.sessionId !== "string" || typeof value.sourceJournalId !== "string"
-        || typeof value.sourceDate !== "string" || typeof value.sourceText !== "string") return null;
-    return value;
-  } catch { return null; }
+function loadVoiceContext(ownerUid) {
+  try { return readVoiceContext(window.sessionStorage, ownerUid); } catch { return null; }
 }
-
 function answerText(step, a) {
   if (step.kind === "pause") return a ? `✓ (${step.seconds}s)` : "—";
   if (step.kind === "confirm") return a ? "Ja" : "Nein";
@@ -163,7 +158,7 @@ function StrikeFollowUp({ answers, sessionId }) {
 export default function VoicePanel({ user }) {
   const [idx, setIdx] = useState(0);
   const stage = VOICE_STAGES[idx];
-  const [voiceContext, setVoiceContext] = useState(readVoiceContext);
+  const [voiceContext, setVoiceContext] = useState(() => loadVoiceContext(user?.uid || null));
   const [sessionId] = useState(() => {
     const existing = voiceContext?.sessionId || read(key("session", "-id"), "");
     if (existing) return existing;
@@ -199,7 +194,7 @@ export default function VoicePanel({ user }) {
       setSaved((s) => ({ ...s, [stage.key]: true }));
       if (idx < VOICE_STAGES.length - 1) setIdx(idx + 1);
       else if (voiceContext) {
-        try { window.sessionStorage.removeItem("vos:voice:context:v1"); } catch {}
+        try { window.sessionStorage.removeItem(VOICE_CONTEXT_KEY); } catch {}
         setVoiceContext(null);
       }
     } catch (e) { setErr(e?.message || "Speichern fehlgeschlagen"); }

@@ -214,3 +214,7 @@ Enabled Dependabot alerts and security updates. Configured weekly GitHub Actions
 ## 2026-11-03 — Smart-Log-Datentransparenz
 - Vor der Analyse wird in beiden Smart-Log-Einstiegen die Übermittlung an Gemini offengelegt. V2 nennt Text, Datum, Tags und Habit-Namen; die ältere Ansicht nennt Text, Datum und Habit-Namen. Analyse startet ausschließlich nach dem Klick, Vorschläge bleiben prüfbar.
 - Verifiziert: `pnpm run build:cloud` erfolgreich (3.009 Module). Fokus-Tests für Smart-Log und Google-Flows zuvor erfolgreich; keine Deploys.
+
+## 2026-11-03 — Voice-Journal-Kontext an Konto binden
+- Der Kontext eines Journaleintrags wird vor dem Start von The Voice mit der aktuellen UID markiert. Bei Accountwechsel, Gast-/Login-Wechsel oder alten ungebundenen Kontexten wird der Kontext verworfen; er wird nicht in einer anderen Anmeldung angezeigt.
+- Regressionstests decken gleiches Konto, anderes Konto, Gastwechsel und alte Metadaten ab. Verifiziert: `node --test tests/*.test.mjs` (22 Testdateien, alle bestanden) und `pnpm run build:cloud` (3.010 Module, PWA-Service-Worker erzeugt). Keine Nutzerdaten migriert; kein Push/Deploy.

@@ -155,9 +155,8 @@ export function mergeSmartNutritionLog(currentValue, { date, requestId, journalI
       nextMeals.push(stored);
       mealsAdded += 1;
       mealsChanged = true;
-    } else if (JSON.stringify(nextMeals[previousIndex]) !== JSON.stringify(stored)) {
-      nextMeals[previousIndex] = stored;
-      mealsChanged = true;
+    } else if (nextMeals[previousIndex].sourceRequestId !== requestId || nextMeals[previousIndex].sourceJournalId !== journalId) {
+      throw new Error("smart_skill_record_id_conflict");
     }
   });
 

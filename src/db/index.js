@@ -5,6 +5,7 @@ import { db } from "../lib/firebase.js";
 import { getUid, localToday } from "../lib/db/core.js";
 import { track } from "../lib/offline.js";
 import { mergeSmartNutritionLog } from "../lib/smartJournalApplyCore.js";
+import { mergeSmartRelaxItems, shouldCreateSmartRecord } from "../lib/smartSkillReplay.js";
 export { deleteJournal } from "../lib/db/journal.js";
 
 export * from "../lib/db/core.js";
@@ -156,6 +157,7 @@ export async function applySmartNutrition({ date, requestId, sourceJournalId, me
 // IDs derive from the analysis request so re-applying cannot create duplicate sessions.
 export async function applySmartFitness({ date, requestId, sourceJournalId, sessions = [] }) {
   const uid = getUid();
+  let created = 0;
   for (const [index, session] of sessions.entries()) {
     const sessionDate = session.date || date;
     const id = `${sessionDate}__smart_${requestId}_${index}`;
@@ -165,25 +167,31 @@ export async function applySmartFitness({ date, requestId, sourceJournalId, sess
       duration: session.duration_minutes == null ? "" : String(session.duration_minutes),
       notes: session.notes || "",
     };
-    await setDoc(ref, {
-      date: sessionDate,
-      session_id: `smart_${requestId}_${index}`,
-      sessionMode: session.activity_type === "strength" ? "strength" : "cardio",
-      block: session.activity_type === "strength" ? "Krafttraining" : "",
-      activity,
-      exercises: [],
-      notes: session.activity_type === "strength" ? session.notes || "Krafttraining" : "",
-      duration_minutes: session.duration_minutes,
-      session_time: session.time,
-      started_at: session.time ? new Date(`${sessionDate}T${session.time}:00`).toISOString() : null,
-      finished_at: null,
-      sourceJournalId,
-      sourceRequestId: requestId,
-      smartLog: true,
-      saved_at: serverTimestamp(),
-    }, { merge: true });
+    const inserted = await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(ref);
+      if (!shouldCreateSmartRecord(snapshot.exists() ? snapshot.data() : null, { requestId, sourceJournalId })) return false;
+      transaction.set(ref, {
+        date: sessionDate,
+        session_id: `smart_${requestId}_${index}`,
+        sessionMode: session.activity_type === "strength" ? "strength" : "cardio",
+        block: session.activity_type === "strength" ? "Krafttraining" : "",
+        activity,
+        exercises: [],
+        notes: session.activity_type === "strength" ? session.notes || "Krafttraining" : "",
+        duration_minutes: session.duration_minutes,
+        session_time: session.time,
+        started_at: session.time ? new Date(`${sessionDate}T${session.time}:00`).toISOString() : null,
+        finished_at: null,
+        sourceJournalId,
+        sourceRequestId: requestId,
+        smartLog: true,
+        saved_at: serverTimestamp(),
+      });
+      return true;
+    });
+    if (inserted) created += 1;
   }
-  return sessions.length;
+  return created;
 }
 
 export async function applySmartRelax({ date, requestId, sourceJournalId, sessions = [] }) {
@@ -193,23 +201,18 @@ export async function applySmartRelax({ date, requestId, sourceJournalId, sessio
     const targetDate = session.date || date;
     groups.set(targetDate, [...(groups.get(targetDate) || []), { ...session, _smartIndex: index }]);
   });
+  let created = 0;
   for (const [targetDate, group] of groups) {
     const ref = doc(db, "relax", getUid(), "sessions", targetDate);
-    await runTransaction(db, async (transaction) => {
+    created += await runTransaction(db, async (transaction) => {
       const snapshot = await transaction.get(ref);
       const current = snapshot.exists() ? snapshot.data() || {} : {};
-      const items = Array.isArray(current.items) ? [...current.items] : [];
-      group.forEach((session) => {
-        const id = `smart_${requestId}_${session._smartIndex}`;
-        const item = { id, technique: session.technique, minutes: session.minutes, note: session.note, sourceJournalId, sourceRequestId: requestId };
-        const oldIndex = items.findIndex((entry) => entry?.id === id);
-        if (oldIndex < 0) items.push(item);
-        else items[oldIndex] = item;
-      });
-      transaction.set(ref, { ...current, date: targetDate, items, saved_at: serverTimestamp() }, { merge: true });
+      const merged = mergeSmartRelaxItems(current.items, group, { requestId, sourceJournalId });
+      if (merged.created) transaction.set(ref, { ...current, date: targetDate, items: merged.items, saved_at: serverTimestamp() }, { merge: true });
+      return merged.created;
     });
   }
-  return sessions.length;
+  return created;
 }
 
 export { getSupplementsHistory } from "../lib/db/firestore/supplements.js";

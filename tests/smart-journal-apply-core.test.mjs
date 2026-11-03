@@ -147,3 +147,14 @@ test('does not resume an unsupported or incomplete stored Smart Log payload', ()
   assert.equal(smartAnalysisForRetry({ text: 'Quelle' }), null);
   assert.equal(smartAnalysisForRetry({ text: 'Quelle', smartLog: { schemaVersion: 2, retryPayload: {} } }), null);
 });
+
+test('nutrition retry does not overwrite a meal enriched by the user', () => {
+  const input = { date: '2026-11-03', requestId: 'request_1234567890ab', journalId: sourceJournalId('request_1234567890ab'), meals: analysis().meals, water_ml: 0 };
+  const first = mergeSmartNutritionLog(null, input);
+  const changed = { ...first.data, meals: [{ ...first.data.meals[0], description: 'User correction', custom: 'keep' }] };
+  const retry = mergeSmartNutritionLog(changed, input);
+  assert.deepEqual(retry.data.meals, changed.meals);
+  assert.equal(retry.changed, false);
+  const conflicting = { ...changed, meals: [{ ...changed.meals[0], sourceRequestId: 'other' }] };
+  assert.throws(() => mergeSmartNutritionLog(conflicting, input), /smart_skill_record_id_conflict/);
+});

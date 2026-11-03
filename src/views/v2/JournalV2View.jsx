@@ -13,7 +13,8 @@ import { getJournal, getJournalRange, saveJournal, updateJournal, deleteJournal,
 import { MonthView, WeekView, YearView, rangeFor } from "./JournalV2Range.jsx";
 import HabitsView from "./JournalV2Habits.jsx";
 import { TimelineOverlay, useTimelineDrag, hhmm } from "./TimelineDrag.jsx";
-import { analyzeSmartJournal } from "../../lib/smartJournalLogger.js";
+import { analyzeSmartJournal, newSmartRequestId } from "../../lib/smartJournalLogger.js";
+import { browserStorage, clearSmartLogRequestId, readSmartLogRequestId, smartLogRequestKey, writeSmartLogRequestId } from "../../lib/smartLogRequestStore.js";
 import { applySmartAnalysis } from "../../lib/smartJournalApply.js";
 import { smartAnalysisForRetry } from "../../lib/smartJournalApplyCore.js";
 import { addHabit, getHabitsRange, setHabitArchived, updateHabit } from "./habitsDb.js";
@@ -28,6 +29,15 @@ import "./journal-v2.css";
 
 const HABIT_LIMIT = 5;
 const iso = (d) => format(d, "yyyy-MM-dd");
+
+function smartLogErrorText(error) {
+  const message = error?.message || "";
+  if (message.includes("smart_log_request_in_progress")) return "Diese Analyse läuft noch. Dein Entwurf bleibt gespeichert; bitte gleich erneut Analyse wählen.";
+  if (message.includes("smart_log_weekly_quota_reached")) return "Das Smart-Log-Wochenkontingent ist ausgeschöpft. Du kannst den Text ohne KI im Journal speichern.";
+  if (message.includes("smart_log_provider_not_configured")) return "Smart Logging ist gerade nicht verfügbar. Dein Entwurf bleibt erhalten und kann ohne KI gespeichert werden.";
+  if (message.includes("smart_log_failed")) return "Die Analyse ist fehlgeschlagen. Dein Entwurf bleibt erhalten; du kannst es erneut versuchen oder ohne KI speichern.";
+  return message || "Analyse fehlgeschlagen. Dein Entwurf bleibt erhalten.";
+}
 
 // Lokale Uhrzeit eines Eintrags in Minuten seit 0:00. `time` ist meist ein
 // ISO-String (UTC) — timeStr() aus v1 schneidet davon nur die UTC-Stunde ab.
@@ -77,6 +87,19 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const uid = user?.uid ?? null;
   // Eingabe-Entwurf (Journal/Smart Logger) übersteht Reload und Absturz; nach dem Speichern wird er geleert
   const [draft, setDraft] = usePersistedText(`${uid}:jv2:compose`);
+  const smartRequestKey = smartLogRequestKey(uid || "anonymous", date);
+  const [smartRequestId, setSmartRequestId] = useState(() => readSmartLogRequestId(browserStorage(), smartRequestKey));
+  useEffect(() => {
+    setSmartRequestId(readSmartLogRequestId(browserStorage(), smartRequestKey));
+  }, [smartRequestKey]);
+  const clearSmartRequest = () => {
+    clearSmartLogRequestId(browserStorage(), smartRequestKey);
+    setSmartRequestId("");
+  };
+  const changeDraft = (value) => {
+    clearSmartRequest();
+    setDraft(value);
+  };
 
   const entries = useQuery({
     queryKey: ["jv2-entries", uid, date],
@@ -164,7 +187,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const disconnect = () => google.disconnect();
   // Review: Termin als Journal-Eintrag beginnen (Tag +termin, Titel vorbelegt)
   const review = (ev) => {
-    setDraft(`+termin ${ev.title}: `);
+    changeDraft(`+termin ${ev.title}: `);
     inputRef.current?.focus();
   };
   const evList = events.data || [];
@@ -185,15 +208,20 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
 
   const analyze = async () => {
     if (!draft.trim() || busy) return;
+    const requestId = smartRequestId || newSmartRequestId();
+    if (!smartRequestId) {
+      setSmartRequestId(requestId);
+      writeSmartLogRequestId(browserStorage(), smartRequestKey, requestId);
+    }
     setBusy(true);
     setSmartMsg("");
     try {
       const { tags } = extractTags(draft);
-      setAnalysis(await analyzeSmartJournal({ text: draft, date, habits: allHabits, tags }));
+      setAnalysis(await analyzeSmartJournal({ text: draft, date, habits: allHabits, tags, requestId }));
       setPlannerPending([]);
     } catch (error) {
       console.error("Smart-Analyse fehlgeschlagen:", error);
-      setSmartMsg(error?.message === "vertex_ai_unavailable" ? "Vertex AI ist hier nicht verfügbar." : (error?.message || "Analyse fehlgeschlagen."));
+      setSmartMsg(error?.message === "vertex_ai_unavailable" ? "Vertex AI ist hier nicht verfügbar." : smartLogErrorText(error));
     } finally {
       setBusy(false);
     }
@@ -222,6 +250,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       setPlannerPending(res.planner_pending || []);
       if (!res.planner_pending?.length) setAnalysis(null);
       setDraft("");
+      clearSmartRequest();
       const parts = [res.journal && "Eintrag", res.meals && `${res.meals} Mahlzeit${res.meals > 1 ? "en" : ""}`, res.water_ml && `${res.water_ml} ml Wasser`, res.habits.length && `${res.habits.length} Habit${res.habits.length > 1 ? "s" : ""}`, res.fitness && `${res.fitness} Fitness-Session${res.fitness > 1 ? "s" : ""}`, res.relax && `${res.relax} Relax-Einheit${res.relax > 1 ? "en" : ""}`, res.planner && `${res.planner} Google-Kalendertermin${res.planner > 1 ? "e" : ""}`].filter(Boolean);
       setSmartMsg(res.planner_pending?.length
         ? `Übernommen: ${parts.join(", ")}. ${res.planner_pending.length} Kalender-Vorschlag${res.planner_pending.length > 1 ? "e brauchen" : " braucht"} noch Angaben oder eine Google-Berechtigung.`
@@ -263,6 +292,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     try {
       await saveJournal(date, text, { tags });
       setDraft("");
+      clearSmartRequest();
       setSmartMsg("Als normaler Journaleintrag gespeichert.");
       await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
     } catch (error) {
@@ -281,6 +311,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     try {
       await saveJournal(date, text, { tags });
       setDraft("");
+      clearSmartRequest();
       await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
     } catch (error) {
       console.error("Journal save failed:", error);
@@ -532,8 +563,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
               rows={3}
               placeholder="Dein Tag in eigenen Worten: 2 Eier und Kaffee, 2 l Wasser, 30 Min Lesen …"
               value={draft}
-              onChange={(e) => { setDraft(e.target.value); setAnalysis(null); setPlannerPending([]); }}
-              disabled={!uid}
+              onChange={(e) => { changeDraft(e.target.value); setAnalysis(null); setPlannerPending([]); }}
+              disabled={!uid || busy}
             />
           ) : (
             <input
@@ -542,8 +573,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
               aria-label="Neuer Eintrag"
               placeholder="Neuer Eintrag … (+tag)"
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              disabled={!uid}
+              onChange={(e) => changeDraft(e.target.value)}
+              disabled={!uid || busy}
             />
           )}
           <button type="submit" disabled={!uid || busy || !draft.trim()}>{smart ? (busy && !analysis ? "…" : "Analyse") : "Log"}</button>

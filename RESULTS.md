@@ -204,3 +204,9 @@ Enabled Dependabot alerts and security updates. Configured weekly GitHub Actions
 - Build-Prüfung war nicht möglich: pnpm scheiterte am schreibgeschützten Store-Lock; im Worktree gibt es kein lokales `node_modules/.bin/vite`.
 ## 2026-11-01 — Build-Versionen
 - **Build-Versionen:** Journal zeigt im Update-Dialog die Paketversion mit der gebauten Git-Revision statt dauerhaft `v0.1.1`; `pnpm release` startet den vorgesehenen `dev → master`-PR-Releaseweg statt lokal eine Patch-Version zu ändern und direkt zu deployen.
+
+## 2026-11-03 — Smart-Log-Retry und Google-Kalenderberechtigung
+- Smart-Log-Request-IDs bleiben für Nutzer und Journaldatum lokal gespeichert und werden bei Wiederholungen nach Reload wiederverwendet. Änderungen am Entwurf löschen die ID; erfolgreiche Übernahme und manuelles Speichern räumen sie auf. Der Server kann so gecachte Analyseergebnisse liefern, statt einen zweiten Gemini-Aufruf für denselben Entwurf zu starten.
+- Die Eingabe ist während einer laufenden Analyse gesperrt. Meldungen für laufende Requests, ausgeschöpftes Wochenkontingent und fehlende Provider-Konfiguration erklären, dass der Entwurf erhalten bleibt und ohne KI gespeichert werden kann.
+- Google-OAuth prüft `calendar.events.owned` jetzt neben Kalender-Lese- und Tasks-Scope serverseitig. Tokens ohne Kalenderschreibrecht werden beim Verbinden abgelehnt.
+- Verifiziert: `CI=true pnpm test` (135/135) und `CI=true pnpm run build:firebase` erfolgreich; `git diff --check` sauber. Kein Push, Release oder Deploy.

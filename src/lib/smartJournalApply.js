@@ -15,7 +15,9 @@ async function applyPlanner({ requestId, sourceJournalId, tasks }) {
       events.push({ title: task.title, date: task.date, time: task.time, htmlLink: event.htmlLink });
       created += 1;
     } catch (error) {
-      const reason = error?.status === 403 || /insufficient|scope/i.test(error?.message || "")
+      const reason = error?.message === "planner_event_content_conflict"
+        ? "google_calendar_event_conflict"
+        : error?.status === 403 || /insufficient|scope/i.test(error?.message || "")
         ? "google_calendar_permission_required"
         : ["google-expired", "google-offline"].includes(error?.message) ? error.message : "google_calendar_write_failed";
       pending.push({ task, reason });

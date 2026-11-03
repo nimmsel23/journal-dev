@@ -25,3 +25,21 @@ export async function smartCalendarEventId(requestId, index) {
   const hash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
   return `v${hash}`;
 }
+
+// Google can normalize a timed event's offset while preserving the instant.
+export function matchesSmartCalendarEvent(existing, expected) {
+  if (!existing || existing.status === 'cancelled') return false;
+  if (existing.summary !== expected.summary || (existing.description || '') !== (expected.description || '')) return false;
+  if (existing.visibility !== 'private') return false;
+  const actualSource = existing.extendedProperties?.private;
+  const expectedSource = expected.extendedProperties?.private;
+  if (actualSource?.sourceRequestId !== expectedSource?.sourceRequestId || actualSource?.sourceJournalId !== expectedSource?.sourceJournalId) return false;
+  const sameBoundary = (actual, wanted) => {
+    if (wanted?.date) return actual?.date === wanted.date && !actual?.dateTime;
+    if (!actual?.dateTime || !wanted?.dateTime) return false;
+    const actualTime = Date.parse(actual.dateTime);
+    const wantedTime = Date.parse(wanted.dateTime);
+    return Number.isFinite(actualTime) && actualTime === wantedTime;
+  };
+  return sameBoundary(existing.start, expected.start) && sameBoundary(existing.end, expected.end);
+}

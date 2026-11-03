@@ -1,5 +1,5 @@
 import { google } from "./auth.js";
-import { buildSmartCalendarEvent, smartCalendarEventId } from "./smartCalendarModel.js";
+import { buildSmartCalendarEvent, matchesSmartCalendarEvent, smartCalendarEventId } from "./smartCalendarModel.js";
 
 export { buildSmartCalendarEvent, smartCalendarEventId } from "./smartCalendarModel.js";
 
@@ -14,8 +14,8 @@ export async function createSmartCalendarEvent(task, { sourceJournalId, requestI
   if (response.status === 409) {
     const check = await google.authFetch(`${API}/calendars/primary/events/${encodeURIComponent(id)}`);
     const existing = await check.json().catch(() => ({}));
-    if (!check.ok || existing.extendedProperties?.private?.sourceRequestId !== requestId
-      || existing.extendedProperties?.private?.sourceJournalId !== sourceJournalId) throw new Error("planner_event_id_conflict");
+    if (!check.ok) throw new Error("planner_event_lookup_failed");
+    if (!matchesSmartCalendarEvent(existing, event)) throw new Error("planner_event_content_conflict");
     return { id, htmlLink: existing.htmlLink || null, existing: true };
   }
   const data = await response.json().catch(() => ({}));

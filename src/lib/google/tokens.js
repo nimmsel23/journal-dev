@@ -10,9 +10,9 @@
 //   "server" – dauerhaft. Eine Cloud Function (functions/google.js) hält den Refresh-Token
 //              (Firestore `googleTokens/{uid}`, vom Browser nicht lesbar) und liefert bei Bedarf
 //              einen frischen Access-Token. Der Browser sieht nie einen Refresh-Token.
-//   "popup"  – Rückfall, wenn die Function nicht eingerichtet ist: Firebase-Popup, Token ~1 h,
-//              danach „neu verbinden“. Das ist das bisherige Verhalten, nur mit Token im
-//              localStorage (übersteht Reload und PWA-Neustart innerhalb der Stunde).
+//   "popup"  – kurzlebiger Rückfall außerhalb des offiziellen VitalOS-Produktbuilds, wenn die
+//              Function nicht eingerichtet ist: Firebase-Popup, Token ~1 h, danach neu verbinden.
+//              Produktbuilds setzen allowPopupFallback=false und verlangen den Servermodus.
 //
 // Fehlermeldungen (Error.message), auf die die Oberfläche reagiert:
 //   "google-expired" – Verbindung ist weg (Refresh-Token widerrufen, 401 trotz frischem Token,
@@ -31,6 +31,7 @@ export const isCancel = (e) => CANCEL_CODES.includes(e?.code);
 /** Lesbarer Text für die Oberfläche. */
 export function googleErrorText(e) {
   switch (e?.message) {
+    case "google-not-configured": return "Die dauerhafte Google-Verbindung ist für dieses Produkt noch nicht eingerichtet.";
     case "google-expired": return "Google-Verbindung abgelaufen – bitte neu verbinden.";
     case "google-offline": return "Google gerade nicht erreichbar (offline?). Die Verbindung bleibt bestehen.";
     default: return e?.message || "Fehler";
@@ -50,7 +51,7 @@ const fail = (message, code) => Object.assign(new Error(message), code ? { code 
  *     unlink()     → void
  * @param {object} deps.popup    popup.connect() → {accessToken}
  */
-export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a) => fetch(...a), remote, popup }) {
+export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a) => fetch(...a), remote, popup, allowPopupFallback = true }) {
   let mem = {}; // Rückfall, falls der Speicher gesperrt ist (privates Fenster): hält wenigstens die Sitzung
   const listeners = new Set();
   let inflight = null;
@@ -83,7 +84,7 @@ export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a)
   /** server: dauerhaft verbunden; popup: nur, solange der Token noch gilt. */
   const connected = () => {
     const m = mode();
-    return m === "server" || (m === "popup" && !!cached());
+    return m === "server" || (allowPopupFallback && m === "popup" && !!cached());
   };
   /** Stabiler Wert für useSyncExternalStore: "server" | "popup" | "off". */
   const snapshot = () => (connected() ? mode() : "off");
@@ -104,11 +105,15 @@ export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a)
 
   /** Gültiger Access-Token; mehrere gleichzeitige Aufrufe teilen sich eine Erneuerung. */
   async function getToken({ force = false } = {}) {
+    const m = mode();
+    if (m === "popup" && !allowPopupFallback) {
+      clear();
+      throw fail("google-not-configured");
+    }
     if (!force) {
       const t = cached();
       if (t) return t;
     }
-    const m = mode();
     if (m === "server") {
       inflight ??= refresh().finally(() => { inflight = null; });
       return inflight;
@@ -135,6 +140,7 @@ export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a)
       res = await remote.link();
     } catch (e) {
       if (e?.code !== "unavailable") throw e;
+      if (!allowPopupFallback) throw fail("google-not-configured");
       viaServer = false;
     }
     if (viaServer) {

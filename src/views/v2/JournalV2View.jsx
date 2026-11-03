@@ -59,7 +59,7 @@ function splitEntry(text) {
 const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["jahr", "Jahr"]];
 const LINKS = [["#door2", "Door"], ["#game2/focus", "Focus"], ["#game2", "Game"]];
 
-export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice }) {
+export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice, startSmart = false }) {
   const qc = useQueryClient();
   // Vollbild: Seitenhintergrund + Statusleiste papierfarben, solange v2 offen ist
   useEffect(() => {
@@ -79,6 +79,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const [grain, setGrain] = useSetting("jv2:grain", 30, (v) => ([60, 30, 15].includes(Number(v)) ? Number(v) : undefined));
   // Smart Logger: Freitext → Vertex-Analyse → Vorschau → Übernehmen (Journal, Mahlzeiten, Wasser, Habits)
   const [smart, setSmart] = useSetting("jv2:smart", false, asBool);
+  useEffect(() => { if (startSmart) setSmart(true); }, [startSmart, setSmart]);
   const [analysis, setAnalysis] = useState(null);
   const [plannerPending, setPlannerPending] = useState([]);
   const [smartMsg, setSmartMsg] = useState("");

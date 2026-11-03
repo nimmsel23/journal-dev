@@ -33,6 +33,11 @@ test("uses ISO weeks in Vienna, including year boundaries", () => {
   assert.equal(weekKey(new Date("2027-01-04T12:00:00Z")), "2027-W01");
 });
 
+test("quota week rolls over at Monday midnight in Vienna, not UTC", () => {
+  assert.equal(weekKey(new Date("2026-11-01T22:59:59Z")), "2026-W44");
+  assert.equal(weekKey(new Date("2026-11-01T23:00:00Z")), "2026-W45");
+});
+
 test("successful requests consume one quota unit and replay from cache", async () => {
   const db = fakeDb();
   let providerCalls = 0;

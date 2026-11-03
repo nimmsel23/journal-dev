@@ -83,7 +83,21 @@ function App() {
     }
   };
 
-  const tabCtx = { user, date, setDate, mode, setMode };
+  const startVoiceFromJournal = (entry) => {
+    try {
+      const sessionId = globalThis.crypto?.randomUUID?.() || `voice_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+      window.sessionStorage.setItem("vos:voice:context:v1", JSON.stringify({
+        sessionId,
+        sourceJournalId: String(entry.id),
+        sourceDate: String(entry.date),
+        sourceText: String(entry.text || "").slice(0, 12000),
+      }));
+    } catch (error) {
+      console.warn("Voice-Kontext konnte nicht lokal bereitgestellt werden:", error?.message || error);
+    }
+    navigate({ tab: "voice-v2" });
+  };
+  const tabCtx = { user, date, setDate, mode, setMode, startVoiceFromJournal };
 
   // "bare"-Tabs (z.B. Journal v2) bringen ihr eigenes Layout mit: kein App-Header.
   if (activeTabConfig?.bare) {

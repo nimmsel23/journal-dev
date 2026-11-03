@@ -8,11 +8,24 @@ import { VOICE_STAGES } from "./voiceData.js";
 import PauseViz, { VIZ } from "./PauseViz.jsx";
 import { asBool, readSetting, useSetting, writeSetting } from "../../lib/useSetting.js";
 import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
+import { createSmartCalendarEvent } from "../../lib/google/smartCalendar.js";
+import { useGoogle } from "../../lib/google/useGoogle.js";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
 const key = (stage, suffix = "") => `gv2:voice:${today()}:${stage}${suffix}`;
 const read = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+function newSessionId() {
+  return globalThis.crypto?.randomUUID?.() || `voice_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+function readVoiceContext() {
+  try {
+    const value = JSON.parse(window.sessionStorage.getItem("vos:voice:context:v1") || "null");
+    if (!value || typeof value.sessionId !== "string" || typeof value.sourceJournalId !== "string"
+        || typeof value.sourceDate !== "string" || typeof value.sourceText !== "string") return null;
+    return value;
+  } catch { return null; }
+}
 
 function answerText(step, a) {
   if (step.kind === "pause") return a ? `✓ (${step.seconds}s)` : "—";
@@ -106,31 +119,100 @@ function PauseStep({ s, label, value, onChange }) {
   );
 }
 
+function StrikeFollowUp({ answers, sessionId }) {
+  const google = useGoogle({ prepare: false });
+  const [date, setDate] = useState(today());
+  const [time, setTime] = useState("");
+  const [duration, setDuration] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [event, setEvent] = useState(null);
+  const [error, setError] = useState("");
+
+  const schedule = async () => {
+    if (!answers.first_step?.trim() || !date || (time && (!duration || Number(duration) < 1))) return;
+    setBusy(true); setError("");
+    try {
+      const sourceJournalId = `voice_${sessionId}_strike`;
+      const result = await createSmartCalendarEvent({
+        title: answers.first_step.trim(),
+        date,
+        time: time || null,
+        duration_minutes: time ? Number(duration) : null,
+        notes: `Gewählt in The Voice (Strike).\nNächster Schritt: ${answers.action || answers.first_step}`,
+      }, { sourceJournalId, requestId: `voice_${sessionId}`, index: 0 });
+      setEvent(result);
+    } catch (cause) {
+      setError(cause?.message || "Der Planner-Eintrag konnte nicht angelegt werden.");
+    } finally { setBusy(false); }
+  };
+
+  return <aside className="gv2-step" aria-label="Strike-Folgehandlung planen">
+    <b className="gv2-q">Diesen Strike-Schritt in den Planner übernehmen?</b>
+    <p className="gv2-hint">{answers.first_step}</p>
+    <label className="gv2-step">Datum<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+    <label className="gv2-step">Uhrzeit (optional)<input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></label>
+    {time && <label className="gv2-step">Dauer (Minuten)<input type="number" min="1" max="1440" value={duration} onChange={(e) => setDuration(e.target.value)} /></label>}
+    {!google.connected && <button type="button" className="dv2-pick" disabled={google.busy} onClick={() => google.connect()}>{google.busy ? "Verbinde …" : "Google Kalender verbinden"}</button>}
+    {(error || google.error) && <p role="alert" className="dv2-none">{error || google.error}</p>}
+    <button type="button" className="dv2-pick" disabled={busy || !google.connected || !date || (time && !duration)} onClick={schedule}>{busy ? "Plane …" : event ? "Kalendereintrag erneut öffnen / prüfen" : "In Google Kalender planen"}</button>
+    {event?.htmlLink && <a href={event.htmlLink} target="_blank" rel="noreferrer">Termin öffnen ↗</a>}
+    {event?.existing && <small>Der idempotente Termineintrag war bereits vorhanden.</small>}
+  </aside>;
+}
+
 export default function VoicePanel({ user }) {
   const [idx, setIdx] = useState(0);
   const stage = VOICE_STAGES[idx];
-  const [answers, setAnswers] = useState(() => read(key(stage.key), {}));
-  const [saved, setSaved] = useState(() => Object.fromEntries(VOICE_STAGES.map((s) => [s.key, read(key(s.key, ":saved"), false)])));
+  const [voiceContext, setVoiceContext] = useState(readVoiceContext);
+  const [sessionId] = useState(() => {
+    const existing = voiceContext?.sessionId || read(key("session", "-id"), "");
+    if (existing) return existing;
+    const created = newSessionId();
+    write(key("session", "-id"), created);
+    return created;
+  });
+  const sessionKey = (phase, suffix = "") => `gv2:voice:${today()}:${sessionId}:${phase}${suffix}`;
+  const [answers, setAnswers] = useState(() => read(sessionKey(stage.key), voiceContext ? {} : read(key(stage.key), {})));
+  const [saved, setSaved] = useState(() => Object.fromEntries(VOICE_STAGES.map((s) => [s.key, read(sessionKey(s.key, ":saved"), voiceContext ? false : read(key(s.key, ":saved"), false))])));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  useEffect(() => { setAnswers(read(key(stage.key), {})); setErr(""); }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
-  const set = (k, v) => setAnswers((a) => { const n = { ...a, [k]: v }; write(key(stage.key), n); return n; });
+  useEffect(() => { setAnswers(read(sessionKey(stage.key), voiceContext ? {} : read(key(stage.key), {}))); setErr(""); }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
+  const set = (k, v) => setAnswers((a) => { const n = { ...a, [k]: v }; write(sessionKey(stage.key), n); return n; });
   const missing = stage.steps.filter((s) => s.required && s.kind !== "pause" && (answers[s.key] == null || answers[s.key] === "" || (Array.isArray(answers[s.key]) && !answers[s.key].length)));
 
   const save = async () => {
     setBusy(true); setErr("");
     try {
-      await saveJournal(today(), stageMarkdown(stage, answers).trim(), { tags: ["voice", stage.key] });
-      write(key(stage.key, ":saved"), true);
+      const voiceSession = voiceContext ? {
+        sessionId,
+        stage: stage.key,
+        sourceJournalId: voiceContext.sourceJournalId,
+        sourceDate: voiceContext.sourceDate,
+      } : { sessionId, stage: stage.key };
+      await saveJournal(today(), stageMarkdown(stage, answers).trim(), {
+        id: `voice_${sessionId}_${stage.key}`,
+        tags: ["voice", stage.key],
+        voiceSession,
+      });
+      write(sessionKey(stage.key, ":saved"), true);
       setSaved((s) => ({ ...s, [stage.key]: true }));
       if (idx < VOICE_STAGES.length - 1) setIdx(idx + 1);
+      else if (voiceContext) {
+        try { window.sessionStorage.removeItem("vos:voice:context:v1"); } catch {}
+        setVoiceContext(null);
+      }
     } catch (e) { setErr(e?.message || "Speichern fehlgeschlagen"); }
     setBusy(false);
   };
 
   return (
     <>
+      {voiceContext && <aside className="gv2-step" aria-label="Auslösender Journaleintrag">
+        <b className="gv2-q">Aus deinem Journal · {voiceContext.sourceDate}</b>
+        <blockquote className="gv2-epi">{voiceContext.sourceText}</blockquote>
+        <small className="gv2-hint">Diese Voice-Session bleibt über ihre Journal-Metadaten mit diesem Eintrag verknüpft.</small>
+      </aside>}
       <div className="dv2-modes" role="tablist" aria-label="Phase">
         {VOICE_STAGES.map((s, i) => (
           <button key={s.key} type="button" role="tab" aria-selected={i === idx} onClick={() => setIdx(i)}>{saved[s.key] ? "✓ " : ""}{s.key}</button>
@@ -152,6 +234,7 @@ export default function VoicePanel({ user }) {
         </button>
         {missing.length > 0 && <span className="dv2-none">Noch offen: {missing.length}</span>}
       </div>
+      {stage.key === "strike" && saved.strike && <StrikeFollowUp answers={answers} sessionId={sessionId} />}
     </>
   );
 }

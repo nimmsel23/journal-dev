@@ -139,7 +139,7 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
   const userId = await uid();
   const content = opts.preserveText ? String(text ?? "") : String(text || "").trim();
   const time = new Date().toISOString();
-  const { tags = [], startDate, endDate, smartLog } = opts;
+  const { tags = [], startDate, endDate, smartLog, voiceSession } = opts;
   const docData = {
     date,
     text: content,
@@ -150,6 +150,7 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
   if (startDate) docData.startDate = startDate;
   if (endDate) docData.endDate = endDate;
   if (smartLog) docData.smartLog = smartLog;
+  if (voiceSession) docData.voiceSession = voiceSession;
   // Offline-first: lokal sofort fertig, der Server-Abgleich läuft im Hintergrund (`synced` löst nach Bestätigung auf).
   const ref = opts.id ? doc(journalCol(userId), String(opts.id)) : doc(journalCol(userId));
   const synced = track(opts.id ? setDoc(ref, docData, { merge: true }) : setDoc(ref, docData));
@@ -160,7 +161,7 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
 
 export async function updateJournal(id, text, opts = {}) {
   const userId = await uid();
-  const { startDate, endDate, tags, smartLog } = opts;
+  const { startDate, endDate, tags, smartLog, voiceSession } = opts;
   const content = opts.preserveText ? String(text ?? "") : String(text || "").trim();
   const patch = { text: content, updated_at: serverTimestamp() };
   // Alt-Doc (Doc-ID = Datum): date-Feld nachziehen, damit where("date")-Queries es finden
@@ -169,6 +170,7 @@ export async function updateJournal(id, text, opts = {}) {
   patch.endDate = endDate || null;
   if (tags) patch.tags = tags;
   if (smartLog) patch.smartLog = smartLog;
+  if (voiceSession) patch.voiceSession = voiceSession;
   const synced = track(setDoc(doc(journalCol(userId), id), patch, { merge: true }));
   if (tags) { void hotToPotential(userId, id, content, tags); void profitReview(userId, id, content, tags); }
   return { ok: true, id, text: content, startDate, endDate, tags, synced };

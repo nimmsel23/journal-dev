@@ -59,7 +59,7 @@ function splitEntry(text) {
 const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["jahr", "Jahr"]];
 const LINKS = [["#door2", "Door"], ["#game2/focus", "Focus"], ["#game2", "Game"]];
 
-export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal }) {
+export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice }) {
   const qc = useQueryClient();
   // Vollbild: Seitenhintergrund + Statusleiste papierfarben, solange v2 offen ist
   useEffect(() => {
@@ -515,6 +515,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
                     {e.smartLog?.applied?.planner_suggestions?.length > 0 && <div className="jv2-smart-archived"><b>Google-Kalender-Vorschläge</b>{e.smartLog.applied.planner_suggestions.map((task, index) => { const event = e.smartLog.applied.planner_events?.find((created) => created.title === task.title && created.date === task.date); return <p key={`${e.id}-planner-${index}`}>{task.date || "Datum offen"}{task.time ? ` · ${task.time}` : ""} · {task.title}{event?.htmlLink ? <> · <a href={event.htmlLink} target="_blank" rel="noreferrer">Kalender öffnen ↗</a></> : null}</p>; })}</div>}
                     {e.smartLog?.status && e.smartLog.status !== "applied" && <div className="jv2-smart-archived"><small>Smart Log: {e.smartLog.status === "partial" ? "teilweise übernommen" : "Übernahme wurde unterbrochen"}</small>{smartAnalysisForRetry(e) && <button type="button" className="jv2-link" disabled={busy} onClick={() => resumeSmartEntry(e)}>Offene Schritte erneut übernehmen</button>}</div>}
                     {tags.map((t) => <span key={t} className="jv2-tag">{t}</span>)}
+                    {onStartVoice && <div><button type="button" className="jv2-review" onClick={() => onStartVoice({ id: e.id, date: e.date || date, text: e.text })}>Mit The Voice reflektieren →</button></div>}
                   </div>
                   <button type="button" className="jv2-editbtn" aria-label="Eintrag bearbeiten" onClick={() => startEdit(e)}>✎</button>
                   <button type="button" className="jv2-del" aria-label="Eintrag löschen" onClick={() => remove(e.id)}>×</button>

@@ -16,6 +16,7 @@ function fakeDb() {
     set: (document, value, options = {}) => docs.set(document.path, options.merge ? { ...(docs.get(document.path) || {}), ...value } : value),
   });
   root.peek = (path) => docs.get(path);
+  root.seed = (path, value) => docs.set(path, value);
   return root;
 }
 
@@ -83,4 +84,18 @@ test("unknown provider results stay locked and are never sent to Gemini twice", 
     (error) => error.code === "resource-exhausted" && error.message === "smart_log_weekly_quota_reached",
   );
   assert.equal(providerCalls, 1);
+});
+
+test("an orphaned processing reservation from a hard abort stays locked", async () => {
+  const db = fakeDb();
+  db.seed("smartLoggingRequests/u5/requests/1234567890abcdef", { status: "processing", week: "2026-W45" });
+  db.seed("smartLoggingQuotas/u5/weeks/2026-W45", { used: 0, reserved: 1 });
+  let providerCalls = 0;
+  await assert.rejects(
+    analyze({ db, uid: "u5", data: baseInput, apiKey: "test", now: new Date("2026-11-03T12:00:00Z"),
+      fetchImpl: async () => { providerCalls += 1; return { ok: true, json: async () => response }; } }),
+    (error) => error.code === "aborted" && error.message === "smart_log_request_locked",
+  );
+  assert.equal(providerCalls, 0);
+  assert.equal(db.peek("smartLoggingQuotas/u5/weeks/2026-W45").reserved, 1);
 });

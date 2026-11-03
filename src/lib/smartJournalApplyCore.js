@@ -122,6 +122,16 @@ export function sourceJournalId(requestId) {
   return `smart_${requestId}`;
 }
 
+export function smartAnalysisForRetry(entry) {
+  const payload = entry?.smartLog?.retryPayload;
+  if (entry?.smartLog?.schemaVersion !== 1 || !payload || !entry?.text) return null;
+  return {
+    ...payload,
+    original_text: entry.text,
+    source_tags: (entry.tags || []).filter((tag) => tag !== "smart-log"),
+  };
+}
+
 export function mergeSmartNutritionLog(currentValue, { date, requestId, journalId, meals = [], water_ml = 0 }) {
   const current = currentValue || { date, meals: [], water_ml: 0 };
   const existing = Array.isArray(current.meals) ? current.meals : [];
@@ -184,13 +194,14 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, applyNut
     const journalId = sourceJournalId(data.request_id);
     const tags = [...new Set([...data.source_tags, "smart-log"])];
     const summary = data.journal_entry;
+    const { original_text, source_tags, ...retryPayload } = data;
     const result = { request_id: data.request_id, sourceJournalId: journalId, journal: true, meals: 0, water_ml: 0, habits: [], fitness: 0, relax: 0, planner: 0, planner_pending: [], planner_events: [], planner_suggestions: data.planner_tasks, unmatched: [] };
 
     await saveJournal(date, data.original_text, {
       id: journalId,
       preserveText: true,
       tags,
-      smartLog: { requestId: data.request_id, status: "applying", summary, updatedAt: now() },
+      smartLog: { schemaVersion: 1, requestId: data.request_id, status: "applying", summary, retryPayload, updatedAt: now() },
     });
 
     try {
@@ -236,7 +247,7 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, applyNut
       await updateJournal(journalId, data.original_text, {
         preserveText: true,
         tags,
-        smartLog: { requestId: data.request_id, status, summary, applied: result, updatedAt: now() },
+        smartLog: { schemaVersion: 1, requestId: data.request_id, status, summary, ...(status === "partial" ? { retryPayload } : {}), applied: result, updatedAt: now() },
       });
       return result;
     } catch (error) {
@@ -244,7 +255,7 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, applyNut
         await updateJournal(journalId, data.original_text, {
           preserveText: true,
           tags,
-          smartLog: { requestId: data.request_id, status: "partial", summary, applied: result, updatedAt: now() },
+          smartLog: { schemaVersion: 1, requestId: data.request_id, status: "partial", summary, retryPayload, applied: result, updatedAt: now() },
         });
       } catch (statusError) {
         console.error("Smart-Log-Status konnte nicht aktualisiert werden:", statusError);

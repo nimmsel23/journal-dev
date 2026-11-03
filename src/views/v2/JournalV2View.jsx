@@ -15,6 +15,7 @@ import HabitsView from "./JournalV2Habits.jsx";
 import { TimelineOverlay, useTimelineDrag, hhmm } from "./TimelineDrag.jsx";
 import { analyzeSmartJournal } from "../../lib/smartJournalLogger.js";
 import { applySmartAnalysis } from "../../lib/smartJournalApply.js";
+import { smartAnalysisForRetry } from "../../lib/smartJournalApplyCore.js";
 import { addHabit, getHabitsRange, setHabitArchived, updateHabit } from "./habitsDb.js";
 import { extractTags, timeStr } from "../../components/Journal/journalUtils";
 import { asBool, useSetting } from "../../lib/useSetting.js";
@@ -230,6 +231,26 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     } catch (error) {
       console.error("Smart-Übernahme fehlgeschlagen:", error);
       setSmartMsg(error?.message || "Übernahme fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resumeSmartEntry = async (entry) => {
+    const retryAnalysis = smartAnalysisForRetry(entry);
+    if (!retryAnalysis || busy) return;
+    setBusy(true);
+    setSmartMsg("");
+    try {
+      const res = await applySmartAnalysis({ date: entry.date, analysis: retryAnalysis, habits: allHabits });
+      setSmartMsg(res.planner_pending?.length
+        ? `Eintrag erneut verarbeitet. ${res.planner_pending.length} Kalender-Vorschlag${res.planner_pending.length > 1 ? "e bleiben" : " bleibt"} noch offen.`
+        : "Offene Smart-Log-Schritte wurden übernommen.");
+      await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
+      await qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
+    } catch (error) {
+      setSmartMsg(error?.message || "Erneute Übernahme fehlgeschlagen. Der Journaleintrag bleibt erhalten.");
+      await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
     } finally {
       setBusy(false);
     }
@@ -459,6 +480,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
                     {title && <h3>{title}</h3>}
                     {body && <p>{body}</p>}
                     {e.smartLog?.applied?.planner_suggestions?.length > 0 && <div className="jv2-smart-archived"><b>Google-Kalender-Vorschläge</b>{e.smartLog.applied.planner_suggestions.map((task, index) => { const event = e.smartLog.applied.planner_events?.find((created) => created.title === task.title && created.date === task.date); return <p key={`${e.id}-planner-${index}`}>{task.date || "Datum offen"}{task.time ? ` · ${task.time}` : ""} · {task.title}{event?.htmlLink ? <> · <a href={event.htmlLink} target="_blank" rel="noreferrer">Kalender öffnen ↗</a></> : null}</p>; })}</div>}
+                    {e.smartLog?.status && e.smartLog.status !== "applied" && <div className="jv2-smart-archived"><small>Smart Log: {e.smartLog.status === "partial" ? "teilweise übernommen" : "Übernahme wurde unterbrochen"}</small>{smartAnalysisForRetry(e) && <button type="button" className="jv2-link" disabled={busy} onClick={() => resumeSmartEntry(e)}>Offene Schritte erneut übernehmen</button>}</div>}
                     {tags.map((t) => <span key={t} className="jv2-tag">{t}</span>)}
                   </div>
                   <button type="button" className="jv2-editbtn" aria-label="Eintrag bearbeiten" onClick={() => startEdit(e)}>✎</button>

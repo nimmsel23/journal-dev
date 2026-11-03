@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createSmartJournalApplier,
   mergeSmartNutritionLog,
+  smartAnalysisForRetry,
   sourceJournalId,
   validateSmartAnalysis,
 } from '../src/lib/smartJournalApplyCore.js';
@@ -132,4 +133,17 @@ test('partial skill failure leaves the source journal and records partial status
   assert.equal(saved.length, 1);
   assert.equal(saved[0][1], analysis().original_text);
   assert.equal(updates.at(-1)[2].smartLog.status, 'partial');
+  const retryAnalysis = smartAnalysisForRetry({
+    text: analysis().original_text,
+    tags: ['body', 'smart-log'],
+    smartLog: updates.at(-1)[2].smartLog,
+  });
+  assert.equal(retryAnalysis.original_text, analysis().original_text);
+  assert.deepEqual(retryAnalysis.source_tags, ['body']);
+  assert.deepEqual(retryAnalysis.meals, validateSmartAnalysis(analysis()).meals);
+});
+
+test('does not resume an unsupported or incomplete stored Smart Log payload', () => {
+  assert.equal(smartAnalysisForRetry({ text: 'Quelle' }), null);
+  assert.equal(smartAnalysisForRetry({ text: 'Quelle', smartLog: { schemaVersion: 2, retryPayload: {} } }), null);
 });

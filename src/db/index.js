@@ -1,9 +1,10 @@
 // Journal-owned database facade. No sibling repositories are required.
-import { collection, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDocs, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc, where } from "firebase/firestore";
 
 import { db } from "../lib/firebase.js";
 import { getUid, localToday } from "../lib/db/core.js";
 import { track } from "../lib/offline.js";
+import { mergeSmartNutritionLog } from "../lib/smartJournalApplyCore.js";
 export { deleteJournal } from "../lib/db/journal.js";
 
 export * from "../lib/db/core.js";
@@ -101,14 +102,17 @@ export async function getHabitRecordsForDate(date = localToday()) {
 
 // Habit-Records: lokal sofort fertig, Abgleich im Hintergrund (track) – nie auf die Server-Bestätigung warten,
 // sonst hängt das Abhaken offline ewig.
-export async function recordHabit(uuid, date = localToday()) {
+export async function recordHabit(uuid, date = localToday(), provenance = {}) {
   const ref = doc(db, "fitness", getUid(), "habitRecords", `${uuid}_${date}`);
-  track(setDoc(ref, {
+  const record = {
     habitId: uuid,
     date,
     completion: "DONE",
     recorded_at: serverTimestamp(),
-  }));
+  };
+  if (provenance.sourceJournalId) record.sourceJournalId = provenance.sourceJournalId;
+  if (provenance.requestId) record.sourceRequestId = provenance.requestId;
+  track(setDoc(ref, record, { merge: true }));
   return { ok: true };
 }
 
@@ -130,6 +134,23 @@ export {
   getNutritionNotesHistory,
   saveNutritionLog,
 } from "../lib/db/firestore/nutrition.js";
+
+// A single Smart-Log apply may be retried after a partial failure. Stable meal
+// IDs plus a Firestore transaction make the nutrition write idempotent.
+export async function applySmartNutrition({ date, requestId, sourceJournalId, meals = [], water_ml = 0 }) {
+  const ref = doc(db, "nutrition", getUid(), "logs", date);
+  return runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const merged = mergeSmartNutritionLog(snapshot.exists() ? snapshot.data() : null, { date, requestId, journalId: sourceJournalId, meals, water_ml });
+    if (merged.changed) {
+      transaction.set(ref, {
+        ...merged.data,
+        updated_at: serverTimestamp(),
+      }, { merge: true });
+    }
+    return merged.applied;
+  });
+}
 
 export { getSupplementsHistory } from "../lib/db/firestore/supplements.js";
 

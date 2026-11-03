@@ -137,9 +137,9 @@ export async function getJournalHistory(limitCount = 50) {
 
 export async function saveJournal(date = localToday(), text, opts = {}) {
   const userId = await uid();
-  const content = String(text || "").trim();
+  const content = opts.preserveText ? String(text ?? "") : String(text || "").trim();
   const time = new Date().toISOString();
-  const { tags = [], startDate, endDate } = opts;
+  const { tags = [], startDate, endDate, smartLog } = opts;
   const docData = {
     date,
     text: content,
@@ -149,9 +149,10 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
   };
   if (startDate) docData.startDate = startDate;
   if (endDate) docData.endDate = endDate;
+  if (smartLog) docData.smartLog = smartLog;
   // Offline-first: lokal sofort fertig, der Server-Abgleich läuft im Hintergrund (`synced` löst nach Bestätigung auf).
-  const ref = doc(journalCol(userId));
-  const synced = track(setDoc(ref, docData));
+  const ref = opts.id ? doc(journalCol(userId), String(opts.id)) : doc(journalCol(userId));
+  const synced = track(opts.id ? setDoc(ref, docData, { merge: true }) : setDoc(ref, docData));
   void hotToPotential(userId, ref.id, content, tags);
   void profitReview(userId, ref.id, content, tags, date);
   return { id: ref.id, date, text: content, time, startDate, endDate, synced };
@@ -159,14 +160,15 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
 
 export async function updateJournal(id, text, opts = {}) {
   const userId = await uid();
-  const content = String(text || "").trim();
-  const { startDate, endDate, tags } = opts;
+  const { startDate, endDate, tags, smartLog } = opts;
+  const content = opts.preserveText ? String(text ?? "") : String(text || "").trim();
   const patch = { text: content, updated_at: serverTimestamp() };
   // Alt-Doc (Doc-ID = Datum): date-Feld nachziehen, damit where("date")-Queries es finden
   if (DATE_ID.test(id)) patch.date = id;
   patch.startDate = startDate || null;
   patch.endDate = endDate || null;
   if (tags) patch.tags = tags;
+  if (smartLog) patch.smartLog = smartLog;
   const synced = track(setDoc(doc(journalCol(userId), id), patch, { merge: true }));
   if (tags) { void hotToPotential(userId, id, content, tags); void profitReview(userId, id, content, tags); }
   return { ok: true, id, text: content, startDate, endDate, tags, synced };

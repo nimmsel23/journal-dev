@@ -274,10 +274,31 @@
 .jv2-sact button.ghost { background: var(--p); color: var(--ink); border-left: 2px solid var(--ink); }
 .jv2-sact button:disabled { opacity: .5; cursor: default; }
 .jv2-sact button:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.jv2-smart-field, .jv2-smart-meal, .jv2-smart-habit { display: grid; gap: 8px; padding: 12px; border: 0; border-bottom: 1px solid var(--ink); margin: 0; font-size: 13px; }
+.jv2-smart-field { grid-template-columns: 140px 1fr auto; align-items: center; }
+.jv2-smart-field > b, .jv2-smart-meal legend, .jv2-smart-habit b { font-family: var(--mono); font-size: 10px; font-weight: 600; text-transform: uppercase; }
+.jv2-smart-field textarea, .jv2-smart-field input, .jv2-smart-meal input, .jv2-smart-meal select, .jv2-smart-habit input {
+  min-width: 0; width: 100%; border: 1px solid var(--ink); border-radius: 0; background: var(--soft); color: var(--ink); padding: 7px; font: inherit;
+}
+.jv2-smart-meal { grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+.jv2-smart-meal legend { padding: 0 5px; }
+.jv2-smart-meal > label, .jv2-smart-macros > label, .jv2-smart-habit label { display: grid; gap: 4px; font-size: 11px; }
+.jv2-smart-macros { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.jv2-smart-macros span { display: flex; align-items: center; gap: 4px; font-size: 10px; }
+.jv2-smart-macros span input { width: auto; }
+.jv2-smart-habit { grid-template-columns: 1fr 1fr auto; align-items: end; }
+.jv2-smart-habit label { min-width: 0; }
+.jv2-smart-habit small { color: #934b00; font-size: 11px; }
+.jv2-smart-remove { border: 1px solid var(--ink); background: transparent; color: var(--ink); padding: 7px; font-size: 11px; }
+.jv2-smart input:focus-visible, .jv2-smart select:focus-visible, .jv2-smart textarea:focus-visible { outline: 3px solid var(--sig); outline-offset: 1px; }
 @media (min-width: 700px) {
   .jv2-compose .jv2-smarttoggle { width: 64px; font-size: 24px; }
   .jv2-compose textarea { padding: 20px 22px; font-size: 17px; }
   .jv2-sline { grid-template-columns: 110px 1fr; font-size: 16px; padding: 12px 22px; }
+}
+@media (max-width: 560px) {
+  .jv2-smart-field, .jv2-smart-habit { grid-template-columns: 1fr; }
+  .jv2-smart-macros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* ── Versteckte Timeline (erscheint nur beim Ziehen der Uhrzeit) ── */

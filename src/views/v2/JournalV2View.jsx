@@ -185,7 +185,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     setBusy(true);
     setSmartMsg("");
     try {
-      setAnalysis(await analyzeSmartJournal({ text: draft.trim(), habits: allHabits }));
+      const { tags } = extractTags(draft);
+      setAnalysis(await analyzeSmartJournal({ text: draft, habits: allHabits, tags }));
     } catch (error) {
       console.error("Smart-Analyse fehlgeschlagen:", error);
       setSmartMsg(error?.message === "vertex_ai_unavailable" ? "Vertex AI ist hier nicht verfügbar." : (error?.message || "Analyse fehlgeschlagen."));
@@ -193,6 +194,16 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       setBusy(false);
     }
   };
+
+  const editAnalysis = (patch) => setAnalysis((current) => current && ({ ...current, ...patch }));
+  const editMeal = (index, patch) => setAnalysis((current) => current && ({
+    ...current,
+    meals: current.meals.map((meal, i) => i === index ? { ...meal, ...patch } : meal),
+  }));
+  const editAnalysisHabit = (index, patch) => setAnalysis((current) => current && ({
+    ...current,
+    habits_done: current.habits_done.map((habit, i) => i === index ? { ...habit, ...patch } : habit),
+  }));
 
   const applyAnalysis = async () => {
     if (!analysis || busy) return;
@@ -209,6 +220,22 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     } catch (error) {
       console.error("Smart-Übernahme fehlgeschlagen:", error);
       setSmartMsg(error?.message || "Übernahme fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveDraftWithoutAI = async () => {
+    const { text, tags } = extractTags(draft);
+    if (!text || !uid || busy) return;
+    setBusy(true);
+    try {
+      await saveJournal(date, text, { tags });
+      setDraft("");
+      setSmartMsg("Als normaler Journaleintrag gespeichert.");
+      await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
+    } catch (error) {
+      setSmartMsg(error?.message || "Journaleintrag konnte nicht gespeichert werden.");
     } finally {
       setBusy(false);
     }
@@ -433,15 +460,21 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
 
         {smart && analysis && (
           <div className="jv2-smart" aria-label="Vorschau der Analyse">
-            <h4>Vorschau</h4>
-            <p className="jv2-sline"><b>Eintrag</b>{analysis.journal_entry || "—"}</p>
-            {analysis.meals.map((m, i) => (
-              <p className="jv2-sline" key={i}><b>{m.type}</b>{m.description} · {Math.round(m.kcal)} kcal · P{Math.round(m.protein)} K{Math.round(m.carbs)} F{Math.round(m.fat)}</p>
-            ))}
-            {analysis.water_ml > 0 && <p className="jv2-sline"><b>Wasser</b>{analysis.water_ml} ml</p>}
+            <h4>Vorschau · vor dem Speichern korrigieren</h4>
+            <p className="jv2-sline"><b>Original</b>{analysis.original_text}</p>
+            {analysis.journal_entry && <label className="jv2-smart-field"><b>Journal-Zusammenfassung</b><textarea rows={2} value={analysis.journal_entry} onChange={(event) => editAnalysis({ journal_entry: event.target.value })} /></label>}
+            {analysis.meals.map((m, i) => <fieldset className="jv2-smart-meal" key={`${analysis.request_id}-meal-${i}`}>
+              <legend>Mahlzeit {i + 1}</legend>
+              <label>Art<select value={m.type} onChange={(event) => editMeal(i, { type: event.target.value })}>{[["breakfast", "Frühstück"], ["lunch", "Mittagessen"], ["dinner", "Abendessen"], ["snack", "Snack"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label>Beschreibung<input value={m.description} onChange={(event) => editMeal(i, { description: event.target.value })} /></label>
+              <label>Uhrzeit<input type="time" value={m.time || ""} onChange={(event) => editMeal(i, { time: event.target.value || null })} /></label>
+              <div className="jv2-smart-macros">{[["kcal", "kcal", 10000], ["protein", "Protein g", 1500], ["carbs", "Kohlenhydrate g", 2000], ["fat", "Fett g", 1500]].map(([field, label, max]) => <label key={field}>{label}<input type="number" min="0" max={max} step="any" value={m[field] ?? ""} placeholder="unbekannt" onChange={(event) => editMeal(i, { [field]: event.target.value === "" ? null : Number(event.target.value) })} /><span><input type="checkbox" checked={m.estimated_fields.includes(field)} onChange={(event) => editMeal(i, { estimated_fields: event.target.checked ? [...new Set([...m.estimated_fields, field])] : m.estimated_fields.filter((name) => name !== field) })} /> geschätzt</span></label>)}</div>
+              <label>Notiz<input value={m.notes} onChange={(event) => editMeal(i, { notes: event.target.value })} /></label>
+            </fieldset>)}
+            <label className="jv2-smart-field"><b>Wasser · zusätzliche Menge</b><input type="number" min="0" max="20000" step="1" value={analysis.water_ml} onChange={(event) => editAnalysis({ water_ml: event.target.value === "" ? 0 : Number(event.target.value) })} /> ml</label>
             {analysis.habits_done.map((h, i) => {
               const known = allHabits.some((x) => String(x.name || "").trim().toLowerCase() === h.name.toLowerCase());
-              return <p className="jv2-sline" key={i}><b>Habit</b>{h.name}{known ? "" : " (unbekannt, wird übersprungen)"}</p>;
+              return <div className="jv2-smart-habit" key={`${analysis.request_id}-habit-${i}`}><label><b>Habit</b><input value={h.name} onChange={(event) => editAnalysisHabit(i, { name: event.target.value })} />{!known && <small>Unbekannt — wird nur übernommen, wenn der Name einem vorhandenen Habit entspricht.</small>}</label><label><b>Beleg</b><input value={h.evidence} onChange={(event) => editAnalysisHabit(i, { evidence: event.target.value })} /></label><button type="button" className="jv2-smart-remove" onClick={() => editAnalysis({ habits_done: analysis.habits_done.filter((_, index) => index !== i) })}>Entfernen</button></div>;
             })}
             <div className="jv2-sact">
               <button type="button" onClick={applyAnalysis} disabled={busy}>Übernehmen</button>
@@ -449,7 +482,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             </div>
           </div>
         )}
-        {smartMsg && <div className="jv2-empty" role="status">{smartMsg}</div>}
+        {smartMsg && <div className="jv2-empty" role="status">{smartMsg}{smart && !analysis && draft.trim() && <button type="button" className="jv2-link" onClick={saveDraftWithoutAI} disabled={busy}>Freitext ohne KI im Journal speichern</button>}</div>}
 
         <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>
           <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Journal, Mahlzeiten, Wasser und Habits zerlegen">✦</button>

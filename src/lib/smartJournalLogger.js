@@ -1,6 +1,7 @@
 import { getGenerativeModel, SchemaType } from "firebase/ai";
 
 import { getVertexAI } from "./firebase.js";
+import { validateSmartAnalysis } from "./smartJournalApplyCore.js";
 
 async function withAiRetry(fn, retries = 2) {
   let lastError = null;
@@ -29,12 +30,14 @@ const RESPONSE_SCHEMA = {
           description: { type: SchemaType.STRING },
           type: { type: SchemaType.STRING },
           notes: { type: SchemaType.STRING },
+          time: { type: SchemaType.STRING },
           kcal: { type: SchemaType.NUMBER },
           protein: { type: SchemaType.NUMBER },
           carbs: { type: SchemaType.NUMBER },
           fat: { type: SchemaType.NUMBER },
+          estimated_fields: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
         },
-        required: ["description", "type", "kcal", "protein", "carbs", "fat"],
+        required: ["description", "type"],
       },
     },
     habits_done: {
@@ -49,10 +52,10 @@ const RESPONSE_SCHEMA = {
       },
     },
   },
-  required: ["journal_entry", "meals", "habits_done"],
+  required: ["journal_entry", "water_ml", "meals", "habits_done"],
 };
 
-function buildPrompt(text, habits) {
+function buildPrompt(text, habits, tags = []) {
   const habitList = habits.length
     ? habits.map((habit) => `- ${habit.name}`).join("\n")
     : "- keine bekannten Habits";
@@ -61,12 +64,14 @@ function buildPrompt(text, habits) {
 
 WICHTIG:
 - Erfinde nichts. Extrahiere nur Dinge, die im Text wirklich genannt oder sehr direkt impliziert sind.
-- "journal_entry" soll eine saubere, knappe Journal-Zusammenfassung auf Deutsch sein.
+- "journal_entry" soll eine saubere, knappe Journal-Zusammenfassung auf Deutsch sein. Der Originaltext wird separat unverändert gespeichert.
 - "meals" nur für klar erwähnte Mahlzeiten/Getränke. "type" nur breakfast, lunch, dinner oder snack.
-- Schätze Makros nur für explizit genannte Mahlzeiten/Getränke.
+- "time" nur als HH:mm ausgeben, wenn eine Uhrzeit ausdrücklich genannt ist. Sonst weglassen.
+- Makros nur ausgeben, wenn ausdrücklich genannt oder für ein explizit genanntes Essen geschätzt. Unbekannte Werte weglassen, niemals als 0 ausgeben. Jede geschätzte Größe muss in "estimated_fields" stehen (nur kcal, protein, carbs, fat).
 - "habits_done" darf nur Habit-Namen aus dieser Liste enthalten, exakt geschrieben wie in der Liste:
 ${habitList}
 - "water_ml" nur setzen, wenn Trinkmenge klar genannt ist, sonst 0.
+- Nutzertags können die Zuordnung leiten, sind aber keine zusätzlichen Fakten: ${tags.length ? tags.join(", ") : "keine"}.
 
 Freitext:
 """
@@ -74,11 +79,12 @@ ${text}
 """`;
 }
 
-function normalizeMealType(type) {
-  return ["breakfast", "lunch", "dinner", "snack"].includes(type) ? type : "snack";
+function newRequestId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `smart_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 14)}`;
 }
 
-export async function analyzeSmartJournal({ text, habits }) {
+export async function analyzeSmartJournal({ text, habits = [], tags = [] }) {
   const vertexAI = getVertexAI();
   if (!vertexAI) throw new Error("vertex_ai_unavailable");
 
@@ -90,23 +96,28 @@ export async function analyzeSmartJournal({ text, habits }) {
     },
   });
 
-  const result = await withAiRetry(() => model.generateContent(buildPrompt(text, habits)));
+  const result = await withAiRetry(() => model.generateContent(buildPrompt(text, habits, tags)));
   const parsed = JSON.parse(result.response.text());
 
-  return {
+  return validateSmartAnalysis({
+    request_id: newRequestId(),
+    original_text: String(text),
+    source_tags: tags,
     journal_entry: String(parsed?.journal_entry || "").trim(),
-    water_ml: Math.max(0, Math.round(Number(parsed?.water_ml || 0))),
+    water_ml: parsed?.water_ml,
     meals: Array.isArray(parsed?.meals)
       ? parsed.meals
           .filter((meal) => meal?.description)
           .map((meal) => ({
             description: String(meal.description).trim(),
-            type: normalizeMealType(meal.type),
+            type: meal.type,
             notes: String(meal.notes || "").trim(),
-            kcal: Number(meal.kcal || 0),
-            protein: Number(meal.protein || 0),
-            carbs: Number(meal.carbs || 0),
-            fat: Number(meal.fat || 0),
+            kcal: meal.kcal,
+            protein: meal.protein,
+            carbs: meal.carbs,
+            fat: meal.fat,
+            time: meal.time,
+            estimated_fields: meal.estimated_fields || [],
           }))
       : [],
     habits_done: Array.isArray(parsed?.habits_done)
@@ -117,5 +128,5 @@ export async function analyzeSmartJournal({ text, habits }) {
             evidence: String(habit.evidence || "").trim(),
           }))
       : [],
-  };
+  });
 }

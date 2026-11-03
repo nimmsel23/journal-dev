@@ -365,7 +365,7 @@ Rule (Standard = verboten für Clients), nur das Admin-SDK der Function liest/sc
 
 **Dateien:**
 - `src/lib/google/tokens.js` – reiner Dienst (Speicher, Ablauf, geteilte Erneuerung, 401-Retry, Modi); getestet in `tests/google-tokens.test.mjs`.
-- `src/lib/google/auth.js` – Browser-Glue: Cloud-Function-Aufrufe (`firebase/functions`, erst beim Verbinden/Erneuern nachgeladen), Google-Identity-Services-Skript (wird erst beim Verbinden-Vorladen geholt, nie beim Start), Firebase-Popup-Rückfall. Beide Scopes (`calendar.readonly`, `tasks`) in einer Einwilligung.
+- `src/lib/google/auth.js` – Browser-Glue: Cloud-Function-Aufrufe (`firebase/functions`, erst beim Verbinden/Erneuern nachgeladen), Google-Identity-Services-Skript (wird erst beim Verbinden-Vorladen geholt, nie beim Start), Firebase-Popup-Rückfall. Kalender-Lesen, Kalender-Schreiben (`calendar.events.owned`) und Google Tasks werden in einer Einwilligung angefragt.
 - `src/lib/google/useGoogle.js` – Hook `{ connected, mode, busy, error, connect, disconnect }`; eine Verbindung gilt in Door v2, Journal v2 und Fire.
 - `functions/google.js` (+ Export in `functions/index.js`) – `googleLinkConfig`, `googleLink` (Code → Refresh-Token), `googleAccessToken`, `googleUnlink`; getestet in `tests/google-function.test.mjs`.
 - `gcal.js`/`gtasks.js` rufen nur noch `google.authFetch` auf (Fehler: `google-expired` → „neu verbinden“, `google-offline` → Verbindung bleibt, Hinweis).
@@ -377,9 +377,9 @@ Rule (Standard = verboten für Clients), nur das Admin-SDK der Function liest/sc
 Umschalter „Alle Kalender“/„Nur Fire Map“ (gleiche Einstellung `jv2:cal-all` wie Journal v2). Die Kalender-Anbindung in
 Journal v2 gab es schon (`gcal.js`), sie wird wiederverwendet.
 
-**Einrichtung für die dauerhafte Verbindung (manuell, nicht von Claude erledigt):**
+**Historische Einrichtung des privaten Projekts `fitness-aos` (nicht für VitalOS-Produktionsreleases verwenden):**
 1. Google Cloud Console, Projekt `fitness-aos` → APIs & Dienste → Anmeldedaten: OAuth-Client-ID „Webanwendung“ (der von Firebase angelegte Web-Client kann genutzt werden). **Autorisierte JavaScript-Ursprünge:** alle Hosting-Domains (`https://vos-journal.web.app`, `https://vos-door.web.app`, die Game/Tent/Voice-Sites, ggf. `http://127.0.0.1:9001`). Weiterleitungs-URIs nicht nötig (Popup-Flow, `postmessage`).
-2. Zustimmungsbildschirm: Scopes `calendar.readonly` und `tasks` eintragen. **Status auf „In Produktion“ stellen**: im Status „Testing“ laufen Refresh-Tokens nach 7 Tagen ab (dann `google-expired` → neu verbinden). Für Scopes ohne Prüfung (nur eigener Account, <100 Nutzer) reicht „nicht verifiziert“ mit Warnhinweis beim Verbinden.
+2. Zustimmungsbildschirm: Scopes `calendar.readonly`, `calendar.events.owned` und `tasks` eintragen. **Status auf „In Produktion“ stellen**: im Status „Testing“ laufen Refresh-Tokens nach 7 Tagen ab (dann `google-expired` → neu verbinden). Für Scopes ohne Prüfung (nur eigener Account, <100 Nutzer) reicht „nicht verifiziert“ mit Warnhinweis beim Verbinden.
 3. `firebase functions:secrets:set GOOGLE_OAUTH_CLIENT_SECRET` (Client-Secret), Client-ID beim Deploy als Parameter `GOOGLE_OAUTH_CLIENT_ID` angeben (oder in `functions/.env.fitness-aos`), dann `firebase deploy --only functions:journal`.
 4. Im Browser einmal „verbinden“. Bekommt Google keinen Refresh-Token geliefert (Zugriff war schon erteilt), Meldung `google-no-refresh-token`: unter myaccount.google.com/permissions den Zugriff der App entfernen und neu verbinden.
 
@@ -391,6 +391,8 @@ Ohne diese Schritte läuft alles im Popup-Modus (~1 h), wie zuvor.
 `firebase functions:secrets:get GOOGLE_OAUTH_CLIENT_SECRET --project fitness-aos` (404 = nicht gesetzt). Deploy läuft über die
 Codebase `journal` (`firebase.json`), nicht über einzelne Functions von Hand; andere App-Sender dürfen nicht überschrieben werden
 (siehe `RESULTS.md`, 2026-10-22, `deploy-push-functions.yml` in vitalos).
+
+**Produktionsvorgabe seit 2026-11-03:** Die Store-Releases verwenden `nimmdaniel@gmail.com` und ein frisches VitalOS-Firebase-Projekt. `fitness-aos` bleibt die private Altumgebung und darf weder umbenannt noch als offizielles Produktziel weiterverwendet werden. Der letzte dokumentierte Read-only-Audit des Meta-Repos meldete die Google-Token-Functions und `GOOGLE_OAUTH_CLIENT_SECRET` im privaten Projekt als vorhanden; der Status wurde in dieser Sitzung wegen abgelaufener Firebase-Credentials nicht erneut live geprüft. Dieser Audit bestätigt weder den Status des Google-Consent-Screens noch einen dauerhaft funktionierenden Token-Refresh. Im neuen Projekt müssen OAuth-Client, produktiver Consent-Screen, Functions-Secrets und Kalender-Lese-/Schreib-Scopes eingerichtet und mit echtem Google-Login geprüft werden. Der Nutzer erteilt dort einmalig die Verbindung; der Refresh-Token bleibt serverseitig in Firestore, und kurzlebige Access-Tokens werden automatisch erneuert. Ein Wechsel vom privaten Projekt erfordert eine neue Einwilligung; Refresh-Tokens sind nicht projektübergreifend übertragbar. Ein Consent-Screen im Status „Testing“ würde die Verbindung nach sieben Tagen wieder brechen.
 
 **Fehlercode bei fehlender Function:** Eine nicht deployte Callable liefert 404 ohne CORS-Header; der Browser blockiert die
 Antwort, das SDK meldet `functions/internal` (nicht `functions/not-found`). `prepareGoogleConnect` in `auth.js` behandelt das

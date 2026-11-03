@@ -363,7 +363,9 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         </div>
         <div className="jv2-modes" role="group" aria-label="Habits und Sprünge">
           <button type="button" aria-pressed={mode === "habits"} onClick={() => onModeChange("habits")}>Habits</button>
-          {LINKS.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
+          {LINKS.map(([href, label]) => onNavigateJournal
+            ? <button key={href} type="button" onClick={() => onNavigateJournal(href === "#door2" ? "door-v2" : "game-v2")}>{label}</button>
+            : <a key={href} href={href}>{label}</a>)}
         </div>
         {mode !== "tag" && head && (
           <div className="jv2-top">

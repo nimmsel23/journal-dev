@@ -11,6 +11,28 @@ const { createGoogleHandlers } = require("./google");
 const { buildDoorReminder, fetchDueTasks } = require("./door-reminders");
 const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_OAUTH_CLIENT_SECRET");
 const GOOGLE_CLIENT_ID = defineString("GOOGLE_OAUTH_CLIENT_ID", { default: "" });
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+
+exports.analyzeSmartLog = functions
+  .region("europe-west1")
+  .runWith({ secrets: [GEMINI_API_KEY], timeoutSeconds: 60, memory: "256MB" })
+  .https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
+    try {
+      return await require("./smart-log").analyze({
+        db: admin.firestore(),
+        uid: context.auth.uid,
+        data: data || {},
+        apiKey: GEMINI_API_KEY.value(),
+        fetchImpl: fetch,
+        now: new Date(),
+      });
+    } catch (error) {
+      if (error instanceof functions.https.HttpsError) throw error;
+      console.error("Smart Log analysis failed", error);
+      throw new functions.https.HttpsError("internal", "smart_log_failed");
+    }
+  });
 
 const makeGoogleHandlers = () => {
   const col = admin.firestore().collection("googleTokens");

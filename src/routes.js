@@ -18,7 +18,7 @@ export const TAB_CONFIG = [
     Icon: NotebookPen,
     bare: true,
     View: lazy(() => import("./views/v2/JournalV2View.jsx")),
-    getProps: (ctx) => ({ date: ctx.date, onDateChange: ctx.setDate, user: ctx.user, mode: ctx.mode, onModeChange: ctx.setMode }),
+    getProps: (ctx) => ({ date: ctx.date, onDateChange: ctx.setDate, user: ctx.user, mode: ctx.mode, onModeChange: ctx.setMode, onStartVoice: ctx.startVoiceFromJournal }),
   },
   {
     // Hash-Alias: #door2 (Modus: #door2/plan). Rendert ohne App-Header.

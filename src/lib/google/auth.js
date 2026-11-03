@@ -10,6 +10,7 @@ import { createGoogleTokens, KEY } from "./tokens.js";
 /** Beide Scopes in einer Einwilligung: Kalender (lesen) und Google Tasks. */
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/calendar.events.owned",
   "https://www.googleapis.com/auth/tasks",
 ];
 const REGION = "europe-west1";
@@ -114,7 +115,14 @@ const popup = {
 };
 
 const storage = typeof localStorage !== "undefined" ? localStorage : { getItem: () => null, setItem() {}, removeItem() {} };
-export const google = createGoogleTokens({ storage, remote, popup });
+// Produktbuilds dürfen keine kurzlebige Popup-Verbindung als dauerhafte Google-Anbindung ausgeben.
+// Der Rückfall bleibt nur außerhalb des offiziellen VitalOS-Produktbuilds für lokale/alte Umgebungen.
+export const google = createGoogleTokens({
+  storage,
+  remote,
+  popup,
+  allowPopupFallback: import.meta.env.VITE_VOS_PRODUCT_BUILD !== "1",
+});
 
 // Änderungen aus einem anderen Tab/Fenster (gleicher localStorage) an die Oberfläche melden
 if (typeof window !== "undefined") {

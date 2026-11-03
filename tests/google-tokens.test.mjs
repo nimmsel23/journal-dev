@@ -8,7 +8,7 @@ const mkStorage = () => {
 };
 const H = 3600 * 1000;
 
-function setup({ remote = {}, popup = {}, fetchImpl } = {}) {
+function setup({ remote = {}, popup = {}, fetchImpl, allowPopupFallback = true } = {}) {
   const t = { now: 1_000_000 };
   const storage = mkStorage();
   const calls = { fetchToken: 0, link: 0, unlink: 0, popup: 0 };
@@ -23,6 +23,7 @@ function setup({ remote = {}, popup = {}, fetchImpl } = {}) {
       ...remote,
     },
     popup: { connect: async () => { calls.popup++; return { accessToken: "pop" }; }, ...popup },
+    allowPopupFallback,
   });
   return { t, storage, calls, svc };
 }
@@ -94,6 +95,27 @@ test("Rückfall Popup, wenn Server nicht eingerichtet; Token nur ~55 min, dann e
   assert.equal(svc.connected(), false);
   await assert.rejects(svc.getToken(), { message: "google-expired" });
   assert.equal(svc.mode(), null); // aufgeräumt
+});
+
+test("Produktmodus verweigert kurzlebigen Popup-Rückfall, wenn der Token-Server fehlt", async () => {
+  const { svc, calls } = setup({
+    allowPopupFallback: false,
+    remote: { link: async () => { throw err("x", "unavailable"); } },
+  });
+  await assert.rejects(svc.connect(), { message: "google-not-configured" });
+  assert.equal(calls.popup, 0);
+  assert.equal(svc.snapshot(), "off");
+  assert.match(googleErrorText(new Error("google-not-configured")), /dauerhafte Google-Verbindung/);
+});
+
+test("Produktmodus verwirft gespeicherte kurzlebige Popup-Tokens", async () => {
+  const storage = mkStorage();
+  storage.setItem(KEY, JSON.stringify({ mode: "popup", token: "old-pop", exp: 1_000_000 + H }));
+  const svc = createGoogleTokens({ storage, now: () => 1_000_000, allowPopupFallback: false, remote: {}, popup: {} });
+  assert.equal(svc.connected(), false);
+  assert.equal(svc.snapshot(), "off");
+  await assert.rejects(svc.getToken(), { message: "google-not-configured" });
+  assert.equal(storage.getItem(KEY), null);
 });
 
 test("andere Fehler beim Server-Verbinden brechen ab (kein stiller Popup-Rückfall)", async () => {

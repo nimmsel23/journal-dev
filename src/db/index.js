@@ -1,9 +1,10 @@
 // Journal-owned database facade. No sibling repositories are required.
-import { collection, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDocs, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc, where } from "firebase/firestore";
 
 import { db } from "../lib/firebase.js";
 import { getUid, localToday } from "../lib/db/core.js";
 import { track } from "../lib/offline.js";
+import { mergeSmartNutritionLog } from "../lib/smartJournalApplyCore.js";
 export { deleteJournal } from "../lib/db/journal.js";
 
 export * from "../lib/db/core.js";
@@ -101,14 +102,17 @@ export async function getHabitRecordsForDate(date = localToday()) {
 
 // Habit-Records: lokal sofort fertig, Abgleich im Hintergrund (track) – nie auf die Server-Bestätigung warten,
 // sonst hängt das Abhaken offline ewig.
-export async function recordHabit(uuid, date = localToday()) {
+export async function recordHabit(uuid, date = localToday(), provenance = {}) {
   const ref = doc(db, "fitness", getUid(), "habitRecords", `${uuid}_${date}`);
-  track(setDoc(ref, {
+  const record = {
     habitId: uuid,
     date,
     completion: "DONE",
     recorded_at: serverTimestamp(),
-  }));
+  };
+  if (provenance.sourceJournalId) record.sourceJournalId = provenance.sourceJournalId;
+  if (provenance.requestId) record.sourceRequestId = provenance.requestId;
+  track(setDoc(ref, record, { merge: true }));
   return { ok: true };
 }
 
@@ -130,6 +134,83 @@ export {
   getNutritionNotesHistory,
   saveNutritionLog,
 } from "../lib/db/firestore/nutrition.js";
+
+// A single Smart-Log apply may be retried after a partial failure. Stable meal
+// IDs plus a Firestore transaction make the nutrition write idempotent.
+export async function applySmartNutrition({ date, requestId, sourceJournalId, meals = [], water_ml = 0 }) {
+  const ref = doc(db, "nutrition", getUid(), "logs", date);
+  return runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const merged = mergeSmartNutritionLog(snapshot.exists() ? snapshot.data() : null, { date, requestId, journalId: sourceJournalId, meals, water_ml });
+    if (merged.changed) {
+      transaction.set(ref, {
+        ...merged.data,
+        updated_at: serverTimestamp(),
+      }, { merge: true });
+    }
+    return merged.applied;
+  });
+}
+
+// Journal's Smart Log adapters write only the existing, owner-defined skill paths.
+// IDs derive from the analysis request so re-applying cannot create duplicate sessions.
+export async function applySmartFitness({ date, requestId, sourceJournalId, sessions = [] }) {
+  const uid = getUid();
+  for (const [index, session] of sessions.entries()) {
+    const sessionDate = session.date || date;
+    const id = `${sessionDate}__smart_${requestId}_${index}`;
+    const ref = doc(db, "fitness", uid, "sessions", id);
+    const activity = session.activity_type === "strength" ? null : {
+      type: session.activity_type,
+      duration: session.duration_minutes == null ? "" : String(session.duration_minutes),
+      notes: session.notes || "",
+    };
+    await setDoc(ref, {
+      date: sessionDate,
+      session_id: `smart_${requestId}_${index}`,
+      sessionMode: session.activity_type === "strength" ? "strength" : "cardio",
+      block: session.activity_type === "strength" ? "Krafttraining" : "",
+      activity,
+      exercises: [],
+      notes: session.activity_type === "strength" ? session.notes || "Krafttraining" : "",
+      duration_minutes: session.duration_minutes,
+      session_time: session.time,
+      started_at: session.time ? new Date(`${sessionDate}T${session.time}:00`).toISOString() : null,
+      finished_at: null,
+      sourceJournalId,
+      sourceRequestId: requestId,
+      smartLog: true,
+      saved_at: serverTimestamp(),
+    }, { merge: true });
+  }
+  return sessions.length;
+}
+
+export async function applySmartRelax({ date, requestId, sourceJournalId, sessions = [] }) {
+  if (!sessions.length) return 0;
+  const groups = new Map();
+  sessions.forEach((session, index) => {
+    const targetDate = session.date || date;
+    groups.set(targetDate, [...(groups.get(targetDate) || []), { ...session, _smartIndex: index }]);
+  });
+  for (const [targetDate, group] of groups) {
+    const ref = doc(db, "relax", getUid(), "sessions", targetDate);
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(ref);
+      const current = snapshot.exists() ? snapshot.data() || {} : {};
+      const items = Array.isArray(current.items) ? [...current.items] : [];
+      group.forEach((session) => {
+        const id = `smart_${requestId}_${session._smartIndex}`;
+        const item = { id, technique: session.technique, minutes: session.minutes, note: session.note, sourceJournalId, sourceRequestId: requestId };
+        const oldIndex = items.findIndex((entry) => entry?.id === id);
+        if (oldIndex < 0) items.push(item);
+        else items[oldIndex] = item;
+      });
+      transaction.set(ref, { ...current, date: targetDate, items, saved_at: serverTimestamp() }, { merge: true });
+    });
+  }
+  return sessions.length;
+}
 
 export { getSupplementsHistory } from "../lib/db/firestore/supplements.js";
 

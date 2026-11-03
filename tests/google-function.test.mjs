@@ -47,6 +47,9 @@ test("link: fehlender Scope, ungültiger Code, leerer Code", async () => {
   const a = setup({ responses: [json(200, { access_token: "A", refresh_token: "R", scope: REQUIRED_SCOPES[0] })] });
   await assert.rejects(a.h.link("u1", "c"), { message: "google-scope-missing" });
   assert.equal(a.rows.size, 0);
+  const missingCalendarWrite = setup({ responses: [json(200, { access_token: "A", refresh_token: "R", scope: REQUIRED_SCOPES.filter((scope) => scope !== "https://www.googleapis.com/auth/calendar.events.owned").join(" ") })] });
+  await assert.rejects(missingCalendarWrite.h.link("u1", "c"), { message: "google-scope-missing" });
+  assert.equal(missingCalendarWrite.rows.size, 0);
   const b = setup({ responses: [json(400, { error: "invalid_grant" })] });
   await assert.rejects(b.h.link("u1", "c"), /google-code: invalid_grant/);
   await assert.rejects(b.h.link("u1", ""), { message: "google-code-missing" });

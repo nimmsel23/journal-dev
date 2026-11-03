@@ -253,6 +253,7 @@
 .jv2-compose .jv2-smarttoggle.on { background: var(--sig); color: #fff; }
 .jv2-compose .jv2-smarttoggle:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
 .jv2-compose { border-top: 2px solid var(--ink); }
+.jv2-smart-disclosure { margin: 0; padding: 8px 12px; border-top: 1px solid var(--ink); background: var(--soft); color: var(--ink); font-size: 11px; line-height: 1.45; }
 .jv2-compose textarea {
   flex: 1; min-width: 0; border: 0; border-radius: 0; resize: vertical; background: var(--soft);
   padding: 14px 12px; font: inherit; font-size: 14px; line-height: 1.4; color: var(--ink);

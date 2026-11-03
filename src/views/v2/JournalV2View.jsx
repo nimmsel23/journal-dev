@@ -554,6 +554,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         )}
         {smartMsg && <div className="jv2-empty" role="status">{smartMsg}{smart && !analysis && draft.trim() && <button type="button" className="jv2-link" onClick={saveDraftWithoutAI} disabled={busy}>Freitext ohne KI im Journal speichern</button>}</div>}
 
+        {smart && <p className="jv2-smart-disclosure">Mit „Analyse“ werden dein Text, Datum, Tags und Habit-Namen über den VitalOS-Server an Gemini gesendet. Es wird nichts automatisch analysiert; du prüfst die Vorschläge vor der Übernahme.</p>}
+
         <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>
           <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Journal, Mahlzeiten, Wasser und Habits zerlegen">✦</button>
           {smart ? (

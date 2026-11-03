@@ -210,3 +210,7 @@ Enabled Dependabot alerts and security updates. Configured weekly GitHub Actions
 - Die Eingabe ist während einer laufenden Analyse gesperrt. Meldungen für laufende Requests, ausgeschöpftes Wochenkontingent und fehlende Provider-Konfiguration erklären, dass der Entwurf erhalten bleibt und ohne KI gespeichert werden kann.
 - Google-OAuth prüft `calendar.events.owned` jetzt neben Kalender-Lese- und Tasks-Scope serverseitig. Tokens ohne Kalenderschreibrecht werden beim Verbinden abgelehnt.
 - Verifiziert: `CI=true pnpm test` (135/135) und `CI=true pnpm run build:firebase` erfolgreich; `git diff --check` sauber. Kein Push, Release oder Deploy.
+
+## 2026-11-03 — Smart-Log-Datentransparenz
+- Vor der Analyse wird in beiden Smart-Log-Einstiegen die Übermittlung an Gemini offengelegt. V2 nennt Text, Datum, Tags und Habit-Namen; die ältere Ansicht nennt Text, Datum und Habit-Namen. Analyse startet ausschließlich nach dem Klick, Vorschläge bleiben prüfbar.
+- Verifiziert: `pnpm run build:cloud` erfolgreich (3.009 Module). Fokus-Tests für Smart-Log und Google-Flows zuvor erfolgreich; keine Deploys.

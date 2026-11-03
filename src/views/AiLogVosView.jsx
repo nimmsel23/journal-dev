@@ -134,7 +134,7 @@ export default function AiLogVosView({ date, user }) {
           </div>
         </div>
         <p className="text-sm text-indigo-300/80 md:max-w-md md:text-right">
-          Ein Text. Dann Smart-Log-Analyse. Prüfe die Vorschläge und übernimm sie in die passenden Skills.
+          Ein Text. Dann Smart-Log-Analyse. Mit „Analysieren“ werden dein Text, das Datum und bekannte Habit-Namen über den VitalOS-Server an Gemini gesendet. Es läuft keine automatische Analyse; du prüfst die Vorschläge vor der Übernahme.
         </p>
       </header>
 

@@ -7,14 +7,19 @@ const { analyze, weekKey } = require("../functions/smart-log.js");
 
 function fakeDb() {
   const docs = new Map();
+  let transactionTail = Promise.resolve();
   const pathOf = (parts) => parts.join("/");
   const ref = (...parts) => ({ path: pathOf(parts), collection(name) { return ref(...parts, name); }, doc(name) { return ref(...parts, name); } });
   const snapshot = (value) => ({ exists: value !== undefined, get: (key) => value?.[key], data: () => value });
   const root = { collection(name) { return ref(name); } };
-  root.runTransaction = (fn) => fn({
-    get: async (document) => snapshot(docs.get(document.path)),
-    set: (document, value, options = {}) => docs.set(document.path, options.merge ? { ...(docs.get(document.path) || {}), ...value } : value),
-  });
+  root.runTransaction = (fn) => {
+    const operation = transactionTail.then(() => fn({
+      get: async (document) => snapshot(docs.get(document.path)),
+      set: (document, value, options = {}) => docs.set(document.path, options.merge ? { ...(docs.get(document.path) || {}), ...value } : value),
+    }));
+    transactionTail = operation.then(() => undefined, () => undefined);
+    return operation;
+  };
   root.peek = (path) => docs.get(path);
   root.seed = (path, value) => docs.set(path, value);
   return root;
@@ -63,6 +68,26 @@ test("Observe permits one successful analysis per week, then rejects AI only", a
     analyze({ ...options, data: { ...baseInput, request_id: "abcdef1234567890" } }),
     (error) => error.code === "resource-exhausted" && error.message === "smart_log_weekly_quota_reached",
   );
+  assert.equal(providerCalls, 1);
+});
+
+test("concurrent Observe requests reserve quota atomically before either model call", async () => {
+  const db = fakeDb();
+  let providerCalls = 0;
+  let markStarted;
+  let finishProvider;
+  const started = new Promise((resolve) => { markStarted = resolve; });
+  const provider = new Promise((resolve) => { finishProvider = resolve; });
+  const firstOptions = { db, uid: "u6", data: baseInput, apiKey: "test", now: new Date("2026-11-03T12:00:00Z"),
+    fetchImpl: async () => { providerCalls += 1; markStarted(); return provider; } };
+  const first = analyze(firstOptions);
+  await started;
+  await assert.rejects(
+    analyze({ ...firstOptions, data: { ...baseInput, request_id: "fedcba0987654321" }, fetchImpl: async () => { providerCalls += 1; return { ok: true, json: async () => response }; } }),
+    (error) => error.code === "resource-exhausted" && error.message === "smart_log_weekly_quota_reached",
+  );
+  finishProvider({ ok: true, json: async () => response });
+  await first;
   assert.equal(providerCalls, 1);
 });
 

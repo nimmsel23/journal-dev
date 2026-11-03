@@ -38,6 +38,19 @@ test("successful requests consume one quota unit and replay from cache", async (
   assert.equal(first.original_text, baseInput.text);
 });
 
+test("rejects reusing a request ID for different input", async () => {
+  const db = fakeDb();
+  let providerCalls = 0;
+  const options = { db, uid: "u3", data: baseInput, apiKey: "test", now: new Date("2026-11-03T12:00:00Z"),
+    fetchImpl: async () => { providerCalls += 1; return { ok: true, json: async () => response }; } };
+  await analyze(options);
+  await assert.rejects(
+    analyze({ ...options, data: { ...baseInput, text: "Ein anderer Eintrag." } }),
+    (error) => error.code === "failed-precondition" && error.message === "smart_log_request_id_conflict",
+  );
+  assert.equal(providerCalls, 1);
+});
+
 test("failed model calls release reservation without consuming free quota", async () => {
   const db = fakeDb();
   const options = { db, uid: "u2", data: baseInput, apiKey: "test", now: new Date("2026-11-03T12:00:00Z"),

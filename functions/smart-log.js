@@ -1,4 +1,5 @@
 const { HttpsError } = require("firebase-functions/v1/https");
+const { createHash } = require("node:crypto");
 
 const REGION_TIME_ZONE = "Europe/Vienna";
 const MODEL = "gemini-2.5-flash";
@@ -56,6 +57,15 @@ relax_sessions nur für klar absolvierte Praxis. Felder: technique, date wenn ei
 planner_tasks nur für ausdrücklich zukünftige Absichten mit konkretem Verb. Bezugsdatum des Journaleintrags: ${date}. Felder: title, date (YYYY-MM-DD nur wenn aus Kontext eindeutig ableitbar), time (HH:mm nur ausdrücklich genannt), duration_minutes nur wenn genannt, notes. Keine Termine aus vagen Wünschen erzeugen.
 water_ml ist eine klar genannte Trinkmenge als ganze ml-Zahl, sonst 0. Tags helfen nur bei der Zuordnung, nicht als Fakten: ${JSON.stringify(tags)}
 Text:\n"""\n${text}\n"""`;
+}
+
+function fingerprint(input) {
+  return createHash("sha256").update(JSON.stringify({
+    text: input.text,
+    date: input.date,
+    tags: input.tags,
+    habits: input.habits,
+  })).digest("hex");
 }
 
 function validateResult(parsed, input) {
@@ -126,6 +136,7 @@ function validateResult(parsed, input) {
 
 async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
   const input = validateInput(data);
+  const inputHash = fingerprint(input);
   if (!apiKey) throw new HttpsError("failed-precondition", "smart_log_provider_not_configured");
   const key = weekKey(now);
   const reqRef = db.collection("smartLoggingRequests").doc(uid).collection("requests").doc(input.requestId);
@@ -137,6 +148,9 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
     const [reqSnap, quotaSnap, entitlementSnap, configSnap] = await Promise.all([
       tx.get(reqRef), tx.get(quotaRef), tx.get(entitlementRef), tx.get(configRef),
     ]);
+    if (reqSnap.exists && reqSnap.get("inputHash") && reqSnap.get("inputHash") !== inputHash) {
+      throw new HttpsError("failed-precondition", "smart_log_request_id_conflict");
+    }
     if (reqSnap.exists && reqSnap.get("status") === "succeeded") return { cached: reqSnap.get("result") };
     if (reqSnap.exists && reqSnap.get("status") === "processing") throw new HttpsError("aborted", "smart_log_request_in_progress");
     const entitlement = entitlementSnap.data() || {};
@@ -148,7 +162,7 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
     const pending = quotaSnap.exists ? (quotaSnap.get("reserved") || 0) : 0;
     if (used + pending >= limit) throw new HttpsError("resource-exhausted", "smart_log_weekly_quota_reached", { tier: isOperate ? "operate" : "observe", week: key, limit });
     tx.set(quotaRef, { used, reserved: pending + 1, week: key, tier: isOperate ? "operate" : "observe", updatedAt: new Date() }, { merge: true });
-    tx.set(reqRef, { status: "processing", week: key, createdAt: new Date(), updatedAt: new Date() });
+    tx.set(reqRef, { status: "processing", week: key, inputHash, createdAt: new Date(), updatedAt: new Date() });
     return { cached: null };
   });
   if (reservation.cached) return reservation.cached;

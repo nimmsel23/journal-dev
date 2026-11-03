@@ -69,6 +69,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   // Smart Logger: Freitext → Vertex-Analyse → Vorschau → Übernehmen (Journal, Mahlzeiten, Wasser, Habits)
   const [smart, setSmart] = useSetting("jv2:smart", false, asBool);
   const [analysis, setAnalysis] = useState(null);
+  const [plannerPending, setPlannerPending] = useState([]);
   const [smartMsg, setSmartMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const day = parseISO(date);
@@ -177,6 +178,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const toggleSmart = () => {
     setSmart(!smart);
     setAnalysis(null);
+    setPlannerPending([]);
     setSmartMsg("");
   };
 
@@ -186,7 +188,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     setSmartMsg("");
     try {
       const { tags } = extractTags(draft);
-      setAnalysis(await analyzeSmartJournal({ text: draft, habits: allHabits, tags }));
+      setAnalysis(await analyzeSmartJournal({ text: draft, date, habits: allHabits, tags }));
+      setPlannerPending([]);
     } catch (error) {
       console.error("Smart-Analyse fehlgeschlagen:", error);
       setSmartMsg(error?.message === "vertex_ai_unavailable" ? "Vertex AI ist hier nicht verfügbar." : (error?.message || "Analyse fehlgeschlagen."));
@@ -204,6 +207,10 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     ...current,
     habits_done: current.habits_done.map((habit, i) => i === index ? { ...habit, ...patch } : habit),
   }));
+  const editAnalysisList = (key, index, patch) => setAnalysis((current) => current && ({
+    ...current,
+    [key]: (current[key] || []).map((item, i) => i === index ? { ...item, ...patch } : item),
+  }));
 
   const applyAnalysis = async () => {
     if (!analysis || busy) return;
@@ -211,10 +218,13 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     setSmartMsg("");
     try {
       const res = await applySmartAnalysis({ date, analysis, habits: allHabits });
-      setAnalysis(null);
+      setPlannerPending(res.planner_pending || []);
+      if (!res.planner_pending?.length) setAnalysis(null);
       setDraft("");
-      const parts = [res.journal && "Eintrag", res.meals && `${res.meals} Mahlzeit${res.meals > 1 ? "en" : ""}`, res.water_ml && `${res.water_ml} ml Wasser`, res.habits.length && `${res.habits.length} Habit${res.habits.length > 1 ? "s" : ""}`].filter(Boolean);
-      setSmartMsg(`Übernommen: ${parts.join(", ") || "nichts"}.`);
+      const parts = [res.journal && "Eintrag", res.meals && `${res.meals} Mahlzeit${res.meals > 1 ? "en" : ""}`, res.water_ml && `${res.water_ml} ml Wasser`, res.habits.length && `${res.habits.length} Habit${res.habits.length > 1 ? "s" : ""}`, res.fitness && `${res.fitness} Fitness-Session${res.fitness > 1 ? "s" : ""}`, res.relax && `${res.relax} Relax-Einheit${res.relax > 1 ? "en" : ""}`, res.planner && `${res.planner} Google-Kalendertermin${res.planner > 1 ? "e" : ""}`].filter(Boolean);
+      setSmartMsg(res.planner_pending?.length
+        ? `Übernommen: ${parts.join(", ")}. ${res.planner_pending.length} Kalender-Vorschlag${res.planner_pending.length > 1 ? "e brauchen" : " braucht"} noch Angaben oder eine Google-Berechtigung.`
+        : `Übernommen: ${parts.join(", ") || "nichts"}.`);
       qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
       qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
     } catch (error) {
@@ -448,6 +458,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
                   <div className="jv2-body">
                     {title && <h3>{title}</h3>}
                     {body && <p>{body}</p>}
+                    {e.smartLog?.applied?.planner_suggestions?.length > 0 && <div className="jv2-smart-archived"><b>Google-Kalender-Vorschläge</b>{e.smartLog.applied.planner_suggestions.map((task, index) => { const event = e.smartLog.applied.planner_events?.find((created) => created.title === task.title && created.date === task.date); return <p key={`${e.id}-planner-${index}`}>{task.date || "Datum offen"}{task.time ? ` · ${task.time}` : ""} · {task.title}{event?.htmlLink ? <> · <a href={event.htmlLink} target="_blank" rel="noreferrer">Kalender öffnen ↗</a></> : null}</p>; })}</div>}
                     {tags.map((t) => <span key={t} className="jv2-tag">{t}</span>)}
                   </div>
                   <button type="button" className="jv2-editbtn" aria-label="Eintrag bearbeiten" onClick={() => startEdit(e)}>✎</button>
@@ -472,13 +483,16 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
               <label>Notiz<input value={m.notes} onChange={(event) => editMeal(i, { notes: event.target.value })} /></label>
             </fieldset>)}
             <label className="jv2-smart-field"><b>Wasser · zusätzliche Menge</b><input type="number" min="0" max="20000" step="1" value={analysis.water_ml} onChange={(event) => editAnalysis({ water_ml: event.target.value === "" ? 0 : Number(event.target.value) })} /> ml</label>
+            {(analysis.fitness_sessions || []).map((session, i) => <fieldset className="jv2-smart-meal" key={`${analysis.request_id}-fitness-${i}`}><legend>Fitness · Session {i + 1}</legend><label>Typ<select value={session.activity_type} onChange={(event) => editAnalysisList("fitness_sessions", i, { activity_type: event.target.value })}>{[["strength", "Krafttraining"], ["hiit", "HIIT"], ["running", "Laufen"], ["walking", "Spazieren"], ["cycling", "Radfahren"], ["rowing", "Rudern"], ["swimming", "Schwimmen"], ["hiking", "Wandern"], ["climbing", "Klettern"], ["yoga", "Yoga"], ["stretching", "Stretching"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Datum<input type="date" value={session.date || date} onChange={(event) => editAnalysisList("fitness_sessions", i, { date: event.target.value || date })} /></label><label>Dauer (Minuten)<input type="number" min="1" max="1440" value={session.duration_minutes ?? ""} onChange={(event) => editAnalysisList("fitness_sessions", i, { duration_minutes: event.target.value ? Number(event.target.value) : null })} /></label><label>Uhrzeit<input type="time" value={session.time || ""} onChange={(event) => editAnalysisList("fitness_sessions", i, { time: event.target.value || null })} /></label><label>Notiz<input value={session.notes} onChange={(event) => editAnalysisList("fitness_sessions", i, { notes: event.target.value })} /></label><button type="button" className="jv2-smart-remove" onClick={() => editAnalysis({ fitness_sessions: analysis.fitness_sessions.filter((_, index) => index !== i) })}>Entfernen</button></fieldset>)}
+            {(analysis.relax_sessions || []).map((session, i) => <fieldset className="jv2-smart-meal" key={`${analysis.request_id}-relax-${i}`}><legend>Relax · Praxis {i + 1}</legend><label>Praxis<input value={session.technique} onChange={(event) => editAnalysisList("relax_sessions", i, { technique: event.target.value })} /></label><label>Datum<input type="date" value={session.date || date} onChange={(event) => editAnalysisList("relax_sessions", i, { date: event.target.value || date })} /></label><label>Dauer (Minuten)<input type="number" min="1" max="1440" value={session.minutes ?? ""} onChange={(event) => editAnalysisList("relax_sessions", i, { minutes: event.target.value ? Number(event.target.value) : null })} /></label><label>Notiz<input value={session.note} onChange={(event) => editAnalysisList("relax_sessions", i, { note: event.target.value })} /></label><button type="button" className="jv2-smart-remove" onClick={() => editAnalysis({ relax_sessions: analysis.relax_sessions.filter((_, index) => index !== i) })}>Entfernen</button></fieldset>)}
+            {(analysis.planner_tasks || []).map((task, i) => <fieldset className="jv2-smart-meal" key={`${analysis.request_id}-planner-${i}`}><legend>Google Kalender · Termin {i + 1}</legend><label>Aufgabe<input value={task.title} onChange={(event) => editAnalysisList("planner_tasks", i, { title: event.target.value })} /></label><label>Datum<input type="date" value={task.date || ""} onChange={(event) => editAnalysisList("planner_tasks", i, { date: event.target.value || null })} /></label><label>Uhrzeit<input type="time" value={task.time || ""} onChange={(event) => editAnalysisList("planner_tasks", i, { time: event.target.value || null })} /></label>{task.time && <label>Dauer (Minuten)<input type="number" min="1" max="1440" value={task.duration_minutes ?? ""} placeholder="Bitte angeben" onChange={(event) => editAnalysisList("planner_tasks", i, { duration_minutes: event.target.value ? Number(event.target.value) : null })} /></label>}<label>Notiz<input value={task.notes} onChange={(event) => editAnalysisList("planner_tasks", i, { notes: event.target.value })} /></label><small>Es wird ein privater Termin im primären Google Kalender angelegt. Bei einer Uhrzeit ist eine Dauer nötig; ohne Uhrzeit wird ein ganztägiger Termin erstellt.</small>{plannerPending.some((pending) => pending.task.title === task.title && ["google_calendar_permission_required", "google-expired", "google-offline"].includes(pending.reason)) && <button type="button" className="jv2-link" onClick={() => google.connect().catch((error) => setSmartMsg(googleErrorText(error)))}>Google Kalender verbinden / Berechtigung aktualisieren</button>}<button type="button" className="jv2-smart-remove" onClick={() => editAnalysis({ planner_tasks: analysis.planner_tasks.filter((_, index) => index !== i) })}>Entfernen</button></fieldset>)}
             {analysis.habits_done.map((h, i) => {
               const known = allHabits.some((x) => String(x.name || "").trim().toLowerCase() === h.name.toLowerCase());
               return <div className="jv2-smart-habit" key={`${analysis.request_id}-habit-${i}`}><label><b>Habit</b><input value={h.name} onChange={(event) => editAnalysisHabit(i, { name: event.target.value })} />{!known && <small>Unbekannt — wird nur übernommen, wenn der Name einem vorhandenen Habit entspricht.</small>}</label><label><b>Beleg</b><input value={h.evidence} onChange={(event) => editAnalysisHabit(i, { evidence: event.target.value })} /></label><button type="button" className="jv2-smart-remove" onClick={() => editAnalysis({ habits_done: analysis.habits_done.filter((_, index) => index !== i) })}>Entfernen</button></div>;
             })}
             <div className="jv2-sact">
               <button type="button" onClick={applyAnalysis} disabled={busy}>Übernehmen</button>
-              <button type="button" className="ghost" onClick={() => setAnalysis(null)}>Verwerfen</button>
+              <button type="button" className="ghost" onClick={() => { setAnalysis(null); setPlannerPending([]); }}>Verwerfen</button>
             </div>
           </div>
         )}
@@ -494,7 +508,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
               rows={3}
               placeholder="Dein Tag in eigenen Worten: 2 Eier und Kaffee, 2 l Wasser, 30 Min Lesen …"
               value={draft}
-              onChange={(e) => { setDraft(e.target.value); setAnalysis(null); }}
+              onChange={(e) => { setDraft(e.target.value); setAnalysis(null); setPlannerPending([]); }}
               disabled={!uid}
             />
           ) : (

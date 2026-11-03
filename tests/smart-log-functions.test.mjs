@@ -18,8 +18,8 @@ function fakeDb() {
   return root;
 }
 
-const baseInput = { request_id: "1234567890abcdef", text: "Um 08:30 Haferflocken gegessen.", habits: [], tags: [] };
-const response = { candidates: [{ content: { parts: [{ text: JSON.stringify({ journal_entry: "Frühstück.", water_ml: 0, meals: [{ description: "Haferflocken", type: "breakfast", time: "08:30" }], habits_done: [] }) }] } }] };
+const baseInput = { request_id: "1234567890abcdef", text: "Um 08:30 Haferflocken gegessen.", date: "2026-11-03", habits: [], tags: [] };
+const response = { candidates: [{ content: { parts: [{ text: JSON.stringify({ journal_entry: "Frühstück.", water_ml: 0, meals: [{ description: "Haferflocken", type: "breakfast", time: "08:30" }], habits_done: [], fitness_sessions: [], relax_sessions: [], planner_tasks: [] }) }] } }] };
 
 test("uses ISO weeks in Vienna, including year boundaries", () => {
   assert.equal(weekKey(new Date("2026-12-31T12:00:00Z")), "2026-W53");

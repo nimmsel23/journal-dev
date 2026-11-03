@@ -25,6 +25,19 @@ test('validates known schema and keeps unknown nutrition values absent', () => {
   assert.deepEqual(result.source_tags, ['body']);
 });
 
+test('validates Fitness, Relax and Planner targets without filling in unknown fields', () => {
+  const result = validateSmartAnalysis(analysis({
+    fitness_sessions: [{ activity_type: 'strength', duration_minutes: 45, notes: '', time: null }],
+    relax_sessions: [{ technique: 'Meditation', minutes: 15, note: '' }],
+    planner_tasks: [{ title: 'Trainieren', date: '2026-11-04', time: '18:00', notes: '' }],
+  }));
+  assert.equal(result.fitness_sessions[0].activity_type, 'strength');
+  assert.equal(result.relax_sessions[0].minutes, 15);
+  assert.equal(result.planner_tasks[0].time, '18:00');
+  assert.throws(() => validateSmartAnalysis(analysis({ fitness_sessions: [{ activity_type: 'unknown' }] })), /smart_schema_fitness_type_invalid/);
+  assert.throws(() => validateSmartAnalysis(analysis({ planner_tasks: [{ title: 'Trainieren', date: 'morgen' }] })), /smart_schema_planner_date_invalid/);
+});
+
 test('rejects malformed model values and unexpected fields instead of coercing them', () => {
   assert.throws(() => validateSmartAnalysis(analysis({ water_ml: '500' })), /smart_schema_water_ml_invalid/);
   assert.throws(() => validateSmartAnalysis(analysis({ unexpected: true })), /smart_schema_root_unknown_field/);
@@ -80,6 +93,30 @@ test('apply keeps the original text and uses the same source id when retried', a
   assert.equal(retry.water_ml, 0);
   assert.equal(habitWrites.size, 1);
   assert.equal(updates.at(-1)[2].smartLog.status, 'applied');
+});
+
+test('apply sends Fitness and Relax records through adapters and retains Planner suggestions with provenance', async () => {
+  const adapters = [];
+  const updates = [];
+  const apply = createSmartJournalApplier({
+    saveJournal: async () => {},
+    updateJournal: async (...args) => updates.push(args),
+    applyNutrition: async () => ({ meals: 0, water_ml: 0 }),
+    recordHabit: async () => {},
+    applyFitness: async (input) => { adapters.push(['fitness', input]); return input.sessions.length; },
+    applyRelax: async (input) => { adapters.push(['relax', input]); return input.sessions.length; },
+  });
+  const input = analysis({
+    meals: [], water_ml: 0, habits_done: [],
+    fitness_sessions: [{ activity_type: 'strength', duration_minutes: 45, notes: '', time: null }],
+    relax_sessions: [{ technique: 'Meditation', minutes: 15, note: '' }],
+    planner_tasks: [{ title: 'Morgen trainieren', date: '2026-11-04', time: '18:00', duration_minutes: null, notes: '' }],
+  });
+  const result = await apply({ date: '2026-11-03', analysis: input });
+  assert.deepEqual(adapters.map(([name]) => name), ['fitness', 'relax']);
+  assert.equal(adapters[0][1].sourceJournalId, sourceJournalId(input.request_id));
+  assert.deepEqual(result.planner_suggestions, input.planner_tasks);
+  assert.deepEqual(updates.at(-1)[2].smartLog.applied.planner_suggestions, input.planner_tasks);
 });
 
 test('partial skill failure leaves the source journal and records partial status', async () => {

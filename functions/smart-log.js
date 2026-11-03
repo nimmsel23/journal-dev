@@ -4,6 +4,11 @@ const REGION_TIME_ZONE = "Europe/Vienna";
 const MODEL = "gemini-2.5-flash";
 const MAX_INPUT = 12000;
 const MACROS = new Set(["kcal", "protein", "carbs", "fat"]);
+function isIsoDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
 
 function weekKey(now) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -34,22 +39,27 @@ function validateInput(data) {
   if (habits.length > 100 || habits.some((x) => !x || typeof x.name !== "string" || x.name.length > 120)) {
     throw new HttpsError("invalid-argument", "habits_invalid");
   }
-  return { requestId, text: data.text, tags: [...new Set(tags)], habits: habits.map((x) => x.name) };
+  const referenceDate = isIsoDate(data.date) ? data.date : null;
+  if (!referenceDate) throw new HttpsError("invalid-argument", "date_invalid");
+  return { requestId, text: data.text, date: referenceDate, tags: [...new Set(tags)], habits: habits.map((x) => x.name) };
 }
 
-function promptFor({ text, tags, habits }) {
+function promptFor({ text, date, tags, habits }) {
   return `Du extrahierst strukturierte Tracker-Daten aus einem freien Tagebuchtext. Erfinde nichts.
-Gib ausschließlich JSON mit journal_entry, water_ml, meals und habits_done zurück.
+Gib ausschließlich JSON mit journal_entry, water_ml, meals, habits_done, fitness_sessions, relax_sessions und planner_tasks zurück.
 journal_entry: knappe deutsche Zusammenfassung. Der Originaltext wird separat unverändert gespeichert.
 meals: nur klar erwähnte Mahlzeiten/Getränke; type ist breakfast, lunch, dinner oder snack.
 time nur als HH:mm, wenn ausdrücklich genannt. Makros nur nennen, wenn im Text oder als Schätzung für ein ausdrücklich erwähntes Essen; unbekannte Makros weglassen, nie 0 erfinden. Jede geschätzte Größe unter estimated_fields (kcal, protein, carbs, fat) markieren.
 habits_done darf nur exakt passende Namen aus dieser Liste enthalten: ${JSON.stringify(habits)}
+fitness_sessions nur für klar berichtete, bereits absolvierte Einheiten. Felder: activity_type (strength, hiit, running, walking, cycling, rowing, swimming, hiking, climbing, yoga, stretching), date als YYYY-MM-DD wenn aus Bezugsdatum ${date} eindeutig, sonst weglassen; duration_minutes als ganze Zahl oder weglassen, notes, time nur bei ausdrücklich genannter Uhrzeit. Keine Übungen/Sätze hinzuerfinden.
+relax_sessions nur für klar absolvierte Praxis. Felder: technique, date wenn eindeutig, minutes als ganze Zahl oder weglassen, note. Stimmung nicht ableiten.
+planner_tasks nur für ausdrücklich zukünftige Absichten mit konkretem Verb. Bezugsdatum des Journaleintrags: ${date}. Felder: title, date (YYYY-MM-DD nur wenn aus Kontext eindeutig ableitbar), time (HH:mm nur ausdrücklich genannt), duration_minutes nur wenn genannt, notes. Keine Termine aus vagen Wünschen erzeugen.
 water_ml ist eine klar genannte Trinkmenge als ganze ml-Zahl, sonst 0. Tags helfen nur bei der Zuordnung, nicht als Fakten: ${JSON.stringify(tags)}
 Text:\n"""\n${text}\n"""`;
 }
 
 function validateResult(parsed, input) {
-  const allowedRoot = new Set(["journal_entry", "water_ml", "meals", "habits_done"]);
+  const allowedRoot = new Set(["journal_entry", "water_ml", "meals", "habits_done", "fitness_sessions", "relax_sessions", "planner_tasks"]);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)
       || Object.keys(parsed).some((key) => !allowedRoot.has(key))) throw new Error("schema_root");
   if (typeof parsed.journal_entry !== "string" || parsed.journal_entry.length > 4000) throw new Error("schema_journal");
@@ -80,8 +90,38 @@ function validateResult(parsed, input) {
     if (habit.evidence != null && (typeof habit.evidence !== "string" || habit.evidence.length > 500)) throw new Error("schema_habit_evidence");
     return { name: habit.name, evidence: habit.evidence || "" };
   });
+  const fitnessTypes = new Set(["strength", "hiit", "running", "walking", "cycling", "rowing", "swimming", "hiking", "climbing", "yoga", "stretching"]);
+  for (const [key, cap] of [["fitness_sessions", 20], ["relax_sessions", 20], ["planner_tasks", 20]]) {
+    if (parsed[key] != null && (!Array.isArray(parsed[key]) || parsed[key].length > cap)) throw new Error(`schema_${key}`);
+  }
+  const fitness_sessions = (parsed.fitness_sessions ?? []).map((item) => {
+    if (!item || typeof item !== "object" || Object.keys(item).some((key) => !["activity_type", "date", "duration_minutes", "notes", "time"].includes(key))) throw new Error("schema_fitness");
+    if (!fitnessTypes.has(item.activity_type)) throw new Error("schema_fitness_type");
+    if (item.duration_minutes != null && (!Number.isInteger(item.duration_minutes) || item.duration_minutes < 1 || item.duration_minutes > 1440)) throw new Error("schema_fitness_duration");
+    if (item.notes != null && (typeof item.notes !== "string" || item.notes.length > 500)) throw new Error("schema_fitness_notes");
+    if (item.time != null && (typeof item.time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time))) throw new Error("schema_fitness_time");
+    if (item.date != null && !isIsoDate(item.date)) throw new Error("schema_fitness_date");
+    return { activity_type: item.activity_type, date: item.date || input.date, duration_minutes: item.duration_minutes ?? null, notes: item.notes || "", time: item.time || null };
+  });
+  const relax_sessions = (parsed.relax_sessions ?? []).map((item) => {
+    if (!item || typeof item !== "object" || Object.keys(item).some((key) => !["technique", "date", "minutes", "note"].includes(key))) throw new Error("schema_relax");
+    if (typeof item.technique !== "string" || !item.technique.trim() || item.technique.length > 120) throw new Error("schema_relax_technique");
+    if (item.minutes != null && (!Number.isInteger(item.minutes) || item.minutes < 1 || item.minutes > 1440)) throw new Error("schema_relax_minutes");
+    if (item.note != null && (typeof item.note !== "string" || item.note.length > 500)) throw new Error("schema_relax_note");
+    if (item.date != null && !isIsoDate(item.date)) throw new Error("schema_relax_date");
+    return { technique: item.technique.trim(), date: item.date || input.date, minutes: item.minutes ?? null, note: item.note || "" };
+  });
+  const planner_tasks = (parsed.planner_tasks ?? []).map((item) => {
+    if (!item || typeof item !== "object" || Object.keys(item).some((key) => !["title", "date", "time", "duration_minutes", "notes"].includes(key))) throw new Error("schema_planner");
+    if (typeof item.title !== "string" || !item.title.trim() || item.title.length > 160) throw new Error("schema_planner_title");
+    if (item.date != null && !isIsoDate(item.date)) throw new Error("schema_planner_date");
+    if (item.time != null && (typeof item.time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time))) throw new Error("schema_planner_time");
+    if (item.duration_minutes != null && (!Number.isInteger(item.duration_minutes) || item.duration_minutes < 1 || item.duration_minutes > 1440)) throw new Error("schema_planner_duration");
+    if (item.notes != null && (typeof item.notes !== "string" || item.notes.length > 500)) throw new Error("schema_planner_notes");
+    return { title: item.title.trim(), date: item.date || null, time: item.time || null, duration_minutes: item.duration_minutes ?? null, notes: item.notes || "" };
+  });
   return { request_id: input.requestId, original_text: input.text, source_tags: input.tags,
-    journal_entry: parsed.journal_entry, water_ml: parsed.water_ml, meals, habits_done };
+    journal_entry: parsed.journal_entry, water_ml: parsed.water_ml, meals, habits_done, fitness_sessions, relax_sessions, planner_tasks };
 }
 
 async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {

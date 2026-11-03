@@ -152,6 +152,66 @@ export async function applySmartNutrition({ date, requestId, sourceJournalId, me
   });
 }
 
+// Journal's Smart Log adapters write only the existing, owner-defined skill paths.
+// IDs derive from the analysis request so re-applying cannot create duplicate sessions.
+export async function applySmartFitness({ date, requestId, sourceJournalId, sessions = [] }) {
+  const uid = getUid();
+  for (const [index, session] of sessions.entries()) {
+    const sessionDate = session.date || date;
+    const id = `${sessionDate}__smart_${requestId}_${index}`;
+    const ref = doc(db, "fitness", uid, "sessions", id);
+    const activity = session.activity_type === "strength" ? null : {
+      type: session.activity_type,
+      duration: session.duration_minutes == null ? "" : String(session.duration_minutes),
+      notes: session.notes || "",
+    };
+    await setDoc(ref, {
+      date: sessionDate,
+      session_id: `smart_${requestId}_${index}`,
+      sessionMode: session.activity_type === "strength" ? "strength" : "cardio",
+      block: session.activity_type === "strength" ? "Krafttraining" : "",
+      activity,
+      exercises: [],
+      notes: session.activity_type === "strength" ? session.notes || "Krafttraining" : "",
+      duration_minutes: session.duration_minutes,
+      session_time: session.time,
+      started_at: session.time ? new Date(`${sessionDate}T${session.time}:00`).toISOString() : null,
+      finished_at: null,
+      sourceJournalId,
+      sourceRequestId: requestId,
+      smartLog: true,
+      saved_at: serverTimestamp(),
+    }, { merge: true });
+  }
+  return sessions.length;
+}
+
+export async function applySmartRelax({ date, requestId, sourceJournalId, sessions = [] }) {
+  if (!sessions.length) return 0;
+  const groups = new Map();
+  sessions.forEach((session, index) => {
+    const targetDate = session.date || date;
+    groups.set(targetDate, [...(groups.get(targetDate) || []), { ...session, _smartIndex: index }]);
+  });
+  for (const [targetDate, group] of groups) {
+    const ref = doc(db, "relax", getUid(), "sessions", targetDate);
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(ref);
+      const current = snapshot.exists() ? snapshot.data() || {} : {};
+      const items = Array.isArray(current.items) ? [...current.items] : [];
+      group.forEach((session) => {
+        const id = `smart_${requestId}_${session._smartIndex}`;
+        const item = { id, technique: session.technique, minutes: session.minutes, note: session.note, sourceJournalId, sourceRequestId: requestId };
+        const oldIndex = items.findIndex((entry) => entry?.id === id);
+        if (oldIndex < 0) items.push(item);
+        else items[oldIndex] = item;
+      });
+      transaction.set(ref, { ...current, date: targetDate, items, saved_at: serverTimestamp() }, { merge: true });
+    });
+  }
+  return sessions.length;
+}
+
 export { getSupplementsHistory } from "../lib/db/firestore/supplements.js";
 
 export { getRelaxSessionHistory } from "../lib/db/firestore/relax.js";

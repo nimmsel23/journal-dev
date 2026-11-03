@@ -4,6 +4,7 @@ import { Activity, BrainCircuit, CheckSquare, Droplets, Sparkles, Utensils, Wand
 import * as db from "@journal-db";
 import { analyzeSmartJournal } from "../lib/smartJournalLogger.js";
 import { applySmartAnalysis } from "../lib/smartJournalApply.js";
+import { saveJournal } from "../lib/db/journal.js";
 
 const MEAL_LABELS = {
   breakfast: "Fruehstueck",
@@ -67,12 +68,12 @@ export default function AiLogVosView({ date, user }) {
     setError("");
     setSuccess("");
     try {
-      const result = await analyzeSmartJournal({ text: text.trim(), habits });
+      const result = await analyzeSmartJournal({ text: text.trim(), date, habits });
       setAnalysis(result);
     } catch (err) {
       console.error("[AiLogVosView] analyze failed", err);
-      setError(err?.message === "vertex_ai_unavailable"
-        ? "Vertex AI ist in diesem Kontext nicht verfuegbar."
+      setError(err?.code === "functions/resource-exhausted" || err?.message === "smart_log_weekly_quota_reached"
+        ? "Dein Smart-Log-Kontingent für diese Woche ist ausgeschöpft. Du kannst den Freitext trotzdem manuell speichern."
         : (err?.message || "Analyse fehlgeschlagen."));
     } finally {
       setLoading(false);
@@ -88,12 +89,28 @@ export default function AiLogVosView({ date, user }) {
     try {
       await applySmartAnalysis({ date, analysis, habits });
 
-      setSuccess("Journal, Meals und Habits wurden uebernommen.");
+      setSuccess("Journal, Nutrition, Fitness, Relax und passende Habits wurden übernommen. Planner-Vorschläge bleiben mit dem Journaleintrag verknüpft.");
       setAnalysis(null);
       setText("");
     } catch (err) {
       console.error("[AiLogVosView] apply failed", err);
       setError(err?.message || "Uebernahme fehlgeschlagen.");
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  async function handleManualSave() {
+    if (!text.trim() || loading || applying) return;
+    setApplying(true);
+    setError("");
+    try {
+      await saveJournal(date, text, { tags: [] });
+      setText("");
+      setError("");
+      setSuccess("Freitext wurde ohne KI im Journal gespeichert.");
+    } catch (err) {
+      setError(err?.message || "Journal-Eintrag konnte nicht gespeichert werden.");
     } finally {
       setApplying(false);
     }
@@ -117,7 +134,7 @@ export default function AiLogVosView({ date, user }) {
           </div>
         </div>
         <p className="text-sm text-indigo-300/80 md:max-w-md md:text-right">
-          Ein Text. Dann Vertex-Analyse. Danach uebernimmst du Journal, Mahlzeiten, Wasser und passende Habits mit einem Klick.
+          Ein Text. Dann Smart-Log-Analyse. Prüfe die Vorschläge und übernimm sie in die passenden Skills.
         </p>
       </header>
 
@@ -139,7 +156,7 @@ export default function AiLogVosView({ date, user }) {
             className="inline-flex items-center gap-2 rounded-full bg-indigo-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Sparkles className="h-4 w-4" />
-            {loading ? "Analysiert..." : "Vertex analysieren"}
+            {loading ? "Analysiert..." : "Smart Log analysieren"}
           </button>
           <div className="text-xs text-slate-500">
             Tag: <span className="text-slate-300">{date}</span>
@@ -239,11 +256,12 @@ export default function AiLogVosView({ date, user }) {
         subtitle="Kein Platzhalter mehr: Preview plus echte Writes in die vorhandenen Firestore-Layer."
       >
         <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-sm text-slate-300">Journal: speichert einen bereinigten Eintrag fuer den Tag.</div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-sm text-slate-300">Nutrition: fuegt erkannte Meals an den Tages-Log an und setzt Wasser auf den hoechsten bekannten Tageswert.</div>
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-sm text-slate-300">Journal: bewahrt den Originaltext und ergänzt die geprüfte Zusammenfassung.</div>
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-sm text-slate-300">Nutrition: ergänzt Mahlzeiten; separate Wassermengen werden addiert.</div>
           <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-sm text-slate-300">Habits: hakt nur bestehende, exakt gematchte Habits fuer das Datum ab.</div>
         </div>
         <div className="mt-4 flex justify-end">
+          <button onClick={handleManualSave} disabled={applying || loading || !text.trim()} className="mr-auto inline-flex items-center gap-2 rounded-full border border-slate-600 px-5 py-2.5 text-sm font-semibold text-slate-200 disabled:opacity-50">Freitext ohne KI speichern</button>
           <button
             onClick={handleApply}
             disabled={applying || loading || !analysis}

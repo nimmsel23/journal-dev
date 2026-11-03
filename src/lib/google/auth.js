@@ -9,6 +9,7 @@ import { createGoogleTokens, KEY } from "./tokens.js";
 /** Beide Scopes in einer Einwilligung: Kalender (lesen) und Google Tasks. */
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/calendar.events.owned",
   "https://www.googleapis.com/auth/tasks",
 ];
 const REGION = "europe-west1";

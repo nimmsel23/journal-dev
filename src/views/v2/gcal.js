@@ -1,10 +1,10 @@
 // gcal.js — Google-Calendar-Lesezugriff (Journal v2 Review, Game v2 → Fire).
 // Auth und Token liegen im gemeinsamen Dienst src/lib/google/ (derselbe wie für Google Tasks):
-// dauerhafte Verknüpfung über die Cloud Function, Rückfall Firebase-Popup (~1 h). Hier nur REST.
+// dauerhafte Verknüpfung über die Cloud Function, Rückfall Firebase-Popup (~1 h). Hier nur REST-Lesen.
 // Fehler: "google-expired" (neu verbinden), "google-offline" (Verbindung bleibt) – siehe tokens.js.
 //
 // Voraussetzung (Google Cloud, Projekt hinter firebase.config.js): Google
-// Calendar API aktiviert + Scope calendar.readonly im OAuth-Consent-Screen.
+// Calendar API aktiviert + Leseberechtigung calendar.readonly im OAuth-Consent-Screen.
 import { addDays, eachDayOfInterval, format, isBefore, parseISO } from "date-fns";
 import { google } from "../../lib/google/auth.js";
 

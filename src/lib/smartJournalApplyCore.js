@@ -1,4 +1,4 @@
-const ROOT_FIELDS = new Set(["journal_entry", "water_ml", "meals", "habits_done", "request_id", "original_text", "source_tags"]);
+const ROOT_FIELDS = new Set(["journal_entry", "water_ml", "meals", "habits_done", "fitness_sessions", "relax_sessions", "planner_tasks", "request_id", "original_text", "source_tags"]);
 const MEAL_FIELDS = new Set(["description", "type", "notes", "time", "kcal", "protein", "carbs", "fat", "estimated_fields"]);
 const HABIT_FIELDS = new Set(["name", "evidence"]);
 const MEAL_TYPES = new Set(["breakfast", "lunch", "dinner", "snack"]);
@@ -28,6 +28,12 @@ function optionalNumber(value, name, max) {
   return boundedNumber(value, name, max);
 }
 
+function validISODate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 export function validateSmartAnalysis(value) {
   assertObject(value, "root", ROOT_FIELDS);
   const journal_entry = boundedString(value.journal_entry, "journal_entry", 4000);
@@ -35,6 +41,9 @@ export function validateSmartAnalysis(value) {
   if (!Number.isInteger(water_ml)) throw new Error("smart_schema_water_ml_invalid");
   if (!Array.isArray(value.meals) || value.meals.length > 20) throw new Error("smart_schema_meals_invalid");
   if (!Array.isArray(value.habits_done) || value.habits_done.length > 50) throw new Error("smart_schema_habits_invalid");
+  for (const key of ["fitness_sessions", "relax_sessions", "planner_tasks"]) {
+    if (value[key] != null && (!Array.isArray(value[key]) || value[key].length > 20)) throw new Error(`smart_schema_${key}_invalid`);
+  }
 
   const meals = value.meals.map((meal) => {
     assertObject(meal, "meal", MEAL_FIELDS);
@@ -69,6 +78,34 @@ export function validateSmartAnalysis(value) {
     };
   });
 
+  const fitnessTypes = new Set(["strength", "hiit", "running", "walking", "cycling", "rowing", "swimming", "hiking", "climbing", "yoga", "stretching"]);
+  const fitness_sessions = (value.fitness_sessions || []).map((item) => {
+    assertObject(item, "fitness", new Set(["activity_type", "date", "duration_minutes", "notes", "time"]));
+    if (!fitnessTypes.has(item.activity_type)) throw new Error("smart_schema_fitness_type_invalid");
+    if (item.duration_minutes != null && (!Number.isInteger(item.duration_minutes) || item.duration_minutes < 1 || item.duration_minutes > 1440)) throw new Error("smart_schema_fitness_duration_invalid");
+    const time = item.time == null ? null : boundedString(item.time, "fitness_time", 5, { empty: false });
+    if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error("smart_schema_fitness_time_invalid");
+    const date = item.date == null ? null : boundedString(item.date, "fitness_date", 10, { empty: false });
+    if (date && !validISODate(date)) throw new Error("smart_schema_fitness_date_invalid");
+    return { activity_type: item.activity_type, date, duration_minutes: item.duration_minutes ?? null, notes: boundedString(item.notes ?? "", "fitness_notes", 500), time };
+  });
+  const relax_sessions = (value.relax_sessions || []).map((item) => {
+    assertObject(item, "relax", new Set(["technique", "date", "minutes", "note"]));
+    if (item.minutes != null && (!Number.isInteger(item.minutes) || item.minutes < 1 || item.minutes > 1440)) throw new Error("smart_schema_relax_minutes_invalid");
+    const date = item.date == null ? null : boundedString(item.date, "relax_date", 10, { empty: false });
+    if (date && !validISODate(date)) throw new Error("smart_schema_relax_date_invalid");
+    return { technique: boundedString(item.technique, "relax_technique", 120, { empty: false }).trim(), date, minutes: item.minutes ?? null, note: boundedString(item.note ?? "", "relax_note", 500) };
+  });
+  const planner_tasks = (value.planner_tasks || []).map((item) => {
+    assertObject(item, "planner", new Set(["title", "date", "time", "duration_minutes", "notes"]));
+    const taskDate = item.date == null ? null : boundedString(item.date, "planner_date", 10, { empty: false });
+    if (taskDate && !validISODate(taskDate)) throw new Error("smart_schema_planner_date_invalid");
+    const time = item.time == null ? null : boundedString(item.time, "planner_time", 5, { empty: false });
+    if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error("smart_schema_planner_time_invalid");
+    if (item.duration_minutes != null && (!Number.isInteger(item.duration_minutes) || item.duration_minutes < 1 || item.duration_minutes > 1440)) throw new Error("smart_schema_planner_duration_invalid");
+    return { title: boundedString(item.title, "planner_title", 160, { empty: false }).trim(), date: taskDate, time, duration_minutes: item.duration_minutes ?? null, notes: boundedString(item.notes ?? "", "planner_notes", 500) };
+  });
+
   const source_tags = value.source_tags ?? [];
   if (!Array.isArray(source_tags) || source_tags.length > 30 || source_tags.some((tag) => typeof tag !== "string" || tag.length > 60)) {
     throw new Error("smart_schema_source_tags_invalid");
@@ -77,7 +114,7 @@ export function validateSmartAnalysis(value) {
   if (!/^[A-Za-z0-9_-]{16,80}$/.test(request_id)) throw new Error("smart_schema_request_id_invalid");
   const original_text = boundedString(value.original_text, "original_text", 12000, { empty: false });
 
-  return { request_id, original_text, source_tags: [...new Set(source_tags)], journal_entry, water_ml, meals, habits_done };
+  return { request_id, original_text, source_tags: [...new Set(source_tags)], journal_entry, water_ml, meals, habits_done, fitness_sessions, relax_sessions, planner_tasks };
 }
 
 export function sourceJournalId(requestId) {
@@ -141,13 +178,13 @@ export function mergeSmartNutritionLog(currentValue, { date, requestId, journalI
   };
 }
 
-export function createSmartJournalApplier({ saveJournal, updateJournal, applyNutrition, recordHabit, now = () => new Date().toISOString() }) {
+export function createSmartJournalApplier({ saveJournal, updateJournal, applyNutrition, recordHabit, applyFitness, applyRelax, applyPlanner, now = () => new Date().toISOString() }) {
   return async function applySmartAnalysis({ date, analysis, habits = [] }) {
     const data = validateSmartAnalysis(analysis);
     const journalId = sourceJournalId(data.request_id);
     const tags = [...new Set([...data.source_tags, "smart-log"])];
     const summary = data.journal_entry;
-    const result = { request_id: data.request_id, sourceJournalId: journalId, journal: true, meals: 0, water_ml: 0, habits: [], unmatched: [] };
+    const result = { request_id: data.request_id, sourceJournalId: journalId, journal: true, meals: 0, water_ml: 0, habits: [], fitness: 0, relax: 0, planner: 0, planner_pending: [], planner_events: [], planner_suggestions: data.planner_tasks, unmatched: [] };
 
     await saveJournal(date, data.original_text, {
       id: journalId,
@@ -183,10 +220,23 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, applyNut
         result.habits.push(match.uuid);
       }
 
+      if (data.fitness_sessions.length && applyFitness) result.fitness = await applyFitness({ date, requestId: data.request_id, sourceJournalId: journalId, sessions: data.fitness_sessions });
+      if (data.relax_sessions.length && applyRelax) result.relax = await applyRelax({ date, requestId: data.request_id, sourceJournalId: journalId, sessions: data.relax_sessions });
+      if (data.planner_tasks.length && applyPlanner) {
+        const planner = await applyPlanner({ date, requestId: data.request_id, sourceJournalId: journalId, tasks: data.planner_tasks });
+        result.planner = planner.created;
+        result.planner_pending = planner.pending;
+        result.planner_events = planner.events || [];
+      } else if (data.planner_tasks.length) {
+        result.planner_pending = data.planner_tasks.map((task) => ({ task, reason: "planner_adapter_unavailable" }));
+      }
+
+      const status = result.planner_pending.length ? "partial" : "applied";
+
       await updateJournal(journalId, data.original_text, {
         preserveText: true,
         tags,
-        smartLog: { requestId: data.request_id, status: "applied", summary, applied: result, updatedAt: now() },
+        smartLog: { requestId: data.request_id, status, summary, applied: result, updatedAt: now() },
       });
       return result;
     } catch (error) {

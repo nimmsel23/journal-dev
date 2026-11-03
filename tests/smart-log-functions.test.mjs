@@ -51,6 +51,19 @@ test("rejects reusing a request ID for different input", async () => {
   assert.equal(providerCalls, 1);
 });
 
+test("Observe permits one successful analysis per week, then rejects AI only", async () => {
+  const db = fakeDb();
+  let providerCalls = 0;
+  const options = { db, uid: "u4", data: baseInput, apiKey: "test", now: new Date("2026-11-03T12:00:00Z"),
+    fetchImpl: async () => { providerCalls += 1; return { ok: true, json: async () => response }; } };
+  await analyze(options);
+  await assert.rejects(
+    analyze({ ...options, data: { ...baseInput, request_id: "abcdef1234567890" } }),
+    (error) => error.code === "resource-exhausted" && error.message === "smart_log_weekly_quota_reached",
+  );
+  assert.equal(providerCalls, 1);
+});
+
 test("failed model calls release reservation without consuming free quota", async () => {
   const db = fakeDb();
   const options = { db, uid: "u2", data: baseInput, apiKey: "test", now: new Date("2026-11-03T12:00:00Z"),

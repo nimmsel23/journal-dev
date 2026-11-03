@@ -71,6 +71,22 @@ test("Observe permits one successful analysis per week, then rejects AI only", a
   assert.equal(providerCalls, 1);
 });
 
+test("Operate entitlement uses its configured weekly limit", async () => {
+  const db = fakeDb();
+  db.seed("smartLoggingEntitlements/u7", { tier: "operate", active: true, weeklyLimit: 2 });
+  let providerCalls = 0;
+  const baseOptions = { db, uid: "u7", apiKey: "test", now: new Date("2026-11-03T12:00:00Z"),
+    fetchImpl: async () => { providerCalls += 1; return { ok: true, json: async () => response }; } };
+  await analyze({ ...baseOptions, data: baseInput });
+  await analyze({ ...baseOptions, data: { ...baseInput, request_id: "abcdef1234567890" } });
+  await assert.rejects(
+    analyze({ ...baseOptions, data: { ...baseInput, request_id: "fedcba0987654321" } }),
+    (error) => error.code === "resource-exhausted" && error.message === "smart_log_weekly_quota_reached" && error.details.limit === 2,
+  );
+  assert.equal(providerCalls, 2);
+  assert.equal(db.peek("smartLoggingQuotas/u7/weeks/2026-W45").tier, "operate");
+});
+
 test("concurrent Observe requests reserve quota atomically before either model call", async () => {
   const db = fakeDb();
   let providerCalls = 0;

@@ -15,6 +15,7 @@ function fakeDb() {
     get: async (document) => snapshot(docs.get(document.path)),
     set: (document, value, options = {}) => docs.set(document.path, options.merge ? { ...(docs.get(document.path) || {}), ...value } : value),
   });
+  root.peek = (path) => docs.get(path);
   return root;
 }
 
@@ -64,10 +65,22 @@ test("Observe permits one successful analysis per week, then rejects AI only", a
   assert.equal(providerCalls, 1);
 });
 
-test("failed model calls release reservation without consuming free quota", async () => {
+test("unknown provider results stay locked and are never sent to Gemini twice", async () => {
   const db = fakeDb();
+  let providerCalls = 0;
   const options = { db, uid: "u2", data: baseInput, apiKey: "test", now: new Date("2026-11-03T12:00:00Z"),
-    fetchImpl: async () => ({ ok: false, status: 503 }) };
+    fetchImpl: async () => { providerCalls += 1; return { ok: false, status: 503 }; } };
   await assert.rejects(analyze(options), /provider_http_503/);
-  assert.equal(await analyze({ ...options, fetchImpl: async () => ({ ok: true, json: async () => response }) }).then((result) => result.journal_entry), "Frühstück.");
+  await assert.rejects(
+    analyze({ ...options, fetchImpl: async () => { providerCalls += 1; return { ok: true, json: async () => response }; } }),
+    (error) => error.code === "aborted" && error.message === "smart_log_request_locked",
+  );
+  assert.equal(providerCalls, 1);
+  assert.equal(db.peek("smartLoggingRequests/u2/requests/1234567890abcdef").status, "locked");
+  assert.equal(db.peek("smartLoggingQuotas/u2/weeks/2026-W45").reserved, 1);
+  await assert.rejects(
+    analyze({ ...options, data: { ...baseInput, request_id: "abcdef1234567890" }, fetchImpl: async () => { providerCalls += 1; return { ok: true, json: async () => response }; } }),
+    (error) => error.code === "resource-exhausted" && error.message === "smart_log_weekly_quota_reached",
+  );
+  assert.equal(providerCalls, 1);
 });

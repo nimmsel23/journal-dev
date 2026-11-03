@@ -32,7 +32,7 @@ const iso = (d) => format(d, "yyyy-MM-dd");
 
 function smartLogErrorText(error) {
   const message = error?.message || "";
-  if (message.includes("smart_log_request_in_progress")) return "Diese Analyse läuft noch. Dein Entwurf bleibt gespeichert; bitte gleich erneut Analyse wählen.";
+  if (message.includes("smart_log_request_locked") || message.includes("smart_log_request_in_progress")) return "Diese Anfrage ist noch aktiv oder nach einem unklaren Abbruch gesperrt. Sie wird nicht erneut an Gemini gesendet, damit keine Doppelberechnung entsteht. Dein Entwurf bleibt erhalten; du kannst ihn jederzeit ohne KI speichern.";
   if (message.includes("smart_log_weekly_quota_reached")) return "Das Smart-Log-Wochenkontingent ist ausgeschöpft. Du kannst den Text ohne KI im Journal speichern.";
   if (message.includes("smart_log_provider_not_configured")) return "Smart Logging ist gerade nicht verfügbar. Dein Entwurf bleibt erhalten und kann ohne KI gespeichert werden.";
   if (message.includes("smart_log_failed")) return "Die Analyse ist fehlgeschlagen. Dein Entwurf bleibt erhalten; du kannst es erneut versuchen oder ohne KI speichern.";

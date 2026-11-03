@@ -152,7 +152,9 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
       throw new HttpsError("failed-precondition", "smart_log_request_id_conflict");
     }
     if (reqSnap.exists && reqSnap.get("status") === "succeeded") return { cached: reqSnap.get("result") };
-    if (reqSnap.exists && reqSnap.get("status") === "processing") throw new HttpsError("aborted", "smart_log_request_in_progress");
+    if (reqSnap.exists && ["processing", "locked"].includes(reqSnap.get("status"))) {
+      throw new HttpsError("aborted", "smart_log_request_locked");
+    }
     const entitlement = entitlementSnap.data() || {};
     const isOperate = entitlement.tier === "operate" && entitlement.active === true;
     const config = configSnap.data() || {};
@@ -167,7 +169,9 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
   });
   if (reservation.cached) return reservation.cached;
 
+  let providerStarted = false;
   try {
+    providerStarted = true;
     const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
       method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: promptFor(input) }] }],
@@ -190,8 +194,15 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
     await db.runTransaction(async (tx) => {
       const [quotaSnap, reqSnap] = await Promise.all([tx.get(quotaRef), tx.get(reqRef)]);
       if (reqSnap.exists && reqSnap.get("status") === "processing") {
-        tx.set(quotaRef, { reserved: Math.max(0, (quotaSnap.get("reserved") || 1) - 1), updatedAt: new Date() }, { merge: true });
-        tx.set(reqRef, { status: "failed", updatedAt: new Date() }, { merge: true });
+        if (providerStarted) {
+          // Gemini may have processed/billed the request even if its response
+          // or our success write failed. Keep the request and quota locked so
+          // a retry with the same ID cannot trigger a second model call.
+          tx.set(reqRef, { status: "locked", updatedAt: new Date(), failure: "provider_result_unknown" }, { merge: true });
+        } else {
+          tx.set(quotaRef, { reserved: Math.max(0, (quotaSnap.get("reserved") || 1) - 1), updatedAt: new Date() }, { merge: true });
+          tx.set(reqRef, { status: "failed", updatedAt: new Date() }, { merge: true });
+        }
       }
     });
     throw error;

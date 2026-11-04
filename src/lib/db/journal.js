@@ -162,6 +162,7 @@ export async function updateSmartJournalStatus(id, smartLog, expectedUid) {
 
 export async function saveJournal(date = localToday(), text, opts = {}) {
   const userId = await uid();
+  if (opts.expectedUid && userId !== opts.expectedUid) throw new Error("journal_account_changed");
   const content = opts.preserveText ? String(text ?? "") : String(text || "").trim();
   const time = new Date().toISOString();
   const { tags = [], startDate, endDate, smartLog, voiceSession } = opts;

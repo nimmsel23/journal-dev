@@ -189,6 +189,7 @@ export default function VoicePanel({ user }) {
         id: `voice_${sessionId}_${stage.key}`,
         tags: ["voice", stage.key],
         voiceSession,
+        expectedUid: user.uid,
       });
       write(sessionKey(stage.key, ":saved"), true);
       setSaved((s) => ({ ...s, [stage.key]: true }));
@@ -197,7 +198,7 @@ export default function VoicePanel({ user }) {
         try { window.sessionStorage.removeItem(VOICE_CONTEXT_KEY); } catch {}
         setVoiceContext(null);
       }
-    } catch (e) { setErr(e?.message || "Speichern fehlgeschlagen"); }
+    } catch (e) { setErr(e?.message === "journal_account_changed" ? "Das Konto hat sich geändert. Bitte melde dich erneut an und speichere die Phase noch einmal." : e?.message || "Speichern fehlgeschlagen"); }
     setBusy(false);
   };
 

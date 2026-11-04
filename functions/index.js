@@ -19,11 +19,15 @@ exports.analyzeSmartLog = functions
   .https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
     try {
+      // A saved result can be replayed without a provider key. Let the
+      // analysis layer reject only new requests when the secret is unavailable.
+      let apiKey = "";
+      try { apiKey = GEMINI_API_KEY.value() || ""; } catch { /* provider unavailable */ }
       return await require("./smart-log").analyze({
         db: admin.firestore(),
         uid: context.auth.uid,
         data: data || {},
-        apiKey: GEMINI_API_KEY.value(),
+        apiKey,
         fetchImpl: fetch,
         now: new Date(),
       });

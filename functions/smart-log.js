@@ -137,7 +137,6 @@ function validateResult(parsed, input) {
 async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
   const input = validateInput(data);
   const inputHash = fingerprint(input);
-  if (!apiKey) throw new HttpsError("failed-precondition", "smart_log_provider_not_configured");
   const key = weekKey(now);
   const reqRef = db.collection("smartLoggingRequests").doc(uid).collection("requests").doc(input.requestId);
   const quotaRef = db.collection("smartLoggingQuotas").doc(uid).collection("weeks").doc(key);
@@ -155,6 +154,7 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
     if (reqSnap.exists && ["processing", "locked"].includes(reqSnap.get("status"))) {
       throw new HttpsError("aborted", "smart_log_request_locked");
     }
+    if (!apiKey) throw new HttpsError("failed-precondition", "smart_log_provider_not_configured");
     const entitlement = entitlementSnap.data() || {};
     const isOperate = entitlement.tier === "operate" && entitlement.active === true;
     const config = configSnap.data() || {};

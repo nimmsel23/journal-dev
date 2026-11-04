@@ -46,6 +46,8 @@ test("successful requests consume one quota unit and replay from cache", async (
   const first = await analyze(options);
   const again = await analyze(options);
   assert.deepEqual(again, first);
+  const replayWithoutProvider = await analyze({ ...options, apiKey: "" });
+  assert.deepEqual(replayWithoutProvider, first);
   assert.equal(providerCalls, 1);
   assert.equal(first.original_text, baseInput.text);
 });

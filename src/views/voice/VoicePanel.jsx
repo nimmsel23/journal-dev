@@ -159,7 +159,7 @@ export default function VoicePanel({ user }) {
   const [idx, setIdx] = useState(0);
   const stage = VOICE_STAGES[idx];
   const [voiceContext, setVoiceContext] = useState(() => loadVoiceContext(user?.uid || null));
-  const [sessionId] = useState(() => {
+  const [sessionId, setSessionId] = useState(() => {
     const existing = voiceContext?.sessionId || read(key("session-id"), "");
     if (existing) return existing;
     const created = newSessionId();
@@ -172,9 +172,25 @@ export default function VoicePanel({ user }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  useEffect(() => { setAnswers(read(sessionKey(stage.key), {})); setErr(""); }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
-  const set = (k, v) => setAnswers((a) => { const n = { ...a, [k]: v }; write(sessionKey(stage.key), n); return n; });
+  useEffect(() => { setAnswers(read(sessionKey(stage.key), {})); setErr(""); }, [idx, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const set = (k, v) => {
+    setAnswers((a) => { const n = { ...a, [k]: v }; write(sessionKey(stage.key), n); return n; });
+    write(sessionKey(stage.key, ":saved"), false);
+    setSaved((current) => ({ ...current, [stage.key]: false }));
+  };
   const missing = stage.steps.filter((s) => s.required && s.kind !== "pause" && (answers[s.key] == null || answers[s.key] === "" || (Array.isArray(answers[s.key]) && !answers[s.key].length)));
+
+  const startNewSession = () => {
+    const nextId = newSessionId();
+    write(key("session-id"), nextId);
+    try { window.sessionStorage.removeItem(VOICE_CONTEXT_KEY); } catch {}
+    setVoiceContext(null);
+    setSessionId(nextId);
+    setSaved({});
+    setAnswers({});
+    setIdx(0);
+    setErr("");
+  };
 
   const save = async () => {
     setBusy(true); setErr("");
@@ -230,7 +246,7 @@ export default function VoicePanel({ user }) {
         </button>
         {missing.length > 0 && <span className="dv2-none">Noch offen: {missing.length}</span>}
       </div>
-      {stage.key === "strike" && saved.strike && <StrikeFollowUp answers={answers} sessionId={sessionId} />}
+      {stage.key === "strike" && saved.strike && <><StrikeFollowUp key={sessionId} answers={answers} sessionId={sessionId} /><button type="button" className="dv2-pick" disabled={busy} onClick={startNewSession}>Neue Voice-Session starten</button></>}
     </>
   );
 }

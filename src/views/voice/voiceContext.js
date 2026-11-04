@@ -1,5 +1,10 @@
 export const VOICE_CONTEXT_KEY = "vos:voice:context:v1";
 
+export function voiceStorageKey(ownerUid, date, suffix) {
+  const owner = typeof ownerUid === "string" && ownerUid ? `user:${encodeURIComponent(ownerUid)}` : "guest";
+  return `gv2:voice:v2:${owner}:${date}:${suffix}`;
+}
+
 export function writeVoiceContext(storage, context) {
   if (!storage || typeof context?.sessionId !== "string" || typeof context.sourceJournalId !== "string"
       || typeof context.sourceDate !== "string" || typeof context.sourceText !== "string") {

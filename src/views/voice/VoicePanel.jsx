@@ -10,10 +10,9 @@ import { asBool, readSetting, useSetting, writeSetting } from "../../lib/useSett
 import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 import { createSmartCalendarEvent } from "../../lib/google/smartCalendar.js";
 import { useGoogle } from "../../lib/google/useGoogle.js";
-import { readVoiceContext, VOICE_CONTEXT_KEY } from "./voiceContext.js";
+import { readVoiceContext, voiceStorageKey, VOICE_CONTEXT_KEY } from "./voiceContext.js";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
-const key = (stage, suffix = "") => `gv2:voice:${today()}:${stage}${suffix}`;
 const read = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 function newSessionId() {
@@ -156,23 +155,24 @@ function StrikeFollowUp({ answers, sessionId }) {
 }
 
 export default function VoicePanel({ user }) {
+  const key = (suffix) => voiceStorageKey(user?.uid || null, today(), suffix);
   const [idx, setIdx] = useState(0);
   const stage = VOICE_STAGES[idx];
   const [voiceContext, setVoiceContext] = useState(() => loadVoiceContext(user?.uid || null));
   const [sessionId] = useState(() => {
-    const existing = voiceContext?.sessionId || read(key("session", "-id"), "");
+    const existing = voiceContext?.sessionId || read(key("session-id"), "");
     if (existing) return existing;
     const created = newSessionId();
-    write(key("session", "-id"), created);
+    write(key("session-id"), created);
     return created;
   });
-  const sessionKey = (phase, suffix = "") => `gv2:voice:${today()}:${sessionId}:${phase}${suffix}`;
-  const [answers, setAnswers] = useState(() => read(sessionKey(stage.key), voiceContext ? {} : read(key(stage.key), {})));
-  const [saved, setSaved] = useState(() => Object.fromEntries(VOICE_STAGES.map((s) => [s.key, read(sessionKey(s.key, ":saved"), voiceContext ? false : read(key(s.key, ":saved"), false))])));
+  const sessionKey = (phase, suffix = "") => key(`${sessionId}:${phase}${suffix}`);
+  const [answers, setAnswers] = useState(() => read(sessionKey(stage.key), {}));
+  const [saved, setSaved] = useState(() => Object.fromEntries(VOICE_STAGES.map((s) => [s.key, read(sessionKey(s.key, ":saved"), false)])));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  useEffect(() => { setAnswers(read(sessionKey(stage.key), voiceContext ? {} : read(key(stage.key), {}))); setErr(""); }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setAnswers(read(sessionKey(stage.key), {})); setErr(""); }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (k, v) => setAnswers((a) => { const n = { ...a, [k]: v }; write(sessionKey(stage.key), n); return n; });
   const missing = stage.steps.filter((s) => s.required && s.kind !== "pause" && (answers[s.key] == null || answers[s.key] === "" || (Array.isArray(answers[s.key]) && !answers[s.key].length)));
 

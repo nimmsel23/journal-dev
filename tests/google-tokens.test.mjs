@@ -252,3 +252,24 @@ test('scoped token service never imports the old unowned token', async () => {
   assert.equal(svc.connected(), false);
   await assert.rejects(svc.getToken(), { message: 'google-expired' });
 });
+
+test('disconnect in another tab removes the cached token from this tab too', async () => {
+  const storage = mkStorage();
+  const deps = { storage, now: () => 1_000_000, getOwner: () => 'alice',
+    remote: { link: async () => ({ accessToken: 'token', expiresAt: 1_000_000 + H }), unlink: async () => {} }, popup: {} };
+  const first = createGoogleTokens(deps);
+  const second = createGoogleTokens(deps);
+  await first.connect();
+  assert.equal(await first.getToken(), 'token');
+  await second.disconnect();
+  assert.equal(first.connected(), false);
+  await assert.rejects(first.getToken(), { message: 'google-expired' });
+});
+
+test('readable storage with blocked writes keeps the current session in memory', async () => {
+  const storage = { getItem: () => null, setItem: () => { throw new Error('blocked'); }, removeItem: () => { throw new Error('blocked'); } };
+  const svc = createGoogleTokens({ storage, now: () => 1_000_000,
+    remote: { link: async () => ({ accessToken: 'memory-token', expiresAt: 1_000_000 + H }) }, popup: {} });
+  await svc.connect();
+  assert.equal(await svc.getToken(), 'memory-token');
+});

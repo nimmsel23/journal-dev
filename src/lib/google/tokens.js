@@ -57,6 +57,7 @@ export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a)
   const ownerNow = () => scoped ? (getOwner() || null) : "legacy";
   const storageKey = (owner) => scoped ? `${KEY}:${encodeURIComponent(owner)}` : KEY;
   const mem = new Map();
+  const memoryOnly = new Set();
   const listeners = new Set();
   const inflight = new Map();
   const requireOwner = () => {
@@ -69,12 +70,14 @@ export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a)
   };
   const read = (owner = ownerNow()) => {
     if (!owner) return {};
+    if (memoryOnly.has(owner)) return mem.get(owner) || {};
     try {
       const raw = storage.getItem(storageKey(owner));
       if (raw !== null && raw !== undefined) {
         const state = JSON.parse(raw);
         if (state && typeof state === "object") return state;
       }
+      return {};
     } catch { /* blocked storage falls back to memory */ }
     return mem.get(owner) || {};
   };
@@ -84,7 +87,8 @@ export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a)
     try {
       if (Object.keys(state).length) storage.setItem(storageKey(owner), JSON.stringify(state));
       else storage.removeItem(storageKey(owner));
-    } catch { /* blocked storage falls back to memory */ }
+      memoryOnly.delete(owner);
+    } catch { memoryOnly.add(owner); /* blocked storage falls back to memory */ }
   };
   const notify = () => listeners.forEach((fn) => { try { fn(); } catch {} });
   const clear = (owner = ownerNow()) => { write({}, owner); notify(); };

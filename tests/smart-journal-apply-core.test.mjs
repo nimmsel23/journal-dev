@@ -266,3 +266,17 @@ test('stops before tracker writes when the account changes during the journal cl
   await assert.rejects(apply({ date: '2026-11-03', analysis: analysis(), habits: [] }), /smart_account_changed/);
   assert.equal(nutritionCalled, false);
 });
+
+test('ambiguous habit names are not assigned to an arbitrary habit', async () => {
+  const writes = [];
+  const apply = createSmartJournalApplier({
+    saveJournal: async () => {}, updateJournal: async () => {},
+    recordHabit: async (id) => writes.push(id),
+  });
+  const result = await apply({ date: '2026-11-03', analysis: analysis({ meals: [], water_ml: 0 }), habits: [
+    { uuid: 'one', name: 'Meditieren' }, { uuid: 'two', name: ' meditieren ' },
+    { uuid: 'three', name: 'MEDITIEREN' },
+  ] });
+  assert.deepEqual(writes, []);
+  assert.deepEqual(result.unmatched, ['Meditieren']);
+});

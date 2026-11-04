@@ -270,7 +270,13 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, claimJou
         result.water_ml = nutrition.water_ml;
       }
 
-      const byName = new Map(habits.map((habit) => [String(habit.name || "").trim().toLocaleLowerCase(), habit]));
+      const byName = new Map();
+      for (const habit of habits) {
+        if (habit.deleted || !habit.uuid) continue;
+        const key = String(habit.name || "").trim().toLocaleLowerCase();
+        if (!key) continue;
+        byName.set(key, byName.has(key) ? null : habit);
+      }
       const doneIds = new Set();
       for (const hit of data.habits_done) {
         const match = byName.get(hit.name.toLocaleLowerCase());

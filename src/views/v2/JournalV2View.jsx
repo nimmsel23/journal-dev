@@ -298,11 +298,11 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       if (!pending.length) { setAnalysis(null); setAnalysisDate(null); setResumeDate(null); }
       if (!resumeDate) { setDraft(""); clearSmartRequest(); }
       const parts = [res.journal && "Eintrag", res.meals && `${res.meals} Mahlzeit${res.meals > 1 ? "en" : ""}`, res.water_ml && `${res.water_ml} ml Wasser`, res.habits.length && `${res.habits.length} Habit${res.habits.length > 1 ? "s" : ""}`, res.fitness && `${res.fitness} Fitness-Session${res.fitness > 1 ? "s" : ""}`, res.relax && `${res.relax} Relax-Einheit${res.relax > 1 ? "en" : ""}`, res.planner && `${res.planner} Google-Kalendertermin${res.planner > 1 ? "e" : ""}`].filter(Boolean);
-      const habitNote = res.habits_skipped?.length ? " Ein später geänderter Habit-Status bleibt unverändert." : "";
+      const habitNote = `${res.habits_skipped?.length ? " Ein später geänderter Habit-Status bleibt unverändert." : ""}${res.unmatched?.length ? " Nicht eindeutig zugeordnete Habits wurden ausgelassen; bitte manuell prüfen." : ""}`;
       setSmartMsg(res.planner_pending?.some((pending) => pending.reason === "google_calendar_event_conflict")
         ? `Übernommen: ${parts.join(", ")}. Ein vorhandener Kalendertermin weicht vom Vorschlag ab. Bitte prüfe ihn im Google Kalender; er wurde nicht überschrieben.`
         : res.planner_pending?.length
-        ? `Übernommen: ${parts.join(", ")}. ${res.planner_pending.length} Kalender-Vorschlag${res.planner_pending.length > 1 ? "e brauchen" : " braucht"} noch Angaben oder eine Google-Berechtigung.`
+        ? `Übernommen: ${parts.join(", ")}. ${res.planner_pending.length} Kalender-Vorschlag${res.planner_pending.length > 1 ? "e brauchen" : " braucht"} noch Angaben oder eine Google-Berechtigung.${habitNote}`
         : `Übernommen: ${parts.join(", ") || "nichts"}.${habitNote}`);
       qc.invalidateQueries({ queryKey: ["jv2-entries", uid, applyDate] });
       qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
@@ -584,8 +584,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             <fieldset className="jv2-smart-locked-group" disabled={retryLocked}>
             <legend className="jv2-visually-hidden">Habit-Vorschläge</legend>
             {analysis.habits_done.map((h, i) => {
-              const known = allHabits.some((x) => String(x.name || "").trim().toLowerCase() === h.name.toLowerCase());
-              return <div className="jv2-smart-habit" key={`${analysis.request_id}-habit-${i}`}><label><b>Habit</b><input value={h.name} onChange={(event) => editAnalysisHabit(i, { name: event.target.value })} />{!known && <small>Unbekannt — wird nur übernommen, wenn der Name einem vorhandenen Habit entspricht.</small>}</label><label><b>Beleg</b><input value={h.evidence} onChange={(event) => editAnalysisHabit(i, { evidence: event.target.value })} /></label><button type="button" className="jv2-smart-remove" onClick={() => editAnalysis({ habits_done: analysis.habits_done.filter((_, index) => index !== i) })}>Entfernen</button></div>;
+              const matches = allHabits.filter((x) => !x.deleted && x.uuid && String(x.name || "").trim().toLocaleLowerCase() === h.name.trim().toLocaleLowerCase()).length;
+              return <div className="jv2-smart-habit" key={`${analysis.request_id}-habit-${i}`}><label><b>Habit</b><input value={h.name} onChange={(event) => editAnalysisHabit(i, { name: event.target.value })} />{matches !== 1 && <small>{matches ? "Mehrere Habits heißen so — bitte eindeutig benennen oder manuell erfassen." : "Unbekannt — wird nur bei eindeutigem vorhandenem Habit übernommen."}</small>}</label><label><b>Beleg</b><input value={h.evidence} onChange={(event) => editAnalysisHabit(i, { evidence: event.target.value })} /></label><button type="button" className="jv2-smart-remove" onClick={() => editAnalysis({ habits_done: analysis.habits_done.filter((_, index) => index !== i) })}>Entfernen</button></div>;
             })}
             </fieldset>
             <div className="jv2-sact">

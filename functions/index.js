@@ -13,6 +13,13 @@ const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_OAUTH_CLIENT_SECRET");
 const GOOGLE_CLIENT_ID = defineString("GOOGLE_OAUTH_CLIENT_ID", { default: "" });
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
+exports.getSmartLogQuota = functions.region("europe-west1").https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
+  const smartLog = require("./smart-log");
+  smartLog.assertExpectedUid(context.auth.uid, data?.expected_uid);
+  return smartLog.getQuotaStatus({ db: admin.firestore(), uid: context.auth.uid });
+});
+
 exports.analyzeSmartLog = functions
   .region("europe-west1")
   .runWith({ secrets: [GEMINI_API_KEY], timeoutSeconds: 60, memory: "256MB" })

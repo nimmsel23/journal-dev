@@ -13,7 +13,7 @@ import { getJournal, getJournalRange, saveJournal, updateJournal, deleteJournal,
 import { MonthView, WeekView, YearView, rangeFor } from "./JournalV2Range.jsx";
 import HabitsView from "./JournalV2Habits.jsx";
 import { TimelineOverlay, useTimelineDrag, hhmm } from "./TimelineDrag.jsx";
-import { analyzeSmartJournal, newSmartRequestId } from "../../lib/smartJournalLogger.js";
+import { analyzeSmartJournal, getSmartLogQuota, newSmartRequestId } from "../../lib/smartJournalLogger.js";
 import { browserStorage, clearSmartLogRequestId, readSmartLogRequestId, smartLogRequestKey, writeSmartLogRequestId } from "../../lib/smartLogRequestStore.js";
 import { applySmartAnalysis } from "../../lib/smartJournalApply.js";
 import { smartAnalysisForRetry, smartPendingPlannerIndexes } from "../../lib/smartJournalApplyCore.js";
@@ -92,6 +92,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const [busy, setBusy] = useState(false);
   const day = parseISO(date);
   const uid = user?.uid ?? null;
+  const quota = useQuery({ queryKey: ["smart-log-quota", uid], queryFn: () => getSmartLogQuota(uid), enabled: !!uid && smart, retry: false, staleTime: 60000 });
   const account = useRef({ uid, generation: 0 });
   if (account.current.uid !== uid) account.current = { uid, generation: account.current.generation + 1 };
   const [previewGeneration, setPreviewGeneration] = useState(null);
@@ -260,7 +261,10 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       console.error("Smart-Analyse fehlgeschlagen:", error);
       setSmartMsg(error?.message === "vertex_ai_unavailable" ? "Vertex AI ist hier nicht verfügbar." : smartLogErrorText(error));
     } finally {
-      if (account.current.generation === generation) setBusy(false);
+      if (account.current.generation === generation) {
+        setBusy(false);
+        qc.invalidateQueries({ queryKey: ["smart-log-quota", uid] });
+      }
     }
   };
 
@@ -593,6 +597,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {smartMsg && <div className="jv2-empty" role="status">{smartMsg}</div>}
 
         {smart && <p className="jv2-smart-disclosure">Mit „Analyse“ werden dein Text, Datum, Tags und Habit-Namen über den VitalOS-Server an Gemini gesendet. Es wird nichts automatisch analysiert; du prüfst die Vorschläge vor der Übernahme.</p>}
+        {smart && uid && quota.data && <p className="jv2-smart-disclosure">{quota.data.tier === "operate" ? "Operate" : "Observe"} · {quota.data.remaining} von {quota.data.limit} KI-Analysen diese Woche verfügbar. Wochenwechsel: Montag, Zeitzone Wien.{quota.data.reserved > 0 ? " Eine laufende oder gesperrte Anfrage ist bereits berücksichtigt." : ""}</p>}
+        {smart && uid && quota.isError && <p className="jv2-smart-disclosure">Das KI-Kontingent ist gerade nicht abrufbar. Dein Journal kannst du ohne KI nutzen.</p>}
 
         <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>
           <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Journal, Mahlzeiten, Wasser und Habits zerlegen">✦</button>

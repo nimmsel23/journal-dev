@@ -7,6 +7,13 @@ export function newSmartRequestId() {
   return `smart_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 14)}`;
 }
 
+export async function getSmartLogQuota(expectedUid) {
+  if (!expectedUid || auth?.currentUser?.uid !== expectedUid) throw new Error("smart_account_changed");
+  const { data } = await httpsCallable(getFunctions(app, "europe-west1"), "getSmartLogQuota")({ expected_uid: expectedUid });
+  if (auth?.currentUser?.uid !== expectedUid) throw new Error("smart_account_changed");
+  return data;
+}
+
 export async function analyzeSmartJournal({ text, date, habits = [], tags = [], requestId, expectedUid }) {
   if (!expectedUid || auth?.currentUser?.uid !== expectedUid) throw new Error("smart_account_changed");
   const request_id = requestId || newSmartRequestId();

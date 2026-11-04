@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 const require = createRequire(import.meta.url);
-const { analyze, weekKey, assertExpectedUid } = require("../functions/smart-log.js");
+const { analyze, getQuotaStatus, weekKey, assertExpectedUid } = require("../functions/smart-log.js");
 
 test("Smart Log rejects an account mismatch before processing", () => {
   assert.doesNotThrow(() => assertExpectedUid("alice", "alice"));
@@ -33,6 +33,20 @@ function fakeDb() {
 
 const baseInput = { request_id: "1234567890abcdef", text: "Um 08:30 Haferflocken gegessen.", date: "2026-11-03", habits: [], tags: [] };
 const response = { candidates: [{ content: { parts: [{ text: JSON.stringify({ journal_entry: "Frühstück.", water_ml: 0, meals: [{ description: "Haferflocken", type: "breakfast", time: "08:30" }], habits_done: [], fitness_sessions: [], relax_sessions: [], planner_tasks: [] }) }] } }] };
+
+test("quota status shares the enforcement policy and includes reservations", async () => {
+  const db = fakeDb();
+  const now = new Date("2026-11-03T12:00:00Z");
+  assert.deepEqual(await getQuotaStatus({ db, uid: "status", now }), { tier: "observe", week: "2026-W45", timeZone: "Europe/Vienna", limit: 1, used: 0, reserved: 0, remaining: 1 });
+  db.seed("smartLoggingEntitlements/status", { tier: "operate", active: true, weeklyLimit: 4, expiresAt: new Date("2026-11-04T12:00:00Z") });
+  db.seed("smartLoggingQuotas/status/weeks/2026-W45", { used: 1, reserved: 2 });
+  const status = await getQuotaStatus({ db, uid: "status", now });
+  assert.equal(status.tier, "operate");
+  assert.equal(status.remaining, 1);
+  const expired = await getQuotaStatus({ db, uid: "status", now: new Date("2026-11-05T12:00:00Z") });
+  assert.equal(expired.tier, "observe");
+  assert.equal(expired.remaining, 0);
+});
 
 test("uses ISO weeks in Vienna, including year boundaries", () => {
   assert.equal(weekKey(new Date("2026-12-31T12:00:00Z")), "2026-W53");

@@ -21,6 +21,12 @@ function hasOperateEntitlement(entitlement, now) {
     : typeof expiry === "number" ? expiry : NaN;
   return Number.isFinite(milliseconds) && milliseconds > now.getTime();
 }
+function quotaPolicy(entitlement, config, now) {
+  const isOperate = hasOperateEntitlement(entitlement, now);
+  const limit = isOperate ? entitlement.weeklyLimit : (config.observeWeeklyLimit ?? 1);
+  if (!Number.isInteger(limit) || limit < 0) throw new HttpsError("failed-precondition", "smart_log_entitlement_not_configured");
+  return { tier: isOperate ? "operate" : "observe", limit };
+}
 function isIsoDate(value) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -172,14 +178,12 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
     }
     if (!apiKey) throw new HttpsError("failed-precondition", "smart_log_provider_not_configured");
     const entitlement = entitlementSnap.data() || {};
-    const isOperate = hasOperateEntitlement(entitlement, now);
     const config = configSnap.data() || {};
-    const limit = isOperate ? entitlement.weeklyLimit : (config.observeWeeklyLimit ?? 1);
-    if (!Number.isInteger(limit) || limit < 0) throw new HttpsError("failed-precondition", "smart_log_entitlement_not_configured");
+    const { tier, limit } = quotaPolicy(entitlement, config, now);
     const used = quotaSnap.exists ? (quotaSnap.get("used") || 0) : 0;
     const pending = quotaSnap.exists ? (quotaSnap.get("reserved") || 0) : 0;
-    if (used + pending >= limit) throw new HttpsError("resource-exhausted", "smart_log_weekly_quota_reached", { tier: isOperate ? "operate" : "observe", week: key, limit });
-    tx.set(quotaRef, { used, reserved: pending + 1, week: key, tier: isOperate ? "operate" : "observe", updatedAt: new Date() }, { merge: true });
+    if (used + pending >= limit) throw new HttpsError("resource-exhausted", "smart_log_weekly_quota_reached", { tier, week: key, limit });
+    tx.set(quotaRef, { used, reserved: pending + 1, week: key, tier, updatedAt: new Date() }, { merge: true });
     tx.set(reqRef, { status: "processing", week: key, inputHash, createdAt: new Date(), updatedAt: new Date() });
     return { cached: null };
   });
@@ -225,4 +229,18 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
   }
 }
 
-module.exports = { analyze, weekKey, validateInput, validateResult, assertExpectedUid };
+async function getQuotaStatus({ db, uid, now = new Date() }) {
+  const week = weekKey(now);
+  const quota = db.collection("smartLoggingQuotas").doc(uid).collection("weeks").doc(week);
+  const entitlement = db.collection("smartLoggingEntitlements").doc(uid);
+  const config = db.collection("smartLoggingConfig").doc("default");
+  return db.runTransaction(async (tx) => {
+    const [q, e, c] = await Promise.all([tx.get(quota), tx.get(entitlement), tx.get(config)]);
+    const { tier, limit } = quotaPolicy(e.data() || {}, c.data() || {}, now);
+    const used = q.exists ? (q.get("used") || 0) : 0;
+    const reserved = q.exists ? (q.get("reserved") || 0) : 0;
+    return { tier, week, timeZone: REGION_TIME_ZONE, limit, used, reserved, remaining: Math.max(0, limit - used - reserved) };
+  });
+}
+
+module.exports = { analyze, getQuotaStatus, weekKey, validateInput, validateResult, assertExpectedUid };

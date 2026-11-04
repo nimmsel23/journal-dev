@@ -47,3 +47,13 @@ test("calendar retry compares normalized offsets and all-day boundaries", () => 
   const timed = { ...allDay, start: { dateTime: "2026-11-04T17:00:00Z" }, end: { dateTime: "2026-11-04T17:45:00Z" } };
   assert.equal(matchesSmartCalendarEvent({ ...timed, start: { dateTime: "2026-11-04T18:00:00+01:00" }, end: { dateTime: "2026-11-04T18:45:00+01:00" } }, timed), true);
 });
+
+test("rejects a nonexistent local time instead of silently shifting it", () => {
+  const old = process.env.TZ;
+  process.env.TZ = "Europe/Vienna";
+  try {
+    const args = { sourceJournalId: "voice_session", requestId: "voice_session" };
+    assert.throws(() => buildSmartCalendarEvent({ title: "Training", date: "2026-03-29", time: "02:30", duration_minutes: 30 }, args), /planner_local_time_invalid/);
+    assert.doesNotThrow(() => buildSmartCalendarEvent({ title: "Training", date: "2026-03-29", time: "03:30", duration_minutes: 30 }, args));
+  } finally { if (old === undefined) delete process.env.TZ; else process.env.TZ = old; }
+});

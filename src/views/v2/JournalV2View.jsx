@@ -301,6 +301,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       const habitNote = `${res.habits_skipped?.length ? " Ein später geänderter Habit-Status bleibt unverändert." : ""}${res.unmatched?.length ? " Nicht eindeutig zugeordnete Habits wurden ausgelassen; bitte manuell prüfen." : ""}`;
       setSmartMsg(res.planner_pending?.some((pending) => pending.reason === "google_calendar_event_conflict")
         ? `Übernommen: ${parts.join(", ")}. Ein vorhandener Kalendertermin weicht vom Vorschlag ab. Bitte prüfe ihn im Google Kalender; er wurde nicht überschrieben.`
+        : res.planner_pending?.some((pending) => pending.reason === "planner_local_time_invalid")
+        ? `Übernommen: ${parts.join(", ")}. Eine gewählte Uhrzeit existiert an diesem Tag in deiner Zeitzone nicht. Bitte ändere sie.${habitNote}`
         : res.planner_pending?.length
         ? `Übernommen: ${parts.join(", ")}. ${res.planner_pending.length} Kalender-Vorschlag${res.planner_pending.length > 1 ? "e brauchen" : " braucht"} noch Angaben oder eine Google-Berechtigung.${habitNote}`
         : `Übernommen: ${parts.join(", ") || "nichts"}.${habitNote}`);

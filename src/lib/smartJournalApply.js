@@ -19,7 +19,8 @@ async function applyPlanner({ requestId, sourceJournalId, tasks }, assertAccount
       created += 1;
     } catch (error) {
       assertAccount();
-      const reason = error?.message === "planner_event_content_conflict"
+      const reason = error?.message === "planner_local_time_invalid" ? "planner_local_time_invalid"
+        : error?.message === "planner_event_content_conflict"
         ? "google_calendar_event_conflict"
         : error?.status === 403 || /insufficient|scope/i.test(error?.message || "")
         ? "google_calendar_permission_required"

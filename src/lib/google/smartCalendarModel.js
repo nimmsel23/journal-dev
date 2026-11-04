@@ -15,6 +15,10 @@ export function buildSmartCalendarEvent(task, { sourceJournalId, requestId, time
   if (!Number.isInteger(task.duration_minutes) || task.duration_minutes < 1 || task.duration_minutes > 1440) throw new Error("planner_duration_required");
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(task.time)) throw new Error("planner_time_invalid");
   const start = new Date(`${task.date}T${task.time}:00`);
+  const [year, month, day] = task.date.split("-").map(Number);
+  const [hour, minute] = task.time.split(":").map(Number);
+  if (start.getFullYear() !== year || start.getMonth() + 1 !== month || start.getDate() !== day
+      || start.getHours() !== hour || start.getMinutes() !== minute) throw new Error("planner_local_time_invalid");
   const end = new Date(start.getTime() + task.duration_minutes * 60_000);
   return { ...base, start: { dateTime: start.toISOString(), timeZone }, end: { dateTime: end.toISOString(), timeZone } };
 }

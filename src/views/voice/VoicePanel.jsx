@@ -136,7 +136,7 @@ function StrikeFollowUp({ answers, sessionId }) {
       }, { sourceJournalId, requestId: `voice_${sessionId}`, index: 0 });
       setEvent(result);
     } catch (cause) {
-      setError(cause?.message || "Der Planner-Eintrag konnte nicht angelegt werden.");
+      setError(cause?.message === "planner_local_time_invalid" ? "Diese Uhrzeit existiert an diesem Tag in deiner Zeitzone nicht. Bitte wähle eine andere Uhrzeit." : cause?.message || "Der Planner-Eintrag konnte nicht angelegt werden.");
     } finally { setBusy(false); }
   };
 

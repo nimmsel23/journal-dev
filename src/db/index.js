@@ -187,6 +187,7 @@ export async function applySmartFitness({ date, requestId, sourceJournalId, sess
         activity,
         exercises: [],
         notes: session.activity_type === "strength" ? session.notes || "Krafttraining" : "",
+        duration: session.duration_minutes == null ? "" : String(session.duration_minutes),
         duration_minutes: session.duration_minutes,
         session_time: session.time,
         started_at: session.time ? new Date(`${sessionDate}T${session.time}:00`).toISOString() : null,
@@ -205,6 +206,7 @@ export async function applySmartFitness({ date, requestId, sourceJournalId, sess
 
 export async function applySmartRelax({ date, requestId, sourceJournalId, sessions = [] }) {
   if (!sessions.length) return 0;
+  const uid = getUid();
   const groups = new Map();
   sessions.forEach((session, index) => {
     const targetDate = session.date || date;
@@ -212,7 +214,7 @@ export async function applySmartRelax({ date, requestId, sourceJournalId, sessio
   });
   let created = 0;
   for (const [targetDate, group] of groups) {
-    const ref = doc(db, "relax", getUid(), "sessions", targetDate);
+    const ref = doc(db, "relax", uid, "sessions", targetDate);
     created += await runTransaction(db, async (transaction) => {
       const snapshot = await transaction.get(ref);
       const current = snapshot.exists() ? snapshot.data() || {} : {};

@@ -61,7 +61,7 @@ function splitEntry(text) {
 const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["jahr", "Jahr"]];
 const LINKS = [["#door2", "Door"], ["#game2/focus", "Focus"], ["#game2", "Game"]];
 
-export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice, startSmart = false }) {
+export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice, startSmart = false, onSetHabitCompletion }) {
   const qc = useQueryClient();
   // Vollbild: Seitenhintergrund + Statusleiste papierfarben, solange v2 offen ist
   useEffect(() => {
@@ -217,7 +217,10 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
 
   const toggleHabit = (habit, recordDate = date) => {
     if (recordDate > db.localToday() || habit.deleted) return Promise.resolve(false);
-    return habitAction(() => habit.hasRecord(recordDate) ? db.unrecordHabit(habit.uuid, recordDate) : db.recordHabit(habit.uuid, recordDate));
+    const completed = !habit.hasRecord(recordDate);
+    return habitAction(() => onSetHabitCompletion
+      ? onSetHabitCompletion(habit.uuid, recordDate, completed)
+      : completed ? db.recordHabit(habit.uuid, recordDate) : db.unrecordHabit(habit.uuid, recordDate));
   };
 
   const toggleSmart = () => {

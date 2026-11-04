@@ -22,7 +22,7 @@ async function call(name, data, expectedUid = auth?.currentUser?.uid) {
   const { getFunctions, httpsCallable } = await import("firebase/functions");
   if (auth?.currentUser?.uid !== expectedUid) throw fail("google-account-changed");
   try {
-    const result = (await httpsCallable(getFunctions(app, REGION), name)(data || {})).data;
+    const result = (await httpsCallable(getFunctions(app, REGION), name)({ ...(data || {}), expected_uid: expectedUid })).data;
     if (auth?.currentUser?.uid !== expectedUid) throw fail("google-account-changed");
     return result;
   } catch (e) {

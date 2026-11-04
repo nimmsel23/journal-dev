@@ -7,7 +7,7 @@ admin.initializeApp();
 // Einrichtung: JOURNAL-V2.md, Abschnitt „Google dauerhaft verbinden“. Secret/Parameter:
 //   firebase functions:secrets:set GOOGLE_OAUTH_CLIENT_SECRET   ·   GOOGLE_OAUTH_CLIENT_ID (beim Deploy abgefragt)
 const { defineSecret, defineString } = require("firebase-functions/params");
-const { createGoogleHandlers } = require("./google");
+const { createGoogleHandlers, assertExpectedGoogleUid } = require("./google");
 const { buildDoorReminder, fetchDueTasks } = require("./door-reminders");
 const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_OAUTH_CLIENT_SECRET");
 const GOOGLE_CLIENT_ID = defineString("GOOGLE_OAUTH_CLIENT_ID", { default: "" });
@@ -67,6 +67,7 @@ const googleCall = (fn) =>
     .runWith({ secrets: [GOOGLE_CLIENT_SECRET] })
     .https.onCall(async (data, context) => {
       if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
+      assertExpectedGoogleUid(context.auth.uid, data, functions.https.HttpsError);
       return fn(makeGoogleHandlers(), context.auth.uid, data || {});
     });
 

@@ -235,3 +235,34 @@ test('only pending calendar positions can be edited, including unambiguous legac
   assert.deepEqual(smartPendingPlannerIndexes(tasks, [{ index: 2 }, { task: { title: 'B' } }, { task: { title: 'A' } }]), [2, 1]);
   assert.deepEqual(smartPendingPlannerIndexes(tasks, [{ task: { title: 'A' } }]), []);
 });
+
+test('stops subsequent tracker writes when the account changes during nutrition', async () => {
+  let owner = 'alice';
+  const calls = [];
+  const apply = createSmartJournalApplier({
+    assertAccount: () => { if (owner !== 'alice') throw new Error('smart_account_changed'); },
+    claimJournal: async () => null,
+    updateStatus: async () => calls.push('status'),
+    applyNutrition: async () => { calls.push('nutrition'); owner = 'bob'; return { meals: 1, water_ml: 500 }; },
+    recordHabit: async () => calls.push('habit'),
+  });
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    await assert.rejects(apply({ date: '2026-11-03', analysis: analysis(), habits: [{ uuid: 'habit-1', name: 'Meditieren' }] }), /smart_account_changed/);
+  } finally { console.error = originalError; }
+  assert.deepEqual(calls, ['nutrition']);
+});
+
+test('stops before tracker writes when the account changes during the journal claim', async () => {
+  let owner = 'alice';
+  let nutritionCalled = false;
+  const apply = createSmartJournalApplier({
+    assertAccount: () => { if (owner !== 'alice') throw new Error('smart_account_changed'); },
+    claimJournal: async () => { owner = 'bob'; return null; },
+    applyNutrition: async () => { nutritionCalled = true; },
+    recordHabit: async () => {},
+  });
+  await assert.rejects(apply({ date: '2026-11-03', analysis: analysis(), habits: [] }), /smart_account_changed/);
+  assert.equal(nutritionCalled, false);
+});

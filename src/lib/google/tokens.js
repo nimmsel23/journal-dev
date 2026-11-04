@@ -33,6 +33,7 @@ export function googleErrorText(e) {
   switch (e?.message) {
     case "google-not-configured": return "Die dauerhafte Google-Verbindung ist für dieses Produkt noch nicht eingerichtet.";
     case "google-expired": return "Google-Verbindung abgelaufen – bitte neu verbinden.";
+    case "google-account-changed": return "Das angemeldete Konto hat sich geändert. Bitte starte den Vorgang erneut.";
     case "google-offline": return "Google gerade nicht erreichbar (offline?). Die Verbindung bleibt bestehen.";
     default: return e?.message || "Fehler";
   }
@@ -51,112 +52,138 @@ const fail = (message, code) => Object.assign(new Error(message), code ? { code 
  *     unlink()     → void
  * @param {object} deps.popup    popup.connect() → {accessToken}
  */
-export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a) => fetch(...a), remote, popup, allowPopupFallback = true }) {
-  let mem = {}; // Rückfall, falls der Speicher gesperrt ist (privates Fenster): hält wenigstens die Sitzung
+export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a) => fetch(...a), remote, popup, allowPopupFallback = true, getOwner }) {
+  const scoped = typeof getOwner === "function";
+  const ownerNow = () => scoped ? (getOwner() || null) : "legacy";
+  const storageKey = (owner) => scoped ? `${KEY}:${encodeURIComponent(owner)}` : KEY;
+  const mem = new Map();
   const listeners = new Set();
-  let inflight = null;
-
-  const read = () => {
+  const inflight = new Map();
+  const requireOwner = () => {
+    const owner = ownerNow();
+    if (!owner) throw fail("google-expired");
+    return owner;
+  };
+  const assertOwner = (owner) => {
+    if (ownerNow() !== owner) throw fail("google-account-changed");
+  };
+  const read = (owner = ownerNow()) => {
+    if (!owner) return {};
     try {
-      const raw = storage.getItem(KEY);
+      const raw = storage.getItem(storageKey(owner));
       if (raw !== null && raw !== undefined) {
-        const s = JSON.parse(raw);
-        if (s && typeof s === "object") return s;
+        const state = JSON.parse(raw);
+        if (state && typeof state === "object") return state;
       }
-    } catch { /* gesperrt/kaputtes JSON → Rückfall */ }
-    return mem;
+    } catch { /* blocked storage falls back to memory */ }
+    return mem.get(owner) || {};
   };
-  const write = (s) => {
-    mem = s;
-    try { if (Object.keys(s).length) storage.setItem(KEY, JSON.stringify(s)); else storage.removeItem(KEY); } catch { /* gesperrt */ }
+  const write = (state, owner = ownerNow()) => {
+    if (!owner) return;
+    mem.set(owner, state);
+    try {
+      if (Object.keys(state).length) storage.setItem(storageKey(owner), JSON.stringify(state));
+      else storage.removeItem(storageKey(owner));
+    } catch { /* blocked storage falls back to memory */ }
   };
-  const notify = () => listeners.forEach((fn) => { try { fn(); } catch { /* Zuhörer dürfen den Dienst nicht stören */ } });
-  const clear = () => { write({}); notify(); };
-
-  const cached = () => {
-    const s = read();
-    return s.token && Number(s.exp) - SKEW_MS > now() ? s.token : null;
+  const notify = () => listeners.forEach((fn) => { try { fn(); } catch {} });
+  const clear = (owner = ownerNow()) => { write({}, owner); notify(); };
+  const cached = (owner) => {
+    const state = read(owner);
+    return state.token && Number(state.exp) - SKEW_MS > now() ? state.token : null;
   };
   const mode = () => {
-    const m = read().mode;
-    return m === "server" || m === "popup" ? m : null;
+    const value = read().mode;
+    return value === "server" || value === "popup" ? value : null;
   };
-  /** server: dauerhaft verbunden; popup: nur, solange der Token noch gilt. */
   const connected = () => {
-    const m = mode();
-    return m === "server" || (allowPopupFallback && m === "popup" && !!cached());
+    const value = mode();
+    return value === "server" || (allowPopupFallback && value === "popup" && !!cached(ownerNow()));
   };
-  /** Stabiler Wert für useSyncExternalStore: "server" | "popup" | "off". */
   const snapshot = () => (connected() ? mode() : "off");
-
   const subscribe = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 
-  async function refresh() {
+  async function refresh(owner) {
     try {
+      assertOwner(owner);
       const { accessToken, expiresAt } = await remote.fetchToken();
+      assertOwner(owner);
       if (!accessToken) throw fail("kein Token", "empty");
-      write({ mode: "server", token: accessToken, exp: Number(expiresAt) || now() + POPUP_TTL_MS });
+      write({ mode: "server", token: accessToken, exp: Number(expiresAt) || now() + POPUP_TTL_MS }, owner);
       return accessToken;
-    } catch (e) {
-      if (e?.code === "not-linked") { clear(); throw fail("google-expired"); }
-      throw Object.assign(fail("google-offline"), { cause: e });
+    } catch (error) {
+      assertOwner(owner);
+      if (error?.code === "not-linked") { clear(owner); throw fail("google-expired"); }
+      if (error?.message === "google-account-changed") throw error;
+      throw Object.assign(fail("google-offline"), { cause: error });
     }
   }
 
-  /** Gültiger Access-Token; mehrere gleichzeitige Aufrufe teilen sich eine Erneuerung. */
   async function getToken({ force = false } = {}) {
-    const m = mode();
-    if (m === "popup" && !allowPopupFallback) {
-      clear();
+    const owner = requireOwner();
+    const value = read(owner).mode;
+    if (value === "popup" && !allowPopupFallback) {
+      clear(owner);
       throw fail("google-not-configured");
     }
     if (!force) {
-      const t = cached();
-      if (t) return t;
+      const token = cached(owner);
+      if (token) return token;
     }
-    if (m === "server") {
-      inflight ??= refresh().finally(() => { inflight = null; });
-      return inflight;
+    if (value === "server") {
+      if (!inflight.has(owner)) inflight.set(owner, refresh(owner).finally(() => inflight.delete(owner)));
+      const token = await inflight.get(owner);
+      assertOwner(owner);
+      return token;
     }
-    if (m === "popup") clear(); // Popup-Token abgelaufen: nichts zum Erneuern
+    if (value === "popup") clear(owner);
     throw fail("google-expired");
   }
 
-  /** fetch mit Bearer-Token; bei 401 einmal mit frischem Token wiederholen, sonst „expired“. */
   async function authFetch(url, init = {}) {
-    const go = (token) => fetchImpl(url, { ...init, headers: { ...(init.headers || {}), Authorization: `Bearer ${token}` } });
-    let res = await go(await getToken());
-    if (res.status !== 401) return res;
-    res = await go(await getToken({ force: true }));
-    if (res.status === 401) { clear(); throw fail("google-expired"); }
-    return res;
+    const owner = requireOwner();
+    const go = async (token) => {
+      assertOwner(owner);
+      const response = await fetchImpl(url, { ...init, headers: { ...(init.headers || {}), Authorization: `Bearer ${token}` } });
+      assertOwner(owner);
+      return response;
+    };
+    let response = await go(await getToken());
+    if (response.status !== 401) return response;
+    response = await go(await getToken({ force: true }));
+    if (response.status === 401) { clear(owner); throw fail("google-expired"); }
+    return response;
   }
 
-  /** Nach Nutzerklick: bevorzugt Server-Verknüpfung (dauerhaft), sonst Popup (~1 h). */
   async function connect() {
+    const owner = requireOwner();
     let viaServer = true;
-    let res;
+    let result;
     try {
-      res = await remote.link();
-    } catch (e) {
-      if (e?.code !== "unavailable") throw e;
+      result = await remote.link();
+      assertOwner(owner);
+    } catch (error) {
+      assertOwner(owner);
+      if (error?.code !== "unavailable") throw error;
       if (!allowPopupFallback) throw fail("google-not-configured");
       viaServer = false;
     }
-    if (viaServer) {
-      write({ mode: "server", token: res.accessToken, exp: Number(res.expiresAt) || now() + POPUP_TTL_MS });
-    } else {
-      res = await popup.connect();
-      write({ mode: "popup", token: res.accessToken, exp: now() + POPUP_TTL_MS });
+    if (!viaServer) {
+      result = await popup.connect();
+      assertOwner(owner);
     }
+    write({ mode: viaServer ? "server" : "popup", token: result.accessToken, exp: viaServer ? (Number(result.expiresAt) || now() + POPUP_TTL_MS) : now() + POPUP_TTL_MS }, owner);
     notify();
     return viaServer ? "server" : "popup";
   }
 
   async function disconnect() {
-    const wasServer = mode() === "server";
-    clear();
-    if (wasServer) { try { await remote.unlink(); } catch { /* offline: lokal getrennt, Server-Verknüpfung bleibt bis zum nächsten Trennen */ } }
+    const owner = requireOwner();
+    const wasServer = read(owner).mode === "server";
+    clear(owner);
+    if (wasServer) {
+      try { assertOwner(owner); await remote.unlink(); } catch { /* server connection may remain if offline */ }
+    }
   }
 
   return { getToken, authFetch, connect, disconnect, connected, mode, snapshot, subscribe, notify };

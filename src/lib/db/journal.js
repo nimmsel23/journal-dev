@@ -138,8 +138,9 @@ export async function getJournalHistory(limitCount = 50) {
 
 // The source entry is claimed atomically before any tracker is touched. An
 // existing entry is read, never rewritten, so user edits remain intact.
-export async function claimSmartJournalForApply(date, text, { id, tags, smartLog }) {
+export async function claimSmartJournalForApply(date, text, { id, tags, smartLog, expectedUid }) {
   const userId = await uid();
+  if (expectedUid && userId !== expectedUid) throw new Error("smart_account_changed");
   const ref = doc(journalCol(userId), id);
   const snapshot = await claimSmartJournalTransaction({
     db, ref, runTransaction,
@@ -153,8 +154,9 @@ export async function claimSmartJournalForApply(date, text, { id, tags, smartLog
   return existing;
 }
 
-export async function updateSmartJournalStatus(id, smartLog) {
+export async function updateSmartJournalStatus(id, smartLog, expectedUid) {
   const userId = await uid();
+  if (expectedUid && userId !== expectedUid) throw new Error("smart_account_changed");
   await updateDoc(doc(journalCol(userId), id), { smartLog, updated_at: serverTimestamp() });
 }
 

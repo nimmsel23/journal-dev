@@ -92,6 +92,20 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const [busy, setBusy] = useState(false);
   const day = parseISO(date);
   const uid = user?.uid ?? null;
+  const account = useRef({ uid, generation: 0 });
+  if (account.current.uid !== uid) account.current = { uid, generation: account.current.generation + 1 };
+  const [previewGeneration, setPreviewGeneration] = useState(null);
+  useEffect(() => {
+    setAnalysis(null);
+    setAnalysisDate(null);
+    setPlannerPending([]);
+    setRetryLocked(false);
+    setEditablePlannerIndexes([]);
+    setResumeDate(null);
+    setSmartMsg("");
+    setBusy(false);
+    setPreviewGeneration(null);
+  }, [uid]);
   // Eingabe-Entwurf (Journal/Smart Logger) übersteht Reload und Absturz; nach dem Speichern wird er geleert
   const [draft, setDraft] = usePersistedText(`${uid}:jv2:compose`);
   const smartRequestKey = smartLogRequestKey(uid || "anonymous", date);
@@ -218,7 +232,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
 
   const analyze = async () => {
-    if (!draft.trim() || busy) return;
+    if (!uid || !draft.trim() || busy) return;
+    const generation = account.current.generation;
     const requestId = smartRequestId || newSmartRequestId();
     if (!smartRequestId) {
       setSmartRequestId(requestId);
@@ -228,17 +243,21 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     setSmartMsg("");
     try {
       const { tags } = extractTags(draft);
-      setAnalysis(await analyzeSmartJournal({ text: draft, date, habits: allHabits, tags, requestId }));
+      const result = await analyzeSmartJournal({ text: draft, date, habits: allHabits, tags, requestId });
+      if (account.current.generation !== generation) return;
+      setAnalysis(result);
+      setPreviewGeneration(generation);
       setAnalysisDate(date);
       setPlannerPending([]);
       setRetryLocked(false);
       setEditablePlannerIndexes([]);
       setResumeDate(null);
     } catch (error) {
+      if (account.current.generation !== generation) return;
       console.error("Smart-Analyse fehlgeschlagen:", error);
       setSmartMsg(error?.message === "vertex_ai_unavailable" ? "Vertex AI ist hier nicht verfügbar." : smartLogErrorText(error));
     } finally {
-      setBusy(false);
+      if (account.current.generation === generation) setBusy(false);
     }
   };
 
@@ -257,12 +276,14 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   }));
 
   const applyAnalysis = async () => {
-    if (!analysis || busy) return;
+    if (!analysis || busy || previewGeneration !== account.current.generation) return;
+    const generation = account.current.generation;
     setBusy(true);
     setSmartMsg("");
     try {
       const applyDate = resumeDate || analysisDate || date;
       const res = await applySmartAnalysis({ date: applyDate, analysis, habits: allHabits });
+      if (account.current.generation !== generation) return;
       const pending = res.planner_pending || [];
       setPlannerPending(pending);
       setRetryLocked(pending.length > 0);
@@ -279,10 +300,11 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       qc.invalidateQueries({ queryKey: ["jv2-entries", uid, applyDate] });
       qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
     } catch (error) {
+      if (account.current.generation !== generation) return;
       console.error("Smart-Übernahme fehlgeschlagen:", error);
       setSmartMsg(smartLogErrorText(error));
     } finally {
-      setBusy(false);
+      if (account.current.generation === generation) setBusy(false);
     }
   };
 
@@ -292,6 +314,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     const pending = entry.smartLog?.applied?.planner_pending || [];
     setSmart(true);
     setAnalysis(retryAnalysis);
+    setPreviewGeneration(account.current.generation);
     setAnalysisDate(entry.date);
     setPlannerPending(pending);
     setEditablePlannerIndexes(smartPendingPlannerIndexes(retryAnalysis.planner_tasks || [], pending));
@@ -540,7 +563,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           );
         })}
 
-        {smart && analysis && (
+        {smart && analysis && previewGeneration === account.current.generation && (
           <div className="jv2-smart" aria-label="Vorschau der Analyse">
             <h4>Vorschau · vor dem Speichern korrigieren</h4>
             <p className="jv2-sline"><b>Original · {analysisDate || date}</b>{analysis.original_text}</p>

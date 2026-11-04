@@ -5,6 +5,11 @@ const REGION_TIME_ZONE = "Europe/Vienna";
 const MODEL = "gemini-2.5-flash";
 const MAX_INPUT = 12000;
 const MACROS = new Set(["kcal", "protein", "carbs", "fat"]);
+function assertExpectedUid(uid, expectedUid) {
+  if (typeof expectedUid !== "string" || !expectedUid || expectedUid !== uid) {
+    throw new HttpsError("permission-denied", "smart_account_changed");
+  }
+}
 function isIsoDate(value) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -209,4 +214,4 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
   }
 }
 
-module.exports = { analyze, weekKey, validateInput, validateResult };
+module.exports = { analyze, weekKey, validateInput, validateResult, assertExpectedUid };

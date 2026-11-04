@@ -3,7 +3,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 const require = createRequire(import.meta.url);
-const { analyze, weekKey } = require("../functions/smart-log.js");
+const { analyze, weekKey, assertExpectedUid } = require("../functions/smart-log.js");
+
+test("Smart Log rejects an account mismatch before processing", () => {
+  assert.doesNotThrow(() => assertExpectedUid("alice", "alice"));
+  assert.throws(() => assertExpectedUid("bob", "alice"), /smart_account_changed/);
+  assert.throws(() => assertExpectedUid("alice", null), /smart_account_changed/);
+});
 
 function fakeDb() {
   const docs = new Map();

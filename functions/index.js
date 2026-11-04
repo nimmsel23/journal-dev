@@ -19,6 +19,7 @@ exports.analyzeSmartLog = functions
   .https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
     try {
+      require("./smart-log").assertExpectedUid(context.auth.uid, data?.expected_uid);
       // A saved result can be replayed without a provider key. Let the
       // analysis layer reject only new requests when the secret is unavailable.
       let apiKey = "";

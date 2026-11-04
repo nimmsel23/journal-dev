@@ -246,7 +246,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     setSmartMsg("");
     try {
       const { tags } = extractTags(draft);
-      const result = await analyzeSmartJournal({ text: draft, date, habits: allHabits, tags, requestId });
+      const result = await analyzeSmartJournal({ text: draft, date, habits: allHabits, tags, requestId, expectedUid: uid });
       if (account.current.generation !== generation) return;
       setAnalysis(result);
       setPreviewGeneration(generation);

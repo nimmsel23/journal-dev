@@ -280,3 +280,14 @@ test('ambiguous habit names are not assigned to an arbitrary habit', async () =>
   assert.deepEqual(writes, []);
   assert.deepEqual(result.unmatched, ['Meditieren']);
 });
+
+test('rejects nonexistent local tracker times before any write', async () => {
+  const old = process.env.TZ;
+  process.env.TZ = 'Europe/Vienna';
+  try {
+    let writes = 0;
+    const apply = createSmartJournalApplier({ saveJournal: async () => { writes++; }, applyNutrition: async () => { writes++; } });
+    await assert.rejects(apply({ date: '2026-03-29', analysis: analysis({ meals: [{ description: 'Snack', type: 'snack', time: '02:30' }], habits_done: [] }) }), /smart_local_time_invalid/);
+    assert.equal(writes, 0);
+  } finally { if (old === undefined) delete process.env.TZ; else process.env.TZ = old; }
+});

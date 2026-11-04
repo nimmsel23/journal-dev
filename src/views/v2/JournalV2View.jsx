@@ -32,6 +32,7 @@ const iso = (d) => format(d, "yyyy-MM-dd");
 
 function smartLogErrorText(error) {
   const message = error?.message || "";
+  if (message.includes("smart_local_time_invalid")) return "Eine Mahlzeit oder Trainingseinheit hat eine Uhrzeit, die an diesem Tag in deiner Zeitzone nicht existiert. Bitte ändere oder entferne die Uhrzeit.";
   if (message.includes("smart_retry_tracker_changed") || message.includes("smart_retry_planner_order_changed") || message.includes("smart_retry_planner_already_applied")) return "Ein Teil wurde bereits gespeichert. Bitte ändere gespeicherte Tracker-Einträge direkt im jeweiligen Tracker; offene Kalender-Vorschläge kannst du an derselben Stelle ergänzen.";
   if (message.includes("smart_retry_source_changed") || message.includes("smart_retry_payload_unavailable")) return "Der Journaleintrag wurde geändert oder die gespeicherten Vorschläge fehlen. Bitte öffne den Journaleintrag erneut; vorhandene Daten bleiben erhalten.";
   if (message.includes("smart_log_request_locked") || message.includes("smart_log_request_in_progress")) return "Diese Anfrage ist noch aktiv oder nach einem unklaren Abbruch gesperrt. Sie wird nicht erneut an Gemini gesendet, damit keine Doppelberechnung entsteht. Dein Entwurf bleibt erhalten; du kannst ihn jederzeit ohne KI speichern.";

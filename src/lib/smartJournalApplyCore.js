@@ -34,6 +34,15 @@ function validISODate(value) {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
+function assertExistingLocalTime(date, time) {
+  if (!time) return;
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const value = new Date(`${date}T${time}:00`);
+  if (value.getFullYear() !== year || value.getMonth() + 1 !== month || value.getDate() !== day
+      || value.getHours() !== hour || value.getMinutes() !== minute) throw new Error("smart_local_time_invalid");
+}
+
 export function validateSmartAnalysis(value) {
   assertObject(value, "root", ROOT_FIELDS);
   const journal_entry = boundedString(value.journal_entry, "journal_entry", 4000);
@@ -239,6 +248,9 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, claimJou
       return result;
     };
     const data = validateSmartAnalysis(analysis);
+    if (!validISODate(date)) throw new Error("smart_schema_date_invalid");
+    for (const meal of data.meals) assertExistingLocalTime(date, meal.time);
+    for (const session of data.fitness_sessions) assertExistingLocalTime(session.date || date, session.time);
     const journalId = sourceJournalId(data.request_id);
     const tags = [...new Set([...data.source_tags, "smart-log"])];
     const summary = data.journal_entry;

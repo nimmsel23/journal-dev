@@ -329,36 +329,26 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const saveDraftWithoutAI = async () => {
     const { text, tags } = extractTags(draft);
     if (!text || !uid || busy) return;
+    const generation = account.current.generation;
     setBusy(true);
     try {
-      await saveJournal(date, text, { tags });
+      await saveJournal(date, text, { tags, expectedUid: uid });
+      if (account.current.generation !== generation) return;
       setDraft("");
       clearSmartRequest();
       setSmartMsg("Als normaler Journaleintrag gespeichert.");
       await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
     } catch (error) {
-      setSmartMsg(error?.message || "Journaleintrag konnte nicht gespeichert werden.");
+      if (account.current.generation === generation) setSmartMsg(error?.message || "Journaleintrag konnte nicht gespeichert werden.");
     } finally {
-      setBusy(false);
+      if (account.current.generation === generation) setBusy(false);
     }
   };
 
   const submit = async (event) => {
     event.preventDefault();
     if (smart) return analyze();
-    const { text, tags } = extractTags(draft);
-    if (!text || busy) return;
-    setBusy(true);
-    try {
-      await saveJournal(date, text, { tags });
-      setDraft("");
-      clearSmartRequest();
-      await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
-    } catch (error) {
-      console.error("Journal save failed:", error);
-    } finally {
-      setBusy(false);
-    }
+    return saveDraftWithoutAI();
   };
 
   const moveEntry = async (entry, minutes) => {

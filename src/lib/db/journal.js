@@ -16,7 +16,7 @@ import { db, auth } from "../firebase.js";
 import { track } from "../offline.js";
 import { getDocsFast } from "./fastDocs.js";
 import {
-  collection, doc, setDoc, getDoc, getDocs, deleteDoc,
+  collection, doc, setDoc, updateDoc, getDoc, getDocs, deleteDoc, runTransaction,
   query, where, orderBy, limit as fbLimit, serverTimestamp, onSnapshot,
 } from "firebase/firestore";
 
@@ -133,6 +133,29 @@ export async function getJournalHistory(limitCount = 50) {
   } catch {
     return [];
   }
+}
+
+// The source entry is claimed atomically before any tracker is touched. An
+// existing entry is read, never rewritten, so user edits remain intact.
+export async function claimSmartJournalForApply(date, text, { id, tags, smartLog }) {
+  const userId = await uid();
+  const ref = doc(journalCol(userId), id);
+  const existing = await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    if (snapshot.exists()) return normalizeEntry(snapshot);
+    transaction.set(ref, { date, text, tags, smartLog, time: new Date().toISOString(), created_at: serverTimestamp() });
+    return null;
+  });
+  if (!existing) {
+    void hotToPotential(userId, id, text, tags);
+    void profitReview(userId, id, text, tags, date);
+  }
+  return existing;
+}
+
+export async function updateSmartJournalStatus(id, smartLog) {
+  const userId = await uid();
+  await updateDoc(doc(journalCol(userId), id), { smartLog, updated_at: serverTimestamp() });
 }
 
 export async function saveJournal(date = localToday(), text, opts = {}) {

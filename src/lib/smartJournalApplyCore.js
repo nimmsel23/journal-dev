@@ -132,6 +132,43 @@ export function smartAnalysisForRetry(entry) {
   };
 }
 
+// Existing Smart Log proposals are immutable once tracker writes may have started.
+// A pending calendar proposal can be completed in place without changing its index.
+export function validateSmartReplay(existing, data, date) {
+  if (!existing) return null;
+  const log = existing.smartLog;
+  if (existing.date !== date || existing.text !== data.original_text || log?.requestId !== data.request_id) {
+    throw new Error("smart_retry_source_changed");
+  }
+  if (log.status === "applied") {
+    if (!log.applied) throw new Error("smart_retry_payload_unavailable");
+    return log.applied;
+  }
+  const previous = smartAnalysisForRetry(existing);
+  if (!previous) throw new Error("smart_retry_payload_unavailable");
+  const prior = validateSmartAnalysis(previous);
+  for (const key of ["journal_entry", "water_ml", "meals", "habits_done", "fitness_sessions", "relax_sessions"]) {
+    if (JSON.stringify(prior[key]) !== JSON.stringify(data[key])) throw new Error("smart_retry_tracker_changed");
+  }
+  if (prior.planner_tasks.length !== data.planner_tasks.length) throw new Error("smart_retry_planner_order_changed");
+  const pending = log.applied?.planner_pending || [];
+  const editable = new Set();
+  for (const item of pending) {
+    if (Number.isInteger(item.index) && item.index >= 0 && item.index < prior.planner_tasks.length) {
+      editable.add(item.index);
+    } else {
+      const matches = prior.planner_tasks.map((task, index) => JSON.stringify(task) === JSON.stringify(item.task) ? index : -1).filter((index) => index >= 0);
+      if (matches.length === 1) editable.add(matches[0]);
+    }
+  }
+  for (let index = 0; index < prior.planner_tasks.length; index++) {
+    if (!editable.has(index) && JSON.stringify(prior.planner_tasks[index]) !== JSON.stringify(data.planner_tasks[index])) {
+      throw new Error("smart_retry_planner_already_applied");
+    }
+  }
+  return null;
+}
+
 export function mergeSmartNutritionLog(currentValue, { date, requestId, journalId, meals = [], water_ml = 0 }) {
   const current = currentValue || { date, meals: [], water_ml: 0 };
   const existing = Array.isArray(current.meals) ? current.meals : [];
@@ -187,7 +224,7 @@ export function mergeSmartNutritionLog(currentValue, { date, requestId, journalI
   };
 }
 
-export function createSmartJournalApplier({ saveJournal, updateJournal, applyNutrition, recordHabit, applyFitness, applyRelax, applyPlanner, now = () => new Date().toISOString() }) {
+export function createSmartJournalApplier({ saveJournal, updateJournal, claimJournal, updateStatus, applyNutrition, recordHabit, applyFitness, applyRelax, applyPlanner, now = () => new Date().toISOString() }) {
   return async function applySmartAnalysis({ date, analysis, habits = [] }) {
     const data = validateSmartAnalysis(analysis);
     const journalId = sourceJournalId(data.request_id);
@@ -196,12 +233,17 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, applyNut
     const { original_text, source_tags, ...retryPayload } = data;
     const result = { request_id: data.request_id, sourceJournalId: journalId, journal: true, meals: 0, water_ml: 0, habits: [], fitness: 0, relax: 0, planner: 0, planner_pending: [], planner_events: [], planner_suggestions: data.planner_tasks, unmatched: [] };
 
-    await saveJournal(date, data.original_text, {
-      id: journalId,
-      preserveText: true,
-      tags,
-      smartLog: { schemaVersion: 1, requestId: data.request_id, status: "applying", summary, retryPayload, updatedAt: now() },
-    });
+    const initialStatus = { schemaVersion: 1, requestId: data.request_id, status: "applying", summary, retryPayload, updatedAt: now() };
+    const existing = claimJournal ? await claimJournal(date, data.original_text, { id: journalId, tags, smartLog: initialStatus }) : null;
+    const completed = validateSmartReplay(existing, data, date);
+    if (completed) return completed;
+    const markStatus = (smartLog) => updateStatus
+      ? updateStatus(journalId, smartLog)
+      : updateJournal(journalId, data.original_text, { preserveText: true, tags, smartLog });
+    if (!claimJournal) {
+      const saved = await saveJournal(date, data.original_text, { id: journalId, preserveText: true, tags, smartLog: initialStatus });
+      if (saved?.synced && !(await saved.synced)) throw new Error("smart_source_save_failed");
+    }
 
     try {
       if (data.meals.length || data.water_ml > 0) {
@@ -243,19 +285,11 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, applyNut
 
       const status = result.planner_pending.length ? "partial" : "applied";
 
-      await updateJournal(journalId, data.original_text, {
-        preserveText: true,
-        tags,
-        smartLog: { schemaVersion: 1, requestId: data.request_id, status, summary, ...(status === "partial" ? { retryPayload } : {}), applied: result, updatedAt: now() },
-      });
+      await markStatus({ schemaVersion: 1, requestId: data.request_id, status, summary, ...(status === "partial" ? { retryPayload } : {}), applied: result, updatedAt: now() });
       return result;
     } catch (error) {
       try {
-        await updateJournal(journalId, data.original_text, {
-          preserveText: true,
-          tags,
-          smartLog: { schemaVersion: 1, requestId: data.request_id, status: "partial", summary, retryPayload, applied: result, updatedAt: now() },
-        });
+        await markStatus({ schemaVersion: 1, requestId: data.request_id, status: "partial", summary, retryPayload, applied: result, updatedAt: now() });
       } catch (statusError) {
         console.error("Smart-Log-Status konnte nicht aktualisiert werden:", statusError);
       }

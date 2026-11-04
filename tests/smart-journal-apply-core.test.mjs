@@ -6,6 +6,7 @@ import {
   smartAnalysisForRetry,
   sourceJournalId,
   validateSmartAnalysis,
+  validateSmartReplay,
 } from '../src/lib/smartJournalApplyCore.js';
 
 const analysis = (overrides = {}) => ({
@@ -157,4 +158,49 @@ test('nutrition retry does not overwrite a meal enriched by the user', () => {
   assert.equal(retry.changed, false);
   const conflicting = { ...changed, meals: [{ ...changed.meals[0], sourceRequestId: 'other' }] };
   assert.throws(() => mergeSmartNutritionLog(conflicting, input), /smart_skill_record_id_conflict/);
+});
+
+
+test('retry locks already attempted tracker data but allows a pending calendar correction', () => {
+  const initial = validateSmartAnalysis(analysis({ planner_tasks: [{ title: 'Training', date: null, time: '18:00', duration_minutes: null, notes: '' }] }));
+  const { original_text, source_tags, ...retryPayload } = initial;
+  const entry = { date: '2026-11-03', text: original_text, tags: [...source_tags, 'smart-log'], smartLog: { schemaVersion: 1, requestId: initial.request_id, status: 'partial', retryPayload, applied: { planner_pending: [{ index: 0, task: initial.planner_tasks[0], reason: 'date_required' }] } } };
+  const amended = { ...initial, planner_tasks: [{ ...initial.planner_tasks[0], date: '2026-11-04', duration_minutes: 45 }] };
+  assert.equal(validateSmartReplay(entry, amended, entry.date), null);
+  assert.throws(() => validateSmartReplay(entry, { ...amended, fitness_sessions: [{ activity_type: 'walking', date: '2026-11-05', duration_minutes: 30, notes: '', time: null }] }, entry.date), /smart_retry_tracker_changed/);
+  assert.throws(() => validateSmartReplay(entry, { ...amended, planner_tasks: [] }, entry.date), /smart_retry_planner_order_changed/);
+  assert.throws(() => validateSmartReplay(entry, amended, '2026-11-04'), /smart_retry_source_changed/);
+});
+
+test('retry does not rewrite a changed journal or rerun a completed apply', async () => {
+  const input = validateSmartAnalysis(analysis());
+  const applied = { journal: true, meals: 1, water_ml: 500, habits: [], fitness: 0, relax: 0, planner: 0, planner_pending: [] };
+  let writes = 0;
+  const apply = createSmartJournalApplier({
+    claimJournal: async () => ({ date: '2026-11-03', text: input.original_text, smartLog: { requestId: input.request_id, status: 'applied', applied } }),
+    updateStatus: async () => { writes++; }, applyNutrition: async () => { writes++; }, recordHabit: async () => { writes++; },
+  });
+  assert.deepEqual(await apply({ date: '2026-11-03', analysis: input }), applied);
+  assert.equal(writes, 0);
+  await assert.rejects(() => apply({ date: '2026-11-03', analysis: { ...input, original_text: 'changed' } }), /smart_retry_source_changed/);
+  assert.equal(writes, 0);
+});
+
+test('retry cannot modify a calendar item that was already applied', () => {
+  const initial = validateSmartAnalysis(analysis({ planner_tasks: [{ title: 'A', date: '2026-11-04', time: null, duration_minutes: null, notes: '' }, { title: 'B', date: null, time: null, duration_minutes: null, notes: '' }] }));
+  const { original_text, source_tags, ...retryPayload } = initial;
+  const entry = { date: '2026-11-03', text: original_text, tags: source_tags, smartLog: { schemaVersion: 1, requestId: initial.request_id, status: 'partial', retryPayload, applied: { planner_pending: [{ index: 1, task: initial.planner_tasks[1] }] } } };
+  const changed = { ...initial, planner_tasks: [{ ...initial.planner_tasks[0], title: 'Changed' }, initial.planner_tasks[1]] };
+  assert.throws(() => validateSmartReplay(entry, changed, entry.date), /smart_retry_planner_already_applied/);
+});
+
+test('changed tracker dates are rejected before any retry writes', async () => {
+  const original = validateSmartAnalysis(analysis({ fitness_sessions: [{ activity_type: 'strength', date: '2026-11-03', duration_minutes: 45, notes: '', time: null }] }));
+  const { original_text, source_tags, ...retryPayload } = original;
+  const existing = { date: '2026-11-03', text: original_text, tags: source_tags, smartLog: { schemaVersion: 1, requestId: original.request_id, status: 'partial', retryPayload } };
+  let writes = 0;
+  const apply = createSmartJournalApplier({ claimJournal: async () => existing, updateStatus: async () => { writes++; }, applyNutrition: async () => { writes++; }, recordHabit: async () => { writes++; }, applyFitness: async () => { writes++; } });
+  const changed = { ...original, fitness_sessions: [{ ...original.fitness_sessions[0], date: '2026-11-04' }] };
+  await assert.rejects(() => apply({ date: '2026-11-03', analysis: changed }), /smart_retry_tracker_changed/);
+  assert.equal(writes, 0);
 });

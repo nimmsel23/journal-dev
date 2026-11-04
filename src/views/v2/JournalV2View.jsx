@@ -32,6 +32,8 @@ const iso = (d) => format(d, "yyyy-MM-dd");
 
 function smartLogErrorText(error) {
   const message = error?.message || "";
+  if (message.includes("smart_retry_tracker_changed") || message.includes("smart_retry_planner_order_changed") || message.includes("smart_retry_planner_already_applied")) return "Ein Teil wurde bereits gespeichert. Bitte ändere gespeicherte Tracker-Einträge direkt im jeweiligen Tracker; offene Kalender-Vorschläge kannst du an derselben Stelle ergänzen.";
+  if (message.includes("smart_retry_source_changed") || message.includes("smart_retry_payload_unavailable")) return "Der Journaleintrag wurde geändert oder die gespeicherten Vorschläge fehlen. Bitte öffne den Journaleintrag erneut; vorhandene Daten bleiben erhalten.";
   if (message.includes("smart_log_request_locked") || message.includes("smart_log_request_in_progress")) return "Diese Anfrage ist noch aktiv oder nach einem unklaren Abbruch gesperrt. Sie wird nicht erneut an Gemini gesendet, damit keine Doppelberechnung entsteht. Dein Entwurf bleibt erhalten; du kannst ihn jederzeit ohne KI speichern.";
   if (message.includes("smart_log_weekly_quota_reached")) return "Das Smart-Log-Wochenkontingent ist ausgeschöpft. Du kannst den Text ohne KI im Journal speichern.";
   if (message.includes("smart_log_provider_not_configured")) return "Smart Logging ist gerade nicht verfügbar. Dein Entwurf bleibt erhalten und kann ohne KI gespeichert werden.";
@@ -262,7 +264,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
     } catch (error) {
       console.error("Smart-Übernahme fehlgeschlagen:", error);
-      setSmartMsg(error?.message || "Übernahme fehlgeschlagen.");
+      setSmartMsg(smartLogErrorText(error));
     } finally {
       setBusy(false);
     }
@@ -283,7 +285,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
       await qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
     } catch (error) {
-      setSmartMsg(error?.message || "Erneute Übernahme fehlgeschlagen. Der Journaleintrag bleibt erhalten.");
+      setSmartMsg(smartLogErrorText(error));
       await qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
     } finally {
       setBusy(false);

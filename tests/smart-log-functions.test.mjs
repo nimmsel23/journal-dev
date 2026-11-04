@@ -163,3 +163,13 @@ test('expired or malformed Operate entitlement falls back to the free weekly quo
       (error) => error.message === 'smart_log_weekly_quota_reached' && error.details.tier === 'observe');
   }
 });
+
+test('purchase-sourced Operate access without an expiry is not treated as unlimited', async () => {
+  for (const source of ['google_play', 'app_store', 'stripe', null]) {
+    const db = fakeDb();
+    db.seed('smartLoggingEntitlements/u-purchase', { tier: 'operate', active: true, weeklyLimit: 10, source });
+    db.seed('smartLoggingQuotas/u-purchase/weeks/2026-W45', { used: 1, reserved: 0 });
+    await assert.rejects(analyze({ db, uid: 'u-purchase', data: baseInput, apiKey: 'test', now: new Date('2026-11-03T12:00:00Z'), fetchImpl: async () => { throw new Error('must not call provider'); } }),
+      (error) => error.message === 'smart_log_weekly_quota_reached' && error.details.tier === 'observe');
+  }
+});

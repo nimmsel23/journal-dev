@@ -12,7 +12,9 @@ function assertExpectedUid(uid, expectedUid) {
 }
 function hasOperateEntitlement(entitlement, now) {
   if (entitlement?.tier !== "operate" || entitlement.active !== true) return false;
-  if (!Object.hasOwn(entitlement, "expiresAt")) return true; // Explicit admin grants may be indefinite.
+  // Existing unlabelled grants are legacy admin grants. Any future purchase
+  // source must set a bounded expiry; only manual grants may be indefinite.
+  if (!Object.hasOwn(entitlement, "expiresAt")) return !Object.hasOwn(entitlement, "source") || entitlement.source === "manual";
   const expiry = entitlement.expiresAt;
   const milliseconds = expiry instanceof Date ? expiry.getTime()
     : typeof expiry?.toMillis === "function" ? expiry.toMillis()

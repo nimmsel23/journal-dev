@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { claimSmartJournalTransaction } from '../../src/lib/smartJournalClaim.js';
+import { applySmartHabitTransaction } from '../../src/lib/smartHabitRecord.js';
 
 const workspace = process.env.VOS_TEST_WORKSPACE;
 if (!workspace || !process.env.FIRESTORE_EMULATOR_HOST) throw new Error('Set VOS_TEST_WORKSPACE and run with the Firestore emulator');
@@ -28,7 +29,15 @@ try {
   assert.deepEqual((await getDoc(ref)).data().tags, ['edited']);
   const otherRef = doc(bob, 'fitness/alice/journal/smart_request_1234567890ab');
   await assertFails(claimSmartJournalTransaction({ db: bob, ref: otherRef, data: input('intrusion'), runTransaction }));
-  console.log('PASS Smart Journal claim: concurrent creation, replay, user edits and account isolation');
+  const habitRef = doc(alice, 'fitness/alice/habitRecords/h1_2026-11-04');
+  const habitArgs = { db: alice, ref: habitRef, uuid: 'h1', date: '2026-11-04', requestId: 'request_1234567890ab', sourceJournalId: 'smart_request_1234567890ab', runTransaction, serverTimestamp };
+  const habitResults = await Promise.all([applySmartHabitTransaction(habitArgs), applySmartHabitTransaction(habitArgs)]);
+  assert.deepEqual(habitResults.map((result) => result.status).sort(), ['already_done', 'created']);
+  await updateDoc(habitRef, { completion: 'MISSED' });
+  assert.equal((await applySmartHabitTransaction(habitArgs)).status, 'user_changed');
+  assert.equal((await getDoc(habitRef)).data().completion, 'MISSED');
+  await assertFails(applySmartHabitTransaction({ ...habitArgs, db: bob, ref: doc(bob, 'fitness/alice/habitRecords/h2_2026-11-04'), uuid: 'h2' }));
+  console.log('PASS Smart Journal and habit writes: concurrent creation, replay, user edits and account isolation');
 } finally {
   await env.cleanup();
 }

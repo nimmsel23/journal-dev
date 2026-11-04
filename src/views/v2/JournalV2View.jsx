@@ -255,11 +255,12 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       setDraft("");
       clearSmartRequest();
       const parts = [res.journal && "Eintrag", res.meals && `${res.meals} Mahlzeit${res.meals > 1 ? "en" : ""}`, res.water_ml && `${res.water_ml} ml Wasser`, res.habits.length && `${res.habits.length} Habit${res.habits.length > 1 ? "s" : ""}`, res.fitness && `${res.fitness} Fitness-Session${res.fitness > 1 ? "s" : ""}`, res.relax && `${res.relax} Relax-Einheit${res.relax > 1 ? "en" : ""}`, res.planner && `${res.planner} Google-Kalendertermin${res.planner > 1 ? "e" : ""}`].filter(Boolean);
+      const habitNote = res.habits_skipped?.length ? " Ein später geänderter Habit-Status bleibt unverändert." : "";
       setSmartMsg(res.planner_pending?.some((pending) => pending.reason === "google_calendar_event_conflict")
         ? `Übernommen: ${parts.join(", ")}. Ein vorhandener Kalendertermin weicht vom Vorschlag ab. Bitte prüfe ihn im Google Kalender; er wurde nicht überschrieben.`
         : res.planner_pending?.length
         ? `Übernommen: ${parts.join(", ")}. ${res.planner_pending.length} Kalender-Vorschlag${res.planner_pending.length > 1 ? "e brauchen" : " braucht"} noch Angaben oder eine Google-Berechtigung.`
-        : `Übernommen: ${parts.join(", ") || "nichts"}.`);
+        : `Übernommen: ${parts.join(", ") || "nichts"}.${habitNote}`);
       qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
       qc.invalidateQueries({ queryKey: ["jv2-habits", uid] });
     } catch (error) {

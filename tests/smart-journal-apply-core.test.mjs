@@ -204,3 +204,26 @@ test('changed tracker dates are rejected before any retry writes', async () => {
   await assert.rejects(() => apply({ date: '2026-11-03', analysis: changed }), /smart_retry_tracker_changed/);
   assert.equal(writes, 0);
 });
+
+
+test('habit write failure leaves a Smart Log partial and never reports applied', async () => {
+  const updates = [];
+  const apply = createSmartJournalApplier({
+    saveJournal: async () => {}, updateJournal: async (...args) => updates.push(args),
+    applyNutrition: async () => ({ meals: 0, water_ml: 0 }),
+    recordHabit: async () => { throw new Error('permission-denied'); },
+  });
+  await assert.rejects(() => apply({ date: '2026-11-03', analysis: analysis(), habits: [{ uuid: 'h1', name: 'Meditieren' }] }), /permission-denied/);
+  assert.equal(updates.at(-1)[2].smartLog.status, 'partial');
+});
+
+test('smart replay reports a manually changed habit without marking it done again', async () => {
+  const apply = createSmartJournalApplier({
+    saveJournal: async () => {}, updateJournal: async () => {},
+    applyNutrition: async () => ({ meals: 0, water_ml: 0 }),
+    recordHabit: async () => ({ status: 'user_changed' }),
+  });
+  const result = await apply({ date: '2026-11-03', analysis: analysis(), habits: [{ uuid: 'h1', name: 'Meditieren' }] });
+  assert.deepEqual(result.habits, []);
+  assert.deepEqual(result.habits_skipped, ['h1']);
+});

@@ -231,7 +231,7 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, claimJou
     const tags = [...new Set([...data.source_tags, "smart-log"])];
     const summary = data.journal_entry;
     const { original_text, source_tags, ...retryPayload } = data;
-    const result = { request_id: data.request_id, sourceJournalId: journalId, journal: true, meals: 0, water_ml: 0, habits: [], fitness: 0, relax: 0, planner: 0, planner_pending: [], planner_events: [], planner_suggestions: data.planner_tasks, unmatched: [] };
+    const result = { request_id: data.request_id, sourceJournalId: journalId, journal: true, meals: 0, water_ml: 0, habits: [], habits_skipped: [], fitness: 0, relax: 0, planner: 0, planner_pending: [], planner_events: [], planner_suggestions: data.planner_tasks, unmatched: [] };
 
     const initialStatus = { schemaVersion: 1, requestId: data.request_id, status: "applying", summary, retryPayload, updatedAt: now() };
     const existing = claimJournal ? await claimJournal(date, data.original_text, { id: journalId, tags, smartLog: initialStatus }) : null;
@@ -268,8 +268,9 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, claimJou
         }
         if (doneIds.has(match.uuid)) continue;
         doneIds.add(match.uuid);
-        await recordHabit(match.uuid, date, { requestId: data.request_id, sourceJournalId: journalId });
-        result.habits.push(match.uuid);
+        const habitResult = await recordHabit(match.uuid, date, { requestId: data.request_id, sourceJournalId: journalId });
+        if (habitResult?.status === "user_changed") result.habits_skipped.push(match.uuid);
+        else result.habits.push(match.uuid);
       }
 
       if (data.fitness_sessions.length && applyFitness) result.fitness = await applyFitness({ date, requestId: data.request_id, sourceJournalId: journalId, sessions: data.fitness_sessions });

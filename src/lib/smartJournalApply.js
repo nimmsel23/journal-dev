@@ -35,7 +35,7 @@ const apply = createSmartJournalApplier({
   applyFitness: db.applySmartFitness,
   applyRelax: db.applySmartRelax,
   applyPlanner,
-  recordHabit: db.recordHabit,
+  recordHabit: db.recordSmartHabit,
 });
 
 export function applySmartAnalysis(args) {

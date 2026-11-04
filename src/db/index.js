@@ -6,6 +6,7 @@ import { getUid, localToday } from "../lib/db/core.js";
 import { track } from "../lib/offline.js";
 import { mergeSmartNutritionLog } from "../lib/smartJournalApplyCore.js";
 import { mergeSmartRelaxItems, shouldCreateSmartRecord } from "../lib/smartSkillReplay.js";
+import { applySmartHabitTransaction } from "../lib/smartHabitRecord.js";
 export { deleteJournal } from "../lib/db/journal.js";
 
 export * from "../lib/db/core.js";
@@ -115,6 +116,14 @@ export async function recordHabit(uuid, date = localToday(), provenance = {}) {
   if (provenance.requestId) record.sourceRequestId = provenance.requestId;
   track(setDoc(ref, record, { merge: true }));
   return { ok: true };
+}
+
+// The Smart Log pipeline is online/transactional: do not report success until
+// the habit record has been confirmed by Firestore.
+export async function recordSmartHabit(uuid, date = localToday(), { requestId, sourceJournalId } = {}) {
+  if (!requestId || !sourceJournalId) throw new Error("smart_habit_provenance_required");
+  const ref = doc(db, "fitness", getUid(), "habitRecords", `${uuid}_${date}`);
+  return applySmartHabitTransaction({ db, ref, uuid, date, requestId, sourceJournalId, runTransaction, serverTimestamp });
 }
 
 export async function unrecordHabit(uuid, date = localToday()) {

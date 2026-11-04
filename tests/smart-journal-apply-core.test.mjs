@@ -4,6 +4,7 @@ import {
   createSmartJournalApplier,
   mergeSmartNutritionLog,
   smartAnalysisForRetry,
+  smartPendingPlannerIndexes,
   sourceJournalId,
   validateSmartAnalysis,
   validateSmartReplay,
@@ -226,4 +227,11 @@ test('smart replay reports a manually changed habit without marking it done agai
   const result = await apply({ date: '2026-11-03', analysis: analysis(), habits: [{ uuid: 'h1', name: 'Meditieren' }] });
   assert.deepEqual(result.habits, []);
   assert.deepEqual(result.habits_skipped, ['h1']);
+});
+
+
+test('only pending calendar positions can be edited, including unambiguous legacy records', () => {
+  const tasks = [{ title: 'A' }, { title: 'B' }, { title: 'A' }];
+  assert.deepEqual(smartPendingPlannerIndexes(tasks, [{ index: 2 }, { task: { title: 'B' } }, { task: { title: 'A' } }]), [2, 1]);
+  assert.deepEqual(smartPendingPlannerIndexes(tasks, [{ task: { title: 'A' } }]), []);
 });

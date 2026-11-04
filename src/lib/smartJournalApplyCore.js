@@ -132,6 +132,20 @@ export function smartAnalysisForRetry(entry) {
   };
 }
 
+// Legacy pending items without an index are editable only when their task is unique.
+export function smartPendingPlannerIndexes(tasks, pending) {
+  const editable = new Set();
+  for (const item of pending || []) {
+    if (Number.isInteger(item.index) && item.index >= 0 && item.index < tasks.length) {
+      editable.add(item.index);
+    } else {
+      const matches = tasks.map((task, index) => JSON.stringify(task) === JSON.stringify(item.task) ? index : -1).filter((index) => index >= 0);
+      if (matches.length === 1) editable.add(matches[0]);
+    }
+  }
+  return [...editable];
+}
+
 // Existing Smart Log proposals are immutable once tracker writes may have started.
 // A pending calendar proposal can be completed in place without changing its index.
 export function validateSmartReplay(existing, data, date) {
@@ -151,16 +165,7 @@ export function validateSmartReplay(existing, data, date) {
     if (JSON.stringify(prior[key]) !== JSON.stringify(data[key])) throw new Error("smart_retry_tracker_changed");
   }
   if (prior.planner_tasks.length !== data.planner_tasks.length) throw new Error("smart_retry_planner_order_changed");
-  const pending = log.applied?.planner_pending || [];
-  const editable = new Set();
-  for (const item of pending) {
-    if (Number.isInteger(item.index) && item.index >= 0 && item.index < prior.planner_tasks.length) {
-      editable.add(item.index);
-    } else {
-      const matches = prior.planner_tasks.map((task, index) => JSON.stringify(task) === JSON.stringify(item.task) ? index : -1).filter((index) => index >= 0);
-      if (matches.length === 1) editable.add(matches[0]);
-    }
-  }
+  const editable = new Set(smartPendingPlannerIndexes(prior.planner_tasks, log.applied?.planner_pending || []));
   for (let index = 0; index < prior.planner_tasks.length; index++) {
     if (!editable.has(index) && JSON.stringify(prior.planner_tasks[index]) !== JSON.stringify(data.planner_tasks[index])) {
       throw new Error("smart_retry_planner_already_applied");

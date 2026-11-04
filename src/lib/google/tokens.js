@@ -112,12 +112,16 @@ export function createGoogleTokens({ storage, now = Date.now, fetchImpl = (...a)
       assertOwner(owner);
       const { accessToken, expiresAt } = await remote.fetchToken();
       assertOwner(owner);
+      // Another tab may have disconnected while the refresh was in flight.
+      // Do not recreate a connection that the user explicitly removed.
+      if (read(owner).mode !== "server") throw fail("google-expired");
       if (!accessToken) throw fail("kein Token", "empty");
       write({ mode: "server", token: accessToken, exp: Number(expiresAt) || now() + POPUP_TTL_MS }, owner);
       return accessToken;
     } catch (error) {
       assertOwner(owner);
       if (error?.code === "not-linked") { clear(owner); throw fail("google-expired"); }
+      if (error?.message === "google-expired") throw error;
       if (error?.message === "google-account-changed") throw error;
       throw Object.assign(fail("google-offline"), { cause: error });
     }

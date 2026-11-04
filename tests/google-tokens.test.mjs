@@ -273,3 +273,21 @@ test('readable storage with blocked writes keeps the current session in memory',
   await svc.connect();
   assert.equal(await svc.getToken(), 'memory-token');
 });
+
+test('a pending refresh cannot restore a connection disconnected in another tab', async () => {
+  const storage = mkStorage();
+  let finishRefresh;
+  const pending = new Promise((resolve) => { finishRefresh = resolve; });
+  const deps = { storage, now: () => 1_000_000, getOwner: () => 'alice',
+    remote: { link: async () => ({ accessToken: 'old', expiresAt: 1_000_000 + H }),
+      fetchToken: () => pending, unlink: async () => {} }, popup: {} };
+  const first = createGoogleTokens(deps);
+  const second = createGoogleTokens(deps);
+  await first.connect();
+  const refresh = first.getToken({ force: true });
+  await second.disconnect();
+  finishRefresh({ accessToken: 'new', expiresAt: 1_000_000 + H });
+  await assert.rejects(refresh, { message: 'google-expired' });
+  assert.equal(first.connected(), false);
+  assert.equal(storage.getItem(`${KEY}:alice`), null);
+});

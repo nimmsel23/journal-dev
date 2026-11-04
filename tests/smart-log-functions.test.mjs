@@ -153,3 +153,13 @@ test("an orphaned processing reservation from a hard abort stays locked", async 
   assert.equal(providerCalls, 0);
   assert.equal(db.peek("smartLoggingQuotas/u5/weeks/2026-W45").reserved, 1);
 });
+
+test('expired or malformed Operate entitlement falls back to the free weekly quota', async () => {
+  for (const expiresAt of [new Date('2026-11-03T11:59:00Z'), null, 'not-a-timestamp']) {
+    const db = fakeDb();
+    db.seed('smartLoggingEntitlements/u-expired', { tier: 'operate', active: true, weeklyLimit: 10, expiresAt });
+    db.seed('smartLoggingQuotas/u-expired/weeks/2026-W45', { used: 1, reserved: 0 });
+    await assert.rejects(analyze({ db, uid: 'u-expired', data: baseInput, apiKey: 'test', now: new Date('2026-11-03T12:00:00Z'), fetchImpl: async () => { throw new Error('must not call provider'); } }),
+      (error) => error.message === 'smart_log_weekly_quota_reached' && error.details.tier === 'observe');
+  }
+});

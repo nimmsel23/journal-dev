@@ -10,6 +10,15 @@ function assertExpectedUid(uid, expectedUid) {
     throw new HttpsError("permission-denied", "smart_account_changed");
   }
 }
+function hasOperateEntitlement(entitlement, now) {
+  if (entitlement?.tier !== "operate" || entitlement.active !== true) return false;
+  if (!Object.hasOwn(entitlement, "expiresAt")) return true; // Explicit admin grants may be indefinite.
+  const expiry = entitlement.expiresAt;
+  const milliseconds = expiry instanceof Date ? expiry.getTime()
+    : typeof expiry?.toMillis === "function" ? expiry.toMillis()
+    : typeof expiry === "number" ? expiry : NaN;
+  return Number.isFinite(milliseconds) && milliseconds > now.getTime();
+}
 function isIsoDate(value) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -161,7 +170,7 @@ async function analyze({ db, uid, data, apiKey, fetchImpl, now = new Date() }) {
     }
     if (!apiKey) throw new HttpsError("failed-precondition", "smart_log_provider_not_configured");
     const entitlement = entitlementSnap.data() || {};
-    const isOperate = entitlement.tier === "operate" && entitlement.active === true;
+    const isOperate = hasOperateEntitlement(entitlement, now);
     const config = configSnap.data() || {};
     const limit = isOperate ? entitlement.weeklyLimit : (config.observeWeeklyLimit ?? 1);
     if (!Number.isInteger(limit) || limit < 0) throw new HttpsError("failed-precondition", "smart_log_entitlement_not_configured");

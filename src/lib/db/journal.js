@@ -14,6 +14,7 @@
 import { localToday } from "./core.js";
 import { db, auth } from "../firebase.js";
 import { track } from "../offline.js";
+import { claimSmartJournalTransaction } from "../smartJournalClaim.js";
 import { getDocsFast } from "./fastDocs.js";
 import {
   collection, doc, setDoc, updateDoc, getDoc, getDocs, deleteDoc, runTransaction,
@@ -140,12 +141,11 @@ export async function getJournalHistory(limitCount = 50) {
 export async function claimSmartJournalForApply(date, text, { id, tags, smartLog }) {
   const userId = await uid();
   const ref = doc(journalCol(userId), id);
-  const existing = await runTransaction(db, async (transaction) => {
-    const snapshot = await transaction.get(ref);
-    if (snapshot.exists()) return normalizeEntry(snapshot);
-    transaction.set(ref, { date, text, tags, smartLog, time: new Date().toISOString(), created_at: serverTimestamp() });
-    return null;
+  const snapshot = await claimSmartJournalTransaction({
+    db, ref, runTransaction,
+    data: { date, text, tags, smartLog, time: new Date().toISOString(), created_at: serverTimestamp() },
   });
+  const existing = snapshot ? normalizeEntry(snapshot) : null;
   if (!existing) {
     void hotToPotential(userId, id, text, tags);
     void profitReview(userId, id, text, tags, date);

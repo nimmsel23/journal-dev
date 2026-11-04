@@ -600,7 +600,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             </div>
           </div>
         )}
-        {smartMsg && <div className="jv2-empty" role="status">{smartMsg}{smart && !analysis && draft.trim() && <button type="button" className="jv2-link" onClick={saveDraftWithoutAI} disabled={busy}>Freitext ohne KI im Journal speichern</button>}</div>}
+        {smartMsg && <div className="jv2-empty" role="status">{smartMsg}</div>}
 
         {smart && <p className="jv2-smart-disclosure">Mit „Analyse“ werden dein Text, Datum, Tags und Habit-Namen über den VitalOS-Server an Gemini gesendet. Es wird nichts automatisch analysiert; du prüfst die Vorschläge vor der Übernahme.</p>}
 
@@ -630,6 +630,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           )}
           <button type="submit" disabled={!uid || busy || !draft.trim()}>{smart ? (busy && !analysis ? "…" : "Analyse") : "Log"}</button>
         </form>
+        {smart && !analysis && uid && draft.trim() && <button type="button" className="jv2-link" onClick={saveDraftWithoutAI} disabled={busy}>Ohne KI im Journal speichern</button>}
 
         </>}
 

@@ -60,7 +60,7 @@ export function scanRepo(dir) {
   }
   // Haupt-App(s): alle übrigen Hosting-Targets (bzw. firebase.json-Sites), die keine Solo-App sind
   const mainSites = Object.entries(rcTargets).filter(([t]) => !soloTargets.has(t)).flatMap(([t, sites]) => sites.map((s) => [t, s]));
-  if (!mainSites.length) for (const s of fbSites) if (!entries.some((e) => e.site === s)) mainSites.push([s, s]);
+  if (!mainSites.length && !solo.length) for (const s of fbSites) if (!entries.some((e) => e.site === s)) mainSites.push([s, s]);
   for (const [t, site] of mainSites) {
     const m = meta[t] ?? meta[repo.replace(/-dev$/, "")] ?? Object.values(meta).find((x) => !x.id || x.id === t) ?? {};
     entries.unshift({

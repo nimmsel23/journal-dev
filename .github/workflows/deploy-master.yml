@@ -71,7 +71,7 @@ jobs:
       - name: Install Nachbarn (je eigener Lockfile)
         run: |
           set -euo pipefail
-          for repo in fitness-dev fuel-dev relax-dev habits-dev; do
+          for repo in fitness-dev fuel-dev relax-dev habits-dev 6pack-dev plan-dev; do
             echo "::group::$repo"
             if [ -f "$repo/pnpm-lock.yaml" ]; then
               (cd "$repo" && pnpm install --frozen-lockfile --ignore-scripts)

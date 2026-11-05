@@ -1,4 +1,5 @@
 const functions = require("firebase-functions");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
@@ -160,11 +161,9 @@ async function sendReminder(uid, tokens, title, body, link, app = "journal") {
   }
 }
 
-exports.scheduledJournalPushReminders = functions
-  .region("europe-west1")
-  .pubsub.schedule("every 5 minutes")
-  .timeZone(TIME_ZONE)
-  .onRun(async (context) => {
+exports.scheduledJournalPushReminders = onSchedule(
+  { schedule: "every 5 minutes", timeZone: TIME_ZONE, region: "europe-west1" },
+  async () => {
     const { date, minutes } = getLocalDateParts(new Date(), "Europe/Vienna");
     const db = admin.firestore();
     let sentCount = 0;
@@ -225,7 +224,8 @@ exports.scheduledJournalPushReminders = functions
       console.error("Error in scheduledPushReminders:", error);
       return { error: error.message };
     }
-  });
+  }
+);
 
 // Door: täglich zur eingestellten Zeit die offenen Daily Hits (Google Tasks) als Push melden.
 // Braucht die dauerhafte Google-Verbindung (googleTokens/{uid}) und apps.door in fitness/{uid}/settings/push.

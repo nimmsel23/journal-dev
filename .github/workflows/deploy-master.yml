@@ -2,7 +2,7 @@
 # eigenen Repos, OHNE das Meta-Repo vitalos (gleiches Muster wie fitness-dev/deploy-master.yml).
 #
 # Layout (Geschwister nebeneinander, wie lokal unter ~/dev): journal-dev/ (dieser Commit) und
-# fitness-dev fuel-dev relax-dev habits-dev jeweils `master`. Jedes Repo installiert mit
+# fitness-dev fuel-dev relax-dev habits-dev 6pack-dev plan-dev jeweils `master`. Jedes Repo installiert mit
 # seinem EIGENEN Lockfile (--frozen-lockfile, --ignore-scripts). Die Vite-Configs lösen die Nachbarn über
 # resolveSibling()/siblingDir() auf (`<x>-app` oder `<x>-dev` daneben).
 #
@@ -49,7 +49,7 @@ jobs:
       - name: Checkout Nachbarn (${{ env.NEIGHBOR_REF }})
         run: |
           set -euo pipefail
-          for repo in fitness-dev fuel-dev relax-dev habits-dev; do
+          for repo in fitness-dev fuel-dev relax-dev habits-dev 6pack-dev plan-dev; do
             git clone --depth 1 --branch "$NEIGHBOR_REF" "https://github.com/nimmsel23/${repo}.git" "$repo"
             echo "$repo @ $(git -C "$repo" rev-parse --short HEAD)"
           done

@@ -120,6 +120,54 @@
       "url": null,
       "tab": null,
       "planned": true
+    },
+    {
+      "id": "game-frame",
+      "kind": "solo",
+      "name": "Game Frame",
+      "short": "Frame",
+      "description": "Frame Map: das große Bild, Ausgangslage und Richtung (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "site": "vos-game",
+      "url": "https://vos-game.web.app/frame/",
+      "tab": "game-v2",
+      "planned": false
+    },
+    {
+      "id": "game-freedom",
+      "kind": "solo",
+      "name": "Game Freedom",
+      "short": "Freedom",
+      "description": "Freedom Map: Jahres- bis Quartalsziele (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "site": "vos-game",
+      "url": "https://vos-game.web.app/freedom/",
+      "tab": "game-v2",
+      "planned": false
+    },
+    {
+      "id": "game-focus",
+      "kind": "solo",
+      "name": "Game Focus",
+      "short": "Focus",
+      "description": "Focus Map: Monats- bis Wochenziele (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "site": "vos-game",
+      "url": "https://vos-game.web.app/focus/",
+      "tab": "game-v2",
+      "planned": false
+    },
+    {
+      "id": "game-fire",
+      "kind": "solo",
+      "name": "Game Fire",
+      "short": "Fire",
+      "description": "Fire Map: Wochen- bis Tagesaufgaben (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "site": "vos-game",
+      "url": "https://vos-game.web.app/fire/",
+      "tab": "game-v2",
+      "planned": false
     }
   ]
 }

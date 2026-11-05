@@ -84,3 +84,11 @@ test("unlink widerruft bei Google (best effort) und löscht", async () => {
   await b.h.unlink("u1");
   assert.equal(b.rows.size, 0);
 });
+
+test("Google callable account binding rejects a changed account and keeps legacy clients compatible", async () => {
+  const { assertExpectedGoogleUid } = await import("../functions/google.js");
+  class HttpsError extends Error { constructor(code, message) { super(message); this.code = code; } }
+  assert.doesNotThrow(() => assertExpectedGoogleUid("owner", { expected_uid: "owner" }, HttpsError));
+  assert.doesNotThrow(() => assertExpectedGoogleUid("owner", {}, HttpsError));
+  assert.throws(() => assertExpectedGoogleUid("other", { expected_uid: "owner" }, HttpsError), { code: "permission-denied", message: "google-account-changed" });
+});

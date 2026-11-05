@@ -14,11 +14,12 @@
 import { localToday } from "./core.js";
 import { db, auth } from "../firebase.js";
 import { track } from "../offline.js";
+import { claimSmartJournalTransaction } from "../smartJournalClaim.js";
 import { getDocsFast } from "./fastDocs.js";
 import { hasHotTag, addToPotential } from "../door/hotFromJournal.js";
 import * as profitFromJournal from "../door/profitFromJournal.js";
 import {
-  collection, doc, setDoc, getDoc, getDocs, deleteDoc,
+  collection, doc, setDoc, updateDoc, getDoc, getDocs, deleteDoc, runTransaction,
   query, where, orderBy, limit as fbLimit, serverTimestamp, onSnapshot,
 } from "firebase/firestore";
 
@@ -136,8 +137,33 @@ export async function getJournalHistory(limitCount = 50) {
   }
 }
 
+// The source entry is claimed atomically before any tracker is touched. An
+// existing entry is read, never rewritten, so user edits remain intact.
+export async function claimSmartJournalForApply(date, text, { id, tags, smartLog, expectedUid }) {
+  const userId = await uid();
+  if (expectedUid && userId !== expectedUid) throw new Error("smart_account_changed");
+  const ref = doc(journalCol(userId), id);
+  const snapshot = await claimSmartJournalTransaction({
+    db, ref, runTransaction,
+    data: { date, text, tags, smartLog, time: new Date().toISOString(), created_at: serverTimestamp() },
+  });
+  const existing = snapshot ? normalizeEntry(snapshot) : null;
+  if (!existing) {
+    void hotToPotential(userId, id, text, tags);
+    void profitReview(userId, id, text, tags, date);
+  }
+  return existing;
+}
+
+export async function updateSmartJournalStatus(id, smartLog, expectedUid) {
+  const userId = await uid();
+  if (expectedUid && userId !== expectedUid) throw new Error("smart_account_changed");
+  await updateDoc(doc(journalCol(userId), id), { smartLog, updated_at: serverTimestamp() });
+}
+
 export async function saveJournal(date = localToday(), text, opts = {}) {
   const userId = await uid();
+  if (opts.expectedUid && userId !== opts.expectedUid) throw new Error("journal_account_changed");
   const content = opts.preserveText ? String(text ?? "") : String(text || "").trim();
   const time = new Date().toISOString();
   const { tags = [], startDate, endDate, smartLog, voiceSession } = opts;

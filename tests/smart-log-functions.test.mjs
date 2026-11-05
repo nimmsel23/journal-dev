@@ -3,7 +3,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 const require = createRequire(import.meta.url);
-const { analyze, weekKey } = require("../functions/smart-log.js");
+const { analyze, getQuotaStatus, weekKey, assertExpectedUid } = require("../functions/smart-log.js");
+
+test("Smart Log rejects an account mismatch before processing", () => {
+  assert.doesNotThrow(() => assertExpectedUid("alice", "alice"));
+  assert.throws(() => assertExpectedUid("bob", "alice"), /smart_account_changed/);
+  assert.throws(() => assertExpectedUid("alice", null), /smart_account_changed/);
+});
 
 function fakeDb() {
   const docs = new Map();
@@ -28,6 +34,20 @@ function fakeDb() {
 const baseInput = { request_id: "1234567890abcdef", text: "Um 08:30 Haferflocken gegessen.", date: "2026-11-03", habits: [], tags: [] };
 const response = { candidates: [{ content: { parts: [{ text: JSON.stringify({ journal_entry: "Frühstück.", water_ml: 0, meals: [{ description: "Haferflocken", type: "breakfast", time: "08:30" }], habits_done: [], fitness_sessions: [], relax_sessions: [], planner_tasks: [] }) }] } }] };
 
+test("quota status shares the enforcement policy and includes reservations", async () => {
+  const db = fakeDb();
+  const now = new Date("2026-11-03T12:00:00Z");
+  assert.deepEqual(await getQuotaStatus({ db, uid: "status", now }), { tier: "observe", week: "2026-W45", timeZone: "Europe/Vienna", limit: 1, used: 0, reserved: 0, remaining: 1 });
+  db.seed("smartLoggingEntitlements/status", { tier: "operate", active: true, weeklyLimit: 4, expiresAt: new Date("2026-11-04T12:00:00Z") });
+  db.seed("smartLoggingQuotas/status/weeks/2026-W45", { used: 1, reserved: 2 });
+  const status = await getQuotaStatus({ db, uid: "status", now });
+  assert.equal(status.tier, "operate");
+  assert.equal(status.remaining, 1);
+  const expired = await getQuotaStatus({ db, uid: "status", now: new Date("2026-11-05T12:00:00Z") });
+  assert.equal(expired.tier, "observe");
+  assert.equal(expired.remaining, 0);
+});
+
 test("uses ISO weeks in Vienna, including year boundaries", () => {
   assert.equal(weekKey(new Date("2026-12-31T12:00:00Z")), "2026-W53");
   assert.equal(weekKey(new Date("2027-01-04T12:00:00Z")), "2027-W01");
@@ -46,6 +66,8 @@ test("successful requests consume one quota unit and replay from cache", async (
   const first = await analyze(options);
   const again = await analyze(options);
   assert.deepEqual(again, first);
+  const replayWithoutProvider = await analyze({ ...options, apiKey: "" });
+  assert.deepEqual(replayWithoutProvider, first);
   assert.equal(providerCalls, 1);
   assert.equal(first.original_text, baseInput.text);
 });
@@ -144,4 +166,24 @@ test("an orphaned processing reservation from a hard abort stays locked", async 
   );
   assert.equal(providerCalls, 0);
   assert.equal(db.peek("smartLoggingQuotas/u5/weeks/2026-W45").reserved, 1);
+});
+
+test('expired or malformed Operate entitlement falls back to the free weekly quota', async () => {
+  for (const expiresAt of [new Date('2026-11-03T11:59:00Z'), null, 'not-a-timestamp']) {
+    const db = fakeDb();
+    db.seed('smartLoggingEntitlements/u-expired', { tier: 'operate', active: true, weeklyLimit: 10, expiresAt });
+    db.seed('smartLoggingQuotas/u-expired/weeks/2026-W45', { used: 1, reserved: 0 });
+    await assert.rejects(analyze({ db, uid: 'u-expired', data: baseInput, apiKey: 'test', now: new Date('2026-11-03T12:00:00Z'), fetchImpl: async () => { throw new Error('must not call provider'); } }),
+      (error) => error.message === 'smart_log_weekly_quota_reached' && error.details.tier === 'observe');
+  }
+});
+
+test('purchase-sourced Operate access without an expiry is not treated as unlimited', async () => {
+  for (const source of ['google_play', 'app_store', 'stripe', null]) {
+    const db = fakeDb();
+    db.seed('smartLoggingEntitlements/u-purchase', { tier: 'operate', active: true, weeklyLimit: 10, source });
+    db.seed('smartLoggingQuotas/u-purchase/weeks/2026-W45', { used: 1, reserved: 0 });
+    await assert.rejects(analyze({ db, uid: 'u-purchase', data: baseInput, apiKey: 'test', now: new Date('2026-11-03T12:00:00Z'), fetchImpl: async () => { throw new Error('must not call provider'); } }),
+      (error) => error.message === 'smart_log_weekly_quota_reached' && error.details.tier === 'observe');
+  }
 });

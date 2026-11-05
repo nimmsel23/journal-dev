@@ -10,10 +10,9 @@ import { asBool, readSetting, useSetting, writeSetting } from "../../lib/useSett
 import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 import { createSmartCalendarEvent } from "../../lib/google/smartCalendar.js";
 import { useGoogle } from "../../lib/google/useGoogle.js";
-import { readVoiceContext, VOICE_CONTEXT_KEY } from "./voiceContext.js";
+import { readVoiceContext, voiceStorageKey, VOICE_CONTEXT_KEY } from "./voiceContext.js";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
-const key = (stage, suffix = "") => `gv2:voice:${today()}:${stage}${suffix}`;
 const read = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 function newSessionId() {
@@ -137,7 +136,7 @@ function StrikeFollowUp({ answers, sessionId }) {
       }, { sourceJournalId, requestId: `voice_${sessionId}`, index: 0 });
       setEvent(result);
     } catch (cause) {
-      setError(cause?.message || "Der Planner-Eintrag konnte nicht angelegt werden.");
+      setError(cause?.message === "planner_local_time_invalid" ? "Diese Uhrzeit existiert an diesem Tag in deiner Zeitzone nicht. Bitte wähle eine andere Uhrzeit." : cause?.message || "Der Planner-Eintrag konnte nicht angelegt werden.");
     } finally { setBusy(false); }
   };
 
@@ -156,25 +155,42 @@ function StrikeFollowUp({ answers, sessionId }) {
 }
 
 export default function VoicePanel({ user }) {
+  const key = (suffix) => voiceStorageKey(user?.uid || null, today(), suffix);
   const [idx, setIdx] = useState(0);
   const stage = VOICE_STAGES[idx];
   const [voiceContext, setVoiceContext] = useState(() => loadVoiceContext(user?.uid || null));
-  const [sessionId] = useState(() => {
-    const existing = voiceContext?.sessionId || read(key("session", "-id"), "");
+  const [sessionId, setSessionId] = useState(() => {
+    const existing = voiceContext?.sessionId || read(key("session-id"), "");
     if (existing) return existing;
     const created = newSessionId();
-    write(key("session", "-id"), created);
+    write(key("session-id"), created);
     return created;
   });
-  const sessionKey = (phase, suffix = "") => `gv2:voice:${today()}:${sessionId}:${phase}${suffix}`;
-  const [answers, setAnswers] = useState(() => read(sessionKey(stage.key), voiceContext ? {} : read(key(stage.key), {})));
-  const [saved, setSaved] = useState(() => Object.fromEntries(VOICE_STAGES.map((s) => [s.key, read(sessionKey(s.key, ":saved"), voiceContext ? false : read(key(s.key, ":saved"), false))])));
+  const sessionKey = (phase, suffix = "") => key(`${sessionId}:${phase}${suffix}`);
+  const [answers, setAnswers] = useState(() => read(sessionKey(stage.key), {}));
+  const [saved, setSaved] = useState(() => Object.fromEntries(VOICE_STAGES.map((s) => [s.key, read(sessionKey(s.key, ":saved"), false)])));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  useEffect(() => { setAnswers(read(sessionKey(stage.key), voiceContext ? {} : read(key(stage.key), {}))); setErr(""); }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
-  const set = (k, v) => setAnswers((a) => { const n = { ...a, [k]: v }; write(sessionKey(stage.key), n); return n; });
+  useEffect(() => { setAnswers(read(sessionKey(stage.key), {})); setErr(""); }, [idx, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const set = (k, v) => {
+    setAnswers((a) => { const n = { ...a, [k]: v }; write(sessionKey(stage.key), n); return n; });
+    write(sessionKey(stage.key, ":saved"), false);
+    setSaved((current) => ({ ...current, [stage.key]: false }));
+  };
   const missing = stage.steps.filter((s) => s.required && s.kind !== "pause" && (answers[s.key] == null || answers[s.key] === "" || (Array.isArray(answers[s.key]) && !answers[s.key].length)));
+
+  const startNewSession = () => {
+    const nextId = newSessionId();
+    write(key("session-id"), nextId);
+    try { window.sessionStorage.removeItem(VOICE_CONTEXT_KEY); } catch {}
+    setVoiceContext(null);
+    setSessionId(nextId);
+    setSaved({});
+    setAnswers({});
+    setIdx(0);
+    setErr("");
+  };
 
   const save = async () => {
     setBusy(true); setErr("");
@@ -189,6 +205,7 @@ export default function VoicePanel({ user }) {
         id: `voice_${sessionId}_${stage.key}`,
         tags: ["voice", stage.key],
         voiceSession,
+        expectedUid: user.uid,
       });
       write(sessionKey(stage.key, ":saved"), true);
       setSaved((s) => ({ ...s, [stage.key]: true }));
@@ -197,7 +214,7 @@ export default function VoicePanel({ user }) {
         try { window.sessionStorage.removeItem(VOICE_CONTEXT_KEY); } catch {}
         setVoiceContext(null);
       }
-    } catch (e) { setErr(e?.message || "Speichern fehlgeschlagen"); }
+    } catch (e) { setErr(e?.message === "journal_account_changed" ? "Das Konto hat sich geändert. Bitte melde dich erneut an und speichere die Phase noch einmal." : e?.message || "Speichern fehlgeschlagen"); }
     setBusy(false);
   };
 
@@ -229,7 +246,7 @@ export default function VoicePanel({ user }) {
         </button>
         {missing.length > 0 && <span className="dv2-none">Noch offen: {missing.length}</span>}
       </div>
-      {stage.key === "strike" && saved.strike && <StrikeFollowUp answers={answers} sessionId={sessionId} />}
+      {stage.key === "strike" && saved.strike && <><StrikeFollowUp key={sessionId} answers={answers} sessionId={sessionId} /><button type="button" className="dv2-pick" disabled={busy} onClick={startNewSession}>Neue Voice-Session starten</button></>}
     </>
   );
 }

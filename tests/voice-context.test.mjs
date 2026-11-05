@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readVoiceContext, writeVoiceContext, VOICE_CONTEXT_KEY } from "../src/views/voice/voiceContext.js";
+import { readVoiceContext, writeVoiceContext, voiceStorageKey, VOICE_CONTEXT_KEY } from "../src/views/voice/voiceContext.js";
+
+test("Voice answer keys isolate guest and different accounts", () => {
+  const keys = [null, "alice", "bob", "guest"].map((uid) => voiceStorageKey(uid, "2026-11-04", "session:stop"));
+  assert.equal(new Set(keys).size, keys.length);
+});
 
 function storage() {
   const values = new Map();

@@ -1,0 +1,173 @@
+{
+  "repo": "journal-dev",
+  "apps": [
+    {
+      "id": "journal",
+      "kind": "solo",
+      "name": "Journal v1",
+      "short": "Journal",
+      "description": "Timeline-Journal (v1) mit Tabs Smart Log, Habits und Door",
+      "accent": "#a78bfa",
+      "site": "journal-vos",
+      "url": "https://journal-vos.web.app",
+      "tab": "journal",
+      "planned": false
+    },
+    {
+      "id": "v2",
+      "kind": "solo",
+      "name": "Journal v2",
+      "short": "Journal v2",
+      "description": "Raster-Journal: Tag, Woche, Monat, Smart Logger; dazu Habits v2 (#v2/habits)",
+      "accent": "#1738ff",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app",
+      "tab": "journal-v2",
+      "planned": false
+    },
+    {
+      "id": "door",
+      "kind": "solo",
+      "name": "Door v2",
+      "short": "Door v2",
+      "description": "Door: Potential, Plan, Production, Profit im Raster-Design",
+      "accent": "#1738ff",
+      "site": "vos-door",
+      "url": "https://vos-door.web.app",
+      "tab": "door-v2",
+      "planned": false
+    },
+    {
+      "id": "voice",
+      "kind": "solo",
+      "name": "Voice v2",
+      "short": "Voice v2",
+      "description": "Voice: Mental-Mastery-Sessions",
+      "accent": "#1738ff",
+      "site": "vos-voice",
+      "url": "https://vos-voice.web.app",
+      "tab": "voice-v2",
+      "planned": false
+    },
+    {
+      "id": "game",
+      "kind": "solo",
+      "name": "Game v2",
+      "short": "Game v2",
+      "description": "Game: Frame, Freedom, Focus, Fire Maps",
+      "accent": "#1738ff",
+      "site": "vos-game",
+      "url": "https://vos-game.web.app",
+      "tab": "game-v2",
+      "planned": false
+    },
+    {
+      "id": "tent",
+      "kind": "solo",
+      "name": "Tent v2",
+      "short": "Tent v2",
+      "description": "General's Tent: wöchentlicher Review",
+      "accent": "#1738ff",
+      "site": "vos-tent",
+      "url": "https://vos-tent.web.app",
+      "tab": "tent-v2",
+      "planned": false
+    },
+    {
+      "id": "habits-v1",
+      "kind": "solo",
+      "name": "Habits v1",
+      "short": "Habits v1",
+      "description": "Habit-Tracking (v1), bisher Tab in Journal v1",
+      "accent": "#a78bfa",
+      "site": null,
+      "url": null,
+      "tab": null,
+      "planned": true
+    },
+    {
+      "id": "smart-log",
+      "kind": "solo",
+      "name": "Smart Log",
+      "short": "Smart Log",
+      "description": "KI-Freihand-Logging, bisher Tab in Journal v1",
+      "accent": "#a78bfa",
+      "site": null,
+      "url": null,
+      "tab": null,
+      "planned": true
+    },
+    {
+      "id": "door-v1",
+      "kind": "solo",
+      "name": "Door v1",
+      "short": "Door v1",
+      "description": "The Door Framework (v1), bisher Tab in Journal v1",
+      "accent": "#a78bfa",
+      "site": null,
+      "url": null,
+      "tab": null,
+      "planned": true
+    },
+    {
+      "id": "habits-v2",
+      "kind": "solo",
+      "name": "Habits v2",
+      "short": "Habits v2",
+      "description": "Habits im Raster-Design, bisher Ansicht #v2/habits in Journal v2",
+      "accent": "#1738ff",
+      "site": null,
+      "url": null,
+      "tab": null,
+      "planned": true
+    },
+    {
+      "id": "game-frame",
+      "kind": "solo",
+      "name": "Game Frame",
+      "short": "Frame",
+      "description": "Frame Map: das große Bild, Ausgangslage und Richtung (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "site": "vos-game",
+      "url": "https://vos-game.web.app/frame/",
+      "tab": "game-v2",
+      "planned": false
+    },
+    {
+      "id": "game-freedom",
+      "kind": "solo",
+      "name": "Game Freedom",
+      "short": "Freedom",
+      "description": "Freedom Map: Jahres- bis Quartalsziele (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "site": "vos-game",
+      "url": "https://vos-game.web.app/freedom/",
+      "tab": "game-v2",
+      "planned": false
+    },
+    {
+      "id": "game-focus",
+      "kind": "solo",
+      "name": "Game Focus",
+      "short": "Focus",
+      "description": "Focus Map: Monats- bis Wochenziele (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "site": "vos-game",
+      "url": "https://vos-game.web.app/focus/",
+      "tab": "game-v2",
+      "planned": false
+    },
+    {
+      "id": "game-fire",
+      "kind": "solo",
+      "name": "Game Fire",
+      "short": "Fire",
+      "description": "Fire Map: Wochen- bis Tagesaufgaben (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "site": "vos-game",
+      "url": "https://vos-game.web.app/fire/",
+      "tab": "game-v2",
+      "planned": false
+    }
+  ]
+}

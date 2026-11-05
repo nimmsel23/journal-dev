@@ -59,18 +59,15 @@ export function useAutosaveField({ storageKey, remote, ready = true, save, delay
 /** Eingabezeile mit Entwurf im localStorage (kein Autosave in eine Datenquelle): [text, setText]. */
 export function usePersistedText(storageKey) {
   const store = draftStore();
-  const [text, setText] = useState(() => store.get(storageKey) ?? "");
-  const keyRef = useRef(storageKey);
-  useEffect(() => {
-    keyRef.current = storageKey;
-    setText(store.get(storageKey) ?? "");
-  }, [storageKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [state, setState] = useState(() => ({ key: storageKey, text: store.get(storageKey) ?? "" }));
+  const text = state.key === storageKey ? state.text : store.get(storageKey) ?? "";
   const set = useCallback((next) => {
-    setText((prev) => {
-      const v = typeof next === "function" ? next(prev) : next;
-      if (v) store.set(keyRef.current, v); else store.remove(keyRef.current);
-      return v;
+    setState((prev) => {
+      const current = prev.key === storageKey ? prev.text : store.get(storageKey) ?? "";
+      const v = typeof next === "function" ? next(current) : next;
+      if (v) store.set(storageKey, v); else store.remove(storageKey);
+      return { key: storageKey, text: v };
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [storageKey]); // eslint-disable-line react-hooks/exhaustive-deps
   return [text, set];
 }

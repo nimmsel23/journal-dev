@@ -91,4 +91,12 @@ function createGoogleHandlers({ fetchImpl, store, clientId, clientSecret, HttpsE
   };
 }
 
-module.exports = { createGoogleHandlers, REQUIRED_SCOPES };
+// Older clients omit expected_uid. Updated clients bind token operations to the
+// account that initiated them, even if Firebase authentication changes in flight.
+function assertExpectedGoogleUid(uid, data, HttpsError) {
+  if (Object.hasOwn(data || {}, "expected_uid") && (typeof data.expected_uid !== "string" || data.expected_uid !== uid)) {
+    throw new HttpsError("permission-denied", "google-account-changed");
+  }
+}
+
+module.exports = { createGoogleHandlers, REQUIRED_SCOPES, assertExpectedGoogleUid };

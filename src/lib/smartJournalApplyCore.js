@@ -238,7 +238,12 @@ export function mergeSmartNutritionLog(currentValue, { date, requestId, journalI
   };
 }
 
-export function createSmartJournalApplier({ saveJournal, updateJournal, claimJournal, updateStatus, applyNutrition, recordHabit, applyFitness, applyRelax, applyPlanner, assertAccount = () => {}, now = () => new Date().toISOString() }) {
+function currentLocalDate() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+export function createSmartJournalApplier({ saveJournal, updateJournal, claimJournal, updateStatus, applyNutrition, recordHabit, applyFitness, applyRelax, applyPlanner, assertAccount = () => {}, now = () => new Date().toISOString(), today = currentLocalDate }) {
   return async function applySmartAnalysis({ date, analysis, habits = [] }) {
     assertAccount();
     const guarded = async (fn, ...args) => {
@@ -249,6 +254,7 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, claimJou
     };
     const data = validateSmartAnalysis(analysis);
     if (!validISODate(date)) throw new Error("smart_schema_date_invalid");
+    if (date > today() && data.habits_done.length) throw new Error("smart_future_habit_not_allowed");
     for (const meal of data.meals) assertExistingLocalTime(date, meal.time);
     for (const session of data.fitness_sessions) assertExistingLocalTime(session.date || date, session.time);
     const journalId = sourceJournalId(data.request_id);

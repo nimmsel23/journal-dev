@@ -291,3 +291,10 @@ test('rejects nonexistent local tracker times before any write', async () => {
     assert.equal(writes, 0);
   } finally { if (old === undefined) delete process.env.TZ; else process.env.TZ = old; }
 });
+
+test('future journal dates cannot mark habits done or start partial writes', async () => {
+  let writes = 0;
+  const apply = createSmartJournalApplier({ today: () => '2026-11-04', saveJournal: async () => { writes++; }, recordHabit: async () => { writes++; } });
+  await assert.rejects(apply({ date: '2026-11-05', analysis: analysis({ meals: [], water_ml: 0 }), habits: [{ uuid: 'a', name: 'Meditieren' }] }), /smart_future_habit_not_allowed/);
+  assert.equal(writes, 0);
+});

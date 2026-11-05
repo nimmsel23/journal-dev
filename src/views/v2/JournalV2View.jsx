@@ -32,6 +32,7 @@ const iso = (d) => format(d, "yyyy-MM-dd");
 
 function smartLogErrorText(error) {
   const message = error?.message || "";
+  if (message.includes("smart_future_habit_not_allowed")) return "Für ein zukünftiges Datum können Habits noch nicht als erledigt übernommen werden. Entferne diese Habit-Vorschläge oder wähle den Tag der tatsächlichen Ausführung.";
   if (message.includes("smart_local_time_invalid")) return "Eine Mahlzeit oder Trainingseinheit hat eine Uhrzeit, die an diesem Tag in deiner Zeitzone nicht existiert. Bitte ändere oder entferne die Uhrzeit.";
   if (message.includes("smart_retry_tracker_changed") || message.includes("smart_retry_planner_order_changed") || message.includes("smart_retry_planner_already_applied")) return "Ein Teil wurde bereits gespeichert. Bitte ändere gespeicherte Tracker-Einträge direkt im jeweiligen Tracker; offene Kalender-Vorschläge kannst du an derselben Stelle ergänzen.";
   if (message.includes("smart_retry_source_changed") || message.includes("smart_retry_payload_unavailable")) return "Der Journaleintrag wurde geändert oder die gespeicherten Vorschläge fehlen. Bitte öffne den Journaleintrag erneut; vorhandene Daten bleiben erhalten.";

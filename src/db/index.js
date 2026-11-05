@@ -105,6 +105,7 @@ export async function getHabitRecordsForDate(date = localToday()) {
 // Habit-Records: lokal sofort fertig, Abgleich im Hintergrund (track) – nie auf die Server-Bestätigung warten,
 // sonst hängt das Abhaken offline ewig.
 export async function recordHabit(uuid, date = localToday(), provenance = {}) {
+  if (date > localToday()) throw new Error("smart_future_habit_not_allowed");
   const ref = doc(db, "fitness", getUid(), "habitRecords", `${uuid}_${date}`);
   const record = {
     habitId: uuid,
@@ -121,6 +122,7 @@ export async function recordHabit(uuid, date = localToday(), provenance = {}) {
 // The Smart Log pipeline is online/transactional: do not report success until
 // the habit record has been confirmed by Firestore.
 export async function recordSmartHabit(uuid, date = localToday(), { requestId, sourceJournalId } = {}) {
+  if (date > localToday()) throw new Error("smart_future_habit_not_allowed");
   if (!requestId || !sourceJournalId) throw new Error("smart_habit_provenance_required");
   const ref = doc(db, "fitness", getUid(), "habitRecords", `${uuid}_${date}`);
   return applySmartHabitTransaction({ db, ref, uuid, date, requestId, sourceJournalId, runTransaction, serverTimestamp });

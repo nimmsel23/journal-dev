@@ -3,6 +3,7 @@
 // functions/google.js), Google Identity Services (Code-Popup) und der Firebase-Popup-Rückfall.
 // Beim App-Start passiert hier nichts im Netz; erst Verbinden bzw. ein API-Aufruf braucht es.
 import { GoogleAuthProvider, onAuthStateChanged, reauthenticateWithPopup } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { app, auth } from "../firebase.js";
 import { createGoogleTokens, KEY } from "./tokens.js";
 
@@ -19,7 +20,6 @@ const fail = (message, code) => Object.assign(new Error(message), code ? { code 
 
 async function call(name, data, expectedUid = auth?.currentUser?.uid) {
   if (!expectedUid) throw fail("google-expired");
-  const { getFunctions, httpsCallable } = await import("firebase/functions");
   if (auth?.currentUser?.uid !== expectedUid) throw fail("google-account-changed");
   try {
     const result = (await httpsCallable(getFunctions(app, REGION), name)({ ...(data || {}), expected_uid: expectedUid })).data;

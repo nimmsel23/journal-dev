@@ -57,7 +57,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Functions deps
-        run: pnpm install --dir functions --ignore-workspace --frozen-lockfile --allow-build=protobufjs
+        run: pnpm install --dir functions --ignore-workspace --frozen-lockfile --ignore-scripts
 
       - name: Test
         run: pnpm test

@@ -14,9 +14,10 @@
 import { localToday } from "./core.js";
 import { db, auth } from "../firebase.js";
 import { track } from "../offline.js";
+import { claimSmartJournalTransaction } from "../smartJournalClaim.js";
 import { getDocsFast } from "./fastDocs.js";
 import {
-  collection, doc, setDoc, getDoc, getDocs, deleteDoc,
+  collection, doc, setDoc, updateDoc, getDoc, getDocs, deleteDoc, runTransaction,
   query, where, orderBy, limit as fbLimit, serverTimestamp, onSnapshot,
 } from "firebase/firestore";
 
@@ -135,11 +136,36 @@ export async function getJournalHistory(limitCount = 50) {
   }
 }
 
+// The source entry is claimed atomically before any tracker is touched. An
+// existing entry is read, never rewritten, so user edits remain intact.
+export async function claimSmartJournalForApply(date, text, { id, tags, smartLog, expectedUid }) {
+  const userId = await uid();
+  if (expectedUid && userId !== expectedUid) throw new Error("smart_account_changed");
+  const ref = doc(journalCol(userId), id);
+  const snapshot = await claimSmartJournalTransaction({
+    db, ref, runTransaction,
+    data: { date, text, tags, smartLog, time: new Date().toISOString(), created_at: serverTimestamp() },
+  });
+  const existing = snapshot ? normalizeEntry(snapshot) : null;
+  if (!existing) {
+    void hotToPotential(userId, id, text, tags);
+    void profitReview(userId, id, text, tags, date);
+  }
+  return existing;
+}
+
+export async function updateSmartJournalStatus(id, smartLog, expectedUid) {
+  const userId = await uid();
+  if (expectedUid && userId !== expectedUid) throw new Error("smart_account_changed");
+  await updateDoc(doc(journalCol(userId), id), { smartLog, updated_at: serverTimestamp() });
+}
+
 export async function saveJournal(date = localToday(), text, opts = {}) {
   const userId = await uid();
-  const content = String(text || "").trim();
+  if (opts.expectedUid && userId !== opts.expectedUid) throw new Error("journal_account_changed");
+  const content = opts.preserveText ? String(text ?? "") : String(text || "").trim();
   const time = new Date().toISOString();
-  const { tags = [], startDate, endDate } = opts;
+  const { tags = [], startDate, endDate, smartLog, voiceSession } = opts;
   const docData = {
     date,
     text: content,
@@ -149,9 +175,11 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
   };
   if (startDate) docData.startDate = startDate;
   if (endDate) docData.endDate = endDate;
+  if (smartLog) docData.smartLog = smartLog;
+  if (voiceSession) docData.voiceSession = voiceSession;
   // Offline-first: lokal sofort fertig, der Server-Abgleich läuft im Hintergrund (`synced` löst nach Bestätigung auf).
-  const ref = doc(journalCol(userId));
-  const synced = track(setDoc(ref, docData));
+  const ref = opts.id ? doc(journalCol(userId), String(opts.id)) : doc(journalCol(userId));
+  const synced = track(opts.id ? setDoc(ref, docData, { merge: true }) : setDoc(ref, docData));
   void hotToPotential(userId, ref.id, content, tags);
   void profitReview(userId, ref.id, content, tags, date);
   return { id: ref.id, date, text: content, time, startDate, endDate, synced };
@@ -159,14 +187,16 @@ export async function saveJournal(date = localToday(), text, opts = {}) {
 
 export async function updateJournal(id, text, opts = {}) {
   const userId = await uid();
-  const content = String(text || "").trim();
-  const { startDate, endDate, tags } = opts;
+  const { startDate, endDate, tags, smartLog, voiceSession } = opts;
+  const content = opts.preserveText ? String(text ?? "") : String(text || "").trim();
   const patch = { text: content, updated_at: serverTimestamp() };
   // Alt-Doc (Doc-ID = Datum): date-Feld nachziehen, damit where("date")-Queries es finden
   if (DATE_ID.test(id)) patch.date = id;
   patch.startDate = startDate || null;
   patch.endDate = endDate || null;
   if (tags) patch.tags = tags;
+  if (smartLog) patch.smartLog = smartLog;
+  if (voiceSession) patch.voiceSession = voiceSession;
   const synced = track(setDoc(doc(journalCol(userId), id), patch, { merge: true }));
   if (tags) { void hotToPotential(userId, id, content, tags); void profitReview(userId, id, content, tags); }
   return { ok: true, id, text: content, startDate, endDate, tags, synced };

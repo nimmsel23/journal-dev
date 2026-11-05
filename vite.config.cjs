@@ -29,6 +29,13 @@ module.exports = defineConfig(async ({ mode }) => {
   };
   const FL = FLAVORS[process.env.VITE_APP_FLAVOR || env.VITE_APP_FLAVOR];
   const DOOR = !!FL; // „Flavor-App“ (Name historisch von Door)
+  // Game-Map als eigene Mini-App unter einem Unterpfad derselben Origin (vos-game.web.app/<map>/): scripts/build-game-maps.mjs
+  // setzt VITE_BASE_PATH=/<map>/ und VITE_GAME_SOLO=<map>. Ohne beides unverändert Root-Build.
+  const BASE = process.env.VITE_BASE_PATH || env.VITE_BASE_PATH || "/";
+  const SOLO_MAP = process.env.VITE_GAME_SOLO || env.VITE_GAME_SOLO || "";
+  const MAP_NAMES = { frame: "Frame", freedom: "Freedom", focus: "Focus", fire: "Fire" };
+  const APP_NAME = SOLO_MAP ? `Game ${MAP_NAMES[SOLO_MAP] ?? SOLO_MAP}` : FL ? FL.name : "Vital-Journal";
+  const APP_SHORT = SOLO_MAP ? (MAP_NAMES[SOLO_MAP] ?? SOLO_MAP) : FL ? FL.short : "Vital-Journal";
   const flavorHtml = {
     name: "journal:flavor-html",
     transformIndexHtml(html) {
@@ -38,8 +45,8 @@ module.exports = defineConfig(async ({ mode }) => {
         .replace(/\/icons\/icon-192\.png"( sizes="192x192")?/g, (m, sz) => `/${FL.dir}/icon-192.png"${sz || ""}`)
         .replace(`<link rel="apple-touch-icon" href="/${FL.dir}/icon-192.png"`, `<link rel="apple-touch-icon" href="/${FL.dir}/apple-touch-icon.png"`)
         .replace('href="/favicon.ico"', `href="/${FL.dir}/favicon.ico"`)
-        .replace(/Vital-Journal/g, FL.name)
-        .replace('content="Journal"', `content="${FL.short}"`)
+        .replace(/Vital-Journal/g, APP_NAME)
+        .replace('content="Journal"', `content="${APP_SHORT}"`)
         .replace('content="#f59e0b"', 'content="#f6f6f2"')
         .replace("</head>", `<style>
       #splash { background: #f6f6f2; color: #0d0d0d; }
@@ -58,7 +65,7 @@ module.exports = defineConfig(async ({ mode }) => {
   console.log(`🚀 Building for mode: ${mode}, APP_MODE: ${appMode} -> outDir: ${outDir}`);
 
   return {
-    base: "/",
+    base: BASE,
     define: {
       "import.meta.env.VITE_APP_MODE": JSON.stringify(appMode),
       __APP_VERSION__: JSON.stringify(APP_VERSION),
@@ -68,25 +75,25 @@ module.exports = defineConfig(async ({ mode }) => {
       flavorHtml,
       react(),
       VitePWA({
-        base: "/",
-        scope: "/",
+        base: BASE,
+        scope: BASE,
         // "prompt": Update-Zeitpunkt steuert components/UpdateManager.jsx (kein Reload mitten im Tippen)
         registerType: "prompt",
         injectRegister: "auto",
         manifest: {
-          name: FL ? FL.name : "Vital-Journal",
-          short_name: FL ? FL.short : "Vital-Journal",
+          name: APP_NAME,
+          short_name: APP_SHORT,
           description: "Journal + Habits auf VitalOS-Stack",
           theme_color: DOOR ? "#f6f6f2" : "#f59e0b",
           background_color: DOOR ? "#f6f6f2" : "#0b1018", // = Splash in index.html, kein Farbsprung
           display: "standalone",
-          start_url: "/",
-          scope: "/",
+          start_url: BASE,
+          scope: BASE,
           icons: DOOR
             ? [
-                { src: `/${FL.dir}/icon-192.png`, sizes: "192x192", type: "image/png", purpose: "any" },
-                { src: `/${FL.dir}/icon-512.png`, sizes: "512x512", type: "image/png", purpose: "any" },
-                { src: `/${FL.dir}/icon-maskable-512.png`, sizes: "512x512", type: "image/png", purpose: "maskable" },
+                { src: `${BASE}${FL.dir}/icon-192.png`, sizes: "192x192", type: "image/png", purpose: "any" },
+                { src: `${BASE}${FL.dir}/icon-512.png`, sizes: "512x512", type: "image/png", purpose: "any" },
+                { src: `${BASE}${FL.dir}/icon-maskable-512.png`, sizes: "512x512", type: "image/png", purpose: "maskable" },
               ]
             : [
                 { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
@@ -97,7 +104,7 @@ module.exports = defineConfig(async ({ mode }) => {
         },
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-          navigateFallback: "/index.html",
+          navigateFallback: `${BASE}index.html`,
           navigateFallbackDenylist: [/^\/api/, /^\/__\//],
           globIgnores: ["**/*.map", ...["icons", "icons-door", "icons-voice", "icons-game", "icons-tent"].filter((d) => d !== (FL ? FL.dir : "icons")).map((d) => `${d}/**`)],
           // Nur Google Fonts cachen; Firebase/Auth/Firestore/Vertex bewusst ohne Route (immer Netzwerk)

@@ -56,6 +56,9 @@ jobs:
       - name: Install Journal
         run: pnpm install --frozen-lockfile
 
+      - name: Install Functions deps
+        run: pnpm install --dir functions --ignore-workspace --frozen-lockfile
+
       - name: Test
         run: pnpm test
 

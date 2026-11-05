@@ -1,0 +1,184 @@
+{
+  "_note": "Flavor-Apps aus journal-dev: ein Codebestand, je Site ein Build mit VITE_APP_FLAVOR + VITE_DEFAULT_TAB (package.json deploy:<id>:build, deploy-master.yml). Ein Eintrag mit planned:true hat noch keine eigene Site (nur Tab in einer anderen App). Quelle für das Portal (vos-portal). Game-Maps (gameMap) sind Unterpfad-Apps auf der Site vos-game (gleiche Origin), gebaut mit scripts/build-game-maps.mjs.",
+  "apps": [
+    {
+      "id": "journal",
+      "target": "journal",
+      "site": "journal-vos",
+      "defaultTab": "journal",
+      "name": "Journal v1",
+      "short": "Journal",
+      "description": "Timeline-Journal (v1) mit Tabs Smart Log, Habits und Door",
+      "accent": "#a78bfa",
+      "paths": [
+        "src/views/Journal/",
+        "src/views/JournalVosView.jsx"
+      ]
+    },
+    {
+      "id": "v2",
+      "target": "v2",
+      "site": "vos-journal",
+      "defaultTab": "journal-v2",
+      "name": "Journal v2",
+      "short": "Journal v2",
+      "description": "Raster-Journal: Tag, Woche, Monat, Smart Logger; dazu Habits v2 (#v2/habits)",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/v2/"
+      ]
+    },
+    {
+      "id": "door",
+      "target": "door",
+      "site": "vos-door",
+      "flavor": "door",
+      "defaultTab": "door-v2",
+      "name": "Door v2",
+      "short": "Door v2",
+      "description": "Door: Potential, Plan, Production, Profit im Raster-Design",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/door/"
+      ]
+    },
+    {
+      "id": "voice",
+      "target": "voice",
+      "site": "vos-voice",
+      "flavor": "voice",
+      "defaultTab": "voice-v2",
+      "name": "Voice v2",
+      "short": "Voice v2",
+      "description": "Voice: Mental-Mastery-Sessions",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/voice/"
+      ]
+    },
+    {
+      "id": "game",
+      "target": "game",
+      "site": "vos-game",
+      "flavor": "game",
+      "defaultTab": "game-v2",
+      "name": "Game v2",
+      "short": "Game v2",
+      "description": "Game: Frame, Freedom, Focus, Fire Maps",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/game/"
+      ]
+    },
+    {
+      "id": "tent",
+      "target": "tent",
+      "site": "vos-tent",
+      "flavor": "tent",
+      "defaultTab": "tent-v2",
+      "name": "Tent v2",
+      "short": "Tent v2",
+      "description": "General's Tent: wöchentlicher Review",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/tent/"
+      ]
+    },
+    {
+      "id": "habits-v1",
+      "planned": true,
+      "name": "Habits v1",
+      "description": "Habit-Tracking (v1), bisher Tab in Journal v1",
+      "accent": "#a78bfa",
+      "paths": [
+        "src/views/HabitVosView.jsx"
+      ]
+    },
+    {
+      "id": "smart-log",
+      "planned": true,
+      "name": "Smart Log",
+      "description": "KI-Freihand-Logging, bisher Tab in Journal v1",
+      "accent": "#a78bfa",
+      "paths": [
+        "src/views/AiLogVosView.jsx"
+      ]
+    },
+    {
+      "id": "door-v1",
+      "planned": true,
+      "name": "Door v1",
+      "description": "The Door Framework (v1), bisher Tab in Journal v1",
+      "accent": "#a78bfa",
+      "paths": [
+        "src/views/door/DoorView.jsx"
+      ]
+    },
+    {
+      "id": "habits-v2",
+      "planned": true,
+      "name": "Habits v2",
+      "description": "Habits im Raster-Design, bisher Ansicht #v2/habits in Journal v2",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/v2/JournalV2Habits.jsx"
+      ]
+    },
+    {
+      "id": "game-frame",
+      "gameMap": "frame",
+      "site": "vos-game",
+      "path": "/frame/",
+      "defaultTab": "game-v2",
+      "name": "Game Frame",
+      "short": "Frame",
+      "description": "Frame Map: das große Bild, Ausgangslage und Richtung (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/game/"
+      ]
+    },
+    {
+      "id": "game-freedom",
+      "gameMap": "freedom",
+      "site": "vos-game",
+      "path": "/freedom/",
+      "defaultTab": "game-v2",
+      "name": "Game Freedom",
+      "short": "Freedom",
+      "description": "Freedom Map: Jahres- bis Quartalsziele (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/game/"
+      ]
+    },
+    {
+      "id": "game-focus",
+      "gameMap": "focus",
+      "site": "vos-game",
+      "path": "/focus/",
+      "defaultTab": "game-v2",
+      "name": "Game Focus",
+      "short": "Focus",
+      "description": "Focus Map: Monats- bis Wochenziele (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/game/"
+      ]
+    },
+    {
+      "id": "game-fire",
+      "gameMap": "fire",
+      "site": "vos-game",
+      "path": "/fire/",
+      "defaultTab": "game-v2",
+      "name": "Game Fire",
+      "short": "Fire",
+      "description": "Fire Map: Wochen- bis Tagesaufgaben (gleiche Origin wie Game v2)",
+      "accent": "#1738ff",
+      "paths": [
+        "src/views/game/"
+      ]
+    }
+  ]
+}

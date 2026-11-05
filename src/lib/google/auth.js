@@ -2,13 +2,14 @@
 // Cloud-Function-Aufrufe (googleLinkConfig / googleLink / googleAccessToken / googleUnlink in
 // functions/google.js), Google Identity Services (Code-Popup) und der Firebase-Popup-Rückfall.
 // Beim App-Start passiert hier nichts im Netz; erst Verbinden bzw. ein API-Aufruf braucht es.
-import { GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, onAuthStateChanged, reauthenticateWithPopup } from "firebase/auth";
 import { app, auth } from "../firebase.js";
 import { createGoogleTokens, KEY } from "./tokens.js";
 
 /** Beide Scopes in einer Einwilligung: Kalender (lesen) und Google Tasks. */
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/calendar.events.owned",
   "https://www.googleapis.com/auth/tasks",
 ];
 const REGION = "europe-west1";
@@ -16,10 +17,14 @@ const GIS_SRC = "https://accounts.google.com/gsi/client";
 
 const fail = (message, code) => Object.assign(new Error(message), code ? { code } : {});
 
-async function call(name, data) {
+async function call(name, data, expectedUid = auth?.currentUser?.uid) {
+  if (!expectedUid) throw fail("google-expired");
   const { getFunctions, httpsCallable } = await import("firebase/functions");
+  if (auth?.currentUser?.uid !== expectedUid) throw fail("google-account-changed");
   try {
-    return (await httpsCallable(getFunctions(app, REGION), name)(data || {})).data;
+    const result = (await httpsCallable(getFunctions(app, REGION), name)({ ...(data || {}), expected_uid: expectedUid })).data;
+    if (auth?.currentUser?.uid !== expectedUid) throw fail("google-account-changed");
+    return result;
   } catch (e) {
     const msg = String(e?.message || "");
     // Function nicht deployt oder Secrets fehlen → Rückfall auf das Popup
@@ -89,11 +94,15 @@ const remote = {
     return { accessToken: r.accessToken, expiresAt: r.expiresAt };
   },
   async link() {
+    const owner = auth?.currentUser?.uid;
+    if (!owner) throw fail("google-expired");
     if (!prep) await prepareGoogleConnect();
     if (!prep) throw fail("google-offline"); // offline oder Google-Skript nicht ladbar
     if (prep.status === "unavailable") throw fail("google-not-configured", "unavailable");
+    if (auth?.currentUser?.uid !== owner) throw fail("google-account-changed");
     const code = await requestCode(prep.clientId);
-    const r = await call("googleLink", { code });
+    if (auth?.currentUser?.uid !== owner) throw fail("google-account-changed");
+    const r = await call("googleLink", { code }, owner);
     return { accessToken: r.accessToken, expiresAt: r.expiresAt };
   },
   async unlink() {
@@ -114,9 +123,20 @@ const popup = {
 };
 
 const storage = typeof localStorage !== "undefined" ? localStorage : { getItem: () => null, setItem() {}, removeItem() {} };
-export const google = createGoogleTokens({ storage, remote, popup });
+// Produktbuilds dürfen keine kurzlebige Popup-Verbindung als dauerhafte Google-Anbindung ausgeben.
+// Der Rückfall bleibt nur außerhalb des offiziellen VitalOS-Produktbuilds für lokale/alte Umgebungen.
+export const google = createGoogleTokens({
+  storage,
+  remote,
+  popup,
+  allowPopupFallback: import.meta.env.VITE_VOS_PRODUCT_BUILD !== "1",
+  getOwner: () => auth?.currentUser?.uid || null,
+});
+// Refresh subscribed UI when Firebase identity changes; never reuse the old global cache.
+onAuthStateChanged(auth, () => google.notify());
+try { storage.removeItem(KEY); } catch { /* blocked storage */ }
 
 // Änderungen aus einem anderen Tab/Fenster (gleicher localStorage) an die Oberfläche melden
 if (typeof window !== "undefined") {
-  window.addEventListener("storage", (e) => { if (e.key === KEY || e.key === null) google.notify(); });
+  window.addEventListener("storage", (e) => { if (e.key === null || e.key === KEY || e.key?.startsWith(`${KEY}:`)) google.notify(); });
 }

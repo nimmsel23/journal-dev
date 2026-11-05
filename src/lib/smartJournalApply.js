@@ -1,55 +1,53 @@
-// smartJournalApply.js — übernimmt eine Smart-Logger-Analyse (analyzeSmartJournal)
-// in Journal, Nutrition-Log (Mahlzeiten, Wasser) und Habits. Gemeinsam genutzt
-// von views/AiLogVosView.jsx und views/v2/JournalV2View.jsx.
 import * as db from "@journal-db";
-import { saveJournal } from "./db/journal.js";
+import { auth } from "./firebase.js";
+import { claimSmartJournalForApply, saveJournal, updateJournal, updateSmartJournalStatus } from "./db/journal.js";
+import { createSmartJournalApplier } from "./smartJournalApplyCore.js";
+import { createSmartCalendarEvent } from "./google/smartCalendar.js";
 
-export async function applySmartAnalysis({ date, analysis, habits = [] }) {
-  const done = { journal: false, meals: 0, water_ml: 0, habits: [], unmatched: [] };
-
-  if (analysis.journal_entry) {
-    await saveJournal(date, analysis.journal_entry, { tags: ["smart-log"] });
-    done.journal = true;
-  }
-
-  if (analysis.meals.length > 0 || analysis.water_ml > 0) {
-    const currentLog = await db.getNutritionLog(date);
-    const nextMeals = [
-      ...(currentLog?.meals || []),
-      ...analysis.meals.map((meal, index) => ({
-        id: `smart_${Date.now().toString(36)}_${index}`,
-        type: meal.type,
-        description: meal.description,
-        notes: meal.notes || "Smart Logger",
-        kcal: meal.kcal,
-        protein: meal.protein,
-        carbs: meal.carbs,
-        fat: meal.fat,
-        time: new Date().toISOString(),
-        catalog_item_id: null,
-        catalog_components: [],
-        catalog_addon_ids: [],
-      })),
-    ];
-    await db.saveNutritionLog(date, {
-      ...currentLog,
-      date,
-      meals: nextMeals,
-      water_ml: Math.max(Number(currentLog?.water_ml || 0), Number(analysis.water_ml || 0)),
-    });
-    done.meals = analysis.meals.length;
-    done.water_ml = analysis.water_ml;
-  }
-
-  const byName = new Map(habits.map((h) => [String(h.name || "").trim().toLowerCase(), h]));
-  for (const hit of analysis.habits_done) {
-    const match = byName.get(hit.name.toLowerCase());
-    if (!match?.uuid) {
-      done.unmatched.push(hit.name);
-      continue;
+async function applyPlanner({ requestId, sourceJournalId, tasks }, assertAccount) {
+  const pending = [];
+  const events = [];
+  let created = 0;
+  for (const [index, task] of tasks.entries()) {
+    assertAccount();
+    if (!task.date) { pending.push({ index, task, reason: "date_required" }); continue; }
+    if (task.time && !task.duration_minutes) { pending.push({ index, task, reason: "duration_required_for_timed_event" }); continue; }
+    try {
+      const event = await createSmartCalendarEvent(task, { requestId, sourceJournalId, index });
+      assertAccount();
+      events.push({ title: task.title, date: task.date, time: task.time, htmlLink: event.htmlLink });
+      created += 1;
+    } catch (error) {
+      assertAccount();
+      const reason = error?.message === "planner_local_time_invalid" ? "planner_local_time_invalid"
+        : error?.message === "planner_event_content_conflict"
+        ? "google_calendar_event_conflict"
+        : error?.status === 403 || /insufficient|scope/i.test(error?.message || "")
+        ? "google_calendar_permission_required"
+        : ["google-expired", "google-offline"].includes(error?.message) ? error.message : "google_calendar_write_failed";
+      pending.push({ index, task, reason });
     }
-    await db.recordHabit(match.uuid, date);
-    done.habits.push(match.uuid);
   }
-  return done;
+  return { created, pending, events };
+}
+
+export function applySmartAnalysis(args) {
+  const owner = auth?.currentUser?.uid;
+  if (!owner) throw new Error("smart_account_changed");
+  const assertAccount = () => {
+    if (auth?.currentUser?.uid !== owner) throw new Error("smart_account_changed");
+  };
+  const apply = createSmartJournalApplier({
+    saveJournal,
+    updateJournal,
+    claimJournal: (date, text, options) => claimSmartJournalForApply(date, text, { ...options, expectedUid: owner }),
+    updateStatus: (id, status) => updateSmartJournalStatus(id, status, owner),
+    applyNutrition: db.applySmartNutrition,
+    applyFitness: db.applySmartFitness,
+    applyRelax: db.applySmartRelax,
+    applyPlanner: (options) => applyPlanner(options, assertAccount),
+    recordHabit: db.recordSmartHabit,
+    assertAccount,
+  });
+  return apply(args);
 }

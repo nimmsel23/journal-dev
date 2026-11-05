@@ -47,6 +47,9 @@ test("link: fehlender Scope, ungültiger Code, leerer Code", async () => {
   const a = setup({ responses: [json(200, { access_token: "A", refresh_token: "R", scope: REQUIRED_SCOPES[0] })] });
   await assert.rejects(a.h.link("u1", "c"), { message: "google-scope-missing" });
   assert.equal(a.rows.size, 0);
+  const missingCalendarWrite = setup({ responses: [json(200, { access_token: "A", refresh_token: "R", scope: REQUIRED_SCOPES.filter((scope) => scope !== "https://www.googleapis.com/auth/calendar.events.owned").join(" ") })] });
+  await assert.rejects(missingCalendarWrite.h.link("u1", "c"), { message: "google-scope-missing" });
+  assert.equal(missingCalendarWrite.rows.size, 0);
   const b = setup({ responses: [json(400, { error: "invalid_grant" })] });
   await assert.rejects(b.h.link("u1", "c"), /google-code: invalid_grant/);
   await assert.rejects(b.h.link("u1", ""), { message: "google-code-missing" });
@@ -80,4 +83,12 @@ test("unlink widerruft bei Google (best effort) und löscht", async () => {
   const b = setup({ doc: { refreshToken: "R" }, responses: [new Error("offline")] });
   await b.h.unlink("u1");
   assert.equal(b.rows.size, 0);
+});
+
+test("Google callable account binding rejects a changed account and keeps legacy clients compatible", async () => {
+  const { assertExpectedGoogleUid } = await import("../functions/google.js");
+  class HttpsError extends Error { constructor(code, message) { super(message); this.code = code; } }
+  assert.doesNotThrow(() => assertExpectedGoogleUid("owner", { expected_uid: "owner" }, HttpsError));
+  assert.doesNotThrow(() => assertExpectedGoogleUid("owner", {}, HttpsError));
+  assert.throws(() => assertExpectedGoogleUid("other", { expected_uid: "owner" }, HttpsError), { code: "permission-denied", message: "google-account-changed" });
 });

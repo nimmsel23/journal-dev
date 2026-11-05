@@ -7,10 +7,44 @@ admin.initializeApp();
 // Einrichtung: JOURNAL-V2.md, Abschnitt „Google dauerhaft verbinden“. Secret/Parameter:
 //   firebase functions:secrets:set GOOGLE_OAUTH_CLIENT_SECRET   ·   GOOGLE_OAUTH_CLIENT_ID (beim Deploy abgefragt)
 const { defineSecret, defineString } = require("firebase-functions/params");
-const { createGoogleHandlers } = require("./google");
+const { createGoogleHandlers, assertExpectedGoogleUid } = require("./google");
 const { buildDoorReminder, fetchDueTasks } = require("./door-reminders");
 const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_OAUTH_CLIENT_SECRET");
 const GOOGLE_CLIENT_ID = defineString("GOOGLE_OAUTH_CLIENT_ID", { default: "" });
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+
+exports.getSmartLogQuota = functions.region("europe-west1").https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
+  const smartLog = require("./smart-log");
+  smartLog.assertExpectedUid(context.auth.uid, data?.expected_uid);
+  return smartLog.getQuotaStatus({ db: admin.firestore(), uid: context.auth.uid });
+});
+
+exports.analyzeSmartLog = functions
+  .region("europe-west1")
+  .runWith({ secrets: [GEMINI_API_KEY], timeoutSeconds: 60, memory: "256MB" })
+  .https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
+    try {
+      require("./smart-log").assertExpectedUid(context.auth.uid, data?.expected_uid);
+      // A saved result can be replayed without a provider key. Let the
+      // analysis layer reject only new requests when the secret is unavailable.
+      let apiKey = "";
+      try { apiKey = GEMINI_API_KEY.value() || ""; } catch { /* provider unavailable */ }
+      return await require("./smart-log").analyze({
+        db: admin.firestore(),
+        uid: context.auth.uid,
+        data: data || {},
+        apiKey,
+        fetchImpl: fetch,
+        now: new Date(),
+      });
+    } catch (error) {
+      if (error instanceof functions.https.HttpsError) throw error;
+      console.error("Smart Log analysis failed", error);
+      throw new functions.https.HttpsError("internal", "smart_log_failed");
+    }
+  });
 
 const makeGoogleHandlers = () => {
   const col = admin.firestore().collection("googleTokens");
@@ -33,6 +67,7 @@ const googleCall = (fn) =>
     .runWith({ secrets: [GOOGLE_CLIENT_SECRET] })
     .https.onCall(async (data, context) => {
       if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
+      assertExpectedGoogleUid(context.auth.uid, data, functions.https.HttpsError);
       return fn(makeGoogleHandlers(), context.auth.uid, data || {});
     });
 

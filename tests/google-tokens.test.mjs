@@ -8,7 +8,7 @@ const mkStorage = () => {
 };
 const H = 3600 * 1000;
 
-function setup({ remote = {}, popup = {}, fetchImpl } = {}) {
+function setup({ remote = {}, popup = {}, fetchImpl, allowPopupFallback = true } = {}) {
   const t = { now: 1_000_000 };
   const storage = mkStorage();
   const calls = { fetchToken: 0, link: 0, unlink: 0, popup: 0 };
@@ -23,6 +23,7 @@ function setup({ remote = {}, popup = {}, fetchImpl } = {}) {
       ...remote,
     },
     popup: { connect: async () => { calls.popup++; return { accessToken: "pop" }; }, ...popup },
+    allowPopupFallback,
   });
   return { t, storage, calls, svc };
 }
@@ -94,6 +95,27 @@ test("Rückfall Popup, wenn Server nicht eingerichtet; Token nur ~55 min, dann e
   assert.equal(svc.connected(), false);
   await assert.rejects(svc.getToken(), { message: "google-expired" });
   assert.equal(svc.mode(), null); // aufgeräumt
+});
+
+test("Produktmodus verweigert kurzlebigen Popup-Rückfall, wenn der Token-Server fehlt", async () => {
+  const { svc, calls } = setup({
+    allowPopupFallback: false,
+    remote: { link: async () => { throw err("x", "unavailable"); } },
+  });
+  await assert.rejects(svc.connect(), { message: "google-not-configured" });
+  assert.equal(calls.popup, 0);
+  assert.equal(svc.snapshot(), "off");
+  assert.match(googleErrorText(new Error("google-not-configured")), /dauerhafte Google-Verbindung/);
+});
+
+test("Produktmodus verwirft gespeicherte kurzlebige Popup-Tokens", async () => {
+  const storage = mkStorage();
+  storage.setItem(KEY, JSON.stringify({ mode: "popup", token: "old-pop", exp: 1_000_000 + H }));
+  const svc = createGoogleTokens({ storage, now: () => 1_000_000, allowPopupFallback: false, remote: {}, popup: {} });
+  assert.equal(svc.connected(), false);
+  assert.equal(svc.snapshot(), "off");
+  await assert.rejects(svc.getToken(), { message: "google-not-configured" });
+  assert.equal(storage.getItem(KEY), null);
 });
 
 test("andere Fehler beim Server-Verbinden brechen ab (kein stiller Popup-Rückfall)", async () => {
@@ -168,4 +190,104 @@ test("subscribe meldet Änderungen; kaputter oder gesperrter Speicher wirft nich
   });
   await locked.connect();
   assert.equal(await locked.getToken(), "t"); // hält wenigstens die Sitzung
+});
+
+test('Google access tokens and connection state are isolated by Firebase user', async () => {
+  const storage = mkStorage();
+  let owner = 'alice';
+  const svc = createGoogleTokens({
+    storage, now: () => 1_000_000, getOwner: () => owner,
+    remote: { link: async () => ({ accessToken: `token-${owner}`, expiresAt: 1_000_000 + H }) }, popup: {},
+  });
+  await svc.connect();
+  assert.equal(await svc.getToken(), 'token-alice');
+  owner = 'bob';
+  assert.equal(svc.connected(), false);
+  await assert.rejects(svc.getToken(), { message: 'google-expired' });
+  await svc.connect();
+  assert.equal(await svc.getToken(), 'token-bob');
+  owner = 'alice';
+  assert.equal(await svc.getToken(), 'token-alice');
+  owner = null;
+  assert.equal(svc.connected(), false);
+  await assert.rejects(svc.getToken(), { message: 'google-expired' });
+});
+
+test('account change during refresh does not cache or return the previous account token', async () => {
+  const storage = mkStorage();
+  let owner = 'alice';
+  let resolveRefresh;
+  const wait = new Promise((resolve) => { resolveRefresh = resolve; });
+  const svc = createGoogleTokens({ storage, now: () => 1_000_000, getOwner: () => owner,
+    remote: { link: async () => ({ accessToken: 'old', expiresAt: 1_000_000 + H }), fetchToken: () => wait }, popup: {} });
+  await svc.connect();
+  const request = svc.getToken({ force: true });
+  owner = 'bob';
+  resolveRefresh({ accessToken: 'alice-refresh', expiresAt: 1_000_000 + H });
+  await assert.rejects(request, { message: 'google-account-changed' });
+  assert.equal(svc.connected(), false);
+  owner = 'alice';
+  assert.equal(await svc.getToken(), 'old');
+});
+
+test('account change during a Google request suppresses its response', async () => {
+  const storage = mkStorage();
+  let owner = 'alice';
+  let resolveResponse;
+  const response = new Promise((resolve) => { resolveResponse = resolve; });
+  const svc = createGoogleTokens({ storage, now: () => 1_000_000, getOwner: () => owner,
+    remote: { link: async () => ({ accessToken: 'alice-token', expiresAt: 1_000_000 + H }) }, popup: {}, fetchImpl: () => response });
+  await svc.connect();
+  const request = svc.authFetch('https://example.invalid');
+  await Promise.resolve();
+  owner = 'bob';
+  resolveResponse({ status: 200 });
+  await assert.rejects(request, { message: 'google-account-changed' });
+});
+
+test('scoped token service never imports the old unowned token', async () => {
+  const storage = mkStorage();
+  storage.setItem(KEY, JSON.stringify({ mode: 'server', token: 'legacy-token', exp: 1_000_000 + H }));
+  const svc = createGoogleTokens({ storage, now: () => 1_000_000, getOwner: () => 'bob', remote: {}, popup: {} });
+  assert.equal(svc.connected(), false);
+  await assert.rejects(svc.getToken(), { message: 'google-expired' });
+});
+
+test('disconnect in another tab removes the cached token from this tab too', async () => {
+  const storage = mkStorage();
+  const deps = { storage, now: () => 1_000_000, getOwner: () => 'alice',
+    remote: { link: async () => ({ accessToken: 'token', expiresAt: 1_000_000 + H }), unlink: async () => {} }, popup: {} };
+  const first = createGoogleTokens(deps);
+  const second = createGoogleTokens(deps);
+  await first.connect();
+  assert.equal(await first.getToken(), 'token');
+  await second.disconnect();
+  assert.equal(first.connected(), false);
+  await assert.rejects(first.getToken(), { message: 'google-expired' });
+});
+
+test('readable storage with blocked writes keeps the current session in memory', async () => {
+  const storage = { getItem: () => null, setItem: () => { throw new Error('blocked'); }, removeItem: () => { throw new Error('blocked'); } };
+  const svc = createGoogleTokens({ storage, now: () => 1_000_000,
+    remote: { link: async () => ({ accessToken: 'memory-token', expiresAt: 1_000_000 + H }) }, popup: {} });
+  await svc.connect();
+  assert.equal(await svc.getToken(), 'memory-token');
+});
+
+test('a pending refresh cannot restore a connection disconnected in another tab', async () => {
+  const storage = mkStorage();
+  let finishRefresh;
+  const pending = new Promise((resolve) => { finishRefresh = resolve; });
+  const deps = { storage, now: () => 1_000_000, getOwner: () => 'alice',
+    remote: { link: async () => ({ accessToken: 'old', expiresAt: 1_000_000 + H }),
+      fetchToken: () => pending, unlink: async () => {} }, popup: {} };
+  const first = createGoogleTokens(deps);
+  const second = createGoogleTokens(deps);
+  await first.connect();
+  const refresh = first.getToken({ force: true });
+  await second.disconnect();
+  finishRefresh({ accessToken: 'new', expiresAt: 1_000_000 + H });
+  await assert.rejects(refresh, { message: 'google-expired' });
+  assert.equal(first.connected(), false);
+  assert.equal(storage.getItem(`${KEY}:alice`), null);
 });

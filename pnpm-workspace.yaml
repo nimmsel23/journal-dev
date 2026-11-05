@@ -4,6 +4,7 @@ allowBuilds:
   esbuild: true
   protobufjs: true
 overrides:
+  '@grpc/grpc-js@<1.13.6': '^1.14.6'
   '@firebase/util': 1.12.1
 shamefullyHoist: true
 

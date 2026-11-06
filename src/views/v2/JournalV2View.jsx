@@ -37,7 +37,7 @@ function smartLogErrorText(error) {
   if (message.includes("smart_retry_tracker_changed") || message.includes("smart_retry_planner_order_changed") || message.includes("smart_retry_planner_already_applied")) return "Ein Teil wurde bereits gespeichert. Bitte ändere gespeicherte Tracker-Einträge direkt im jeweiligen Tracker; offene Kalender-Vorschläge kannst du an derselben Stelle ergänzen.";
   if (message.includes("smart_retry_source_changed") || message.includes("smart_retry_payload_unavailable")) return "Der Journaleintrag wurde geändert oder die gespeicherten Vorschläge fehlen. Bitte öffne den Journaleintrag erneut; vorhandene Daten bleiben erhalten.";
   if (message.includes("smart_log_request_locked") || message.includes("smart_log_request_in_progress")) return "Diese Anfrage ist noch aktiv oder nach einem unklaren Abbruch gesperrt. Sie wird nicht erneut an Gemini gesendet, damit keine Doppelberechnung entsteht. Dein Entwurf bleibt erhalten; du kannst ihn jederzeit ohne KI speichern.";
-  if (message.includes("smart_log_weekly_quota_reached")) return "Das Smart-Log-Wochenkontingent ist ausgeschöpft. Du kannst den Text ohne KI im Journal speichern.";
+  if (message.includes("smart_log_daily_quota_reached")) return "Das Smart-Log-Tageskontingent ist ausgeschöpft. Du kannst den Text ohne KI im Journal speichern.";
   if (message.includes("smart_log_provider_not_configured")) return "Smart Logging ist gerade nicht verfügbar. Dein Entwurf bleibt erhalten und kann ohne KI gespeichert werden.";
   if (message.includes("smart_log_failed")) return "Die Analyse ist fehlgeschlagen. Dein Entwurf bleibt erhalten; du kannst es erneut versuchen oder ohne KI speichern.";
   return message || "Analyse fehlgeschlagen. Dein Entwurf bleibt erhalten.";
@@ -601,7 +601,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {smartMsg && <div className="jv2-empty" role="status">{smartMsg}</div>}
 
         {smart && <p className="jv2-smart-disclosure">Mit „Analyse“ werden dein Text, Datum, Tags und Habit-Namen über den VitalOS-Server an Gemini gesendet. Es wird nichts automatisch analysiert; du prüfst die Vorschläge vor der Übernahme.</p>}
-        {smart && uid && quota.data && <p className="jv2-smart-disclosure">{quota.data.tier === "operate" ? "Operate" : "Observe"} · {quota.data.remaining} von {quota.data.limit} KI-Analysen diese Woche verfügbar. Wochenwechsel: Montag, Zeitzone Wien.{quota.data.reserved > 0 ? " Eine laufende oder gesperrte Anfrage ist bereits berücksichtigt." : ""}</p>}
+        {smart && uid && quota.data && <p className="jv2-smart-disclosure">{quota.data.tier === "operate" ? "Operate" : "Observe"} · {quota.data.remaining} von {quota.data.limit} KI-Analysen heute verfügbar. Tageswechsel: Mitternacht, Zeitzone Wien.{quota.data.reserved > 0 ? " Eine laufende oder gesperrte Anfrage ist bereits berücksichtigt." : ""}</p>}
         {smart && uid && quota.isError && <p className="jv2-smart-disclosure">Das KI-Kontingent ist gerade nicht abrufbar. Dein Journal kannst du ohne KI nutzen.</p>}
 
         <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>

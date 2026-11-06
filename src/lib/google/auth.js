@@ -1,6 +1,6 @@
 // auth.js — Browser-Anbindung des gemeinsamen Google-Token-Dienstes (tokens.js):
 // Cloud-Function-Aufrufe (googleLinkConfig / googleLink / googleAccessToken / googleUnlink in
-// functions/google.js), Google Identity Services (Code-Popup) und der Firebase-Popup-Rückfall.
+// backend/functions/journal/google.js), Google Identity Services (Code-Popup) und der Firebase-Popup-Rückfall.
 // Beim App-Start passiert hier nichts im Netz; erst Verbinden bzw. ein API-Aufruf braucht es.
 import { GoogleAuthProvider, onAuthStateChanged, reauthenticateWithPopup } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";

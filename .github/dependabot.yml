@@ -5,7 +5,7 @@ updates:
   schedule:
     interval: weekly
     day: monday
-    time: 07:00
+    time: "07:00"
     timezone: Europe/Vienna
   open-pull-requests-limit: 5
   commit-message:
@@ -20,14 +20,14 @@ updates:
   schedule:
     interval: weekly
     day: monday
-    time: 07:00
+    time: "07:00"
     timezone: Europe/Vienna
   open-pull-requests-limit: 5
   commit-message:
     prefix: deps
   directories:
   - /
-  - /functions
+  - /apps/habits
   target-branch: dev
   cooldown:
     default-days: 7

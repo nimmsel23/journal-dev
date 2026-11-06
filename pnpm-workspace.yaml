@@ -1,3 +1,6 @@
+packages:
+  - apps/habits
+
 # Standalone Journal dependency settings.
 allowBuilds:
   '@firebase/util': true

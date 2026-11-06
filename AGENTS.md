@@ -1,3 +1,7 @@
+## Zusammenführung seit 2026-11-06
+
+Habits gehört jetzt zu diesem Repo (`apps/habits`). Node-Backend-Entwicklung gehört ausschließlich nach `~/dev/backend/`. Siehe `docs/CONSOLIDATION.md`; alte Backend-/Release-Stände werden nicht mehr fachlich erweitert.
+
 # AGENTS.md — Journal
 
 <!-- release-weg:start -->
@@ -26,8 +30,8 @@ Stand 2026-10-29. Ausführlich: `~/vitalos/docs/DEPLOYMENT.md` (GitHub: nimmsel2
 <!-- sync-infra:start -->
 ## TaskChampion-Sync-Infrastruktur (Stand 2026-11-05)
 
-Dieses Repo besitzt den Browser-Zugang auf den Taskwarrior-Sync, den Cors-Proxy
-und die browserseitigen Sync-Clients (Door v2, TcSetup im Game):
+Dieses Repo besitzt den Browser-Zugang auf den Taskwarrior-Sync und die
+browserseitigen Sync-Clients; der CORS-Proxy gehört zu `~/dev/backend/`. Die Clients (Door v2, TcSetup im Game) verwenden folgenden Weg:
 
 ```
 vos-door / vos-game / vos-voice / vos-tent / vos-journal / journal-vos / vitalos.web.app
@@ -36,7 +40,7 @@ vos-door / vos-game / vos-voice / vos-tent / vos-journal / journal-vos / vitalos
 https://ideapad.tail7a15d6.ts.net/   ← Tailscale-Funnel-Root (internetöffentlich)
         │  tailscale serve → 127.0.0.1:53590
         ▼
-tc-cors-proxy.service → scripts/tc-cors-proxy.mjs (:53590, ergänzt nur CORS-Header)
+tc-cors-proxy.service → ../backend/scripts/tc-cors-proxy.mjs (:53590, ergänzt nur CORS-Header)
         ▼
 taskchampion-sync-server :53589 (Systemdienst, 0.0.0.0, /usr/bin, Daten /var/lib/taskchampion-sync-server)
 ```

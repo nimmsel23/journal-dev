@@ -11,6 +11,7 @@ import * as db from "@journal-db";
 // fitness-dev-Variante (andere saveJournal-Signatur, kein getJournalRange).
 import { getJournal, getJournalRange, saveJournal, updateJournal, deleteJournal, setJournalTime } from "../../lib/db/journal.js";
 import { MonthView, WeekView, YearView, rangeFor } from "./JournalV2Range.jsx";
+import SearchView from "./JournalV2Search.jsx";
 import HabitsView from "./JournalV2Habits.jsx";
 import { TimelineOverlay, useTimelineDrag, hhmm } from "./TimelineDrag.jsx";
 import { analyzeSmartJournal, getSmartLogQuota, newSmartRequestId } from "../../lib/smartJournalLogger.js";
@@ -60,7 +61,7 @@ function splitEntry(text) {
 }
 
 // Kopfzeile: oben die Zeitraum-Ansichten, darunter Habits und die Sprünge in Door (unter Woche), Focus (unter Monat), Game (unter Jahr)
-const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["jahr", "Jahr"]];
+const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["jahr", "Jahr"], ["suche", "Suche"]];
 const LINKS = [["#door2", "Door"], ["#game2/focus", "Focus"], ["#game2", "Game"]];
 
 export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice, startSmart = false, onSetHabitCompletion }) {
@@ -404,7 +405,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
 
   const shift = (n) => {
-    const next = mode === "jahr" ? addYears(day, n) : mode === "monat" ? addMonths(day, n) : mode === "woche" ? addWeeks(day, n) : mode === "habits" ? addDays(day, 7 * n) : addDays(day, n);
+    const next = mode === "suche" ? day : mode === "jahr" ? addYears(day, n) : mode === "monat" ? addMonths(day, n) : mode === "woche" ? addWeeks(day, n) : mode === "habits" ? addDays(day, 7 * n) : addDays(day, n);
     onDateChange(iso(next));
   };
   const pick = (d) => { onDateChange(d); onModeChange("tag"); };
@@ -459,6 +460,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {mode === "habits" && uid && <HabitsView date={date} today={db.localToday()} habits={habits.data || []} onToggle={toggleHabit} onAdd={addNew} onUpdate={editHabit} onArchive={archive} onRestore={restore} pending={habitPending} loading={habits.isPending} error={habits.isError && !habits.data ? "Habits konnten nicht geladen werden." : ""} onRetry={() => { habitMutation.reset(); habits.refetch(); }} />}
         {mode === "jahr" && <YearView day={day} entries={range.data || []} onPick={pick} onPickMonth={(d) => { onDateChange(d); onModeChange("monat"); }} />}
         {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
+        {mode === "suche" && uid && <SearchView uid={uid} today={db.localToday()} onPick={pick} />}
         {!uid && mode !== "tag" && (
           <div className="jv2-empty">
             Nicht angemeldet. <button type="button" className="jv2-link" onClick={() => db.signIn()}>Cloud Login</button>

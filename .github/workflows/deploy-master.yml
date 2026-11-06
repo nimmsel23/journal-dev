@@ -40,7 +40,7 @@ jobs:
       DO_DEPLOY: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || inputs.deploy) }}
     steps:
       - name: Checkout journal-dev
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: journal-dev
           # Volle Historie: der Changelog (scripts/vos-changelog) liest bei workflow_dispatch `git log <parent>..HEAD`.
@@ -54,11 +54,11 @@ jobs:
             echo "$repo @ $(git -C "$repo" rev-parse --short HEAD)"
           done
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11.3.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm

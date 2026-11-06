@@ -27,7 +27,7 @@ updates:
     prefix: deps
   directories:
   - /
-  - /functions
+  - /apps/habits
   target-branch: dev
   cooldown:
     default-days: 7

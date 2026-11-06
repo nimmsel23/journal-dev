@@ -10,6 +10,7 @@ import * as twDoor from "../../../lib/door/taskwarrior.door.js";
 import { fetchProfitGtasks } from "../../../lib/door/gtasks.door.js";
 import { fetchProfitReviews } from "../../../lib/door/profitFromJournal.js";
 import { fetchProfitTw } from "../../../lib/door/taskwarrior.door.js";
+import { fetchHabitsToday } from "../../../lib/door/habitsToday.js";
 
 // Offline-first: Verbindungsprobleme (Netz weg, schlechte Verbindung, abgelaufene Google-Verbindung) sind KEINE
 // Meldung — die Ansichten arbeiten mit den lokalen Daten, der Abgleich läuft still im Hintergrund. "" = nichts zeigen.
@@ -313,6 +314,29 @@ export function PlanPanel({ uid, source = "backend" }) {
 
 /* ── Production: Daily Hits ── */
 const DAYS = [["mon", "Mo"], ["tue", "Di"], ["wed", "Mi"], ["thu", "Do"], ["fri", "Fr"], ["sat", "Sa"], ["sun", "So"]];
+
+/* Habits heute (roadmap p2-habits): quelle-unabhängiger Blick auf den gemeinsamen
+   Habits-SOT (fitness/{uid}/habits + habitRecords) — Relation ist bewusst Nur-Lesen:
+   der Vollzug bleibt im Journal/Habits-UI, damit Door und Journal dieselben Datensätze
+   zeigen und es keinen zweiten Write-Pfad gibt. */
+function HabitsToday({ uid }) {
+  const q = useQuery({ queryKey: ["dv2-habits-today", uid], enabled: !!uid, queryFn: () => fetchHabitsToday(uid), staleTime: 15_000 });
+  const list = q.data || [];
+  return (
+    <>
+      <h4 className="dv2-sec">Habits heute <span>{list.filter((h) => h.done).length}/{list.length}</span></h4>
+      {q.isError && msg(q.error) ? <div className="dv2-empty" role="alert">{msg(q.error)}</div>
+        : list.length === 0 ? <div className="dv2-empty">{q.isLoading ? "Lade …" : "Heute keine fälligen Habits. Vollzug im Journal."}</div>
+        : list.map((h) => (
+          <div key={h.uuid} className="dv2-row" title="Nur Ansicht — Vollzug im Journal (Tag-Ansicht) oder im Habits-Modus">
+            <span className={`dv2-check static${h.done ? " done" : ""}`}><i>{h.done ? "✓" : ""}</i></span>
+            <div className="dv2-text"><h3>{h.name}</h3></div>
+          </div>
+        ))}
+    </>
+  );
+}
+
 export function ProductionPanel({ uid, source = "backend" }) {
   const D = door(source);
   const qc = useQueryClient();
@@ -372,6 +396,7 @@ export function ProductionPanel({ uid, source = "backend" }) {
           })}
         </div>
       </State>
+      {uid && <HabitsToday uid={uid} />}
       {menuNode}
     </>
   );

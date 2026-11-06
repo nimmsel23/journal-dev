@@ -30,12 +30,31 @@ export function rangeFor(mode, day) {
 
 export function WeekView({ day, entries, habits, events = new Map(), onPick }) {
   const [from, to] = rangeFor("woche", day);
+  const days = eachDayOfInterval({ start: from, end: to });
   const byDate = groupByDate(entries);
   const today = iso(new Date());
+  // p2-weekly: Wochenbilanz aus den vorhandenen Props — reine Client-
+  // Aggregation, keine neue Query, kein KI, keine Datenveraenderung.
+  const weekKeys = days.map(iso);
+  const lists = weekKeys.map((key) => byDate.get(key) || []);
+  const total = lists.reduce((n, list) => n + list.length, 0);
+  const loggedDays = lists.filter((list) => list.length > 0).length;
+  const eventsTotal = weekKeys.reduce((n, key) => n + (events.get(key) || []).length, 0);
+  const avg = (total / 7).toFixed(1).replace(".", ",");
+  // Skill-/Tag-Verteilung: nur persistierte e.tags (kein Text-Re-Parsing).
+  const tagCounts = new Map();
+  entries.forEach((e) => (e.tags || []).forEach((t) => tagCounts.set(t, (tagCounts.get(t) || 0) + 1)));
+  const tagList = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   return (
     <div className="jv2-week">
-      {eachDayOfInterval({ start: from, end: to }).map((d) => {
-        const key = iso(d);
+      <div className="jv2-wsum" role="status">
+        <span><b>{total}</b> {total === 1 ? "Eintrag" : "Einträge"}</span>
+        <span><b>{loggedDays}</b>/7 Tage mit Eintrag</span>
+        <span>⌀ {avg}/Tag</span>
+        {eventsTotal > 0 && <span><b>{eventsTotal}</b> {eventsTotal === 1 ? "Termin" : "Termine"}</span>}
+      </div>
+      {weekKeys.map((key, i) => {
+        const d = days[i];
         const list = byDate.get(key) || [];
         const done = habits.filter((h) => h.hasRecord(key)).length;
         const evs = events.get(key) || [];
@@ -63,6 +82,45 @@ export function WeekView({ day, entries, habits, events = new Map(), onPick }) {
           </button>
         );
       })}
+      {habits.length > 0 && (
+        <div className="jv2-whabits" aria-label="Habit-Wochenbilanz">
+          {habits.map((h) => {
+            const done = weekKeys.reduce((n, key) => n + (h.hasRecord(key) ? 1 : 0), 0);
+            return (
+              <span key={h.uuid} className="jv2-whabit">
+                <span className="jv2-whname" title={h.name}>{h.name}</span>
+                <span className="jv2-whbar" aria-hidden="true"><i style={{ width: `${Math.round((done / 7) * 100)}%` }} /></span>
+                <b>{done}/7</b>
+              </span>
+            );
+          })}
+        </div>
+      )}
+      {tagList.length > 0 && (
+        <div className="jv2-wtags" aria-label="Skill- und Tag-Verteilung der Woche">
+          {tagList.map(([tag, count]) => (
+            <span key={tag} className="jv2-tag jv2-wtag">+{tag} <b>{count}×</b></span>
+          ))}
+        </div>
+      )}
+      {loggedDays > 0 && (
+        <details className="jv2-wmirror">
+          <summary>Wochenspiegel · Exzerpte pro Tag</summary>
+          {weekKeys.map((key, i) => {
+            const list = lists[i];
+            if (list.length === 0) return null;
+            return (
+              <div key={key} className="jv2-wmday">
+                <button type="button" onClick={() => onPick(key)}>
+                  {format(days[i], "EEE d.M.", { locale: de })} · {list.length} {list.length === 1 ? "Eintrag" : "Einträge"}
+                </button>
+                {list.slice(0, 2).map((e) => <p key={e.id}>{firstLine(e.text)}</p>)}
+                {list.length > 2 && <p className="jv2-wmmore">+{list.length - 2} weitere</p>}
+              </div>
+            );
+          })}
+        </details>
+      )}
     </div>
   );
 }

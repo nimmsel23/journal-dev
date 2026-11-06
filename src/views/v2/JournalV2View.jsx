@@ -63,6 +63,11 @@ function splitEntry(text) {
 // Kopfzeile: oben die Zeitraum-Ansichten, darunter Habits und die Sprünge in Door (unter Woche), Focus (unter Monat), Game (unter Jahr)
 const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["jahr", "Jahr"], ["suche", "Suche"]];
 const LINKS = [["#door2", "Door"], ["#game2/focus", "Focus"], ["#game2", "Game"]];
+// Skill-Stack-Zuordnung (SCOPE-OBSERVE-V1 Zeile 5): `+tag` ordnet den Eintrag
+// dem jeweiligen Skill-Journal zu — reines Zuordnungsmerkmal, keine Pflichtfelder,
+// kein Parsing-Auslöser, keine abgeleiteten Werte (Entscheidung 4).
+const SKILL_TAGS = [["fitness", "Fitness"], ["fuel", "Fuel"], ["relax", "Relax"]];
+const tagTokenRe = (tag) => new RegExp(`(?:^|\\s)\\+${tag}\\b`, "gi");
 
 export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice, startSmart = false, onSetHabitCompletion }) {
   const qc = useQueryClient();
@@ -125,6 +130,21 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
     clearSmartRequest();
     setDraft(value);
   };
+  // p2-fitness: Skill-Quick-Tags im Composer. Einfügen/Entfernen des `+tag`-Tokens
+  // im Text — identisch zur getippten Konvention, extractTags übernimmt beim Speichern.
+  const skillTagActive = (tag) => tagTokenRe(tag).test(draft);
+  const toggleSkillTag = (tag) => {
+    const value = skillTagActive(tag)
+      ? draft.replace(tagTokenRe(tag), "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n").trim()
+      : `${draft.trim().replace(/\s+$/, "")}${draft.trim() ? " " : ""}+${tag}`;
+    changeDraft(value);
+    if (smart) { setAnalysis(null); setAnalysisDate(null); setPlannerPending([]); setRetryLocked(false); setEditablePlannerIndexes([]); setResumeDate(null); }
+    inputRef.current?.focus();
+  };
+  // p2-fitness: Klick auf einen Tag-Chip springt in die Suche mit `+tag`-Filter —
+  // das ist das „Skill-Journal“ (Suche-Ansicht, Nur-Lesen).
+  const [searchSeed, setSearchSeed] = useState("");
+  const openTagInSearch = (tag) => { setSearchSeed(`+${tag}`); onModeChange("suche"); };
 
   const entries = useQuery({
     queryKey: ["jv2-entries", uid, date],
@@ -460,7 +480,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {mode === "habits" && uid && <HabitsView date={date} today={db.localToday()} habits={habits.data || []} onToggle={toggleHabit} onAdd={addNew} onUpdate={editHabit} onArchive={archive} onRestore={restore} pending={habitPending} loading={habits.isPending} error={habits.isError && !habits.data ? "Habits konnten nicht geladen werden." : ""} onRetry={() => { habitMutation.reset(); habits.refetch(); }} />}
         {mode === "jahr" && <YearView day={day} entries={range.data || []} onPick={pick} onPickMonth={(d) => { onDateChange(d); onModeChange("monat"); }} />}
         {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
-        {mode === "suche" && uid && <SearchView uid={uid} today={db.localToday()} onPick={pick} />}
+        {mode === "suche" && uid && <SearchView key={searchSeed} uid={uid} today={db.localToday()} initialQuery={searchSeed} onPick={pick} />}
         {!uid && mode !== "tag" && (
           <div className="jv2-empty">
             Nicht angemeldet. <button type="button" className="jv2-link" onClick={() => db.signIn()}>Cloud Login</button>
@@ -555,7 +575,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
                     {body && <p>{body}</p>}
                     {e.smartLog?.applied?.planner_suggestions?.length > 0 && <div className="jv2-smart-archived"><b>Google-Kalender-Vorschläge</b>{e.smartLog.applied.planner_suggestions.map((task, index) => { const event = e.smartLog.applied.planner_events?.find((created) => created.title === task.title && created.date === task.date); return <p key={`${e.id}-planner-${index}`}>{task.date || "Datum offen"}{task.time ? ` · ${task.time}` : ""} · {task.title}{event?.htmlLink ? <> · <a href={event.htmlLink} target="_blank" rel="noreferrer">Kalender öffnen ↗</a></> : null}</p>; })}</div>}
                     {e.smartLog?.status && e.smartLog.status !== "applied" && <div className="jv2-smart-archived"><small>Smart Log: {e.smartLog.status === "partial" ? "teilweise übernommen" : "Übernahme wurde unterbrochen"}</small>{smartAnalysisForRetry(e) && <button type="button" className="jv2-link" disabled={busy} onClick={() => resumeSmartEntry(e)}>Offene Schritte prüfen</button>}</div>}
-                    {tags.map((t) => <span key={t} className="jv2-tag">{t}</span>)}
+                    {tags.map((t) => <button key={t} type="button" className="jv2-tag jv2-taglink" title={`Einträge mit +${t} in der Suche ansehen`} onClick={() => openTagInSearch(t)}>{t}</button>)}
                     {onStartVoice && <div><button type="button" className="jv2-review" onClick={() => onStartVoice({ id: e.id, date: e.date || date, text: e.text })}>Mit The Voice reflektieren →</button></div>}
                   </div>
                   <button type="button" className="jv2-editbtn" aria-label="Eintrag bearbeiten" onClick={() => startEdit(e)}>✎</button>
@@ -606,6 +626,11 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {smart && uid && quota.data && <p className="jv2-smart-disclosure">{quota.data.tier === "operate" ? "Operate" : "Observe"} · {quota.data.remaining} von {quota.data.limit} KI-Analysen heute verfügbar. Tageswechsel: Mitternacht, Zeitzone Wien.{quota.data.reserved > 0 ? " Eine laufende oder gesperrte Anfrage ist bereits berücksichtigt." : ""}</p>}
         {smart && uid && quota.isError && <p className="jv2-smart-disclosure">Das KI-Kontingent ist gerade nicht abrufbar. Dein Journal kannst du ohne KI nutzen.</p>}
 
+        <div className="jv2-quicktags" role="group" aria-label="Skill-Zuordnung des Eintrags (+tag, optional)">
+          {SKILL_TAGS.map(([tag, label]) => (
+            <button key={tag} type="button" aria-pressed={skillTagActive(tag)} className={skillTagActive(tag) ? "on" : ""} onClick={() => toggleSkillTag(tag)} disabled={!uid || busy} title={`Eintrag dem ${label}-Skill-Journal zuordnen (+${tag})`}>+{label}</button>
+          ))}
+        </div>
         <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>
           <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Journal, Mahlzeiten, Wasser und Habits zerlegen">✦</button>
           {smart ? (

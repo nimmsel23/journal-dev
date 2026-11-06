@@ -85,6 +85,25 @@
 }
 .jv2-compose button:disabled { opacity: .5; cursor: default; }
 
+/* p2-fitness: Skill-Quick-Tags — Zuordnung per +tag ohne Formular (SCOPE Zeile 5) */
+.jv2-quicktags {
+  display: flex; gap: 8px; align-items: center; padding: 10px 12px;
+  border-top: 2px solid var(--ink); background: var(--p);
+}
+.jv2-quicktags button {
+  all: unset; cursor: pointer; display: inline-block; border: 1.5px solid var(--ink);
+  padding: 1px 8px; font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  background: var(--soft); color: var(--ink);
+}
+.jv2-quicktags button.on { background: var(--ink); color: #fff; }
+.jv2-quicktags button:disabled { opacity: .5; cursor: default; }
+.jv2-quicktags button:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+
+/* Tag-Chips an Einträgen: Klick öffnet die Suche mit +tag-Filter (Skill-Journal) */
+.jv2-tag.jv2-taglink { cursor: pointer; font: inherit; background: transparent; }
+.jv2-tag.jv2-taglink:hover, .jv2-tag.jv2-taglink:focus-visible { background: var(--ink); color: var(--p); }
+.jv2-entry.open .jv2-tag.jv2-taglink:hover, .jv2-entry.open .jv2-tag.jv2-taglink:focus-visible { border-color: #fff; color: #fff; }
+
 .jv2-foot {
   display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 2px solid var(--ink);
   font-family: var(--mono); font-size: 10px; text-transform: uppercase;

@@ -13,9 +13,9 @@ import { excerptFor, parseSearchQuery, searchEntries } from "../../lib/journalSe
 const iso = (d) => format(d, "yyyy-MM-dd");
 const WINDOWS = [["30", "30 Tage"], ["90", "90 Tage"], ["365", "1 Jahr"], ["0", "Alles (bis 500)"]];
 
-export default function SearchView({ uid, today, onPick }) {
+export default function SearchView({ uid, today, onPick, initialQuery = "" }) {
   const [windowDays, setWindowDays] = useState("90");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const parsed = useMemo(() => parseSearchQuery(query), [query]);
 
   const results = useQuery({

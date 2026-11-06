@@ -105,12 +105,14 @@ function SortableHabitRow({ h, onToggleCheck, onOpenJournal, onEditHabit }) {
       <div
         {...attributes}
         {...listeners}
-        className="p-1 text-slate-600 hover:text-slate-400 cursor-grab active:cursor-grabbing shrink-0"
+        aria-label={`${h.name} verschieben`}
+        className="p-1 text-slate-600 hover:text-slate-400 cursor-grab active:cursor-grabbing shrink-0 relative after:absolute after:-inset-2.5 after:content-['']"
       >
         <GripVertical size={14} />
       </div>
       <button
         onClick={() => onToggleCheck(h)}
+        aria-pressed={!!h.isDoneForSelectedDate}
         className={`core4-theme-task-chip ${h.isDoneForSelectedDate ? 'done' : ''}`}
       >
         {h.name}
@@ -118,14 +120,16 @@ function SortableHabitRow({ h, onToggleCheck, onOpenJournal, onEditHabit }) {
 
       <button
         onClick={() => onOpenJournal(h)}
-        className="p-1.5 text-slate-500 hover:text-slate-300 transition-colors"
+        aria-label={`Notiz zu ${h.name}`}
+        className="p-1.5 text-slate-500 hover:text-slate-300 transition-colors relative after:absolute after:-inset-2.5 after:content-['']"
       >
         <MessageSquare size={13} />
       </button>
 
       <button
         onClick={() => onEditHabit(h)}
-        className="p-1.5 text-slate-500 hover:text-orange-400 transition-colors"
+        aria-label={`${h.name} bearbeiten`}
+        className="p-1.5 text-slate-500 hover:text-orange-400 transition-colors relative after:absolute after:-inset-2.5 after:content-['']"
       >
         <Pencil size={13} />
       </button>
@@ -172,6 +176,8 @@ function AddHabitInline({ newHabit, setNewHabit, selectedIcon, setSelectedIcon, 
             <button type="button" key={iconName}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => setSelectedIcon(iconName)}
+              aria-label={`Symbol ${iconName}`}
+              aria-pressed={selectedIcon === iconName}
               className={`core4-theme-picker-chip ${selectedIcon === iconName ? 'active' : ''}`}>
               {IconComponent && <IconComponent size={16} />}
             </button>
@@ -207,7 +213,7 @@ function HabitEditSheet({ habit, name, onNameChange, icon, onIconChange, categor
       <div className="core4-theme-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="core4-theme-sheet-head">
           <span>HABIT BEARBEITEN</span>
-          <button onClick={onClose} className="core4-theme-sheet-close"><X size={18} /></button>
+          <button onClick={onClose} aria-label="Schließen" className="core4-theme-sheet-close"><X size={18} /></button>
         </div>
         <input
           type="text"
@@ -222,6 +228,7 @@ function HabitEditSheet({ habit, name, onNameChange, icon, onIconChange, categor
             return (
               <button type="button" key={iconName}
                 onClick={() => onIconChange(iconName)}
+                aria-label={`Symbol ${iconName}`}
                 className={`core4-theme-picker-chip ${icon === iconName ? 'active' : ''}`}>
                 {IconComponent && <IconComponent size={16} />}
               </button>

@@ -11,6 +11,7 @@ import * as db from "@journal-db";
 // fitness-dev-Variante (andere saveJournal-Signatur, kein getJournalRange).
 import { getJournal, getJournalRange, saveJournal, updateJournal, deleteJournal, setJournalTime } from "../../lib/db/journal.js";
 import { MonthView, WeekView, YearView, rangeFor } from "./JournalV2Range.jsx";
+import SearchView from "./JournalV2Search.jsx";
 import HabitsView from "./JournalV2Habits.jsx";
 import { TimelineOverlay, useTimelineDrag, hhmm } from "./TimelineDrag.jsx";
 import { analyzeSmartJournal, getSmartLogQuota, newSmartRequestId } from "../../lib/smartJournalLogger.js";
@@ -37,7 +38,7 @@ function smartLogErrorText(error) {
   if (message.includes("smart_retry_tracker_changed") || message.includes("smart_retry_planner_order_changed") || message.includes("smart_retry_planner_already_applied")) return "Ein Teil wurde bereits gespeichert. Bitte ändere gespeicherte Tracker-Einträge direkt im jeweiligen Tracker; offene Kalender-Vorschläge kannst du an derselben Stelle ergänzen.";
   if (message.includes("smart_retry_source_changed") || message.includes("smart_retry_payload_unavailable")) return "Der Journaleintrag wurde geändert oder die gespeicherten Vorschläge fehlen. Bitte öffne den Journaleintrag erneut; vorhandene Daten bleiben erhalten.";
   if (message.includes("smart_log_request_locked") || message.includes("smart_log_request_in_progress")) return "Diese Anfrage ist noch aktiv oder nach einem unklaren Abbruch gesperrt. Sie wird nicht erneut an Gemini gesendet, damit keine Doppelberechnung entsteht. Dein Entwurf bleibt erhalten; du kannst ihn jederzeit ohne KI speichern.";
-  if (message.includes("smart_log_weekly_quota_reached")) return "Das Smart-Log-Wochenkontingent ist ausgeschöpft. Du kannst den Text ohne KI im Journal speichern.";
+  if (message.includes("smart_log_daily_quota_reached")) return "Das Smart-Log-Tageskontingent ist ausgeschöpft. Du kannst den Text ohne KI im Journal speichern.";
   if (message.includes("smart_log_provider_not_configured")) return "Smart Logging ist gerade nicht verfügbar. Dein Entwurf bleibt erhalten und kann ohne KI gespeichert werden.";
   if (message.includes("smart_log_failed")) return "Die Analyse ist fehlgeschlagen. Dein Entwurf bleibt erhalten; du kannst es erneut versuchen oder ohne KI speichern.";
   return message || "Analyse fehlgeschlagen. Dein Entwurf bleibt erhalten.";
@@ -60,7 +61,7 @@ function splitEntry(text) {
 }
 
 // Kopfzeile: oben die Zeitraum-Ansichten, darunter Habits und die Sprünge in Door (unter Woche), Focus (unter Monat), Game (unter Jahr)
-const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["jahr", "Jahr"]];
+const MODES = [["tag", "Tag"], ["woche", "Woche"], ["monat", "Monat"], ["jahr", "Jahr"], ["suche", "Suche"]];
 const LINKS = [["#door2", "Door"], ["#game2/focus", "Focus"], ["#game2", "Game"]];
 
 export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice, startSmart = false, onSetHabitCompletion }) {
@@ -404,7 +405,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
 
   const shift = (n) => {
-    const next = mode === "jahr" ? addYears(day, n) : mode === "monat" ? addMonths(day, n) : mode === "woche" ? addWeeks(day, n) : mode === "habits" ? addDays(day, 7 * n) : addDays(day, n);
+    const next = mode === "suche" ? day : mode === "jahr" ? addYears(day, n) : mode === "monat" ? addMonths(day, n) : mode === "woche" ? addWeeks(day, n) : mode === "habits" ? addDays(day, 7 * n) : addDays(day, n);
     onDateChange(iso(next));
   };
   const pick = (d) => { onDateChange(d); onModeChange("tag"); };
@@ -459,6 +460,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {mode === "habits" && uid && <HabitsView date={date} today={db.localToday()} habits={habits.data || []} onToggle={toggleHabit} onAdd={addNew} onUpdate={editHabit} onArchive={archive} onRestore={restore} pending={habitPending} loading={habits.isPending} error={habits.isError && !habits.data ? "Habits konnten nicht geladen werden." : ""} onRetry={() => { habitMutation.reset(); habits.refetch(); }} />}
         {mode === "jahr" && <YearView day={day} entries={range.data || []} onPick={pick} onPickMonth={(d) => { onDateChange(d); onModeChange("monat"); }} />}
         {mode === "monat" && <MonthView day={day} entries={range.data || []} habits={habitList} events={eventsByDate} onPick={pick} />}
+        {mode === "suche" && uid && <SearchView uid={uid} today={db.localToday()} onPick={pick} />}
         {!uid && mode !== "tag" && (
           <div className="jv2-empty">
             Nicht angemeldet. <button type="button" className="jv2-link" onClick={() => db.signIn()}>Cloud Login</button>
@@ -601,7 +603,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {smartMsg && <div className="jv2-empty" role="status">{smartMsg}</div>}
 
         {smart && <p className="jv2-smart-disclosure">Mit „Analyse“ werden dein Text, Datum, Tags und Habit-Namen über den VitalOS-Server an Gemini gesendet. Es wird nichts automatisch analysiert; du prüfst die Vorschläge vor der Übernahme.</p>}
-        {smart && uid && quota.data && <p className="jv2-smart-disclosure">{quota.data.tier === "operate" ? "Operate" : "Observe"} · {quota.data.remaining} von {quota.data.limit} KI-Analysen diese Woche verfügbar. Wochenwechsel: Montag, Zeitzone Wien.{quota.data.reserved > 0 ? " Eine laufende oder gesperrte Anfrage ist bereits berücksichtigt." : ""}</p>}
+        {smart && uid && quota.data && <p className="jv2-smart-disclosure">{quota.data.tier === "operate" ? "Operate" : "Observe"} · {quota.data.remaining} von {quota.data.limit} KI-Analysen heute verfügbar. Tageswechsel: Mitternacht, Zeitzone Wien.{quota.data.reserved > 0 ? " Eine laufende oder gesperrte Anfrage ist bereits berücksichtigt." : ""}</p>}
         {smart && uid && quota.isError && <p className="jv2-smart-disclosure">Das KI-Kontingent ist gerade nicht abrufbar. Dein Journal kannst du ohne KI nutzen.</p>}
 
         <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>

@@ -45,6 +45,13 @@ import {
   dailyRelaxSessionOption,
   hasDailySkillRecordData,
 } from "../views/Habits/dailySkillRecordModel.js";
+import {
+  TRACKER_HABITS,
+  TRACKER_KEYS,
+  TRACKER_FREQUENCY,
+  isTrackerActive,
+  trackerDatesToWrite,
+} from "../views/Habits/trackerHabitModel.js";
 
 const PUSH_DEFAULTS = {
   enabled: false,
@@ -432,6 +439,113 @@ export async function saveHabitOrder(orderedUuids) {
     batch.set(ref, { order: idx }, { merge: true });
   });
   await batch.commit();
+}
+
+// ── Tracker-Habits (Ur-Modell: alles ist ein umfunktioniertes Journal) ────────
+// Unter der Haube bekommt jeder Tracker der Daily Four — Fitness (Sessions),
+// Fuel (Mahlzeiten/Ernährung), Relax (Meditation) — ein verstecktes System-Habit
+// (hidden:true, systemTracker:<key>). Tages-Aktivität wird als DONE-Record in
+// habitRecords gespiegelt — nur additiv, mit systemTracker-Provenance; nichts
+// wird je zurückgenommen. Memoirs (Journal/Habits) sind ohnehin direkt im
+// Bestand. Damit gilt die Daily Four einheitlich im Habits-Modell und im
+// Mindest-Log (src/lib/focus/). Konzept: docs/FOKUS-DAILY-FOUR-TRACKER-HABITS.md
+
+function isoFromToday(offsetDays) {
+  const value = new Date();
+  value.setDate(value.getDate() + offsetDays);
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+/** Legt die versteckten System-Habits je Tracker an (idempotent); liefert key → uuid. */
+export async function ensureTrackerHabits() {
+  const uid = getUid();
+  const snap = await getDocs(collection(db, "fitness", uid, "habits"));
+  const byTracker = {};
+  for (const entry of snap.docs) {
+    const key = entry.data()?.systemTracker;
+    if (TRACKER_KEYS.includes(key) && !entry.data()?.deleted && !byTracker[key]) byTracker[key] = entry.id;
+  }
+  for (const tracker of TRACKER_HABITS) {
+    if (byTracker[tracker.key]) continue;
+    const ref = await addDoc(collection(db, "fitness", uid, "habits"), {
+      name: tracker.name,
+      icon: tracker.icon,
+      category: null,
+      frequency: TRACKER_FREQUENCY,
+      hidden: true,
+      systemTracker: tracker.key,
+      created_at: serverTimestamp(),
+    });
+    byTracker[tracker.key] = ref.id;
+  }
+  return byTracker;
+}
+
+/**
+ * Spiegelt Tracker-Aktivität der letzten `days` Tage als DONE-Records der
+ * System-Habits (Backfill inklusive). Nur additiv: bestehende Records bleiben
+ * unberührt, Tage ohne Aktivität werden nicht vermerkt. Für Fire-and-forget
+ * beim App-Start gedacht — Netzfehler pro Tag werden ignoriert (Safe-Default).
+ */
+export async function syncTrackerHabits(days = 28) {
+  const uid = getUid();
+  const today = todayISO();
+  const count = Math.max(1, Math.min(Number(days) || 28, 90));
+  const byTracker = await ensureTrackerHabits();
+  const uuidToTracker = new Map(Object.entries(byTracker).map(([key, uuid]) => [uuid, key]));
+  const since = isoFromToday(-(count - 1));
+
+  // Bestehende DONE-Tage je System-Habit im Fenster (ein Read).
+  const doneByTracker = {};
+  const recordsSnap = await getDocs(query(
+    collection(db, "fitness", uid, "habitRecords"),
+    where("date", ">=", since), where("date", "<=", today), orderBy("date", "desc")));
+  for (const entry of recordsSnap.docs) {
+    const data = entry.data() || {};
+    const key = uuidToTracker.get(data.habitId);
+    if (key && data.completion === "DONE") (doneByTracker[key] ||= new Set()).add(data.date);
+  }
+
+  // Tages-Datenstände der letzten `days` Tage: Sessions (Array), Ernährungs- und
+  // Relax-Tagesdoc — dieselben Formen wie Daily-Four-Options/Mindest-Log.
+  const range = Array.from({ length: count }, (_, i) => isoFromToday(-(count - 1 - i)));
+  const dayData = await Promise.all(range.map(async (date) => {
+    const [sessions, fuelSnap, relaxSnap] = await Promise.all([
+      listFitnessSessionsForDate(date).catch(() => []),
+      getDoc(doc(db, "nutrition", uid, "logs", date)).catch(() => null),
+      getDoc(doc(db, "relax", uid, "sessions", date)).catch(() => null),
+    ]);
+    return {
+      date,
+      fitness: Array.isArray(sessions) ? sessions : [],
+      fuel: fuelSnap?.exists?.() ? (fuelSnap.data() || {}) : null,
+      relax: relaxSnap?.exists?.() ? (relaxSnap.data() || {}) : null,
+    };
+  }));
+
+  // Diff je Tracker (pure Logik in trackerHabitModel) und additive Writes.
+  let written = 0;
+  for (const tracker of TRACKER_HABITS) {
+    const days = Object.fromEntries(dayData.map(({ date, [tracker.key]: log }) => [date, log]));
+    const dates = trackerDatesToWrite({
+      trackerKey: tracker.key,
+      days,
+      doneDays: doneByTracker[tracker.key],
+      today,
+    });
+    for (const date of dates) {
+      const uuid = byTracker[tracker.key];
+      await setDoc(habitRecordRef(uid, uuid, date), {
+        habitId: uuid,
+        date,
+        completion: "DONE",
+        systemTracker: tracker.key,
+        recorded_at: serverTimestamp(),
+      }, { merge: true });
+      written++;
+    }
+  }
+  return { ok: true, written, days: range.length };
 }
 
 // index.firestore.js hat bewusst keinen Fuel-Proxy mehr (learn-dev braucht

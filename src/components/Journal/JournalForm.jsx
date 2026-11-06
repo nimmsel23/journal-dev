@@ -117,7 +117,8 @@ export default function JournalForm({ text, setText, onSubmit, saving, editingEn
         </div>
         <button
           onClick={() => { if (editingEntry) onCancelEdit(); setExpanded(false); }}
-          className="p-1 rounded-lg hover:bg-[var(--j-bg2)] text-[var(--j-dim)] transition-all shrink-0"
+          aria-label="Schließen"
+          className="relative after:absolute after:-inset-2.5 after:content-[''] p-1 rounded-lg hover:bg-[var(--j-bg2)] text-[var(--j-dim)] transition-all shrink-0"
         >
           <X size={14} />
         </button>
@@ -183,7 +184,8 @@ export default function JournalForm({ text, setText, onSubmit, saving, editingEn
                 type="button"
                 onClick={() => onRemoveAttachment?.(a)}
                 title="Anhang entfernen"
-                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-[var(--j-ink)] flex items-center justify-center hover:bg-black/80 transition-colors"
+                aria-label="Anhang entfernen"
+                className="after:absolute after:-inset-3 after:content-[''] absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-[var(--j-ink)] flex items-center justify-center hover:bg-black/80 transition-colors"
               >
                 <X size={11} />
               </button>
@@ -202,7 +204,8 @@ export default function JournalForm({ text, setText, onSubmit, saving, editingEn
                 type="button"
                 onClick={() => removePending(m.key)}
                 title="Bild entfernen"
-                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-[var(--j-ink)] flex items-center justify-center hover:bg-black/80 transition-colors"
+                aria-label="Bild entfernen"
+                className="after:absolute after:-inset-3 after:content-[''] absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-[var(--j-ink)] flex items-center justify-center hover:bg-black/80 transition-colors"
               >
                 <X size={11} />
               </button>
@@ -233,6 +236,7 @@ export default function JournalForm({ text, setText, onSubmit, saving, editingEn
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 title="Bilder anhängen"
+                aria-label="Bilder anhängen"
                 className="p-2.5 rounded-full border border-[var(--j-line)] text-[var(--j-dim)] hover:text-[var(--j-accent)] hover:border-[var(--j-accent)]/40 transition-colors"
               >
                 <ImagePlus size={16} />

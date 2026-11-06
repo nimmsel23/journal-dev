@@ -6,6 +6,7 @@ import {
   saveHabitOrder, getDailyExecution, getDailyExecutionConfig, saveDailyExecutionAssignments,
   getDailyFitnessSessionOptions, linkDailyFitnessSession, getDailyNutritionLogOptions,
   getDailyRelaxSessionOptions, linkDailySkillRecord, setDailyExecutionCompleted,
+  syncTrackerHabits,
 } from "@habits-db";
 import { localToday } from "@utils";
 import { ICON_COMPONENTS_MAP, DEFAULT_FREQUENCY } from "./utils";
@@ -123,12 +124,16 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
       if (selectedDateRef.current !== selectedDate) return;
 
       const habitsWithStatus = allHabits
-        .filter(h => !h.deleted)
+        .filter(h => !h.deleted && !h.hidden)
         .map(h => ({
           ...h,
           isDoneForSelectedDate: completedHabitIdsForSelectedDate.includes(h.uuid)
         }));
       setHabits(habitsWithStatus);
+
+      // Ur-Modell: Tracker-Aktivität unter der Haube als System-Habit-Vollzüge
+      // spiegeln (nur additiv, Fire-and-forget — kein Blockieren der Ansicht).
+      syncTrackerHabits().catch(() => {});
 
       const doneHabits = habitsWithStatus.filter(h => h.isDoneForSelectedDate);
       const journalChecks = await Promise.all(
@@ -359,9 +364,9 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
         <div className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-2xl font-black text-slate-100 sm:text-3xl">VitalOS · Dein Tag</h1>
           <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900 px-3 py-2 shadow-xl">
-            <button type="button" onClick={() => { setLayoutMode("v1"); localStorage.setItem("habits-layout-mode", "v1"); }} className="rounded-xl border border-white/10 p-2 text-slate-400 hover:text-white" title="Alle Habits"><LayoutGrid size={16} /></button>
-            <button type="button" onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }} className="rounded-xl border border-white/10 p-2 text-slate-400 hover:text-white" title="Bisherige Core4-Ansicht"><Smartphone size={16} /></button>
-            <button type="button" onClick={() => setPushModalOpen(true)} className={`rounded-xl border border-white/10 p-2 ${push.settings?.enabled ? "text-orange-300" : "text-slate-400"}`} title="Erinnerungen"><Bell size={16} /></button>
+            <button type="button" onClick={() => { setLayoutMode("v1"); localStorage.setItem("habits-layout-mode", "v1"); }} className="rounded-xl border border-white/10 p-2 text-slate-400 hover:text-white" title="Alle Habits" aria-label="Alle Habits"><LayoutGrid size={16} /></button>
+            <button type="button" onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }} className="rounded-xl border border-white/10 p-2 text-slate-400 hover:text-white" title="Bisherige Core4-Ansicht" aria-label="Bisherige Core4-Ansicht"><Smartphone size={16} /></button>
+            <button type="button" onClick={() => setPushModalOpen(true)} className={`rounded-xl border border-white/10 p-2 ${push.settings?.enabled ? "text-orange-300" : "text-slate-400"}`} title="Erinnerungen" aria-label="Erinnerungen"><Bell size={16} /></button>
           </div>
         </div>
         <DailyFourLayout
@@ -410,28 +415,28 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
             <button
               onClick={() => { setLayoutMode("v1"); localStorage.setItem("habits-layout-mode", "v1"); }}
               className={`p-1.5 rounded-xl border transition-all ${layoutMode === 'v1' ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
-              title="V1 Standard-Ansicht"
+              title="V1 Standard-Ansicht" aria-label="V1 Standard-Ansicht"
             >
               <LayoutGrid size={16} />
             </button>
             <button
               onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }}
               className={`p-1.5 rounded-xl border transition-all ${layoutMode === 'core4' ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
-              title="Core4 Minimal-Ansicht"
+              title="Core4 Minimal-Ansicht" aria-label="Core4 Minimal-Ansicht"
             >
               <Smartphone size={16} />
             </button>
             <button
               onClick={() => { setLayoutMode("daily-four"); localStorage.setItem("habits-layout-mode", "daily-four"); }}
               className="rounded-xl border border-white/10 p-1.5 text-slate-400 transition-all hover:border-orange-400 hover:text-orange-300"
-              title="Daily Execution · vier Ebenen"
+              title="Daily Execution · vier Ebenen" aria-label="Daily Execution · vier Ebenen"
             >
               <Grid2X2 size={16} />
             </button>
             <button
               onClick={() => setPushModalOpen(true)}
               className={`p-1.5 rounded-xl border transition-all ${push.settings?.enabled ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
-              title="Erinnerungen"
+              title="Erinnerungen" aria-label="Erinnerungen"
             >
               <Bell size={16} />
             </button>
@@ -511,28 +516,28 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
             <button
               onClick={() => { setLayoutMode("v1"); localStorage.setItem("habits-layout-mode", "v1"); }}
               className={`p-1.5 rounded-xl border transition-all ${layoutMode === 'v1' ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
-              title="V1 Standard-Ansicht"
+              title="V1 Standard-Ansicht" aria-label="V1 Standard-Ansicht"
             >
               <LayoutGrid size={16} />
             </button>
             <button
               onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }}
               className={`p-1.5 rounded-xl border transition-all ${layoutMode === 'core4' ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
-              title="Core4 Minimal-Ansicht"
+              title="Core4 Minimal-Ansicht" aria-label="Core4 Minimal-Ansicht"
             >
               <Smartphone size={16} />
             </button>
             <button
               onClick={() => { setLayoutMode("daily-four"); localStorage.setItem("habits-layout-mode", "daily-four"); }}
               className="p-1.5 rounded-xl border border-white/10 text-slate-400 transition-all hover:border-orange-400 hover:text-orange-300"
-              title="Daily Execution · vier Ebenen"
+              title="Daily Execution · vier Ebenen" aria-label="Daily Execution · vier Ebenen"
             >
               <Grid2X2 size={16} />
             </button>
             <button
               onClick={() => setPushModalOpen(true)}
               className={`p-1.5 rounded-xl border transition-all ${push.settings?.enabled ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
-              title="Erinnerungen"
+              title="Erinnerungen" aria-label="Erinnerungen"
             >
               <Bell size={16} />
             </button>

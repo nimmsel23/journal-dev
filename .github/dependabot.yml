@@ -31,17 +31,6 @@ updates:
   target-branch: dev
   cooldown:
     default-days: 7
-  # Major-Spruenge bei Kernpaketen bewusst nicht automatisch vorschlagen (react 19, lucide 1.x, vite-plugin-react 5/6):
-  # erst nach Entscheidung/Abnahme; tailwind-merge 3 (Tailwind 4) bleibt erlaubt.
-  ignore:
-  - dependency-name: react
-    update-types: ["version-update:semver-major"]
-  - dependency-name: react-dom
-    update-types: ["version-update:semver-major"]
-  - dependency-name: lucide-react
-    update-types: ["version-update:semver-major"]
-  - dependency-name: "@vitejs/plugin-react"
-    update-types: ["version-update:semver-major"]
   groups:
     minor-and-patch:
       update-types:

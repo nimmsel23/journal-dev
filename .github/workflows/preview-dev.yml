@@ -35,6 +35,8 @@ on:
 
 jobs:
   preview:
+    # Dependabot bekommt keine Repo-Secrets (firebaseServiceAccount) -> Preview-Deploy dort sinnlos rot; check.yml prueft die PRs.
+    if: github.actor != 'dependabot[bot]'
     permissions:
       contents: read
       checks: write

@@ -55,7 +55,7 @@ export default function DailyFourLayout({
     draftDirty.current = false;
     chooserGeneration.current += 1;
   }
-  const activeHabits = useMemo(() => (habits || []).filter((habit) => !habit.deleted), [habits]);
+  const activeHabits = useMemo(() => (habits || []).filter((habit) => !habit.deleted && !habit.hidden), [habits]);
 
   useEffect(() => {
     setFitnessChooserFor(null);

@@ -427,3 +427,19 @@
 
 .jv2-smart-locked-group { border: 0; margin: 0; padding: 0; min-width: 0; }
 .jv2-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* ── Suche (p2-timeline) ─────────────────────────────────────────── */
+.jv2-search { display: grid; }
+.jv2-search-bar { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--ink); background: var(--soft); }
+.jv2-search-bar input[type="search"] { flex: 1 1 220px; margin: 0; border: 1px solid var(--ink); background: var(--paper, #fff); color: var(--ink); font-family: var(--mono); font-size: 12px; padding: 6px 8px; }
+.jv2-search-windows { display: flex; gap: 6px; }
+.jv2-search-windows button { border: 1px solid var(--ink); background: var(--paper, #fff); color: var(--ink); font-family: var(--mono); font-size: 11px; padding: 4px 8px; cursor: pointer; text-transform: uppercase; }
+.jv2-search-windows button[aria-pressed="true"] { background: var(--ink); color: var(--paper, #fff); }
+.jv2-search-hint { margin: 0; padding: 6px 12px; font-family: var(--mono); font-size: 10px; color: var(--ink); opacity: 0.75; border-bottom: 1px solid var(--ink); }
+.jv2-search-hint code { font-family: var(--mono); }
+.jv2-search-empty, .jv2-search-count { margin: 0; padding: 14px 12px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--ink); }
+.jv2-search-date { display: block; width: 100%; text-align: left; margin: 0; padding: 6px 12px; border: 0; border-bottom: 1px solid var(--ink); background: var(--soft); color: var(--ink); font-family: var(--mono); font-size: 11px; text-transform: uppercase; cursor: pointer; }
+.jv2-search-hit { display: flex; gap: 10px; width: 100%; text-align: left; margin: 0; padding: 8px 12px; border: 0; border-bottom: 1px solid var(--ink); background: none; color: var(--ink); font-family: var(--mono); font-size: 12px; cursor: pointer; }
+.jv2-search-hit:hover { background: var(--soft); }
+.jv2-search-hit-time { flex: 0 0 44px; opacity: 0.7; }
+.jv2-search-hit span:last-child { line-height: 1.5; }

@@ -11,7 +11,7 @@ export function normalizeDailyAssignments(assignments, habits) {
   if (!assignments || typeof assignments !== "object" || Array.isArray(assignments)) {
     throw new Error("daily_assignments_invalid");
   }
-  const activeHabits = new Map((habits || []).filter((habit) => !habit.deleted).map((habit) => [habit.uuid, habit]));
+  const activeHabits = new Map((habits || []).filter((habit) => !habit.deleted && !habit.hidden).map((habit) => [habit.uuid, habit]));
   const selectedIds = new Set();
   const normalized = {};
 

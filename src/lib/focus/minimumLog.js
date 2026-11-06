@@ -16,6 +16,8 @@
 // verlangt zusätzlich, dass der Log lokal VOR dieser vollen Stunde angelegt wurde
 // (Beispiel-Regel „4B-Check-in vor 10 Uhr“). Ein Log ohne prüfbaren Zeitstempel kann
 // die Vor-Stunden-Bedingung nicht erfüllen (konservativ, Kriterium einer Sperre).
+// Semantik von Daniel bestätigt (2026-11-06): Frist gilt für den Log-Zeitpunkt, nicht
+// als Gnadenfrist — ein Log nach der Frist erfüllt sie nicht mehr.
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const RULES = ["journal", "habit", "any"];

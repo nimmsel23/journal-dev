@@ -37,7 +37,7 @@ jobs:
           cache: pnpm
 
       - name: Install Journal
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Install Functions deps
         run: pnpm install --dir functions --ignore-workspace --frozen-lockfile --ignore-scripts

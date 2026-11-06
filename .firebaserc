@@ -22,6 +22,9 @@
         ],
         "tent": [
           "vos-tent"
+        ],
+        "habits": [
+          "habit-vos"
         ]
       }
     }

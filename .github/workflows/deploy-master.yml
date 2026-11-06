@@ -2,7 +2,7 @@
 # eigenen Repos, OHNE das Meta-Repo vitalos (gleiches Muster wie fitness-dev/deploy-master.yml).
 #
 # Layout (Geschwister nebeneinander, wie lokal unter ~/dev): journal-dev/ (dieser Commit) und
-# fitness-dev fuel-dev relax-dev habits-dev 6pack-dev plan-dev jeweils `master`. Jedes Repo installiert mit
+# fitness-dev fuel-dev relax-dev 6pack-dev plan-dev skills-dev jeweils `master`. Jedes Repo installiert mit
 # seinem EIGENEN Lockfile (--frozen-lockfile, --ignore-scripts). Die Vite-Configs lösen die Nachbarn über
 # resolveSibling()/siblingDir() auf (`<x>-app` oder `<x>-dev` daneben).
 #
@@ -49,7 +49,7 @@ jobs:
       - name: Checkout Nachbarn (${{ env.NEIGHBOR_REF }})
         run: |
           set -euo pipefail
-          for repo in fitness-dev fuel-dev relax-dev habits-dev 6pack-dev plan-dev; do
+          for repo in fitness-dev fuel-dev relax-dev 6pack-dev plan-dev skills-dev; do
             git clone --depth 1 --branch "$NEIGHBOR_REF" "https://github.com/nimmsel23/${repo}.git" "$repo"
             echo "$repo @ $(git -C "$repo" rev-parse --short HEAD)"
           done
@@ -66,15 +66,15 @@ jobs:
 
       - name: Install (journal-dev, eigener Lockfile)
         working-directory: journal-dev
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Install Nachbarn (je eigener Lockfile)
         run: |
           set -euo pipefail
-          for repo in fitness-dev fuel-dev relax-dev habits-dev 6pack-dev plan-dev; do
+          for repo in fitness-dev fuel-dev relax-dev 6pack-dev plan-dev skills-dev; do
             echo "::group::$repo"
             if [ -f "$repo/pnpm-lock.yaml" ]; then
-              (cd "$repo" && pnpm install --frozen-lockfile --ignore-scripts)
+              (cd "$repo" && pnpm install --no-frozen-lockfile --ignore-scripts)
             elif [ -f "$repo/package.json" ]; then
               echo "::warning::$repo hat keinen pnpm-lock.yaml — Install ohne Lockfile"
               (cd "$repo" && pnpm install --no-frozen-lockfile --ignore-scripts)
@@ -98,7 +98,7 @@ jobs:
         run: |
           printf '%s' "$FIREBASE_SA" > "$RUNNER_TEMP/sa.json"
           GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" \
-            npx firebase-tools@latest deploy --only hosting:journal,hosting:v2,hosting:door,hosting:voice,hosting:game,hosting:tent \
+            npx firebase-tools@latest deploy --only hosting:journal,hosting:v2,hosting:door,hosting:voice,hosting:game,hosting:tent,hosting:habits \
             --project fitness-aos --non-interactive
 
 

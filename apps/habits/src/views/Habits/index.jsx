@@ -6,6 +6,7 @@ import {
   saveHabitOrder, getDailyExecution, getDailyExecutionConfig, saveDailyExecutionAssignments,
   getDailyFitnessSessionOptions, linkDailyFitnessSession, getDailyNutritionLogOptions,
   getDailyRelaxSessionOptions, linkDailySkillRecord, setDailyExecutionCompleted,
+  syncTrackerHabits,
 } from "@habits-db";
 import { localToday } from "@utils";
 import { ICON_COMPONENTS_MAP, DEFAULT_FREQUENCY } from "./utils";
@@ -123,12 +124,16 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
       if (selectedDateRef.current !== selectedDate) return;
 
       const habitsWithStatus = allHabits
-        .filter(h => !h.deleted)
+        .filter(h => !h.deleted && !h.hidden)
         .map(h => ({
           ...h,
           isDoneForSelectedDate: completedHabitIdsForSelectedDate.includes(h.uuid)
         }));
       setHabits(habitsWithStatus);
+
+      // Ur-Modell: Tracker-Aktivität unter der Haube als System-Habit-Vollzüge
+      // spiegeln (nur additiv, Fire-and-forget — kein Blockieren der Ansicht).
+      syncTrackerHabits().catch(() => {});
 
       const doneHabits = habitsWithStatus.filter(h => h.isDoneForSelectedDate);
       const journalChecks = await Promise.all(

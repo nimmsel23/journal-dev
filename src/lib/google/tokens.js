@@ -7,7 +7,7 @@
 // PWA) und wurde nach 55 min verworfen. Danach half nur ein neues Popup.
 //
 // Zwei Betriebsarten, die der Dienst selbst verwaltet:
-//   "server" – dauerhaft. Eine Cloud Function (functions/google.js) hält den Refresh-Token
+//   "server" – dauerhaft. Eine Cloud Function (backend/functions/journal/google.js) hält den Refresh-Token
 //              (Firestore `googleTokens/{uid}`, vom Browser nicht lesbar) und liefert bei Bedarf
 //              einen frischen Access-Token. Der Browser sieht nie einen Refresh-Token.
 //   "popup"  – kurzlebiger Rückfall außerhalb des offiziellen VitalOS-Produktbuilds, wenn die

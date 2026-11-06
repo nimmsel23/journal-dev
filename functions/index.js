@@ -1,8 +1,10 @@
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const admin = require("firebase-admin");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
 
-admin.initializeApp();
+initializeApp();
 
 // ── Google (Tasks + Calendar) dauerhaft verbinden ──
 // Einrichtung: JOURNAL-V2.md, Abschnitt „Google dauerhaft verbinden“. Secret/Parameter:
@@ -18,7 +20,7 @@ exports.getSmartLogQuota = functions.region("europe-west1").https.onCall(async (
   if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "login-required");
   const smartLog = require("./smart-log");
   smartLog.assertExpectedUid(context.auth.uid, data?.expected_uid);
-  return smartLog.getQuotaStatus({ db: admin.firestore(), uid: context.auth.uid });
+  return smartLog.getQuotaStatus({ db: getFirestore(), uid: context.auth.uid });
 });
 
 exports.analyzeSmartLog = functions
@@ -33,7 +35,7 @@ exports.analyzeSmartLog = functions
       let apiKey = "";
       try { apiKey = GEMINI_API_KEY.value() || ""; } catch { /* provider unavailable */ }
       return await require("./smart-log").analyze({
-        db: admin.firestore(),
+        db: getFirestore(),
         uid: context.auth.uid,
         data: data || {},
         apiKey,
@@ -48,7 +50,7 @@ exports.analyzeSmartLog = functions
   });
 
 const makeGoogleHandlers = () => {
-  const col = admin.firestore().collection("googleTokens");
+  const col = getFirestore().collection("googleTokens");
   return createGoogleHandlers({
     fetchImpl: fetch,
     store: {
@@ -150,7 +152,7 @@ async function sendReminder(uid, tokens, title, body, link, app = "journal") {
       },
       tokens,
     };
-    const response = await admin.messaging().sendEachForMulticast(message);
+    const response = await getMessaging().sendEachForMulticast(message);
     return {
       sentCount: response.successCount,
       failureCount: response.failureCount,
@@ -165,7 +167,7 @@ exports.scheduledJournalPushReminders = onSchedule(
   { schedule: "every 5 minutes", timeZone: TIME_ZONE, region: "europe-west1" },
   async () => {
     const { date, minutes } = getLocalDateParts(new Date(), "Europe/Vienna");
-    const db = admin.firestore();
+    const db = getFirestore();
     let sentCount = 0;
     let failureCount = 0;
 
@@ -236,7 +238,7 @@ exports.scheduledDoorReminders = functions
   .timeZone(TIME_ZONE)
   .onRun(async () => {
     const { date, minutes } = getLocalDateParts();
-    const db = admin.firestore();
+    const db = getFirestore();
     const handlers = makeGoogleHandlers();
     let sentCount = 0;
     let failureCount = 0;

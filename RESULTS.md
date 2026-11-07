@@ -1,3 +1,14 @@
+## 2026-11-07 — Smart Journal speichert Tages-Deposits
+
+- Smart-Log-Vorschau um vier bearbeitbare Tages-Deposits erweitert; leere
+  Bereiche bleiben leer, der Nutzer kann erkannte oder fehlende Angaben
+  ergänzen. Übernommene Deposits erscheinen beim Journaleintrag und sind
+  nachträglich ohne neue KI-Analyse editierbar.
+- Persistenz liegt idempotent im Smart-Log-Metadatum des vorhandenen
+  Journaleintrags; keine zweite Tages-Logger-Datenquelle angelegt.
+- Gegenstück im gemeinsamen Backend ergänzt die strukturierte Extraktion.
+  Tests und Build wurden nicht ausgeführt.
+
 ## 2026-11-07 — CI-Agent-Deploy-Routing und No-op-Ausgänge korrigiert
 
 - Reale Modul-Deploy-/Preview-Workflownamen ergänzt; grüne Deploy-Läufe lösen keine Merges aus. Ohne sichere Quellreparatur endet der Agent ohne Commit.

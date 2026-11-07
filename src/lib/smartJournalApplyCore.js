@@ -1,4 +1,5 @@
-const ROOT_FIELDS = new Set(["journal_entry", "water_ml", "meals", "habits_done", "fitness_sessions", "relax_sessions", "planner_tasks", "request_id", "original_text", "source_tags"]);
+const ROOT_FIELDS = new Set(["daily_deposits", "journal_entry", "water_ml", "meals", "habits_done", "fitness_sessions", "relax_sessions", "planner_tasks", "request_id", "original_text", "source_tags"]);
+const DAILY_DEPOSIT_FIELDS = Object.freeze(["body", "business", "balance", "being"]);
 const MEAL_FIELDS = new Set(["description", "type", "notes", "time", "kcal", "protein", "carbs", "fat", "estimated_fields"]);
 const HABIT_FIELDS = new Set(["name", "evidence"]);
 const MEAL_TYPES = new Set(["breakfast", "lunch", "dinner", "snack"]);
@@ -45,6 +46,15 @@ function assertExistingLocalTime(date, time) {
 
 export function validateSmartAnalysis(value) {
   assertObject(value, "root", ROOT_FIELDS);
+  let daily_deposits;
+  if (Object.hasOwn(value, "daily_deposits")) {
+    const rawDeposits = value.daily_deposits;
+    assertObject(rawDeposits, "daily_deposits", new Set(DAILY_DEPOSIT_FIELDS));
+    daily_deposits = Object.fromEntries(DAILY_DEPOSIT_FIELDS.map((field) => [
+      field,
+      boundedString(rawDeposits[field] ?? "", `daily_deposit_${field}`, 500).trim(),
+    ]));
+  }
   const journal_entry = boundedString(value.journal_entry, "journal_entry", 4000);
   const water_ml = boundedNumber(value.water_ml, "water_ml", 20000);
   if (!Number.isInteger(water_ml)) throw new Error("smart_schema_water_ml_invalid");
@@ -123,7 +133,7 @@ export function validateSmartAnalysis(value) {
   if (!/^[A-Za-z0-9_-]{16,80}$/.test(request_id)) throw new Error("smart_schema_request_id_invalid");
   const original_text = boundedString(value.original_text, "original_text", 12000, { empty: false });
 
-  return { request_id, original_text, source_tags: [...new Set(source_tags)], journal_entry, water_ml, meals, habits_done, fitness_sessions, relax_sessions, planner_tasks };
+  return { request_id, original_text, source_tags: [...new Set(source_tags)], ...(daily_deposits ? { daily_deposits } : {}), journal_entry, water_ml, meals, habits_done, fitness_sessions, relax_sessions, planner_tasks };
 }
 
 export function sourceJournalId(requestId) {
@@ -170,7 +180,7 @@ export function validateSmartReplay(existing, data, date) {
   const previous = smartAnalysisForRetry(existing);
   if (!previous) throw new Error("smart_retry_payload_unavailable");
   const prior = validateSmartAnalysis(previous);
-  for (const key of ["journal_entry", "water_ml", "meals", "habits_done", "fitness_sessions", "relax_sessions"]) {
+  for (const key of ["daily_deposits", "journal_entry", "water_ml", "meals", "habits_done", "fitness_sessions", "relax_sessions"]) {
     if (JSON.stringify(prior[key]) !== JSON.stringify(data[key])) throw new Error("smart_retry_tracker_changed");
   }
   if (prior.planner_tasks.length !== data.planner_tasks.length) throw new Error("smart_retry_planner_order_changed");
@@ -261,7 +271,7 @@ export function createSmartJournalApplier({ saveJournal, updateJournal, claimJou
     const tags = [...new Set([...data.source_tags, "smart-log"])];
     const summary = data.journal_entry;
     const { original_text, source_tags, ...retryPayload } = data;
-    const result = { request_id: data.request_id, sourceJournalId: journalId, journal: true, meals: 0, water_ml: 0, habits: [], habits_skipped: [], fitness: 0, relax: 0, planner: 0, planner_pending: [], planner_events: [], planner_suggestions: data.planner_tasks, unmatched: [] };
+    const result = { request_id: data.request_id, sourceJournalId: journalId, journal: true, ...(data.daily_deposits ? { daily_deposits: data.daily_deposits } : {}), meals: 0, water_ml: 0, habits: [], habits_skipped: [], fitness: 0, relax: 0, planner: 0, planner_pending: [], planner_events: [], planner_suggestions: data.planner_tasks, unmatched: [] };
 
     const initialStatus = { schemaVersion: 1, requestId: data.request_id, status: "applying", summary, retryPayload, updatedAt: now() };
     const existing = claimJournal ? await guarded(claimJournal, date, data.original_text, { id: journalId, tags, smartLog: initialStatus }) : null;

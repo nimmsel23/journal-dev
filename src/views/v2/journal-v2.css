@@ -366,6 +366,23 @@
 .jv2-smart-habit { grid-template-columns: 1fr 1fr auto; align-items: end; }
 .jv2-smart-habit label { min-width: 0; }
 .jv2-smart-habit small { color: #934b00; font-size: 11px; }
+.jv2-deposit-editor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; padding: 12px; border-bottom: 1px solid var(--ink); }
+.jv2-deposit-heading { grid-column: 1 / -1; display: grid; gap: 4px; margin-bottom: 8px; }
+.jv2-deposit-heading b, .jv2-deposit-input > b, .jv2-deposit > b { font-family: var(--mono); font-size: 10px; font-weight: 600; text-transform: uppercase; }
+.jv2-deposit-heading small { color: var(--muted, #666); font-size: 11px; line-height: 1.4; }
+.jv2-deposit-input { display: grid; align-content: start; gap: 5px; padding: 7px 0; font-size: 11px; }
+.jv2-deposit-input textarea { min-width: 0; width: 100%; resize: vertical; border: 1px solid var(--ink); border-radius: 0; background: var(--soft); color: var(--ink); padding: 7px; font: inherit; }
+.jv2-deposit-input textarea:focus-visible { outline: 3px solid var(--sig); outline-offset: 1px; }
+.jv2-deposit-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.jv2-deposit-summary > b { font-family: var(--mono); font-size: 10px; text-transform: uppercase; }
+.jv2-deposit-actions { grid-column: 1 / -1; display: flex; }
+.jv2-deposit-actions button { flex: 1; min-height: 40px; border: 1px solid var(--ink); background: var(--ink); color: var(--p); font: inherit; font-weight: 700; }
+.jv2-deposit-actions button.ghost { background: transparent; color: var(--ink); }
+.jv2-deposit-actions button:disabled { opacity: .55; }
+.jv2-deposit-empty { grid-column: 1 / -1; margin: 0; color: var(--muted, #666); font-size: 12px; }
+.jv2-deposits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.jv2-deposit { display: grid; gap: 3px; min-width: 0; padding: 8px; border-left: 2px solid var(--sig); background: color-mix(in srgb, var(--sig) 7%, transparent); font-size: 12px; line-height: 1.4; }
+.jv2-deposit > span { overflow-wrap: anywhere; }
 .jv2-smart-remove { border: 1px solid var(--ink); background: transparent; color: var(--ink); padding: 7px; font-size: 11px; }
 .jv2-smart input:focus-visible, .jv2-smart select:focus-visible, .jv2-smart textarea:focus-visible { outline: 3px solid var(--sig); outline-offset: 1px; }
 @media (min-width: 700px) {
@@ -375,6 +392,7 @@
 }
 @media (max-width: 560px) {
   .jv2-smart-field, .jv2-smart-habit { grid-template-columns: 1fr; }
+  .jv2-deposit-editor, .jv2-deposits { grid-template-columns: 1fr; }
   .jv2-smart-macros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 

@@ -9,7 +9,7 @@ import { de } from "date-fns/locale";
 import * as db from "@journal-db";
 // Journal-CRUD direkt aus journal-dev: @journal-db liefert dafür evtl. die
 // fitness-dev-Variante (andere saveJournal-Signatur, kein getJournalRange).
-import { getJournal, getJournalRange, saveJournal, updateJournal, deleteJournal, setJournalTime } from "../../lib/db/journal.js";
+import { getJournal, getJournalRange, saveJournal, updateJournal, updateJournalDailyDeposits, deleteJournal, setJournalTime } from "../../lib/db/journal.js";
 import { MonthView, WeekView, YearView, rangeFor } from "./JournalV2Range.jsx";
 import SearchView from "./JournalV2Search.jsx";
 import HabitsView from "./JournalV2Habits.jsx";
@@ -29,6 +29,18 @@ import { googleErrorText } from "../../lib/google/tokens.js";
 import "./journal-v2.css";
 
 const HABIT_LIMIT = 5;
+const DAILY_DEPOSITS = Object.freeze([
+  ["body", "Body"],
+  ["business", "Business"],
+  ["balance", "Balance"],
+  ["being", "Being"],
+]);
+const DAILY_DEPOSIT_PROMPTS = Object.freeze({
+  body: "Was hast du für deinen Körper getan?",
+  business: "Woran hast du heute gearbeitet oder gelernt?",
+  balance: "Welche Beziehung, Pause oder Grenze war wichtig?",
+  being: "Wie war dein innerer Zustand oder deine Praxis?",
+});
 const iso = (d) => format(d, "yyyy-MM-dd");
 
 function smartLogErrorText(error) {
@@ -92,10 +104,12 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   }, []);
   // Timeline-Raster (Drag auf die versteckte Timeline): 60 / 30 / 15 Minuten
   const [grain, setGrain] = useSetting("jv2:grain", 30, (v) => ([60, 30, 15].includes(Number(v)) ? Number(v) : undefined));
-  // Smart Logger: Freitext → Vertex-Analyse → Vorschau → Übernehmen (Journal, Mahlzeiten, Wasser, Habits)
+  // Smart Logger: Freitext → Analyse → prüfbare Tages-Deposits und Tracker-Vorschläge → Übernehmen
   const [smart, setSmart] = useSetting("jv2:smart", false, asBool);
   useEffect(() => { if (startSmart) setSmart(true); }, [startSmart, setSmart]);
   const [analysis, setAnalysis] = useState(null);
+  const [depositEdit, setDepositEdit] = useState(null);
+  const [depositSaving, setDepositSaving] = useState(false);
   const [analysisDate, setAnalysisDate] = useState(null);
   const [plannerPending, setPlannerPending] = useState([]);
   const [retryLocked, setRetryLocked] = useState(false);
@@ -111,6 +125,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   const [previewGeneration, setPreviewGeneration] = useState(null);
   useEffect(() => {
     setAnalysis(null);
+    setDepositEdit(null);
+    setDepositSaving(false);
     setAnalysisDate(null);
     setPlannerPending([]);
     setRetryLocked(false);
@@ -297,6 +313,23 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
 
   const editAnalysis = (patch) => setAnalysis((current) => current && ({ ...current, ...patch }));
+  const editDailyDeposit = (field, value) => setAnalysis((current) => current && ({
+    ...current,
+    daily_deposits: { ...(current.daily_deposits || {}), [field]: value },
+  }));
+  const saveDailyDepositEdit = async () => {
+    if (!depositEdit || depositSaving) return;
+    setDepositSaving(true);
+    try {
+      await updateJournalDailyDeposits(depositEdit.id, depositEdit.values);
+      qc.invalidateQueries({ queryKey: ["jv2-entries", uid, date] });
+      setDepositEdit(null);
+    } catch (error) {
+      setDepositEdit((current) => current && ({ ...current, error: error?.message || "Speichern fehlgeschlagen." }));
+    } finally {
+      setDepositSaving(false);
+    }
+  };
   const editMeal = (index, patch) => setAnalysis((current) => current && ({
     ...current,
     meals: current.meals.map((meal, i) => i === index ? { ...meal, ...patch } : meal),
@@ -325,7 +358,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
       setEditablePlannerIndexes(smartPendingPlannerIndexes(analysis.planner_tasks || [], pending));
       if (!pending.length) { setAnalysis(null); setAnalysisDate(null); setResumeDate(null); }
       if (!resumeDate) { setDraft(""); clearSmartRequest(); }
-      const parts = [res.journal && "Eintrag", res.meals && `${res.meals} Mahlzeit${res.meals > 1 ? "en" : ""}`, res.water_ml && `${res.water_ml} ml Wasser`, res.habits.length && `${res.habits.length} Habit${res.habits.length > 1 ? "s" : ""}`, res.fitness && `${res.fitness} Fitness-Session${res.fitness > 1 ? "s" : ""}`, res.relax && `${res.relax} Relax-Einheit${res.relax > 1 ? "en" : ""}`, res.planner && `${res.planner} Google-Kalendertermin${res.planner > 1 ? "e" : ""}`].filter(Boolean);
+      const depositCount = Object.values(res.daily_deposits || {}).filter((value) => String(value || "").trim()).length;
+      const parts = [res.journal && "Eintrag", res.daily_deposits && `${depositCount}/4 Tages-Deposits`, res.meals && `${res.meals} Mahlzeit${res.meals > 1 ? "en" : ""}`, res.water_ml && `${res.water_ml} ml Wasser`, res.habits.length && `${res.habits.length} Habit${res.habits.length > 1 ? "s" : ""}`, res.fitness && `${res.fitness} Fitness-Session${res.fitness > 1 ? "s" : ""}`, res.relax && `${res.relax} Relax-Einheit${res.relax > 1 ? "en" : ""}`, res.planner && `${res.planner} Google-Kalendertermin${res.planner > 1 ? "e" : ""}`].filter(Boolean);
       const habitNote = `${res.habits_skipped?.length ? " Ein später geänderter Habit-Status bleibt unverändert." : ""}${res.unmatched?.length ? " Nicht eindeutig zugeordnete Habits wurden ausgelassen; bitte manuell prüfen." : ""}`;
       setSmartMsg(res.planner_pending?.some((pending) => pending.reason === "google_calendar_event_conflict")
         ? `Übernommen: ${parts.join(", ")}. Ein vorhandener Kalendertermin weicht vom Vorschlag ab. Bitte prüfe ihn im Google Kalender; er wurde nicht überschrieben.`
@@ -554,6 +588,8 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {list.map((e) => {
           const { title, body } = splitEntry(e.text);
           const tags = e.tags || [];
+          const dailyDeposits = e.smartLog?.applied?.daily_deposits;
+          const savedDepositCount = dailyDeposits ? DAILY_DEPOSITS.filter(([key]) => String(dailyDeposits[key] || "").trim()).length : 0;
           return (
             <div key={e.id} className={`jv2-entry${tags.includes("offen") ? " open" : ""}`}>
               <button type="button" className="jv2-thandle" {...timeline.handleProps(e)} aria-label={`Uhrzeit ${hhmm(minutesOf(e))}: ziehen oder Pfeiltasten hoch/runter verschiebt den Eintrag`}>{hhmm(minutesOf(e))}</button>
@@ -578,6 +614,11 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
                   <div className="jv2-body">
                     {title && <h3>{title}</h3>}
                     {body && <p>{body}</p>}
+                    {dailyDeposits && <div className="jv2-deposits-wrap">
+                      <div className="jv2-deposit-summary"><b>Tages-Deposits · {savedDepositCount}/4</b><button type="button" className="jv2-link" onClick={() => setDepositEdit({ id: e.id, values: Object.fromEntries(DAILY_DEPOSITS.map(([key]) => [key, String(dailyDeposits[key] || "")])) })}>{depositEdit?.id === e.id ? "Schließen" : "Bearbeiten"}</button></div>
+                      {depositEdit?.id === e.id ? <div className="jv2-deposit-editor" role="group" aria-label="Tages-Deposits bearbeiten">{DAILY_DEPOSITS.map(([key, label]) => <label className="jv2-deposit-input" key={`edit-${e.id}-${key}`}><b>{label}</b><textarea rows={2} maxLength={500} aria-label={`${label}-Deposit`} value={depositEdit.values[key] || ""} placeholder={DAILY_DEPOSIT_PROMPTS[key]} onChange={(event) => setDepositEdit((current) => ({ ...current, values: { ...current.values, [key]: event.target.value }, error: "" }))} /></label>)}{depositEdit.error && <div className="jv2-eerr" role="alert">{depositEdit.error}</div>}<div className="jv2-deposit-actions"><button type="button" onClick={saveDailyDepositEdit} disabled={depositSaving}>{depositSaving ? "Speichere …" : "Speichern"}</button><button type="button" className="ghost" onClick={() => setDepositEdit(null)} disabled={depositSaving}>Abbrechen</button></div></div>
+                        : <div className="jv2-deposits" role="group" aria-label="Gespeicherte Tages-Deposits">{DAILY_DEPOSITS.map(([key, label]) => { const value = String(dailyDeposits[key] || "").trim(); return value ? <div className="jv2-deposit" key={`${e.id}-${key}`}><b>{label}</b><span>{value}</span></div> : null; })}{savedDepositCount === 0 && <p className="jv2-deposit-empty">Für diesen Tag wurde noch kein Deposit übernommen.</p>}</div>}
+                    </div>}
                     {e.smartLog?.applied?.planner_suggestions?.length > 0 && <div className="jv2-smart-archived"><b>Google-Kalender-Vorschläge</b>{e.smartLog.applied.planner_suggestions.map((task, index) => { const event = e.smartLog.applied.planner_events?.find((created) => created.title === task.title && created.date === task.date); return <p key={`${e.id}-planner-${index}`}>{task.date || "Datum offen"}{task.time ? ` · ${task.time}` : ""} · {task.title}{event?.htmlLink ? <> · <a href={event.htmlLink} target="_blank" rel="noreferrer">Kalender öffnen ↗</a></> : null}</p>; })}</div>}
                     {e.smartLog?.status && e.smartLog.status !== "applied" && <div className="jv2-smart-archived"><small>Smart Log: {e.smartLog.status === "partial" ? "teilweise übernommen" : "Übernahme wurde unterbrochen"}</small>{smartAnalysisForRetry(e) && <button type="button" className="jv2-link" disabled={busy} onClick={() => resumeSmartEntry(e)}>Offene Schritte prüfen</button>}</div>}
                     {tags.map((t) => <button key={t} type="button" className="jv2-tag jv2-taglink" title={`Einträge mit +${t} in der Suche ansehen`} onClick={() => openTagInSearch(t)}>{t}</button>)}
@@ -599,6 +640,10 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             <fieldset className="jv2-smart-locked-group" disabled={retryLocked}>
             <legend className="jv2-visually-hidden">Tracker-Vorschläge</legend>
             {analysis.journal_entry && <label className="jv2-smart-field"><b>Journal-Zusammenfassung</b><textarea rows={2} value={analysis.journal_entry} onChange={(event) => editAnalysis({ journal_entry: event.target.value })} /></label>}
+            <div className="jv2-deposit-editor" role="group" aria-label="Tages-Deposits prüfen und ergänzen">
+              <div className="jv2-deposit-heading"><b>Deine Tages-Deposits</b><small>Aus deinem Freitext erkannt. Leere Felder kannst du ergänzen; nichts wird dazugedichtet.</small></div>
+              {DAILY_DEPOSITS.map(([key, label]) => <label className="jv2-deposit-input" key={`${analysis.request_id}-${key}`}><b>{label}</b><textarea rows={2} maxLength={500} aria-label={`${label}-Deposit`} value={analysis.daily_deposits?.[key] || ""} placeholder={DAILY_DEPOSIT_PROMPTS[key]} onChange={(event) => editDailyDeposit(key, event.target.value)} /></label>)}
+            </div>
             {analysis.meals.map((m, i) => <fieldset className="jv2-smart-meal" key={`${analysis.request_id}-meal-${i}`}>
               <legend>Mahlzeit {i + 1}</legend>
               <label>Art<select value={m.type} onChange={(event) => editMeal(i, { type: event.target.value })}>{[["breakfast", "Frühstück"], ["lunch", "Mittagessen"], ["dinner", "Abendessen"], ["snack", "Snack"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -637,7 +682,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           ))}
         </div>
         <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>
-          <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Journal, Mahlzeiten, Wasser und Habits zerlegen">✦</button>
+          <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Tages-Deposits und Tracker-Einträge überführen">✦</button>
           {smart ? (
             <textarea
               id="jv2-input"
@@ -669,7 +714,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             <li><b>/fit</b> ist das Schnellerfassungs-Kürzel: es wird direkt im Text zu <b>+fitness</b> expandiert (Datum = Zeitpunkt des Loggings).</li>
             <li><b>+hot / +potential / +door</b> legt den Eintrag zusätzlich als Potential-Item in Door › Potential (Hot List) an — Titel ist die erste Zeile.</li>
             <li>Tag-Chip am Eintrag anklicken oder in der Suche <b>+wort</b> tippen: filtert nach Tags (Zeitraum 30 Tage bis Alles).</li>
-            <li><b>✦ Smart Log</b> (1 KI-Analyse/Tag) zerlegt Freitext in bearbeitbare Vorschläge (Eintrag, Mahlzeiten, Wasser, Habits, Fitness, Relax, Kalender) — nichts wird ohne Bestätigung übernommen.</li>
+            <li><b>✦ Smart Log</b> (1 KI-Analyse/Tag) zerlegt Freitext in bearbeitbare Vorschläge für vier Tages-Deposits und Eintrag, Mahlzeiten, Wasser, Habits, Fitness, Relax und Kalender — nichts wird ohne Bestätigung übernommen.</li>
             <li><b>+termin Titel:</b> Termin als Eintrag reviewen — Kalender verbinden (unten), dann am Termin auf „Rückblick →" klicken; das Tag wird vorbelegt.</li>
           </ul>
         </details>

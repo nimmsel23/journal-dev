@@ -161,6 +161,23 @@ export async function updateSmartJournalStatus(id, smartLog, expectedUid) {
   await updateDoc(doc(journalCol(userId), id), { smartLog, updated_at: serverTimestamp() });
 }
 
+export async function updateJournalDailyDeposits(id, value) {
+  const userId = await uid();
+  const fields = ["body", "business", "balance", "being"];
+  if (!id || !value || typeof value !== "object" || Array.isArray(value)
+      || Object.keys(value).some((key) => !fields.includes(key))) throw new Error("journal_daily_deposits_invalid");
+  const dailyDeposits = Object.fromEntries(fields.map((field) => {
+    const text = value[field] ?? "";
+    if (typeof text !== "string" || text.length > 500) throw new Error("journal_daily_deposits_invalid");
+    return [field, text.trim()];
+  }));
+  const synced = track(updateDoc(doc(journalCol(userId), id), {
+    "smartLog.applied.daily_deposits": dailyDeposits,
+    updated_at: serverTimestamp(),
+  }));
+  return { id, daily_deposits: dailyDeposits, synced };
+}
+
 export async function saveJournal(date = localToday(), text, opts = {}) {
   const userId = await uid();
   if (opts.expectedUid && userId !== opts.expectedUid) throw new Error("journal_account_changed");

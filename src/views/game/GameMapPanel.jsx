@@ -57,10 +57,11 @@ export function groupsFor(map, all) {
 export { weekDoor };
 
 function Row({ t, busy, onToggle }) {
+  const done = t.status === "completed";
   const d = secs(t.due);
   const meta = [t.priority && `Prio ${t.priority}`, d && format(d, "EEE d. MMM", { locale: de }), t.project, t.domain].filter(Boolean).join(" · ");
   return (
-    <button type="button" className="dv2-hit" aria-pressed={false} disabled={busy} onClick={() => onToggle(t)} style={{ width: "100%" }}>
+    <button type="button" className="dv2-hit" aria-pressed={done} disabled={busy} onClick={() => onToggle(t)} style={{ width: "100%" }}>
       <i />
       <span>{t.description || "— leer —"}{meta && <small style={{ display: "block", opacity: 0.6 }}>{meta}</small>}</span>
     </button>

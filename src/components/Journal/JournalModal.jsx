@@ -107,7 +107,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
               </div>
             </div>
           </div>
-          <button onClick={() => setSelectedEntry(null)} className="p-3 rounded-2xl hover:bg-[var(--j-bg2)] text-[var(--j-dim)] transition-all">
+          <button onClick={() => setSelectedEntry(null)} aria-label="Schließen" className="p-3 rounded-2xl hover:bg-[var(--j-bg2)] text-[var(--j-dim)] transition-all">
             <X size={24} />
           </button>
         </div>
@@ -248,6 +248,7 @@ export default function JournalModal({ selectedEntry, setSelectedEntry, habits, 
                     type="button"
                     onClick={() => window.open(a.url, "_blank", "noopener")}
                     title="In voller Größe öffnen"
+                    aria-label={`Anhang ${idx + 1} in voller Größe öffnen`}
                     className="aspect-square rounded-2xl overflow-hidden border border-[var(--j-line)] bg-[var(--j-bg2)] hover:border-[var(--j-accent)]/40 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--j-accent)]/40"
                   >
                     <img src={a.url} alt="" loading="lazy" className="h-full w-full object-cover" />

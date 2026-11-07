@@ -108,8 +108,9 @@ export default function JournalEntry({ e, habits, setSelectedEntry, onEdit, colo
             {e.type === 'regular' && (
               <button
                 onClick={(ev) => { ev.stopPropagation(); onEdit(e); }}
-                className="p-1.5 rounded-lg text-[var(--j-dim)] hover:text-[var(--j-accent)] hover:bg-[var(--j-bg2)] transition-all"
+                className="relative after:absolute after:-inset-2.5 after:content-[''] p-1.5 rounded-lg text-[var(--j-dim)] hover:text-[var(--j-accent)] hover:bg-[var(--j-bg2)] transition-all shrink-0"
                 title="Eintrag bearbeiten"
+                aria-label="Eintrag bearbeiten"
               >
                 <Edit size={12} />
               </button>

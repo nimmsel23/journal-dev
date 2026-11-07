@@ -1,3 +1,7 @@
+## 2026-11-07 — GitHub-Pages-Doku vorbereitet
+
+- `docs/README.md` als Jekyll-Landingpage ergänzt. Die Datei ist auf `/index.html` geroutet; GitHub-Pages-Quelle `dev /docs` muss noch in den Repository-Einstellungen geprüft bzw. aktiviert werden.
+
 ## 2026-11-07 — Wochenrückblick zeigt Bereichsspur
 
 - Journal-Wochenansicht lädt zusätzlich die Vorwoche und zeigt je Bereich

@@ -7,6 +7,7 @@ import {
 import { de } from "date-fns/locale";
 
 const iso = (d) => format(d, "yyyy-MM-dd");
+const DAILY_DEPOSIT_LABELS = Object.freeze({ body: "Body", business: "Business", balance: "Balance", being: "Being" });
 
 function groupByDate(entries = []) {
   const map = new Map();
@@ -36,6 +37,12 @@ export function WeekView({ day, entries, habits, events = new Map(), onPick }) {
   // p2-weekly: Wochenbilanz aus den vorhandenen Props — reine Client-
   // Aggregation, keine neue Query, kein KI, keine Datenveraenderung.
   const weekKeys = days.map(iso);
+  const currentWeekKeySet = new Set(weekKeys);
+  const previousDays = eachDayOfInterval({ start: addDays(from, -7), end: addDays(from, -1) });
+  const previousWeekKeys = previousDays.map(iso);
+  const previousWeekKeySet = new Set(previousWeekKeys);
+  const currentEntries = entries.filter((entry) => currentWeekKeySet.has(entry.date));
+  const previousEntries = entries.filter((entry) => previousWeekKeySet.has(entry.date));
   const lists = weekKeys.map((key) => byDate.get(key) || []);
   const total = lists.reduce((n, list) => n + list.length, 0);
   const loggedDays = lists.filter((list) => list.length > 0).length;
@@ -43,8 +50,17 @@ export function WeekView({ day, entries, habits, events = new Map(), onPick }) {
   const avg = (total / 7).toFixed(1).replace(".", ",");
   // Skill-/Tag-Verteilung: nur persistierte e.tags (kein Text-Re-Parsing).
   const tagCounts = new Map();
-  entries.forEach((e) => (e.tags || []).forEach((t) => tagCounts.set(t, (tagCounts.get(t) || 0) + 1)));
+  currentEntries.forEach((e) => (e.tags || []).forEach((t) => tagCounts.set(t, (tagCounts.get(t) || 0) + 1)));
   const tagList = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const depositRows = ["body", "business", "balance", "being"].map((domain) => {
+    const hasDeposit = (entry) => Boolean(String(entry.smartLog?.applied?.daily_deposits?.[domain] || "").trim());
+    return {
+      domain,
+      current: new Set(currentEntries.filter(hasDeposit).map((entry) => entry.date)),
+      previous: new Set(previousEntries.filter(hasDeposit).map((entry) => entry.date)),
+    };
+  });
+  const hasAnyDeposits = depositRows.some((row) => row.current.size || row.previous.size);
   return (
     <div className="jv2-week">
       <div className="jv2-wsum" role="status">
@@ -53,6 +69,18 @@ export function WeekView({ day, entries, habits, events = new Map(), onPick }) {
         <span>⌀ {avg}/Tag</span>
         {eventsTotal > 0 && <span><b>{eventsTotal}</b> {eventsTotal === 1 ? "Termin" : "Termine"}</span>}
       </div>
+      {hasAnyDeposits ? <section className="jv2-wdeposits" aria-label="Tages-Deposits im Wochenvergleich">
+        <div className="jv2-wdeposit-head"><b>Bereichsspur</b><span>Diese Woche · Vorwoche</span></div>
+        {depositRows.map((row) => <div className="jv2-wdeposit-row" key={row.domain}>
+          <b>{DAILY_DEPOSIT_LABELS[row.domain]}</b>
+          <span className="jv2-wdeposit-dots" aria-label={`${row.current.size} von 7 Tagen`}>
+            {weekKeys.map((key) => <i key={key} className={row.current.has(key) ? "on" : ""} title={`${key}: ${row.current.has(key) ? "Deposit erfasst" : "kein Deposit erfasst"}`} />)}
+          </span>
+          <span className="jv2-wdeposit-count">{row.current.size}/7</span>
+          <small>Vorwoche {row.previous.size}/7</small>
+        </div>)}
+        <p>Zeigt, was in deinen Einträgen vorkommt. Keine Bewertung und keine Einträge werden ergänzt.</p>
+      </section> : loggedDays > 0 && <p className="jv2-wdeposits-hint">Die Bereichsspur füllt sich, sobald du Smart-Log-Einträge mit Tages-Deposits übernimmst.</p>}
       {weekKeys.map((key, i) => {
         const d = days[i];
         const list = byDate.get(key) || [];

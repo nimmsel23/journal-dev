@@ -1,3 +1,26 @@
+## 2026-11-07 — Wochenrückblick zeigt Bereichsspur
+
+- Journal-Wochenansicht lädt zusätzlich die Vorwoche und zeigt je Bereich
+  eingetragene Tage als kompakte Spur mit aktuellem und vorherigem Wochenwert.
+  Darstellung bleibt eine Auswertung vorhandener Smart-Log-Deposits; sie
+  verändert weder Daten noch den Core4-Punktestand.
+- Core4 heute 0 geloggt und Woche 1,5/28 sind die vom Nutzer bestätigten
+  Referenzwerte. Die bestehende Habit-Core4-Ansicht hat eine andere Score-Logik;
+  eine echte Anbindung an die maßgebliche Core4-Datenquelle bleibt offen.
+- Kein Browser-/Konto-Check, Test oder Build ausgeführt.
+
+## 2026-11-07 — Start-Habits fuer neue Konten
+
+- Habits legt beim ersten Laden zwei editierbare tägliche Starter an: „10.000
+  Steps or 1 hr Workout everyday“ (Body) und „Meditate or pray everyday“
+  (Being). Definitionen und Namen stehen zentral in
+  `apps/habits/src/views/Habits/defaultHabits.js`.
+- Bestehende eigene Habit-Dokumente — auch soft-geloeschte — verhindern das
+  Seeding. Versteckte System-Tracker allein verhindern es nicht. Feste
+  Dokument-IDs machen parallele Erstaufrufe idempotent; Reload erzeugt keine
+  Duplikate.
+- Nicht im Browser gegen ein echtes Konto abgenommen; keine Tests oder Builds.
+
 ## 2026-11-07 — Smart Journal speichert Tages-Deposits
 
 - Smart-Log-Vorschau um vier bearbeitbare Tages-Deposits erweitert; leere

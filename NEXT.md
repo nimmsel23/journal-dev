@@ -1,8 +1,10 @@
 # CI-Agent — offener Betriebspunkt
 
-- [ ] Smart Journal: vier Tages-Deposits im Live-Preview gegen echtes Konto
-  abnehmen (Erkennung, leere Felder ergänzen, Speichern, erneutes Bearbeiten).
-  Danach Journal-Range/Wochenrückblick um Frequenz und Verlauf ergänzen;
+- [ ] Smart Journal und Habits im Live-Preview gegen echtes Konto abnehmen:
+  vier Tages-Deposits, Wochenvergleich und neue Default-Habits (nur bei frischem
+  Konto, editieren/erledigen/löschen, kein Duplikat nach Reload). Core4-
+  Punktestand separat an dessen maßgebliche Datenquelle anbinden: heute 0
+  geloggt, Woche 1,5/28 laut Nutzer; Journal-Deposits sind kein Ersatzscore.
   Shell-Pointer und Veröffentlichung bleiben separates Release-Gate.
 
 - [ ] `GEMINI_API_KEY` und `SYNC_TOKEN` als Actions-Secrets fuer diesen Repo-Zweig einrichten/prüfen; einen absichtlich roten Check bis zum grünen Promote/Deploy beobachten.

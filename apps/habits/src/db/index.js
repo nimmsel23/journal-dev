@@ -26,6 +26,7 @@ import {
 import { addDoc, getDoc, getDocs, setDoc, writeBatch } from "../lib/offline.js";
 import { listSessionsForDate as listFitnessSessionsForDate } from "@fitness-db/index.firestore.js";
 import { applyManualHabitTransaction } from "../views/Habits/manualHabitTransaction.js";
+import { DEFAULT_STARTER_HABITS } from "../views/Habits/defaultHabits.js";
 
 export * from "@fitness-db/index.firestore.js";
 import { db, getUid } from "@fitness-db/index.firestore.js";
@@ -136,6 +137,21 @@ export async function addHabit(name, icon = "Activity", category = null, frequen
     frequency,
     created_at: serverTimestamp(),
   });
+}
+
+// Seed only a genuinely new account. Soft-deleted user habits prevent reseeding;
+// hidden tracker mirrors alone do not count as a user's own habit setup.
+export async function ensureStarterHabits(existingHabits = null) {
+  const habits = existingHabits || await getHabits();
+  const onlySystemMirrors = habits.every((habit) => habit.hidden && habit.systemTracker && !habit.deleted);
+  if (!onlySystemMirrors) return false;
+
+  const uid = getUid();
+  await Promise.all(DEFAULT_STARTER_HABITS.map(({ id, ...habit }) => setDoc(
+    doc(db, "fitness", uid, "habits", id),
+    { ...habit, starterHabit: true, created_at: serverTimestamp() },
+  )));
+  return true;
 }
 
 export async function deleteHabit(uuid) {

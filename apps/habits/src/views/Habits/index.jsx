@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Star, CalendarDays, Activity, PenLine, LayoutGrid, Smartphone, Bell, Grid2X2 } from "lucide-react";
 import {
   getHabits, setHabitCompletionFromHabits, addHabit, deleteHabit,
+  ensureStarterHabits,
   updateHabit, getHabitRecordsForDate, getHabitJournal, saveHabitJournal, getHabitJournalHistory,
   saveHabitOrder, getDailyExecution, getDailyExecutionConfig, saveDailyExecutionAssignments,
   getDailyFitnessSessionOptions, linkDailyFitnessSession, getDailyNutritionLogOptions,
@@ -119,7 +120,8 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
   async function load() {
     setLoading(true);
     try {
-      const allHabits = await getHabits();
+      let allHabits = await getHabits();
+      if (await ensureStarterHabits(allHabits)) allHabits = await getHabits();
       const completedHabitIdsForSelectedDate = await getHabitRecordsForDate(selectedDate);
       if (selectedDateRef.current !== selectedDate) return;
 

@@ -197,6 +197,16 @@
   font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
 }
 .jv2-wsum b { font-size: 13px; font-variant-numeric: tabular-nums; }
+.jv2-wdeposits { display: grid; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--ink); }
+.jv2-wdeposit-head { display: flex; justify-content: space-between; gap: 8px; font: 10px var(--mono); text-transform: uppercase; letter-spacing: .04em; }
+.jv2-wdeposit-head span { opacity: .55; text-align: right; }
+.jv2-wdeposit-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; }
+.jv2-wdeposit-row > b, .jv2-wdeposit-count, .jv2-wdeposit-row small { font: 10px var(--mono); text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.jv2-wdeposit-dots { display: flex; align-items: center; gap: 5px; }
+.jv2-wdeposit-dots i { display: block; width: 8px; height: 8px; border: 1px solid var(--ink); }
+.jv2-wdeposit-dots i.on { background: var(--sig); border-color: var(--sig); }
+.jv2-wdeposit-row small { grid-column: 2 / -1; opacity: .55; }
+.jv2-wdeposits > p, .jv2-wdeposits-hint { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--ink); font-size: 11px; line-height: 1.4; opacity: .65; }
 .jv2-whabits { display: grid; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--ink); }
 .jv2-whabit { display: grid; grid-template-columns: minmax(0, 1fr) 90px auto; align-items: center; gap: 10px; min-width: 0; }
 .jv2-whname {
@@ -229,11 +239,21 @@
 @media (min-width: 700px) {
   .jv2-wsum { font-size: 12px; padding: 12px 20px; }
   .jv2-wsum b { font-size: 16px; }
+  .jv2-wdeposits { padding: 12px 20px; }
+  .jv2-wdeposit-row { grid-template-columns: 90px minmax(0, 1fr) auto; }
+  .jv2-wdeposit-dots { gap: 8px; }
+  .jv2-wdeposit-dots i { width: 10px; height: 10px; }
+  .jv2-wdeposits > p, .jv2-wdeposits-hint { padding: 8px 20px; }
   .jv2-whabits { padding: 12px 20px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
   .jv2-wtags { padding: 12px 20px 6px; }
   .jv2-wmirror summary { padding: 12px 20px; }
   .jv2-wmday { padding: 8px 20px 12px; }
   .jv2-wmday p { font-size: 16px; }
+}
+@media (max-width: 380px) {
+  .jv2-wdeposit-row { grid-template-columns: 64px minmax(0, 1fr) auto; gap: 4px; }
+  .jv2-wdeposit-dots { gap: 3px; }
+  .jv2-wdeposit-dots i { width: 7px; height: 7px; }
 }
 
 /* ── Monat ── */

@@ -208,7 +208,9 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
 
   const [rangeFrom, rangeTo] = rangeFor(mode === "monat" ? "monat" : "woche", day);
-  const [loadFrom, loadTo] = mode === "jahr" ? rangeFor("jahr", day) : [rangeFrom, rangeTo];
+  const [loadFrom, loadTo] = mode === "jahr" ? rangeFor("jahr", day)
+    : mode === "woche" ? [addDays(rangeFrom, -7), rangeTo]
+    : [rangeFrom, rangeTo];
   const rangeKey = [iso(loadFrom), iso(loadTo)];
   const range = useQuery({
     queryKey: ["jv2-range", uid, ...rangeKey],

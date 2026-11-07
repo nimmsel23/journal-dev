@@ -43,3 +43,9 @@
 *   Obwohl Claude es selbst berichtet, bleibt die zentrale Funktionalität der `selectWeeklyDoor`-Änderung (Interaktion mit Taskwarrior-Daten und das resultierende UI-Verhalten) ungetestet im Browser und gegen echte Taskwarrior-Daten, was eine wesentliche "sollte funktionieren"-Behauptung unbestätigt lässt.
 - [ ] Tent-Login-Helfer auf `vos-tent-dev` im Browser prüfen: ohne Konto Notizen im localStorage bearbeiten und Reload überstehen; optional Google-Login und danach Cloud-Abschluss prüfen. Build war in der Sandbox am schreibgeschützten pnpm-Store-Lock blockiert.
 - [ ] Login-Helfer für Tent, Voice, Game und Door im Browser prüfen (Gastmodus, localStorage nach Reload, optionaler Google-Login und Cloud-Speichern). Änderungen liegen direkt auf `journal-dev/dev`; die Flavor-Hosting-Targets bleiben erhalten.
+
+
+## Gemini CI-Agent — verbleibende Betriebsprüfung
+
+- [ ] Einen echten roten, code-behebbaren CI-Lauf beobachten und bestätigen, dass Reparatur-Commit, grüner Check und vorgesehener Promote/Deploy enden.
+- [ ] Fehler außerhalb des Codes (fehlende Deploy-Credentials, externe Dienste, Runner-Ausfälle) separat als Diagnose melden; keine ungeprüften Änderungen an Secrets oder Deploy-Konfiguration.

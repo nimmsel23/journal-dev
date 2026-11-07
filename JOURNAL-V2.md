@@ -414,3 +414,157 @@ eine **tägliche Erinnerung** statt Zeiten je Task:
 - Voraussetzung: **dauerhafte** Google-Verbindung (nicht der 1-h-Popup-Rückfall) und Functions-Deploy
   (`firebase deploy --only functions:scheduledDoorReminders`, Secret `GOOGLE_OAUTH_CLIENT_SECRET` wie bei den Google-Functions).
 - Ohne offene Hits wird nichts gesendet. Test: `tests/door-reminders.test.mjs`.
+
+## Destillat aus der RESULTS.md (2026-11-07)
+
+Kurzfassung dauerhaft relevanten Wissens aus dem früheren Arbeitslog, thematisch einsortiert vom thin-results-Dienst.
+
+## Door v2
+
+### Architecture
+
+- **Offline-First Grundsatz:** Lokaler Store ist die Wahrheit; Abgleich still im Hintergrund. Keine Lags, keine Warnhinweise, nichts geht verloren.
+- **Google Tasks Store (`src/lib/door/gtasks.{store,model,sync,lists,local}.js`):**
+  - Store: `localStorage` unter `dv2:lf:gtasks:v1:<uid>`
+  - **Outbox-Pattern:** Offline-Änderungen mit temp-ids (`tmp:…` → echte id via Alias-Tabelle), Ops werden zusammengefasst
+  - **Modell:** alle Door-Funktionen synchron aus dem Store gerechnet (`peek.*`)
+  - **Sync-Engine:** Outbox → Pull → Rebase mit Backoff/Timeouts; 404 verwerfen; verlorene Insert-Antworten adoptieren
+  - **Listenauflösung:** nie doppelt anlegen, kleinste id, nie löschen
+  - **Verdrahtung:** Web Lock, `startBackgroundSync`, React auf `online`/`visibility`/`storage` Events
+  - **Adapter:** `gtasks.door.js` (Adapter), `gtasks.js` (REST, Status am Fehler, 20-s-Timeout)
+
+---
+
+### Door v2 UI
+
+- **Verbindungsstatus:** `msg()` still bei Fehlern; `State` blendet Daten **nie** aus; `initialData` aus `peek` (kein "Lade…")
+- **Hinweise:** "nicht verbunden" nur bei **Erstverwendung**; dezentes "↻ n" für offene Änderungen
+- **Queries:** nach Pull/id-Mapping neu aus dem Store gelesen (kein Server-Call)
+- **Header:** zweizeilig – Zeile 1: Tag/Woche/Monat/Jahr; Zeile 2: Habits + Sprünge zu Door (Woche), Focus (Monat), Game (Jahr)
+
+---
+
+### Door v2 Features
+
+- **Jahr-Ansicht:** 12 Mini-Monate, heute markiert (`#v2/jahr` via `hashRoute.js`)
+- **Tageseinträge bearbeiten:** ✎ neben ×; Text und `+tags` im Textfeld; **Strg/Cmd+Enter** oder "Speichern" sichert; **Esc**/"Abbrechen" verwirft; leerer Text wird abgelehnt; Zeitraum/Uhrzeit bleiben erhalten
+- **Rechtsklick-Menüs (`src/views/door/v2/DoorV2ContextMenu.jsx`):** `contextmenu`-Event (Rechtsklick, Menütaste, Umschalt+F10, Langdruck), Pfeiltasten/esc/Klick daneben schließen; Rollen `menuitem`/`menuitemradio` (aktueller Quadrant mit ✓)
+  - **Potential:** Q1–Q4, Notiz/War Stack öffnen/schließen, "Entfernen" (sofort, Refetch holt zurück bei Fehler)
+  - **Plan:** Q1–Q4 und "Als Door der Woche"
+  - **Production:** "Erledigt"/"Wieder öffnen", "Text kopieren"
+  - **Profit:** Menü je Zeile
+- **Notizfeld in Potential:** für Backend, Google Tasks und Taskwarrior (bisher nur Taskwarrior); vorhandene Notiz wird angezeigt
+- **Rechtsklick in Journal v1:** Fitness/Fuel/Relax unterstützen Rechtsklick, Long-Tap und ContextMenu/Umschalt+F10 für Tab-/View-Auswahl; normale Klicks behalten bestehende Aktion
+
+---
+
+### Door v2 Week Selection
+
+- `selectWeeklyDoor` (`src/lib/door/taskwarrior.door.js`): lässt `+door`-Tag überall stehen (früher entfernt)
+- Woche wird mit Tag `kw<NN>` (ISO-Woche, z. B. `kw44`) markiert, gelesen via `getISOWeek` (`date-fns`)
+- Tag wandert vom Wochen-Task zum **gewählten Task**; dieser bekommt zusätzlich `+door` (falls noch nicht vorhanden)
+- **Priorität:** Hängen bereits Hits dieser Woche an einer anderen Door, gewinnt diese (Hits haben Vorrang vor dem Tag); Button ändert Door der Woche erst, wenn Hits umgehängt sind
+
+---
+
+### Door v2 CSS Fixes
+
+- **Notizfeld/Sheet Overlay:** `.dv2-swhint` (`position: absolute; inset: 0`) deckte Notizfeld und Sheet ab → `.dv2-swipe > .dv2-note, .dv2-swipe > .dv2-sheet { position: relative; }` (DOM-Reihenfolge entscheidet)
+
+---
+
+### Door v2 Limitierungen
+
+- **Google Tasks:** Notiz/Quadrant/Door-Woche teilen sich das Feld `notes` → bei **gleichzeitiger Offline-Änderung zweier Geräte gewinnt der zuletzt Sendende**
+- **Door v1:** schreibt Notizen/Updates weiter **direkt per REST** (nicht offline-first)
+- **Backend-Quelle:** liest per `getDocs` (Cache, aber bei schlechtem Netz Wartezeit)
+- **Konto-Wechsel:** leert die Outbox **nicht**
+- **Ohne deployte Functions:** 1-h-Popup-Token; Abgleich pausiert still bis "Google Tasks verbinden"
+
+---
+
+## Habits v2
+
+### Features
+
+- **Bearbeiten:** Name, Core4-Kategorie, Frequenz
+- **Tagesraster-Korrekturen**
+- **Archivieren/Wiederherstellen**
+- **Suche und Filter**
+- **Statistik:** Serien/Quoten berücksichtigen feste Wochentage, Erstellungsdatum, Zukunft
+- **Monatsziele:** zählen den gewählten Kalendermonat
+- **Fehlerbehandlung:** Fehler werden angezeigt; Entwürfe bei fehlgeschlagenem Speichern erhalten; parallele Aktionen gesperrt
+- **Kein optimistisches Verstecken** fehlgeschlagener Schreibvorgänge
+- **Host-Navigation:** optionale Host-Navigation für eingebettete Journal-v2-Links
+- **Cache-First:** `getJournal`, `getJournalRange`, `getHabitsRange` cache-first
+- **Offline-Writes:** `recordHabit`, `unrecordHabit`, `addHabit`, `updateHabit`, `setHabitArchived` awaiten **keine Server-Bestätigung** mehr (früher hing Offline-Schreiben ewig und `habitLock` sperrte weitere Aktionen)
+
+---
+
+## Journal v2
+
+### Autosave & Drafts (`src/lib/draftStore.js`, `src/lib/useAutosaveField.js`, `src/views/game/AutosaveArea.jsx`)
+
+- **Problem:** Frame/Focus/Freedom speicherten nur bei `onBlur` und bauten Feld per `key={…}` neu auf → Textverlust bei Beenden/Neuladen
+- **Lösung:** Autosave mit Entwurf in `localStorage`
+- **Architektur:** Entprellen, Dirty-Regel, Wiederherstellung
+- **Game v2:** Frame, Fire-Strike/Hit-Slots (`GameMapPanel.jsx`), MapDocsPanel (Focus/Freedom, alle Perioden)
+- **Tent v2:** bereits sauber (Entwurf je Tastendruck, Listener cache-first, Abschluss lokal sofort)
+
+---
+
+## Smart Log
+
+### Request-IDs & Retry
+
+- Request-IDs bleiben **lokal für Nutzer und Journaldatum** gespeichert und werden bei Wiederholungen nach Reload **wiederverwendet**
+- **Löschung:** Änderungen am Entwurf löschen die ID; erfolgreiche Übernahme/manuelles Speichern räumen sie auf
+- **Server-Cache:** kann gecachte Analyseergebnisse liefern, statt zweiten **Gemini-Aufruf** für denselben Entwurf zu starten
+- **UI:** Eingabe gesperrt während laufender Analyse; Meldungen für:
+  - laufende Requests
+  - ausgeschöpftes Wochenkontingent
+  - fehlende Provider-Konfiguration
+  → Entwurf bleibt erhalten und kann **ohne KI gespeichert** werden
+
+---
+
+### Datentransparenz
+
+- Vor Analyse wird in **beiden Smart-Log-Einstiegen** die Übermittlung an **Gemini offengelegt**
+- **Journal v2:** Text, Datum, Tags, Habit-Namen
+- **Ältere Ansicht:** Text, Datum, Habit-Namen
+- Analyse startet **ausschließlich nach Klick**; Vorschläge bleiben prüfbar
+
+---
+
+## Voice
+
+### Voice-Journal-Kontext
+
+- Kontext eines Journaleintrags wird **vor Voice-Start** mit der **aktuellen UID** markiert
+- Bei Accountwechsel, Gast-/Login-Wechsel oder alten ungebundenen Kontexten: **Kontext wird verworfen**
+- Wird **nicht** in einer anderen Anmeldung angezeigt
+
+---
+
+### Pause-Visualisierungen
+
+- **Visualisierungen:** Mandelbrot-Zoom, Julia, Flow, Mandelbrot-Baum, Atemkreis/Atemring, Buddhabrot
+- **Auswahl:** pro Tag; Zufall wiederholt **nie** die letzte
+- **Dateien:** `src/views/game/PauseViz.jsx` (neu), `VoicePanel.jsx`, `game-v2.css`
+
+---
+
+## Hash-Routing
+
+- **Single Source of Truth:** URL-Hash ist **einzige** Quelle für Tab/Modus/Datum
+- **Implementierung:** `hashRoute.js` + `useHashRoute`
+- **Vereinheitlichung:** `main.jsx` von 234 auf 159 Zeilen reduziert; alle bestehenden URLs bleiben gültig
+- **Bugfix:** `localToday()` nutzte UTC → sprang nach 22/23 Uhr auf nächsten Tag, jetzt **Ortszeit**
+
+---
+
+## Build & Versioning
+
+- **Versionierung:** Journal zeigt im Update-Dialog die **Paketversion mit der gebauten Git-Revision** statt dauerhaft `v0.1.1`
+- **Release:** `pnpm release` startet den vorgesehenen `dev → master`-PR-Releaseweg (früher: lokal Patch-Version ändern und direkt deployen)

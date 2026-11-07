@@ -63,3 +63,73 @@ Frequenz `{ type: 'daily', timesPerPeriod: 1 }` (reines Abbild, keine Pflicht-Rh
 - `hidden`-Habits in evtl. dritten Konsumenten (fitness-dev Ansichten) — dort beim
   ersten Auftreten ebenfalls filtern.
 - UI-Anbindung des Mindest-Logs (Stufe-0-Erinnerung) weiterhin offen; Baustein ist pure.
+
+## Destillat aus der RESULTS.md (2026-11-07)
+
+Kurzfassung dauerhaft relevanten Wissens aus dem früheren Arbeitslog, thematisch einsortiert vom thin-results-Dienst.
+
+## Fokus-Sperrmodus (Stufe 0)
+
+**Konzept:** "Erst loggen, dann Apps" — Ur-Modell: *alles ist ein umfunktioniertes Journal (Datenstand)*.
+
+**Daily Four:** Domänen
+- `fitness` (Sessions)
+- `fuel` (Mahlzeiten/Ernährung)
+- `relax` (Meditation)
+- `journal/habits` (Memoirs)
+
+---
+
+### Mindest-Log (`src/lib/focus/minimumLog.js`)
+
+- `hasMinimumLogToday(entries, habitCompletions, now, options)`: erfüllt, wenn heute (lokal) **mind. 1 Journal-Eintrag ODER 1 Habit-Vollzug** existiert.
+- `options.rule`: `'journal'` | `'habit'` | `'any'` (Default `'any'`)
+- `options.requiredBeforeHour`: 0–23 → Log muss **lokal VOR der vollen Stunde** vorliegen (keine Gnadenfrist, von Daniel bestätigt).
+- Datenformen: `lib/db/journal.js` (`normalizeEntry`) und `views/v2/habitsModel.js` (`habit.records`)
+- Defensiv gegen `undefined`/ungültige Eingaben.
+
+---
+
+### Daily Four (`src/lib/focus/dailyFour.js`)
+
+- `buildDailyActivity(bundles)` + `hasDailyFourLogToday(activity, now, options)`
+- Tages-Sets je Domain, Form kompatibel zur Shell-Header-Auswertung `buildDayMap` (inkl. `relax`)
+- `options.domains`: schränkt Domänen ein
+- **Tages-Predikate (gespiegelt aus `apps/habits`):**
+  - `fuel`: Mahlzeit **ODER** Wasser
+  - `fitness`: Session **nur mit Substanz**
+  - `relax`: Relax-Praxis **nur mit Details**
+
+---
+
+### Tracker-Habits (`apps/habits/src/views/Habits/trackerHabitModel.js`)
+
+- **System-Habits:** `TRACKER_HABITS` für `fitness`/`fuel`/`relax` mit `hidden: true`, `systemTracker: <key>`
+- Helfer: `isTrackerActive`, `hasSessionDetails`, `visibleHabits`, `trackerDatesToWrite`
+- **Diff-Algorithmus:** nur aktive, ungespiegelte, nicht-zukünftige Tage (nur additiv, **niemals Un-Spiegeln**)
+
+---
+
+### Sync (`apps/habits/src/db/index.js`)
+
+- `ensureTrackerHabits()`: idempotent
+- `syncTrackerHabits(days=28)`: liest Sessions-/Ernährungs-/Relax-Tagesdatenstände (28-Tage-Fenster, Backfill inklusive) und schreibt fehlende **DONE-Records** nach `fitness/{uid}/habitRecords/{uuid}_{date}` mit `systemTracker`-Provenance
+- **Ausführung:** fire-and-forget beim App-Start (`views/Habits/index.jsx` `load()`) → schreibt erstmals echte Nutzerdaten
+- **UI-Filter:** System-Habits nie sichtbar (`!hidden` in `views/Habits/index.jsx`, `DailyFourLayout.jsx`, `dailyExecutionModel.js`)
+
+---
+
+### Sync-Regeln
+
+- Additiv: nur fehlende Records ergänzen
+- Keine Zukunft: keine Records für zukünftige Tage
+- Konservativ bei Tombstones: keine Löschung oder Rücknahme
+- Provenance: `systemTracker`-Markierung für Nachverfolgbarkeit
+
+---
+
+### Tests
+
+- `tests/minimumLog.test.mjs` (8): Mitternacht, Zeitzone, leere Listen, Grenzfälle
+- `tests/tracker-habits.test.mjs` (8): Sync-Logik, TZ=UTC und TZ=Pacific/Kiritimati je 8/8
+- Basline: 154/154 (Haupt-Checkout)

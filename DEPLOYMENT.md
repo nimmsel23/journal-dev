@@ -65,3 +65,184 @@ bestätigt die Git-Übergabe, das Deploy-Ergebnis in der CI bleibt zu prüfen. S
 vitalos (`package.json`, Lockfile): [`JOURNAL-V2.md`](JOURNAL-V2.md), Abschnitt „Nach vitalos übernehmen“.
 
 Details zu v2, Door, Game, Tent, Service Worker und Updater: [`JOURNAL-V2.md`](JOURNAL-V2.md).
+
+## Destillat aus der RESULTS.md (2026-11-07)
+
+Kurzfassung dauerhaft relevanten Wissens aus dem früheren Arbeitslog, thematisch einsortiert vom thin-results-Dienst.
+
+## Release-Weg
+
+- **Standard:** `dev` → `master` per `vos-release-pr journal` (erstellt PR, z. B. [#4](https://github.com/nimmsel23/journal-dev/pull/4), [#11](https://github.com/nimmsel23/journal-dev/pull/11)) → Merge → Live-Deploy per CI
+- **Live-Deploy:** `journal-release --yes` (ohne `--yes` bricht Skript ab, da `gum confirm` kein TTY hat)
+  - Aktionen: dev pushen, nach `journal-app/vitalos` mergen, **Release-Branch** sowie **VitalOS-Pointer** pushen
+  - CI: `deploy-master.yml` (z. B. Run 40894437472)
+- **npm-Befehl:** `npm run deploy:vos` führt `vos-release journal --yes` aus (Weitergabe von `--dry-run` unterstützt; Fehlercodes unverändert)
+- **Standalone vs. Eingebettet:** Standalone mit eigener Bestätigung; eingebettet unterdrückt zugunsten des **zentralen Shell-Dialogs** (universalisierter VitalOS-Release-Dialog über vendorte Vite-Module)
+
+---
+
+### Wichtige Commits & Releases
+
+| Datum | Commit | Beschreibung |
+|-------|--------|--------------|
+| 2026-10-25 | `855e2c6` | Voice-Pause-Visualisierungen gemerged |
+| 2026-10-26 | `3813407` | Door v2 Rechtsklick-Menüs, Journal v2 Jahr-Ansicht |
+| 2026-10-29 | `a0b7bac` | Door v2 Potential Notizfeld CSS-Fix |
+| 2026-10-31 | `fde6b31` | Door v2 `selectWeeklyDoor` Fix |
+| 2026-10-31 | `1643ebe` | Google Auth `functions/internal` Rückfall |
+| 2026-11-01 | — | Tent-Push Live-Deploy `41299163327` |
+| 2026-11-03 | — | Smart-Log Features |
+
+---
+
+## Push-Benachrichtigungen
+
+### Getrennter Push-Sender
+
+- **Function:** `scheduledJournalPushReminders` in **eigener Firebase-Codebase `journal`**
+- **Deployment:** gezielt über VitalOS `deploy-push-functions.yml` → andere App-Sender werden **nicht überschrieben oder gelöscht**
+- **Token-Lanes:**
+  - Journal: `apps.journal` (Reminder-Einstellungen in shared push settings document)
+  - Tent: `apps.tent` (eigene Lane)
+- **Worker:** Journal registriert `/journal-messaging-sw.js` unter `/journal-push/`; Tent registriert `/tent-messaging-sw.js` unter `/tent-push/`
+- **Tagging:** Outgoing messages tagged mit `app: journal` bzw. `app: tent`
+
+---
+
+### Tent-Push
+
+- **Prüfung:** Sonntags zur gespeicherten Zeit (Standard **14:00, Europe/Vienna**) prüft die Journal-Cloud-Function, ob diese Woche ein **Journal-Eintrag mit `tent` und ISO-Wochen-Tag** vorliegt
+- **Aktion:** Bei offenem Tent → Sendet Link nach `/#tent2`
+- **Trennung:** Journal-/Door-Payloads bleiben **getrennt**
+- **Deployment:**
+  - Functions: manuell per Firebase CLI für `fitness-aos` (`firebase functions:list` bestätigt `scheduled` in `europe-west1`, `v1`, Node.js 22)
+  - **CI-Blocker:** `deploy-push-functions.yml` scheitert am fehlenden `secretmanager.secrets.get` des CI-Serviceaccounts
+  - Hosting: Live-Deploy `41299163327` veröffentlichte Hosting-Targets inkl. `tent` erfolgreich
+- **Prüfung:** `vos-tent.web.app/` liefert HTTP 200; `/tent-messaging-sw.js` liefert HTTP 200 mit `Cache-Control: no-cache`
+
+---
+
+## Hosting-Konfiguration
+
+- **`firebase.json`:** `no-cache` für:
+  - `/index.html`
+  - `/manifest.webmanifest`
+  - `/journal-messaging-sw.js` (fiel sonst unter 1-Jahr-immutable-Regel für `*.js`)
+- **Door-Build:**
+  - Precache: 60 Einträge/~1,5 MiB
+  - Alle 39 JS-Chunks
+  - `index.html`, Fallback `/index.html`
+  - Door-Icons
+
+---
+
+## Journal Push Reminders
+
+- **Lane:** `apps.journal` in shared push settings document
+- **Worker:** `/journal-messaging-sw.js` unter `/journal-push/`
+- **Function:** prüft nur **aktivierte Journal-Einstellungen** und taggt Messages mit `app: journal`
+- **Legacy:** Alte shared Tokens werden **nicht** als Journal-Tokens übernommen
+
+---
+
+## Build-Ziele & Versionen
+
+- **Versionierung:** Im Update-Dialog wird die **Paketversion mit der gebauten Git-Revision** angezeigt (nicht dauerhaft `v0.1.1`)
+- **Build-Befehle:**
+  - `npx vite build --mode firebase` (fallback, wenn `pnpm run build:firebase` scheitert)
+  - `pnpm run build:firebase` (kann an `ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK` scheitern → Store-Zugriff ermöglichen)
+  - `pnpm run build:cloud` (3.009–3.010 Module, PWA-Service-Worker)
+- **CI:**
+  - `CI=true pnpm test` (z. B. 135/135)
+  - `CI=true pnpm run build:firebase`
+  - `--frozen-lockfile` für `pnpm-lock.yaml`
+- **Validierung:** `git diff --check` sauber
+
+## Destillat aus der RESULTS.md (2026-11-07)
+
+Kurzfassung dauerhaft relevanten Wissens aus dem früheren Arbeitslog, thematisch einsortiert vom thin-results-Dienst.
+
+# Journal — Deployment
+
+## Ablauf
+
+### Release-Weg
+- **Standard:** `dev` → `master` via `vos-release-pr journal` (erstellt PR, z. B. [#4](https://github.com/nimmsel23/journal-dev/pull/4), [#11](https://github.com/nimmsel23/journal-dev/pull/11))
+- **Merge:** PR wird gemergt → **Live-Deploy per CI** (`deploy-master.yml`, z. B. Run 40894437472)
+- **Final:** `journal-release --yes` (ohne `--yes` bricht Skript ab, da `gum confirm` kein TTY hat)
+  - Aktionen: dev pushen → nach `journal-app/vitalos` mergen → **Release-Branch** sowie **VitalOS-Pointer** pushen
+- **npm-Shortcut:** `npm run deploy:vos` = `vos-release journal --yes` (unterstützt `--dry-run`)
+
+---
+
+### Standalone vs. Eingebettet
+- **Standalone:** Eigene Bestätigung für Release-Dialog
+- **Eingebettet:** Unterdrückt zugunsten des **zentralen Shell-Dialogs** (universalisierter VitalOS-Release-Dialog über vendorte Vite-Module)
+
+---
+
+## Hosting-Targets
+
+- **Journal PWA:** `journal.web.app`
+- **Tent PWA:** `vos-tent.web.app`
+- **VitalOS Shell:** `vitalos.web.app` (integriert Journal als Submodul)
+
+---
+
+## Lokale Hooks
+
+- **`firebase.json`:** `no-cache` für `/index.html`, `/manifest.webmanifest`, `/journal-messaging-sw.js`
+- **Service Worker:** Dienst nicht gecached (1-Jahr-immutable-Regel für `*.js` umgehen)
+- **Door-Build:** Precache 60 Einträge (~1,5 MiB), alle 39 JS-Chunks, `index.html`, Fallback `/index.html`
+
+---
+
+## Desktop-Prod
+
+- **Build:** `npx vite build --mode firebase` (fallback, wenn `pnpm run build:firebase` scheitert)
+- **Validierung:** `CI=true pnpm run build:firebase` in CI
+- **CI-Blocker:** `ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK` → Store-Zugriff ermöglichen
+
+---
+
+## VitalOS-Release
+
+- **Pointer-Bump:** VitalOS-Pointer wird bei `journal-release` automatisch gebumpt (z. B. `1697008` auf `master`)
+- **Shell-Integration:** Journal als Submodul in VitalOS-Shell integriert
+- **Achtung:** `vitalos` nutzt **gemeinsames `pnpm-lock.yaml`** im Root → bei App-Änderungen Lockfile aktualisieren
+
+---
+
+## Push-Sender
+
+- **Getrennt:** `scheduledJournalPushReminders` in **eigener Firebase-Codebase `journal`**
+- **Deployment:** Gezielt über VitalOS `deploy-push-functions.yml` → **andere App-Sender bleiben unberührt**
+- **Lane:** `apps.journal` in shared push settings document
+- **Service Worker:** `/journal-messaging-sw.js` unter `/journal-push/`
+- **Tent:** Eigene Lane `apps.tent` mit `/tent-messaging-sw.js` unter `/tent-push/`
+
+---
+
+## Build-Versionen
+
+- **Anzeige:** Im Update-Dialog wird die **Paketversion mit der gebauten Git-Revision** angezeigt (nicht dauerhaft `v0.1.1`)
+- **Release-Prozess:** `pnpm release` startet den vorgesehenen `dev → master`-PR-Releaseweg (nicht lokal Patch-Version ändern)
+
+---
+
+## Validierung
+
+- **Tests:** `CI=true pnpm test` (z. B. 135/135)
+- **Build:** `CI=true pnpm run build:firebase`
+- **Lockfile:** `git diff --check` sauber; `--frozen-lockfile` in CI
+- **Browser:** Headless-Thorium mit gemockten Daten als Fallback (echte Browser-Tests oft nicht durchgeführt)
+
+---
+
+## Bekannte Probleme
+
+1. **pnpm build:firebase:** Kann an `ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK` scheitern → Store-Zugriff ermöglichen
+2. **CI-Serviceaccount:** `deploy-push-functions.yml` scheitert an fehlendem `secretmanager.secrets.get`
+3. **Google Functions:** Nicht deployte Functions (`googleLink`, `googleAccessToken`, etc.) → 404 ohne CORS → Browser blockiert
+4. **Tent-Push:** Empfang auf mobilem Gerät noch nicht getestet
+5. **Service Worker Cache:** Ohne `no-cache` für `*-messaging-sw.js` → 1-Jahr-immutable-Problem

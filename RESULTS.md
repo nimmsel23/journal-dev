@@ -245,3 +245,10 @@ Enabled Dependabot alerts and security updates. Configured weekly GitHub Actions
 ## 2026-11-03 — Voice-Journal-Kontext an Konto binden
 - Der Kontext eines Journaleintrags wird vor dem Start von The Voice mit der aktuellen UID markiert. Bei Accountwechsel, Gast-/Login-Wechsel oder alten ungebundenen Kontexten wird der Kontext verworfen; er wird nicht in einer anderen Anmeldung angezeigt.
 - Regressionstests decken gleiches Konto, anderes Konto, Gastwechsel und alte Metadaten ab. Verifiziert: `node --test tests/*.test.mjs` (22 Testdateien, alle bestanden) und `pnpm run build:cloud` (3.010 Module, PWA-Service-Worker erzeugt). Keine Nutzerdaten migriert; kein Push/Deploy.
+
+
+## 2026-11-07 — Gemini CI-Agent aktiviert
+
+- Agent-Workflow und lokale Trigger für `journal-dev` auf `dev` eingerichtet; `GEMINI_API_KEY` als Actions-Secret gesetzt.
+- `Check`/Preview und Agent-Run [42405240561](https://github.com/nimmsel23/journal-dev/actions/runs/42405240561) waren auf Commit `66aa07e7` grün. Dieser Lauf war ein No-op auf einem erfolgreichen Check; ein roter Code-Fehler wurde noch nicht absichtlich simuliert.
+- Pushes und PR-Merges verwenden die eng berechtigte `GITHUB_TOKEN`-Workflow-Berechtigung; kein separates `SYNC_TOKEN` erforderlich.

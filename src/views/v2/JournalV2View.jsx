@@ -68,6 +68,11 @@ const LINKS = [["#door2", "Door"], ["#game2/focus", "Focus"], ["#game2", "Game"]
 // kein Parsing-Auslöser, keine abgeleiteten Werte (Entscheidung 4).
 const SKILL_TAGS = [["fitness", "Fitness"], ["fuel", "Fuel"], ["relax", "Relax"]];
 const tagTokenRe = (tag) => new RegExp(`(?:^|\\s)\\+${tag}\\b`, "gi");
+// p2-terminal (SCOPE Zeile 13): EIN Schnellerfassungs-Kuerzel. /fit expandiert
+// direkt im Text zu +fitness — identisch zur getippten Konvention, kein
+// generisches Kommando-Parsing, keine Befehlsliste.
+const FIT_KUERZEL_RE = /(^|\s)\/fit\b/g;
+const expandFitKuerzel = (text) => String(text || "").replace(FIT_KUERZEL_RE, (_, ws) => `${ws}+fitness`);
 
 export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice, startSmart = false, onSetHabitCompletion }) {
   const qc = useQueryClient();
@@ -128,7 +133,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   };
   const changeDraft = (value) => {
     clearSmartRequest();
-    setDraft(value);
+    setDraft(expandFitKuerzel(value));
   };
   // p2-fitness: Skill-Quick-Tags im Composer. Einfügen/Entfernen des `+tag`-Tokens
   // im Text — identisch zur getippten Konvention, extractTags übernimmt beim Speichern.
@@ -657,6 +662,17 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           )}
           <button type="submit" disabled={!uid || busy || !draft.trim()}>{smart ? (busy && !analysis ? "…" : "Analyse") : "Log"}</button>
         </form>
+        <details className="jv2-kommandos">
+          <summary>Journal-Kommandos</summary>
+          <ul>
+            <li><b>+wort</b> im Eintragstext wird zum Tag. <b>+fitness / +fuel / +relax</b> ordnen den Eintrag dem jeweiligen Skill-Journal zu — die Chips über dem Eingabefeld sind dieselbe Abkürzung, das Tag bleibt reines Zuordnungsmerkmal (keine Pflichtfelder).</li>
+            <li><b>/fit</b> ist das Schnellerfassungs-Kürzel: es wird direkt im Text zu <b>+fitness</b> expandiert (Datum = Zeitpunkt des Loggings).</li>
+            <li><b>+hot / +potential / +door</b> legt den Eintrag zusätzlich als Potential-Item in Door › Potential (Hot List) an — Titel ist die erste Zeile.</li>
+            <li>Tag-Chip am Eintrag anklicken oder in der Suche <b>+wort</b> tippen: filtert nach Tags (Zeitraum 30 Tage bis Alles).</li>
+            <li><b>✦ Smart Log</b> (1 KI-Analyse/Tag) zerlegt Freitext in bearbeitbare Vorschläge (Eintrag, Mahlzeiten, Wasser, Habits, Fitness, Relax, Kalender) — nichts wird ohne Bestätigung übernommen.</li>
+            <li><b>+termin Titel:</b> Termin als Eintrag reviewen — Kalender verbinden (unten), dann am Termin auf „Rückblick →" klicken; das Tag wird vorbelegt.</li>
+          </ul>
+        </details>
         {smart && !analysis && uid && draft.trim() && <button type="button" className="jv2-link" onClick={saveDraftWithoutAI} disabled={busy}>Ohne KI im Journal speichern</button>}
 
         </>}

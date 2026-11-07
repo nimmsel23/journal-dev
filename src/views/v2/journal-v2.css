@@ -99,6 +99,18 @@
 .jv2-quicktags button:disabled { opacity: .5; cursor: default; }
 .jv2-quicktags button:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
 
+/* p2-terminal: Doku-Einheit „Journal-Kommandos“ — zeigt nur existierende Mechaniken */
+.jv2-kommandos { border-top: 2px solid var(--ink); background: var(--p); }
+.jv2-kommandos summary {
+  cursor: pointer; padding: 10px 12px; font-family: var(--mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .06em; list-style-position: inside;
+}
+.jv2-kommandos[open] summary { border-bottom: 1px solid var(--ink); }
+.jv2-kommandos ul { margin: 0; padding: 10px 12px 12px 28px; }
+.jv2-kommandos li { font-size: 12px; line-height: 1.5; margin: 0 0 6px; color: var(--ink); }
+.jv2-kommandos li:last-child { margin-bottom: 0; }
+.jv2-kommandos b { font-weight: 800; font-stretch: 75%; }
+
 /* Tag-Chips an Einträgen: Klick öffnet die Suche mit +tag-Filter (Skill-Journal) */
 .jv2-tag.jv2-taglink { cursor: pointer; font: inherit; background: transparent; }
 .jv2-tag.jv2-taglink:hover, .jv2-tag.jv2-taglink:focus-visible { background: var(--ink); color: var(--p); }

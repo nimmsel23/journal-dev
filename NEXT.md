@@ -1,3 +1,7 @@
+# CI-Agent — offener Betriebspunkt
+
+- [ ] `GEMINI_API_KEY` und `SYNC_TOKEN` als Actions-Secrets fuer diesen Repo-Zweig einrichten/prüfen; einen absichtlich roten Check bis zum grünen Promote/Deploy beobachten.
+
 - [ ] `syncTrackerHabits` (ef51b88, dev) im Browser gegen ein echtes Konto prüfen: System-Habits (hidden/systemTracker fitness/fuel/relax) werden nicht in der Habits-Liste/Daily-Four-Zuordnung sichtbar, DONE-Spiegel-Records mit Provenance entstehen nur an Tagen mit echter Aktivität, kein Schreiben für Zukunft. Läuft bei jedem `load()` fire-and-forget (28 Tage × 3 Reads) — Write/Read-Last im Start ggf. debouncen (Throttle/Once pro Session) und `pnpm test` gegen echtes node_modules laufen lassen (Worktree hatte keins).
 - [ ] Push-Reminder-Auswertung (Backend/Functions) muss `hidden`-/System-Habits ausschließen, sonst feuern Tracker-Spiegel ggf. Habit-Reminders; lokaler Hook und Doku-Punkt in `docs/FOKUS-DAILY-FOUR-TRACKER-HABITS.md`, Auswertung selbst nicht geprüft.
 - [ ] Mindest-Log-UI (Stufe-0-Erinnerung des Fokus-Sperrmodus) weiter unangeschlossen: `src/lib/focus/minimumLog.js` + `src/lib/focus/dailyFour.js` sind pure Bausteine; Anzeige/Notification ist ein eigener Handoff (Konzept: FOKUS-SPERRMODUS.md).

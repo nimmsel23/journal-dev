@@ -1,3 +1,9 @@
+## 2026-11-07 — Gemini CI-Agent installiert
+
+- CI-Agent fuer Check-Fehler, Dependabot-PRs und Merge-Konflikte ergänzt; Tailwind-/Paket-Upgrades bleiben erhalten.
+- Quellreparaturen werden auf den betroffenen Branch geschrieben; Zielbranch-Reparaturen erhalten einen PR und werden erst nach gruenem Check gemergt.
+- Gemini-API und `SYNC_TOKEN` muessen als Actions-Secrets vorhanden sein. Nachweis: erster erfolgreicher automatischer Reparatur- und Deploy-Lauf steht aus.
+
 ## 2026-11-06 — Fokus-Sperre (Stufe 0/1): Mindest-Log-Funktion, Daily Four und Tracker-Habits unter der Haube
 
 Bausteine für den Fokus-Sperrmodus („erst loggen, dann Apps“, ~/vitalos-prod/docs/product-dev/FOKUS-SPERRMODUS.md), als pure, getestete Funktionen ohne UI-Anbindung, plus das von Daniel per Session-Chat bestätigte Ur-Modell „alles ist ein umfunktioniertes Journal (Datenstand)“: Daily Four aus fitness (Sessions), fuel (Mahlzeiten/Ernährung), relax (Meditation), journal/habits (Memoirs).

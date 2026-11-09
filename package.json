@@ -1,6 +1,6 @@
 {
   "name": "@vos/journal",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@11.3.0",
   "type": "module",

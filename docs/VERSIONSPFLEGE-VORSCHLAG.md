@@ -60,9 +60,11 @@ Anzeige bleibt `MAJOR.MINOR.PATCH+sha7` (Build-Revision unverändert als Build-M
 
 Nicht Teil dieses Vorschlags: Store-VersionCodes, native Apps, getrennte Flavor-Versionen.
 
-## Entscheidung nötig (CEO)
+## Entscheidung (CEO 2026-11-09)
 
-- [ ] Option A / B / C
-- [ ] Baseline `0.2.0` oder `1.0.0` (oder andere)
-- [ ] Git-Tag `journal-v*` ja/nein
-- [ ] Umsetzung erst nach ausdrücklichem +hit / Freigabe — dieser Lauf ändert keine Version
+- [x] Option **B** (Bump auf `dev`, Promote trägt mit; kein Autobump auf `master`)
+- [x] Baseline **`1.0.0`** (Owner: „0.1.1 suckte“; Standalone-PWAs live → produktreifer Start)
+- [x] Git-Tag `journal-v*`: **später optional** (nicht Teil des Erstsprungs)
+- [x] Umsetzung: `package.json` → `1.0.0` auf `dev` (Commit mit RESULTS/DEPLOYMENT-Notiz)
+
+Danach: bei Feature-Paketen MINOR, bei Fixes PATCH bewusst mitbumpen — eine Zeile in `DEPLOYMENT.md`.

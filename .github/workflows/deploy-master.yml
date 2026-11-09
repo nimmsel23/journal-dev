@@ -1,8 +1,8 @@
 # Standalone-Prod Journal: Push auf master deployt live (nur CI).
 # Journal selbst ist standalone; deploy:all:build endet mit apps/habits, das
 # @fitness-db/@fuel braucht → Nachbarn fitness-dev + fuel-dev (+ exercise-data/coaching-notes)
-# und 6pack-dev (miniAppSubmodulePlugin → views/SixPack/workoutDoc.js).
-# Kein relax/plan/skills, kein vitalos-Meta.
+# sowie 6pack-dev + plan-dev (miniAppSubmodulePlugin → views/SixPack|Plan/*).
+# Kein relax/skills, kein vitalos-Meta.
 #
 # Auslöser: push auf master und workflow_dispatch (automerge.yml) -> baut und deployt live (nur master).
 # Push auf `ci-test/**` -> reiner Build-Test (Nachbarn von dev), KEIN Deploy.
@@ -51,10 +51,13 @@ jobs:
           echo "fitness-dev @ $(git -C fitness-dev rev-parse --short HEAD) (dev)"
           git clone --depth 1 --branch "$NEIGHBOR_REF" "https://github.com/nimmsel23/fuel-dev.git" fuel-dev
           echo "fuel-dev @ $(git -C fuel-dev rev-parse --short HEAD)"
-          # habits/fitness importiert views/SixPack/* → Resolver mappt auf 6pack-dev Root.
+          # habits/fitness importiert views/SixPack|Plan/* → miniAppSubmodulePlugin.
           git clone --depth 1 --branch "$NEIGHBOR_REF" "https://github.com/nimmsel23/6pack-dev.git" 6pack-dev
           echo "6pack-dev @ $(git -C 6pack-dev rev-parse --short HEAD)"
           test -f 6pack-dev/workoutDoc.js
+          git clone --depth 1 --branch "$NEIGHBOR_REF" "https://github.com/nimmsel23/plan-dev.git" plan-dev
+          echo "plan-dev @ $(git -C plan-dev rev-parse --short HEAD)"
+          test -f plan-dev/src/views/Plan/lib/planVersions.js
 
       - name: Checkout fitness KB (SOT)
         uses: actions/checkout@v7

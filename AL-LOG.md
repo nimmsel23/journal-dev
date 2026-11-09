@@ -63,6 +63,6 @@ _Automatik:_
 - Org: eeb9d722 +hit blocked (Server-Deploy 5f09bbb1); 9545df26 +ceo Semver-Vorschlag.
 
 _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
-- Erledigt: Org-Task 9545df26 — Semver-Vorschlag `docs/VERSIONSPFLEGE-VORSCHLAG.md` (Option A/B/C, Empf. B); Docs a670ea0/7d6cc72/2ff890a (TODO/RESULTS/NEXT); Vorschlag+AL-LOG dieser Commit.
+- Erledigt: Org-Task 9545df26 — Semver-Vorschlag `docs/VERSIONSPFLEGE-VORSCHLAG.md` (Option A/B/C, Empf. B); Docs a670ea0/7d6cc72/2ff890a (TODO/RESULTS/NEXT); Vorschlag+AL-LOG `edf67f1`.
 - Offen/Weiter: CEO-Entscheid Baseline/Option (NEXT); eeb9d722 weiter blocked bis Deploy+Emulator 5f09bbb1; Anleitung-Queue leer.
 - Blocker: eeb9d722 wartet auf Functions-Deploy (backend `5f2f694` lokal, Gate CEO/Owner).

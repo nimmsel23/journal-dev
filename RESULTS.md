@@ -1,3 +1,9 @@
+## 2026-11-09 — Node Tooling (Biome/knip/engines/smoke)
+
+- `engines.node: >=22.13`, Scripts `tooling:biome|knip|check`.
+- Check.yml: Biome format auf `scripts/`; knip report (continue-on-error).
+- SSOT-Vorlagen: `~/vitalos/tooling/`.
+
 ## 2026-11-09 — Firebase 13 + React 19 (Dependabot #46/#49/#50)
 
 - **CI:** Live-Deploy standalone — Nachbarn/Fitness-KB/`build:kb-data` entfernt (waren tot; Check/Preview schon standalone).

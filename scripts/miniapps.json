@@ -10,10 +10,7 @@
       "short": "Journal",
       "description": "Timeline-Journal (v1) mit Tabs Smart Log, Habits und Door",
       "accent": "#a78bfa",
-      "paths": [
-        "src/views/Journal/",
-        "src/views/JournalVosView.jsx"
-      ]
+      "paths": ["src/views/Journal/", "src/views/JournalVosView.jsx"]
     },
     {
       "id": "v2",
@@ -24,9 +21,7 @@
       "short": "Journal v2",
       "description": "Raster-Journal: Tag, Woche, Monat, Smart Logger; dazu Habits v2 (#v2/habits)",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/v2/"
-      ]
+      "paths": ["src/views/v2/"]
     },
     {
       "id": "door",
@@ -38,9 +33,7 @@
       "short": "Door v2",
       "description": "Door: Potential, Plan, Production, Profit im Raster-Design",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/door/"
-      ]
+      "paths": ["src/views/door/"]
     },
     {
       "id": "voice",
@@ -52,9 +45,7 @@
       "short": "Voice v2",
       "description": "Voice: Mental-Mastery-Sessions",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/voice/"
-      ]
+      "paths": ["src/views/voice/"]
     },
     {
       "id": "game",
@@ -66,9 +57,7 @@
       "short": "Game v2",
       "description": "Game: Frame, Freedom, Focus, Fire Maps",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/game/"
-      ]
+      "paths": ["src/views/game/"]
     },
     {
       "id": "tent",
@@ -80,9 +69,7 @@
       "short": "Tent v2",
       "description": "General's Tent: wöchentlicher Review",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/tent/"
-      ]
+      "paths": ["src/views/tent/"]
     },
     {
       "id": "habits-v1",
@@ -90,9 +77,7 @@
       "name": "Habits v1",
       "description": "Habit-Tracking (v1), bisher Tab in Journal v1",
       "accent": "#a78bfa",
-      "paths": [
-        "src/views/HabitVosView.jsx"
-      ]
+      "paths": ["src/views/HabitVosView.jsx"]
     },
     {
       "id": "smart-log",
@@ -100,9 +85,7 @@
       "name": "Smart Log",
       "description": "KI-Freihand-Logging, bisher Tab in Journal v1",
       "accent": "#a78bfa",
-      "paths": [
-        "src/views/AiLogVosView.jsx"
-      ]
+      "paths": ["src/views/AiLogVosView.jsx"]
     },
     {
       "id": "door-v1",
@@ -110,9 +93,7 @@
       "name": "Door v1",
       "description": "The Door Framework (v1), bisher Tab in Journal v1",
       "accent": "#a78bfa",
-      "paths": [
-        "src/views/door/DoorView.jsx"
-      ]
+      "paths": ["src/views/door/DoorView.jsx"]
     },
     {
       "id": "habits-v2",
@@ -120,9 +101,7 @@
       "name": "Habits v2",
       "description": "Habits im Raster-Design, bisher Ansicht #v2/habits in Journal v2",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/v2/JournalV2Habits.jsx"
-      ]
+      "paths": ["src/views/v2/JournalV2Habits.jsx"]
     },
     {
       "id": "game-frame",
@@ -134,9 +113,7 @@
       "short": "Frame",
       "description": "Frame Map: das große Bild, Ausgangslage und Richtung (gleiche Origin wie Game v2)",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/game/"
-      ]
+      "paths": ["src/views/game/"]
     },
     {
       "id": "game-freedom",
@@ -148,9 +125,7 @@
       "short": "Freedom",
       "description": "Freedom Map: Jahres- bis Quartalsziele (gleiche Origin wie Game v2)",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/game/"
-      ]
+      "paths": ["src/views/game/"]
     },
     {
       "id": "game-focus",
@@ -162,9 +137,7 @@
       "short": "Focus",
       "description": "Focus Map: Monats- bis Wochenziele (gleiche Origin wie Game v2)",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/game/"
-      ]
+      "paths": ["src/views/game/"]
     },
     {
       "id": "game-fire",
@@ -176,9 +149,7 @@
       "short": "Fire",
       "description": "Fire Map: Wochen- bis Tagesaufgaben (gleiche Origin wie Game v2)",
       "accent": "#1738ff",
-      "paths": [
-        "src/views/game/"
-      ]
+      "paths": ["src/views/game/"]
     }
   ]
 }

@@ -52,15 +52,28 @@ export default function ContextMenuButton({ items, children, onClick, menuLabel,
     else if (event.key === 'ArrowUp') next = (current - 1 + buttons.length) % buttons.length
     else if (event.key === 'Home') next = 0
     else if (event.key === 'End') next = buttons.length - 1
-    else if (event.key === 'Escape') { event.preventDefault(); close(); return }
-    else if (event.key === 'Tab') { close(); return }
-    else if (event.key.length === 1 && event.key !== ' ') {
+    else if (event.key === 'Escape') {
+      event.preventDefault()
+      close()
+      return
+    } else if (event.key === 'Tab') {
+      close()
+      return
+    } else if (event.key.length === 1 && event.key !== ' ') {
       const ordered = [...buttons.slice(current + 1), ...buttons.slice(0, current + 1)]
-      const match = ordered.find((button) => button.textContent.trim().toLocaleLowerCase().startsWith(event.key.toLocaleLowerCase()))
-      if (match) { event.preventDefault(); match.focus() }
+      const match = ordered.find((button) =>
+        button.textContent.trim().toLocaleLowerCase().startsWith(event.key.toLocaleLowerCase()),
+      )
+      if (match) {
+        event.preventDefault()
+        match.focus()
+      }
       return
     }
-    if (next !== undefined) { event.preventDefault(); buttons[next]?.focus() }
+    if (next !== undefined) {
+      event.preventDefault()
+      buttons[next]?.focus()
+    }
   }
 
   return (
@@ -73,9 +86,16 @@ export default function ContextMenuButton({ items, children, onClick, menuLabel,
         aria-expanded={Boolean(position)}
         aria-controls={position ? menuId : undefined}
         onClick={(event) => {
-          if (consumed.current && event.detail !== 0) { event.preventDefault(); consumed.current = false; return }
+          if (consumed.current && event.detail !== 0) {
+            event.preventDefault()
+            consumed.current = false
+            return
+          }
           consumed.current = false
-          if (position) { close(); return }
+          if (position) {
+            close()
+            return
+          }
           onClick?.(event)
         }}
         onContextMenu={(event) => {
@@ -94,43 +114,82 @@ export default function ContextMenuButton({ items, children, onClick, menuLabel,
           consumed.current = false
           if (event.pointerType === 'mouse' || !event.isPrimary || event.button !== 0) return
           start.current = { x: event.clientX, y: event.clientY }
-          hold.current = setTimeout(() => { consumed.current = true; open(event.clientX, event.clientY) }, 500)
+          hold.current = setTimeout(() => {
+            consumed.current = true
+            open(event.clientX, event.clientY)
+          }, 500)
         }}
         onPointerMove={(event) => {
-          if (start.current && Math.hypot(event.clientX - start.current.x, event.clientY - start.current.y) > 10) cancelHold()
+          if (start.current && Math.hypot(event.clientX - start.current.x, event.clientY - start.current.y) > 10)
+            cancelHold()
         }}
         onPointerUp={cancelHold}
         onPointerCancel={cancelHold}
         onPointerLeave={cancelHold}
         style={{ ...props.style, WebkitTouchCallout: 'none', userSelect: 'none' }}
-      >{children}</button>
-      {position && createPortal(
-        <div
-          ref={menu}
-          id={menuId}
-          role="menu"
-          aria-label={menuLabel || 'Unterbereiche'}
-          onKeyDown={menuKeys}
-          onContextMenu={(event) => event.preventDefault()}
-          style={{ position: 'fixed', zIndex: 10000, left: position.x, top: position.y, width: 280, maxWidth: 'calc(100vw - 16px)', maxHeight: 'min(420px, calc(100dvh - 16px))', overflowY: 'auto', padding: 6, borderRadius: 16, border: '1px solid var(--line, #475569)', background: 'var(--card, var(--j-card, #172033))', color: 'var(--ink, var(--j-ink, #f1f5f9))', boxShadow: '0 16px 48px #0006' }}
-        >
-          {items.map(({ label, href, onSelect }, index) => {
-            const Tag = href ? 'a' : 'button'
-            return (
-              <Tag
-                key={`${label}-${index}`}
-                role="menuitem"
-                className="vos-context-menu-item"
-                tabIndex={-1}
-                href={href}
-                type={href ? undefined : 'button'}
-                onClick={() => { close(); onSelect?.() }}
-                style={{ display: 'block', width: '100%', padding: '10px 12px', border: 0, borderRadius: 10, color: 'inherit', textAlign: 'left', fontSize: 14, textDecoration: 'none', cursor: 'pointer' }}
-              >{label}</Tag>
-            )
-          })}
-        </div>, document.body,
-      )}
+      >
+        {children}
+      </button>
+      {position &&
+        createPortal(
+          <div
+            ref={menu}
+            id={menuId}
+            role="menu"
+            aria-label={menuLabel || 'Unterbereiche'}
+            onKeyDown={menuKeys}
+            onContextMenu={(event) => event.preventDefault()}
+            style={{
+              position: 'fixed',
+              zIndex: 10000,
+              left: position.x,
+              top: position.y,
+              width: 280,
+              maxWidth: 'calc(100vw - 16px)',
+              maxHeight: 'min(420px, calc(100dvh - 16px))',
+              overflowY: 'auto',
+              padding: 6,
+              borderRadius: 16,
+              border: '1px solid var(--line, #475569)',
+              background: 'var(--card, var(--j-card, #172033))',
+              color: 'var(--ink, var(--j-ink, #f1f5f9))',
+              boxShadow: '0 16px 48px #0006',
+            }}
+          >
+            {items.map(({ label, href, onSelect }, index) => {
+              const Tag = href ? 'a' : 'button'
+              return (
+                <Tag
+                  key={`${label}-${index}`}
+                  role="menuitem"
+                  className="vos-context-menu-item"
+                  tabIndex={-1}
+                  href={href}
+                  type={href ? undefined : 'button'}
+                  onClick={() => {
+                    close()
+                    onSelect?.()
+                  }}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: 0,
+                    borderRadius: 10,
+                    color: 'inherit',
+                    textAlign: 'left',
+                    fontSize: 14,
+                    textDecoration: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {label}
+                </Tag>
+              )
+            })}
+          </div>,
+          document.body,
+        )}
     </>
   )
 }

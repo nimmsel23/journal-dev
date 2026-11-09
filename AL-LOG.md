@@ -50,6 +50,6 @@ completed	success	Live Deploy (Journal master)	Live Deploy (Journal master)	mast
 - Arbeitsbaum: 1 uncommittete Pfade
 
 _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
-- Erledigt: Aufgabe 4 — Vorschlag+Test Composer-Zuklapp: `src/lib/journal/composerCollapse.js` + `tests/composer-collapse.test.mjs` (Legacy wasSaving/text vs onSubmit `{ok}`, 4/4 `node --test`); `JournalForm.jsx` unverändert. Anleitung abgehakt in vitalos-prod `docs/product-dev/abteilungen/journal-dev.md`.
-- Offen/Weiter: Org-Task eeb9d722 (smartLogErrorText fail-closed) wartet auf Server-Fix 5f09bbb1; Anleitung-Queue danach leer (nächste Pakete vom PM); Semver-Vorschlag Org-Task 9545df26 +ceo offen.
+- Erledigt: Aufgabe 4 — Vorschlag+Test Composer-Zuklapp: Commit `0b14fcc` auf dev (`src/lib/journal/composerCollapse.js` + `tests/composer-collapse.test.mjs`, Legacy wasSaving/text vs onSubmit `{ok}`, 4/4 `node --test`); `JournalForm.jsx` unverändert. Anleitung abgehakt (vitalos-prod `811a5c7`). CI Check (Journal) grün Run 42583534309.
+- Offen/Weiter: Org-Task eeb9d722 (smartLogErrorText fail-closed) wartet auf Server-Fix 5f09bbb1; Anleitung-Queue leer (nächste Pakete vom PM); Semver-Vorschlag Org-Task 9545df26 +ceo offen.
 - Blocker: keine.

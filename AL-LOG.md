@@ -75,6 +75,6 @@ _Automatik:_
 - Org: c46b3028 C-003 +al +hit (Guide Aufgabe 5); eeb9d722 blocked; 4b2781de C-007 +cto.
 
 _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
-- Erledigt: Aufgabe 5/C-003 Org `c46b3028` — `docs/C-003-4-DEPOSIT-LUECKENLISTE.md` (Antwort: Nein ohne KI; 5×S/M/L; Belege `JournalV2View.jsx`/`journal.js`/`JournalV2Range.jsx`/`b33f924`); TODO/NEXT/RESULTS `225f568`/`ffef6c0`/`78680b6`; Anleitung abgehakt vitalos-prod `9b839bd`.
+- Erledigt: Aufgabe 5/C-003 Org `c46b3028` — Commit `23ad2b3` `docs/C-003-4-DEPOSIT-LUECKENLISTE.md` (Antwort: Nein ohne KI; 5×S/M/L; Belege `JournalV2View.jsx`/`journal.js`/`JournalV2Range.jsx`/`b33f924`); TODO/NEXT/RESULTS `225f568`/`ffef6c0`/`78680b6`; Anleitung abgehakt vitalos-prod `9b839bd`.
 - Offen/Weiter: PM/CEO-Frage Observe manuelle Deposits vs Smart-only (NEXT); eeb9d722 weiter blocked bis Deploy+Emulator `5f09bbb1`; C-007 `4b2781de` CTO-Nacharbeit.
 - Blocker: eeb9d722 Functions-Deploy-Gate (CEO/Owner); C-003 selbst ohne Blocker.

@@ -1,17 +1,10 @@
 #!/bin/bash
-# pre-push hook: Reminder-only. Der volle Release-Flow (journal-dev dev ->
-# vitalos/journal-app Shell-Pin (vos-release)-Pointer-Bump) läuft bereits
-# automatisiert über `journal-release` (~/vitalos/bin, in PATH). Der
-# kritische Moment ist der Push von dev — direkt danach folgt sonst von
-# Hand: Merge in vitalos/journal-app master, Push, Submodule-Pointer in
-# vitalos bumpen. Deshalb hier auf "dev" triggern.
-#
-# Runs once per push (not per ref), reads pushed refs from stdin.
+# pre-push: Reminder-only. Standalone-Live = CI auf master; Shell-Pin = vos-release/vos-ship.
 
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_ref" ] && continue
   if [ "${local_ref#refs/heads/}" = "dev" ]; then
-    echo "💡 Release: dev → master per PR mit 'vos-release-pr journal' (Check, Auto-Merge, Live per CI); Shell-Pin (vos-release) (Shell) mit 'journal-release'. Doku: ~/vitalos/docs/DEPLOYMENT.md" >&2
+    echo "💡 Release: dev → master (Auto-Promote / vos-release-pr journal); Shell-Pin mit journal-release / vos-ship. Doku: ~/vitalos/docs/DEPLOYMENT.md" >&2
     break
   fi
 done

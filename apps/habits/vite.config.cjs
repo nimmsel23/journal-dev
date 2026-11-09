@@ -170,7 +170,6 @@ module.exports = defineConfig(async ({ mode }) => {
         "firebase/app": requireFromRoot.resolve("firebase/app"),
         "firebase/auth": requireFromRoot.resolve("firebase/auth"),
         "firebase/firestore": requireFromRoot.resolve("firebase/firestore"),
-        "firebase/vertexai": requireFromRoot.resolve("firebase/vertexai"),
         "firebase/ai": requireFromRoot.resolve("firebase/ai"),
       },
       // "firebase" hier zwingend: fitness-dev/fuel-dev importieren firebase/auth
@@ -178,10 +177,11 @@ module.exports = defineConfig(async ({ mode }) => {
       // haben dort eine andere Firebase-Version im eigenen node_modules.
       // Ohne dedupe entstehen zwei SDK-Instanzen -> "Component auth has not
       // been registered yet".
+      // firebase/vertexai entfällt ab Firebase JS 13 (AgentPlatformBackend via firebase/ai).
       dedupe: [
         "react", "react-dom", "@tanstack/react-query",
         "firebase", "firebase/app", "firebase/firestore", "firebase/auth",
-        "firebase/ai", "firebase/vertexai",
+        "firebase/ai",
       ],
     },
     build: {

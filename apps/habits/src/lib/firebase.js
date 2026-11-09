@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getAI, VertexAIBackend } from "firebase/ai";
+import { getAI, AgentPlatformBackend } from "firebase/ai";
 import { getMessaging, isSupported as isMessagingSupported } from "firebase/messaging";
 import { firebaseConfig } from "./firebase.config.js";
 
@@ -12,7 +12,7 @@ let vertexAIInstance = undefined;
 export function getVertexAI() {
   if (vertexAIInstance !== undefined) return vertexAIInstance;
   try {
-    vertexAIInstance = getAI(app, { backend: new VertexAIBackend() });
+    vertexAIInstance = getAI(app, { backend: new AgentPlatformBackend() });
   } catch (error) {
     console.warn("[firebase] Vertex AI init failed", error);
     vertexAIInstance = null;

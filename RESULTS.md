@@ -1,3 +1,11 @@
+## 2026-11-09 — Firebase 13 + React 19 (Dependabot #46/#49/#50)
+
+- Owner: keine PR-Sperre — rote Majors fixen und auf `dev` bringen.
+- `firebase` ^13.1.0 (root + habits); `VertexAIBackend` → `AgentPlatformBackend`.
+- habits: `react`/`react-dom` ^19.3.1; vite-Alias `firebase/vertexai` entfernt.
+- Beleg lokal: `pnpm test` 182 ok, `build:firebase` + `build:habits` grün.
+- Dependabot-PRs #46/#49/#50 werden als supersediert geschlossen.
+
 ## 2026-11-09 — Semver Baseline 1.0.0 (CEO: Option B)
 
 - Owner/CEO: `0.1.1` verworfen; Entscheidung Option B + Baseline `1.0.0`.

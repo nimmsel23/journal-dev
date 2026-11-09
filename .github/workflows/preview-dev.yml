@@ -19,7 +19,7 @@ on:
       - '.firebaserc'
       - '.github/workflows/preview-dev.yml'
   pull_request:
-    branches: [vitalos, master, dev]
+    branches: [master, dev]
     paths:
       - 'src/**'
       - 'public/**'

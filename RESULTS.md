@@ -1,3 +1,8 @@
+## 2026-11-09 — Shell-Pin auf origin/master (CI/AGENTS)
+
+CI: kein Auto-Vorspulen von `vitalos` mehr; Merge-Agent nur `master`; PR-Checks
+auf `[master, dev]`. AGENTS Release-Weg: `dev → master` + Shell-Pin.
+
 ## 2026-11-09 — C-003 4-Deposit-Lückenliste (Org `c46b3028`)
 
 - `docs/C-003-4-DEPOSIT-LUECKENLISTE.md`: Ein Freitext ohne KI deckt Body/Business/Balance/Being **nicht** sichtbar ab; Deposits nur über `smartLog.applied.daily_deposits` (Belege `JournalV2View.jsx`, `journal.js`, `JournalV2Range.jsx`, Commit `b33f924`).

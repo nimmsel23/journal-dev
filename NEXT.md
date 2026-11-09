@@ -24,7 +24,7 @@
 - [ ] Klick-Navigation im Browser prüfen (Tabs, Modi, Datum-Pfeile, `pick` in der Monatsansicht), dazu Offline-Reload und Habit-Doppelklick; bisher nur Headless-Laden der Hash-URLs getestet.
 - [ ] Weitere Vereinfachung in v2 (vorgeschlagen, nicht begonnen): Door-Datenquellen (`lib/door/`, REST-Zweig vermutlich tot, erst verifizieren) und `JournalV2View.jsx` (463 Zeilen, mehrere Aufgaben in einer Komponente).
 - [ ] Pause-Visualisierungen der Voice-Ansicht (`PauseViz.jsx`) im Browser ansehen und `pnpm test` laufen lassen (nach dem Merge nur der Build geprüft); ob die CI den Release vom 2026-10-25 deployt hat, ist nicht kontrolliert.
-- [ ] Release dev → master → vitalos (`journal-release`) nur nach ausdrücklichem OK.
+- [ ] Release/Shell-Pin (vos-release) (`journal-release`) nur nach ausdrücklichem OK.
 - [ ] Door v2 und Journal v2 vom 2026-10-26 im Browser ausprobieren: Rechtsklick-Menüs in Potential/Plan/Production/Profit, Notizfeld in Potential (Tippen und Speichern je Quelle, vorher nur bei Taskwarrior vorhanden), Header-Sprünge Door/Focus/Game, Jahr-Ansicht und ✎-Bearbeiten eines Tageseintrags gegen echte Daten.
 - [ ] Door v2 Potential im Browser prüfen, ob Notizfeld, Quadrant-Buttons und War Stack nach dem Overlay-Fix (`a0b7bac`, live seit 2026-10-29) im aufgeklappten Eintrag sichtbar und bedienbar sind (ggf. zweiter Reload wegen Service Worker); der Fix beruht nur auf den CSS-Malregeln. Gleiches Muster beim Wisch-Hinweis in Plan/Production/Profit prüfen.
 - [ ] vitalos-Shell mit dem Door-v2-Fix aktualisieren (`vos-release journal`): Standalone-Targets sind live, die Shell steht noch auf dem alten Stand; nur nach ausdrücklichem OK.

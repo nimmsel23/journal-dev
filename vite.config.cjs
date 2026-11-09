@@ -140,6 +140,7 @@ module.exports = defineConfig(async ({ mode }) => {
         "@db":      path.resolve(__dirname, "./src/db/index.js"),
         "@utils":   path.resolve(__dirname, "./src/lib/db/core.js"),
         "@journal": path.resolve(__dirname, "./src"),
+        "@fitness-dev": path.resolve(__dirname, "./fitness-dev"),
       },
       dedupe: [
         "react", "react-dom", "@tanstack/react-query",
@@ -202,4 +203,3 @@ module.exports = defineConfig(async ({ mode }) => {
     },
   };
 });
-

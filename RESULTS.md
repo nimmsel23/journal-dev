@@ -1,3 +1,10 @@
+## 2026-11-09 — Semver Baseline 1.0.0 (CEO: Option B)
+
+- Owner/CEO: `0.1.1` verworfen; Entscheidung Option B + Baseline `1.0.0`.
+- `package.json` `version`: `0.1.1` → `1.0.0` (Anzeige weiter `1.0.0+sha7` via vite).
+- `docs/VERSIONSPFLEGE-VORSCHLAG.md` Entscheidungsbox abgehakt; `DEPLOYMENT.md` Pflege-Regel.
+- Kein Autobump auf `master`, kein `journal-v*`-Tag im Erstsprung. Live folgt Auto-Promote.
+
 ## 2026-11-09 — Remote-vitalos gelöscht; Pre-Push ohne vitalos-Deploy
 
 `origin/vitalos` entfernt. Pre-Push: kein lokaler Firebase-Deploy mehr auf Branch vitalos; Reminder/Build auf `dev`.

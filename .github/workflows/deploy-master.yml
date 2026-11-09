@@ -1,6 +1,6 @@
 # Standalone-Prod Journal: Push auf master deployt live (nur CI).
 # Journal selbst ist standalone; deploy:all:build endet mit apps/habits, das
-# @fitness-db/@fuel braucht → Nachbarn nur fitness-dev + fuel-dev (+ KB für generated.js).
+# @fitness-db/@fuel braucht → Nachbarn nur fitness-dev + fuel-dev + 6pack-dev (+ KB für generated.js).
 # Kein relax/6pack/plan/skills, kein vitalos-Meta.
 #
 # Auslöser: push auf master und workflow_dispatch (automerge.yml) -> baut und deployt live (nur master).
@@ -45,7 +45,7 @@ jobs:
       - name: Checkout Nachbarn (${{ env.NEIGHBOR_REF }})
         run: |
           set -euo pipefail
-          for repo in fitness-dev fuel-dev; do
+          for repo in fitness-dev fuel-dev 6pack-dev; do
             git clone --depth 1 --branch "$NEIGHBOR_REF" "https://github.com/nimmsel23/${repo}.git" "$repo"
             echo "$repo @ $(git -C "$repo" rev-parse --short HEAD)"
           done
@@ -85,7 +85,7 @@ jobs:
       - name: Install Nachbarn (je eigener Lockfile)
         run: |
           set -euo pipefail
-          for repo in fitness-dev fuel-dev; do
+          for repo in fitness-dev fuel-dev 6pack-dev; do
             echo "::group::$repo"
             if [ -f "$repo/pnpm-lock.yaml" ]; then
               (cd "$repo" && pnpm install --no-frozen-lockfile --ignore-scripts)

@@ -1,3 +1,8 @@
+## 2026-11-09 — Versionspflege-Vorschlag (Org-Task 9545df26)
+
+- `docs/VERSIONSPFLEGE-VORSCHLAG.md`: Semver-Schema, Kopplung an Auto-Promote/Live-Deploy (Option A/B/C, Empfehlung B), Migrationsweg und CEO-Checkboxen.
+- Keine `package.json`-Versionsänderung, kein Tag, kein Deploy. Home-/Repo-TODO abgehakt; Umsetzung wartet auf CEO-Entscheid.
+
 ## 2026-11-09 — Aufgabe 4: Composer-Zuklapp Vorschlag+Test
 
 - `src/lib/journal/composerCollapse.js` + `tests/composer-collapse.test.mjs`: Legacy-Heuristik (wasSaving↓ + leerer Text) vs. Vorschlag `onSubmit → { ok }` belegt; 4 Node-Tests grün.

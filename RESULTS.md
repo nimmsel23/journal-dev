@@ -1,3 +1,8 @@
+## 2026-11-09 — Aufgabe 4: Composer-Zuklapp Vorschlag+Test
+
+- `src/lib/journal/composerCollapse.js` + `tests/composer-collapse.test.mjs`: Legacy-Heuristik (wasSaving↓ + leerer Text) vs. Vorschlag `onSubmit → { ok }` belegt; 4 Node-Tests grün.
+- `JournalForm.jsx` nicht umgebaut (Anleitung: nur Vorschlag mit Test). Wiring/Gerätetest erst nach Freigabe.
+
 ## 2026-11-07 — CI-Agent-Fix: gh pr list Feld korrigiert
 
 - Journal-Run 42416606547 scheiterte vor Gemini: GitHub CLI meldete `Unknown JSON field: baseRepository`; `gh pr list` beendete den Analyse-Step mit Exit 1. Kein Gemini-API-Key-Fehler.

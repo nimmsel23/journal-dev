@@ -36,3 +36,20 @@ _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen sta
 - Erledigt: Aufgabe 3 (Dependabot-PRs) ausgewertet: 0 offene Dependabot-PRs (`gh pr list -R nimmsel23/journal-dev --state open` zeigt nur #42 Draft; #34–#38 via PR-AutoMerge d7324d0 bereits gemergt, CI Check dev grün auf a429aaa). In Anleitung abgehakt.
 - Offen/Weiter: Nächste Aufgabe 4 (`JournalForm.jsx` Zuklapp-Logik nur Vorschlag mit Test schreiben); Org-Task eeb9d722-0a00-43ed-80e2-0efc921924e1 (Client-Härtung smartLogErrorText) wartet auf Server-Fix Task 5f09bbb1.
 - Blocker: keine.
+
+## 2026-11-09 (Montag) — Abteilungsleiter-Lauf
+
+_Automatik (vos-al-log Vorlage 2026-11-09):_
+- Commits seit 2026-11-08: 3f7a4d8 docs(agents): Org-Taskwarrior-Konvention v1 — globale Org-Task-DB (TASKRC ~/.local/state/vitalos-org/taskrc), Rolle=Tag, Abteilung/Repo=project, UUID-Regel (Owner-Weisung 2026-11-07)
+8e10973 docs(al-log): Lauf 2026-11-08 (14:15) ausgefuellt — Aufgabe 3 Dependabot-PRs ausgewertet (0 offen, #34-#38 gemergt)
+a429aaa docs(al-log): AL-LOG.md eingefuehrt, Lauf 2026-11-08 ausgefuellt — Aufgabe 2 verifiziert (7b85c7f bereits auf dev), Anleitung abgehakt (vitalos-prod 08183d3)
+- Offene PRs: 42	ci: Merge-Agent für automatische PR-Merges (kein Abweisen von PRs)	vibe/pr-merge-agent-aac181	DRAFT	2026-11-07T16:56:03Z
+- CI (letzte Läufe): completed	success	Auto-Promote dev -> master (Check (Journal))	Auto-Promote dev -> master (Check (Journal))	master	schedule	42538572847	11s	2026-11-09T00:08:38Z
+completed	success	PR-AutoMerge (Dependabot -> dev)	PR-AutoMerge (Dependabot -> dev)	master	schedule	42532710134	7s	2026-11-08T22:56:37Z
+completed	success	Live Deploy (Journal master)	Live Deploy (Journal master)	master	workflow_dispatch	42525032965	3m4s	2026-11-08T21:24:16Z
+- Arbeitsbaum: 1 uncommittete Pfade
+
+_Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
+- Erledigt: Aufgabe 4 — Vorschlag+Test Composer-Zuklapp: `src/lib/journal/composerCollapse.js` + `tests/composer-collapse.test.mjs` (Legacy wasSaving/text vs onSubmit `{ok}`, 4/4 `node --test`); `JournalForm.jsx` unverändert. Anleitung abgehakt in vitalos-prod `docs/product-dev/abteilungen/journal-dev.md`.
+- Offen/Weiter: Org-Task eeb9d722 (smartLogErrorText fail-closed) wartet auf Server-Fix 5f09bbb1; Anleitung-Queue danach leer (nächste Pakete vom PM); Semver-Vorschlag Org-Task 9545df26 +ceo offen.
+- Blocker: keine.

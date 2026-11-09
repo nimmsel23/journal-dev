@@ -1,5 +1,8 @@
 # CI-Agent — offener Betriebspunkt
 
+
+<!-- coo-dispatch-002-c003 -->
+- [ ] (2026-11-09 COO→AL) C-003 4-Deposit-Lueckenliste Org `c46b3028` — max 5 Luecken S/M/L, kein Bau. Guide journal-dev.md Aufgabe 5.
 - [ ] CEO-Entscheid zu `docs/VERSIONSPFLEGE-VORSCHLAG.md` (Org-Task 9545df26): Option A/B/C, Baseline `0.2.0` vs `1.0.0`, Tag `journal-v*` ja/nein — danach erst Versionsbump auf `dev`.
 - [ ] Org-Task eeb9d722 (smartLogErrorText fail-closed): wartet auf Deploy+Emulator-Beleg Server-Fix 5f09bbb1 (`5f2f694` lokal backend); danach Client-Mapping.
 - [ ] Smart Journal und Habits im Live-Preview gegen echtes Konto abnehmen:

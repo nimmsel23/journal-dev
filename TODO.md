@@ -4,4 +4,7 @@
 - [x] 2026-10-21: `npm run deploy:vos` über `vos-release journal --yes` ergänzen.
 
 ## 2026-11-07 — Versionspflege (Quelle: Home-TODO 00:48 CET, Daniel via Bot)
+
+<!-- coo-dispatch-002-c003 -->
+- [ ] (2026-11-09 COO→AL) C-003 4-Deposit-Lueckenliste Org `c46b3028` — max 5 Luecken S/M/L, kein Bau. Guide journal-dev.md Aufgabe 5.
 - [x] 2026-11-09: Vorschlag vorgelegt — `docs/VERSIONSPFLEGE-VORSCHLAG.md` (Org-Task 9545df26); CEO-Entscheid Option/Baseline offen, keine Versionsänderung.

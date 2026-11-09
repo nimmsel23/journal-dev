@@ -1,14 +1,9 @@
-# Standalone-Prod Journal: Push auf master deployt live (nur CI) — aus den MASTER-Checkouts der
-# eigenen Repos, OHNE das Meta-Repo vitalos (gleiches Muster wie fitness-dev/deploy-master.yml).
-#
-# Layout (Geschwister nebeneinander, wie lokal unter ~/dev): journal-dev/ (dieser Commit) und
-# fitness-dev fuel-dev relax-dev 6pack-dev plan-dev skills-dev jeweils `master`. Jedes Repo installiert mit
-# seinem EIGENEN Lockfile (--frozen-lockfile, --ignore-scripts). Die Vite-Configs lösen die Nachbarn über
-# resolveSibling()/siblingDir() auf (`<x>-app` oder `<x>-dev` daneben).
+# Standalone-Prod Journal: Push auf master deployt live (nur CI) — aus dem eigenen Repo.
+# Kein vitalos-Meta, keine Nachbar-Repos, keine Fitness-KB (Journal ist standalone seit Check/Preview).
 #
 # Auslöser: push auf master und workflow_dispatch (automerge.yml) -> baut und deployt live (nur master).
-# Push auf `ci-test/**` -> reiner Build-Test (Nachbarn von dev), KEIN Deploy.
-# Shell-Pin im Meta-Repo bleibt bewusst: Pointer-Bump via vos-release/vos-ship, kein Auto-Push auf einen vitalos-Branch.
+# Push auf `ci-test/**` -> reiner Build-Test, KEIN Deploy.
+# Shell-Pin im Meta-Repo bleibt bewusst: Pointer-Bump via vos-release/vos-ship.
 
 name: Live Deploy (Journal master)
 
@@ -36,7 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      NEIGHBOR_REF: ${{ github.ref == 'refs/heads/master' && 'master' || 'dev' }}
       DO_DEPLOY: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || inputs.deploy) }}
     steps:
       - name: Checkout journal-dev
@@ -45,31 +39,6 @@ jobs:
           path: journal-dev
           # Volle Historie: der Changelog (scripts/vos-changelog) liest bei workflow_dispatch `git log <parent>..HEAD`.
           fetch-depth: 0
-
-      - name: Checkout Nachbarn (${{ env.NEIGHBOR_REF }})
-        run: |
-          set -euo pipefail
-          for repo in fitness-dev fuel-dev relax-dev 6pack-dev plan-dev skills-dev; do
-            git clone --depth 1 --branch "$NEIGHBOR_REF" "https://github.com/nimmsel23/${repo}.git" "$repo"
-            echo "$repo @ $(git -C "$repo" rev-parse --short HEAD)"
-          done
-
-      # fitness-dev hat das Python-Paket/KB entfernt — SOT ist nimmsel23/fitness.
-      - name: Checkout fitness KB (SOT)
-        uses: actions/checkout@v7
-        with:
-          repository: nimmsel23/fitness
-          ref: main
-          path: fitness-kb
-
-      - name: KB in fitness-dev einhängen
-        run: |
-          set -euo pipefail
-          mkdir -p fitness-dev/fitness/catalog
-          rm -rf fitness-dev/fitness/catalog/kb
-          ln -sfn "$GITHUB_WORKSPACE/fitness-kb" fitness-dev/fitness/catalog/kb
-          test -d fitness-dev/fitness/catalog/kb/exercises/6pack
-          echo "KB @ $(git -C fitness-kb rev-parse --short HEAD)"
 
       - uses: pnpm/action-setup@v6
         with:
@@ -85,24 +54,6 @@ jobs:
         working-directory: journal-dev
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Install Nachbarn (je eigener Lockfile)
-        run: |
-          set -euo pipefail
-          for repo in fitness-dev fuel-dev relax-dev 6pack-dev plan-dev skills-dev; do
-            echo "::group::$repo"
-            if [ -f "$repo/pnpm-lock.yaml" ]; then
-              (cd "$repo" && pnpm install --no-frozen-lockfile --ignore-scripts)
-            elif [ -f "$repo/package.json" ]; then
-              echo "::warning::$repo hat keinen pnpm-lock.yaml — Install ohne Lockfile"
-              (cd "$repo" && pnpm install --no-frozen-lockfile --ignore-scripts)
-            fi
-            echo "::endgroup::"
-          done
-
-      - name: Fitness-KB-Daten erzeugen (transitive Abhängigkeit über @fitness-db)
-        working-directory: fitness-dev
-        run: pnpm run build:kb-data
-
       - name: Build Journal
         working-directory: journal-dev
         run: pnpm run deploy:all:build
@@ -117,6 +68,3 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" \
             npx firebase-tools@latest deploy --only hosting:journal,hosting:v2,hosting:door,hosting:voice,hosting:game,hosting:tent,hosting:habits \
             --project fitness-aos --non-interactive
-
-
-

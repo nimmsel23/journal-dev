@@ -1,7 +1,8 @@
-## 2026-11-09 — Live-Deploy: 6pack+plan Nachbarn (Firebase 13/React 19 live)
+## 2026-11-09 — Live-Deploy: 6pack+plan+backend (Firebase 13/React 19 live)
 
-- Live Deploy rot: habits-Build brach an `views/SixPack/workoutDoc.js`, danach an `views/Plan/lib/planVersions.js` (fitness-dev Views nur via miniAppSubmodulePlugin).
-- `deploy-master.yml`: `6pack-dev` + `plan-dev` als Nachbar-Checkouts (`NEIGHBOR_REF`) inkl. Existenz-Tests.
+- Live Deploy rot: habits → SixPack/`workoutDoc`, Plan/`planVersions`, dann fuel `src/shared` → `../../../../backend/fuel/...`.
+- `deploy-master.yml`: Nachbarn `6pack-dev` + `plan-dev`; privates `backend@dev` via `SYNC_TOKEN`.
+- Repo-Secret `SYNC_TOKEN` auf journal-dev gesetzt (wie fuel-dev).
 - Ziel: Firebase 13 + React 19 (habits) auf Hosting nachziehen.
 
 ## 2026-11-09 — Node Tooling (Biome/knip/engines/smoke)

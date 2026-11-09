@@ -3,7 +3,8 @@
 
 <!-- coo-dispatch-002-c003 -->
 - [x] 2026-11-09: C-003 Lückenliste geliefert — `docs/C-003-4-DEPOSIT-LUECKENLISTE.md` (Org `c46b3028`); PM/CEO-Frage Observe manuelle Deposits vs Smart-only offen.
-- [ ] CEO-Entscheid zu `docs/VERSIONSPFLEGE-VORSCHLAG.md` (Org-Task 9545df26): Option A/B/C, Baseline `0.2.0` vs `1.0.0`, Tag `journal-v*` ja/nein — danach erst Versionsbump auf `dev`.
+- [x] CEO-Entscheid Versionspflege: Option B + Baseline `1.0.0` (2026-11-09); Tag `journal-v*` weiterhin optional.
+- [ ] Live Deploy nach 6pack-Nachbar-Fix beobachten (habits `workoutDoc.js`); bei Grün Firebase-13/React-19 Hosting abnehmen.
 - [ ] Org-Task eeb9d722 (smartLogErrorText fail-closed): wartet auf Deploy+Emulator-Beleg Server-Fix 5f09bbb1 (`5f2f694` lokal backend); danach Client-Mapping.
 - [ ] Smart Journal und Habits im Live-Preview gegen echtes Konto abnehmen:
   vier Tages-Deposits, Wochenvergleich und neue Default-Habits (nur bei frischem

@@ -31,8 +31,8 @@ importers:
         specifier: ^13.2.0
         version: 13.2.0(react@18.3.1)
       framer-motion:
-        specifier: ^14.11.1
-        version: 14.11.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 14.10.1
+        version: 14.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       lucide-react:
         specifier: ^1.70.0
         version: 1.70.0(react@18.3.1)
@@ -1934,8 +1934,8 @@ packages:
   fraction.js@5.3.4:
     resolution: {integrity: sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==}
 
-  framer-motion@14.11.1:
-    resolution: {integrity: sha512-kXs+RHzja034QumwdXJubF0az86ueiWtANLB7FbhM+WKNGrgmYHysRRWG+we2KEpWv1+8W4eoMtsKaUldf54nA==}
+  framer-motion@14.10.1:
+    resolution: {integrity: sha512-hT8WLczAcreOHG4EHymMtATztwUc3al1/88/stal3tpxYkMefGNzIPHHgFFHW3iLnrNY36BrKKJDuT2V7o8Tfw==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -2333,8 +2333,8 @@ packages:
   module-details-from-path@1.0.4:
     resolution: {integrity: sha512-EGWKgxALGMgzvxYF1UyGTy0HXX/2vHLkw6+NvDKW2jypWbHpjQuj4UMcqQWXHERJhVGKikolT06G3bcKe4fi7w==}
 
-  motion-dom@14.11.1:
-    resolution: {integrity: sha512-H/12gSe24nuV19IR7jHLObI+5Tm34UA/S5JaUye802l19VoVsT1USE+Suv+G/XO1U+YmXI9Nnbs4Krd4FthSSg==}
+  motion-dom@14.10.1:
+    resolution: {integrity: sha512-NzVzM7y3JJl3rYlVN4yM6kbziab/tHNBEV6gqOoAQIg8npHlIMhW2oPnzr0HkP+rR8xMoiX9+zSZ4BLaVuJadw==}
 
   motion-utils@14.7.0:
     resolution: {integrity: sha512-woO0/Nb7ys75f94fjvQi/6leiHGvZUYkeHUPEZ3vxsV+9OpEVhkxp01x8MlRwX0zt31EqgXsKDAoBoJLC148Tw==}
@@ -4991,9 +4991,9 @@ snapshots:
 
   fraction.js@5.3.4: {}
 
-  framer-motion@14.11.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  framer-motion@14.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      motion-dom: 14.11.1
+      motion-dom: 14.10.1
       motion-utils: 14.7.0
       tslib: 2.9.1
     optionalDependencies:
@@ -5355,7 +5355,7 @@ snapshots:
 
   module-details-from-path@1.0.4: {}
 
-  motion-dom@14.11.1:
+  motion-dom@14.10.1:
     dependencies:
       motion-utils: 14.7.0
 

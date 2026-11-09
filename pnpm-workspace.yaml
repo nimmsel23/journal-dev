@@ -6,8 +6,10 @@ allowBuilds:
   '@firebase/util': true
   esbuild: true
   protobufjs: true
+minimumReleaseAgeExclude:
+  - framer-motion@14.11.1
+  - motion-dom@14.11.1
 overrides:
   '@grpc/grpc-js@<1.13.6': '^1.14.6'
   '@firebase/util': 1.12.1
 shamefullyHoist: true
-

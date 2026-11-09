@@ -1,5 +1,7 @@
 # CI-Agent — offener Betriebspunkt
 
+- [ ] CEO-Entscheid zu `docs/VERSIONSPFLEGE-VORSCHLAG.md` (Org-Task 9545df26): Option A/B/C, Baseline `0.2.0` vs `1.0.0`, Tag `journal-v*` ja/nein — danach erst Versionsbump auf `dev`.
+- [ ] Org-Task eeb9d722 (smartLogErrorText fail-closed): wartet auf Deploy+Emulator-Beleg Server-Fix 5f09bbb1 (`5f2f694` lokal backend); danach Client-Mapping.
 - [ ] Smart Journal und Habits im Live-Preview gegen echtes Konto abnehmen:
   vier Tages-Deposits, Wochenvergleich und neue Default-Habits (nur bei frischem
   Konto, editieren/erledigen/löschen, kein Duplikat nach Reload). Core4-

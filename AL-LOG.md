@@ -66,3 +66,15 @@ _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen sta
 - Erledigt: Org-Task 9545df26 — Semver-Vorschlag `docs/VERSIONSPFLEGE-VORSCHLAG.md` (Option A/B/C, Empf. B); Docs a670ea0/7d6cc72/2ff890a (TODO/RESULTS/NEXT); Vorschlag+AL-LOG `edf67f1`; CI Check (Journal) Run 42584713380.
 - Offen/Weiter: CEO-Entscheid Baseline/Option (NEXT); eeb9d722 weiter blocked bis Deploy+Emulator 5f09bbb1; Anleitung-Queue leer.
 - Blocker: eeb9d722 wartet auf Functions-Deploy (backend `5f2f694` lokal, Gate CEO/Owner).
+
+## 2026-11-09 (Montag, 14:10) — Abteilungsleiter-Lauf
+
+_Automatik:_
+- Commits seit 09:14-Log: 50fe6fd docs(al) C-003 in TODO/NEXT; 22a0b00/c41cbf5 Semver-AL-LOG.
+- Offene PRs: 42 Draft (pr-merge-agent).
+- Org: c46b3028 C-003 +al +hit (Guide Aufgabe 5); eeb9d722 blocked; 4b2781de C-007 +cto.
+
+_Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
+- Erledigt: Aufgabe 5/C-003 Org `c46b3028` — `docs/C-003-4-DEPOSIT-LUECKENLISTE.md` (Antwort: Nein ohne KI; 5×S/M/L; Belege `JournalV2View.jsx`/`journal.js`/`JournalV2Range.jsx`/`b33f924`); TODO/NEXT/RESULTS `225f568`/`ffef6c0`/`78680b6`; Anleitung abgehakt vitalos-prod `9b839bd`.
+- Offen/Weiter: PM/CEO-Frage Observe manuelle Deposits vs Smart-only (NEXT); eeb9d722 weiter blocked bis Deploy+Emulator `5f09bbb1`; C-007 `4b2781de` CTO-Nacharbeit.
+- Blocker: eeb9d722 Functions-Deploy-Gate (CEO/Owner); C-003 selbst ohne Blocker.

@@ -1,5 +1,6 @@
 ## 2026-11-09 — Firebase 13 + React 19 (Dependabot #46/#49/#50)
 
+- **CI:** Live-Deploy standalone — Nachbarn/Fitness-KB/`build:kb-data` entfernt (waren tot; Check/Preview schon standalone).
 - Owner: keine PR-Sperre — rote Majors fixen und auf `dev` bringen.
 - `firebase` ^13.1.0 (root + habits); `VertexAIBackend` → `AgentPlatformBackend`.
 - habits: `react`/`react-dom` ^19.3.1; vite-Alias `firebase/vertexai` entfernt.

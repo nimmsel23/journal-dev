@@ -1,3 +1,8 @@
+## 2026-11-09 — C-003 4-Deposit-Lückenliste (Org `c46b3028`)
+
+- `docs/C-003-4-DEPOSIT-LUECKENLISTE.md`: Ein Freitext ohne KI deckt Body/Business/Balance/Being **nicht** sichtbar ab; Deposits nur über `smartLog.applied.daily_deposits` (Belege `JournalV2View.jsx`, `journal.js`, `JournalV2Range.jsx`, Commit `b33f924`).
+- DoD: max. 5 Lücken je S/M/L, kein Bau. Produktfrage an PM/CEO: manuelle Observe-Deposits vs. Smart-only.
+
 ## 2026-11-09 — Versionspflege-Vorschlag (Org-Task 9545df26)
 
 - `docs/VERSIONSPFLEGE-VORSCHLAG.md`: Semver-Schema, Kopplung an Auto-Promote/Live-Deploy (Option A/B/C, Empfehlung B), Migrationsweg und CEO-Checkboxen.

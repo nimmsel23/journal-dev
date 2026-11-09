@@ -1,3 +1,9 @@
+## 2026-11-09 — Live-Deploy: 6pack-dev Nachbar zurück (Firebase 13/React 19 live)
+
+- Live Deploy rot nach Promote: habits-Build konnte `views/SixPack/workoutDoc.js` nicht auflösen (fitness-dev hat die View nicht mehr lokal; Resolver braucht `../6pack-dev`).
+- `deploy-master.yml`: `6pack-dev` wieder als Nachbar-Checkout (`NEIGHBOR_REF`) + `test -f workoutDoc.js`; Kommentar angepasst.
+- Ziel: Firebase 13 + React 19 (habits) auf Hosting nachziehen.
+
 ## 2026-11-09 — Node Tooling (Biome/knip/engines/smoke)
 
 - `engines.node: >=22.13`, Scripts `tooling:biome|knip|check`.

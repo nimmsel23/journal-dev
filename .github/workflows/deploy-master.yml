@@ -1,7 +1,7 @@
 # Standalone-Prod Journal: Push auf master deployt live (nur CI).
 # Journal selbst ist standalone; deploy:all:build endet mit apps/habits, das
-# @fitness-db/@fuel braucht → Nachbarn fitness-dev + fuel-dev (+ exercise-data/coaching-notes)
-# sowie 6pack-dev + plan-dev (miniAppSubmodulePlugin → views/SixPack|Plan/*).
+# @fitness-db/@fuel braucht → Nachbarn fitness-dev + fuel-dev (+ exercise-data/coaching-notes),
+# 6pack-dev + plan-dev (miniAppSubmodulePlugin), und privates backend (fuel src/shared Stubs).
 # Kein relax/skills, kein vitalos-Meta.
 #
 # Auslöser: push auf master und workflow_dispatch (automerge.yml) -> baut und deployt live (nur master).
@@ -58,6 +58,17 @@ jobs:
           git clone --depth 1 --branch "$NEIGHBOR_REF" "https://github.com/nimmsel23/plan-dev.git" plan-dev
           echo "plan-dev @ $(git -C plan-dev rev-parse --short HEAD)"
           test -f plan-dev/src/views/Plan/lib/planVersions.js
+
+      - name: Checkout backend (fuel shared SOT)
+        uses: actions/checkout@v7
+        with:
+          repository: nimmsel23/backend
+          ref: dev
+          path: backend
+          token: ${{ secrets.SYNC_TOKEN }}
+
+      - name: Verify backend fuel shared
+        run: test -f backend/fuel/src/shared/utils/validation.mjs
 
       - name: Checkout fitness KB (SOT)
         uses: actions/checkout@v7

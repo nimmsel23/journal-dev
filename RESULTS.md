@@ -1,3 +1,5 @@
+- 2026-11-10: fix(git): accidental `.worktrees/*` gitlinks entfernt + `.gitignore` — Gemini CI Agent Checkout (`No url found for submodule path .worktrees/…`) war die Rot-Ursache; Commit `c2bf199` auf `dev`.
+
 - 2026-11-10: fix(build): Rolldown-Preload-Guard nachgezogen (fitness/6pack/fuel/relax) — `rolldown@1.2.16` Pin, `fixRolldownPreloadMarker` in Root+habits Vite-Config, Post-Build-Scrub `scripts/fix-vite-preload-markers.mjs` an allen Hosting-Builds; viele `React.lazy`-Routen.
 - 2026-11-10: fix(habits): Vite 8 `manualChunks` Funktionsform — Live Deploy 42725191840 Build Journal (habits) wieder grün; Semver PATCH `1.0.1`.
 - 2026-11-10: chore(deps) major stack align — React 19 / Vite 8.3.6 / plugin-react 6.2.1 / Firebase 13 (age-safe pins, pnpm-workspace overrides).

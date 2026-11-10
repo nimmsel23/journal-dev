@@ -1,3 +1,4 @@
+- 2026-11-10: fix(habits): Vite 8 `manualChunks` Funktionsform — Live Deploy 42725191840 Build Journal (habits) wieder grün; Semver PATCH `1.0.1`.
 - 2026-11-10: chore(deps) major stack align — React 19 / Vite 8.3.6 / plugin-react 6.2.1 / Firebase 13 (age-safe pins, pnpm-workspace overrides).
 
 ## 2026-11-09 — deps: minor/patch Upgrades

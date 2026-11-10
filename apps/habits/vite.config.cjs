@@ -17,6 +17,18 @@ const ROOT_FIREBASE = fs.existsSync(VITALOS_ROOT_PKG)
   ? path.resolve(__dirname, "../node_modules/firebase")
   : path.resolve(__dirname, "node_modules/firebase");
 
+// Vite 8 / Rolldown: `__VITE_PRELOAD__<hash>` → Blackscreen (gleiche Guard wie Root).
+function fixRolldownPreloadMarker() {
+  return {
+    name: "fix-rolldown-preload-marker",
+    renderChunk(code) {
+      if (!code.includes("__VITE_PRELOAD__")) return null;
+      const next = code.replace(/__VITE_PRELOAD__[a-f\d]{8,}/g, "__VITE_PRELOAD__");
+      return next === code ? null : { code: next, map: null };
+    },
+  };
+}
+
 // Nachbar-Repos: die vitalos-Submodule-Checkouts (master = firebase-first,
 // modulare Firestore-Layer). Die Home-Worktrees sind dev-Playgrounds.
 function resolveSibling(nameApp, nameDev) {
@@ -111,6 +123,7 @@ module.exports = defineConfig(async ({ mode }) => {
       // ~/dev/fitness-dev), braucht dieser Quellbaum denselben Resolver für views/{Plan,SixPack,Skills}.
       ...(VOS_FITNESS !== FITNESS ? [miniAppSubmodulePlugin(VOS_FITNESS)] : []),
       react(),
+      fixRolldownPreloadMarker(),
       VitePWA({
         base: "/",
         scope: "/",

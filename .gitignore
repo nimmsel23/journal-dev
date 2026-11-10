@@ -33,3 +33,6 @@ dist-voice/
 dist-game/
 dist-tent/
 
+
+# Local git worktrees (never commit as gitlinks / fake submodules).
+.worktrees/

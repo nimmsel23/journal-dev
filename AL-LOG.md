@@ -104,6 +104,6 @@ completed	failure	Live Deploy (Journal master)	Live Deploy (Journal master)	mast
 - Arbeitsbaum: sauber
 
 _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
-- Erledigt: NEXT Live-Deploy-Build — Root-Cause Run 42725191840 (`d7f3e02`): `apps/habits/vite.config.cjs` Objekt-`manualChunks` bricht Vite 8/Rolldown (`Expected Function but received Object`); Fix Funktionsform + Semver PATCH `1.0.0`→`1.0.1` (dieser Commit). Habits-Build lokal grün (`vendor-react|query|firebase` Chunks).
+- Erledigt: NEXT Live-Deploy-Build — Root-Cause Run 42725191840 (`d7f3e02`): `apps/habits/vite.config.cjs` Objekt-`manualChunks` bricht Vite 8/Rolldown (`Expected Function but received Object`); Fix `52ccc38` Funktionsform + Semver PATCH `1.0.0`→`1.0.1`. CI Check (Journal) grün Run 42734431220.
 - Offen/Weiter: Auto-Promote + Live Deploy nach Push beobachten (Firebase-13/React-19 Hosting-Abnahme); Org `d48d852d` Semver-Anzeige journal-vos erst nach grünem Live; `eeb9d722` weiter blocked (Emulator/`5f09bbb1`).
 - Blocker: `eeb9d722` Functions-Deploy-Gate (CEO/Owner); Live-Deploy selbst war code-behebbar (kein Secret-/Infra-Blocker).

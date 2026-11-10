@@ -34,10 +34,13 @@ Sechs Einträge in `firebase.json`/`.firebaserc`, alle aus demselben Code mit ei
 - Nur bauen: `deploy:<name>:build` (z. B. `deploy:door:build`).
 - Alle sechs bauen und mit einem `firebase deploy` ausrollen: `pnpm run deploy:all` (`deploy:all:build` nur bauen).
 - `pnpm run release` = `vos-release-pr journal` (Alt-Gen-PR-Weg), **kein** Versionsbump.
-- **Semver (CEO 2026-11-09, Option B):** Anzeige = `package.json` `version` + Build-SHA
-  (`vite` → `__APP_VERSION__`). Baseline ab jetzt `1.0.0`. Version **nur auf `dev`**
+- **Semver (CEO C-012, Option B):** Anzeige = `package.json` `version` + Build-SHA
+  (`vite` → `__APP_VERSION__`). Baseline `0.2.0` (`1.0.0` erst beim Play-Store-Produktionsrelease;
+  die Zwischenstände `1.0.0`/`1.0.1` sind abgelöst). Version **nur auf `dev`**
   bewusst mitbumpen (PATCH = Fix/CI/Docs, MINOR = sichtbares Feature, MAJOR = Breaking
-  Client-Daten/Routing). Auto-Promote/Live nehmen die Zahl mit — kein Autobump auf `master`.
+  Client-Daten/Routing). Auto-Promote trägt die Zahl nach `master` — kein Autobump.
+  Dabei setzt `automerge.yml` den annotated Tag `journal-v<version>` auf den Promote-Commit;
+  existiert der Tag, bleibt er liegen.
 - Lokale Vorschau über einen 24-h-Channel `preview` (Link per Telegram, Zugangsdaten aus `~/.env/fitness.env`):
   `pnpm run deploy:preview` (`scripts/deploy-preview.mjs`).
 - CI und `deploy:cloud` deployen nur das Target `journal`; die anderen fünf nur über die Befehle oben.

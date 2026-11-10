@@ -24,6 +24,16 @@ Stand 2026-11-09. Ausführlich: `~/vitalos/docs/DEPLOYMENT.md`.
 - Default-Branch des Repos ist `master`; die Workflows auf `master` bestimmen das Live-Verhalten.
 <!-- release-weg:end -->
 
+## Vite 8 / Rolldown
+
+`vite.config.cjs` und `apps/habits/vite.config.cjs` enthalten
+`fixRolldownPreloadMarker`. Rolldown 1.3.0 hängt sonst an `__VITE_PRELOAD__`
+einen Hash; Vite ersetzt nur die Marke und lässt `[]<hash>` im Bundle
+(SyntaxError → Blackscreen, wie bei `vos-6pack.web.app` / `vos-coach.web.app`).
+Override pinnt `rolldown@1.2.16`; Post-Build-Scrub
+`scripts/fix-vite-preload-markers.mjs` ist Defense-in-depth. Plugin/Pin nicht
+entfernen — Journal nutzt viele `React.lazy`-Routen (Door/Game/Voice/Tent/v2).
+
 <!-- sync-infra:start -->
 ## TaskChampion-Sync-Infrastruktur (Stand 2026-11-05)
 

@@ -14,6 +14,21 @@ if (!BUILD_REVISION) {
 }
 const APP_VERSION = `${PACKAGE_VERSION}+${BUILD_REVISION.slice(0, 7)}`;
 
+// Vite 8 / Rolldown hängt an `__VITE_PRELOAD__` einen Content-Hash
+// (`__VITE_PRELOAD__50b3…`). Vite ersetzt nur die 16-Zeichen-Marke und lässt
+// `[]50b3…` im Bundle → SyntaxError / Blackscreen (vos-6pack / vos-coach).
+// Journal hat viele React.lazy-Routen (Door/Game/Voice/Tent/v2) → Guard nötig.
+function fixRolldownPreloadMarker() {
+  return {
+    name: "fix-rolldown-preload-marker",
+    renderChunk(code) {
+      if (!code.includes("__VITE_PRELOAD__")) return null;
+      const next = code.replace(/__VITE_PRELOAD__[a-f\d]{8,}/g, "__VITE_PRELOAD__");
+      return next === code ? null : { code: next, map: null };
+    },
+  };
+}
+
 module.exports = defineConfig(async ({ mode }) => {
   const { vosChangelog } = await import("./scripts/vos-changelog/vos-changelog-vite.mjs");
   const env = loadEnv(mode, process.cwd(), "");
@@ -74,6 +89,7 @@ module.exports = defineConfig(async ({ mode }) => {
       vosChangelog({ appId: (process.env.VITE_APP_FLAVOR || env.VITE_APP_FLAVOR) || ((process.env.VITE_DEFAULT_TAB || env.VITE_DEFAULT_TAB) === 'journal-v2' ? 'journal-v2' : 'journal'), appName: FL?.name || ((process.env.VITE_DEFAULT_TAB || env.VITE_DEFAULT_TAB) === 'journal-v2' ? 'Journal v2' : 'Journal'), accent: '#a78bfa' }),
       flavorHtml,
       react(),
+      fixRolldownPreloadMarker(),
       VitePWA({
         base: BASE,
         scope: BASE,

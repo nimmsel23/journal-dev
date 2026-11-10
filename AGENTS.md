@@ -35,6 +35,9 @@ im Bundle (SyntaxError → Blackscreen, wie bei `vos-6pack.web.app` /
 `scripts/fix-vite-preload-markers.mjs` ist Defense-in-depth. Plugin/Pin nicht
 entfernen — Journal-Flavor-Builds nutzen `React.lazy`-Routen.
 
+Solo-Flavors setzen `VITE_SOLO_TABS` (ein Tab-Key), damit ungenutzte
+`lazy()`-Imports aus dem Bundle fallen. Hub-Builds (journal / v2) ohne Flag.
+
 <!-- sync-infra:start -->
 ## TaskChampion-Sync-Infrastruktur (Stand 2026-11-05)
 

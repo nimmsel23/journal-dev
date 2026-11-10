@@ -32,6 +32,7 @@ for (const a of list) {
       VITE_APP_MODE: 'client',
       VITE_APP_FLAVOR: 'game',
       VITE_DEFAULT_TAB: 'game-v2',
+      VITE_SOLO_TABS: 'game-v2',
       VITE_DEFAULT_GAME_MODE: a.gameMap,
       VITE_GAME_SOLO: a.gameMap,
       VITE_BASE_PATH: `/${a.gameMap}/`,

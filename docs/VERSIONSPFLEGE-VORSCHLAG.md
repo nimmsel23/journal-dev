@@ -68,3 +68,12 @@ Nicht Teil dieses Vorschlags: Store-VersionCodes, native Apps, getrennte Flavor-
 - [x] Umsetzung: `package.json` → `1.0.0` auf `dev` (Commit mit RESULTS/DEPLOYMENT-Notiz)
 
 Danach: bei Feature-Paketen MINOR, bei Fixes PATCH bewusst mitbumpen — eine Zeile in `DEPLOYMENT.md`.
+
+## Entscheidung C-012 (CEO)
+
+Ersetzt die Baseline der Entscheidung vom 2026-11-09 (Org-Task `9545df26`). Der Eintrag darüber bleibt der damalige Stand.
+
+- [x] Option **B** (Bump auf `dev`, Promote trägt mit; kein Autobump auf `master`)
+- [x] Baseline **`0.2.0`** (`1.0.0` erst beim Play-Store-Produktionsrelease)
+- [x] Git-Tag `journal-vX.Y.Z`: **ja**, annotated auf dem Promote-Commit (`automerge.yml`, idempotent wenn der Tag existiert)
+- [x] Schritt 2: `package.json` → `0.2.0` plus Notiz in `RESULTS.md`

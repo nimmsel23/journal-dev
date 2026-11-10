@@ -6,6 +6,10 @@
 # Rot bleibt liegen (kein Promote). Ein Zeitplan (alle 30 Min) faengt haengende Faelle ab. Fast-Forward statt Merge-Commit auf master, weil der Branch-Schutz den Check
 # `check` fuer genau diesen Commit verlangt. Pushes mit GITHUB_TOKEN loesen keine Workflows aus -> der Deploy
 # wird per workflow_dispatch gestartet. Laeuft aus dem Default-Branch; die Datei muss dort liegen.
+# Zusaetzlich: annotated Tag journal-v<package.json version> auf dem Commit, der auf master liegt
+# (direkt nach dem Fast-Forward, und beim spaeteren Abgleich, falls der Tag noch fehlt - der erste
+# Promote dieser Datei laeuft noch aus dem bisherigen Stand auf master). Existiert der Tag, wird er
+# uebersprungen und nicht verschoben. Derselbe GITHUB_TOKEN wie der Branch-Push.
 
 name: Auto-Promote dev -> master (Check (Journal))
 
@@ -20,7 +24,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write   # Branches fast-forwarden und refs/tags/journal-v* anlegen
   actions: write
   checks: read
 
@@ -52,11 +56,51 @@ jobs:
           set -euo pipefail
           git fetch -q origin master dev
           master=$(git rev-parse origin/master); dev=$(git rev-parse origin/dev)
-          [ "$master" = "$dev" ] && { echo "dev == master, nichts zu tun."; exit 0; }
+
+          # Annotated Tag journal-v<version> auf einem Commit, der auf master liegt.
+          # Idempotent: ein vorhandener Tag bleibt, auch wenn er auf einen aelteren Commit zeigt.
+          tag_promoted() {
+            local sha="$1" ver tag existing peeled
+            ver=$(git show "${sha}:package.json" | sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+            if [ -z "$ver" ]; then
+              echo "::error::keine version in package.json auf ${sha}."
+              return 1
+            fi
+            if ! printf '%s' "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::package.json version '${ver}' auf ${sha} ist kein MAJOR.MINOR.PATCH -> kein Tag."
+              return 1
+            fi
+            tag="journal-v${ver}"
+            existing=$(git ls-remote origin "refs/tags/${tag}")
+            if [ -n "$existing" ]; then
+              # Annotated Tags: die Ref selbst ist das Tag-Objekt; ^{} ist der Commit.
+              peeled=$(git ls-remote origin "refs/tags/${tag}^{}" | awk '{ print $1; exit }')
+              if [ -z "$peeled" ]; then
+                peeled=$(printf '%s\n' "$existing" | awk '{ print $1; exit }')
+              fi
+              if [ -n "$peeled" ] && [ "$peeled" != "$sha" ]; then
+                echo "Tag ${tag} existiert bereits (auf ${peeled}, dieser Commit ist ${sha}) -> uebersprungen, nicht verschoben."
+              else
+                echo "Tag ${tag} existiert bereits -> uebersprungen."
+              fi
+              return 0
+            fi
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              tag -a "$tag" "$sha" -m "journal ${ver}"
+            git push origin "refs/tags/${tag}"
+            echo "Tag ${tag} auf ${sha} gesetzt."
+          }
+
+          if [ "$master" = "$dev" ]; then
+            echo "dev == master, nichts zu tun."
+            tag_promoted "$master"
+            exit 0
+          fi
 
           if git merge-base --is-ancestor "$dev" "$master"; then
             echo "dev ist hinter master -> dev per Fast-Forward nachziehen."
             git push origin "${master}:refs/heads/dev"
+            tag_promoted "$master"
             exit 0
           fi
 
@@ -72,6 +116,7 @@ jobs:
               echo "Check gruen auf $dev -> master per Fast-Forward, Live-Deploy per Dispatch."
               git push origin "${dev}:refs/heads/master"
               gh workflow run "$DEPLOY_FILE" -R "$REPO" --ref master
+              tag_promoted "$dev"
               ;;
             none|pending) echo "Check fuer $dev laeuft noch/fehlt -> naechster Lauf (workflow_run oder Zeitplan) uebernimmt." ;;
             *) echo "Check auf $dev ist '$res' -> bleibt auf dev liegen (rot)." ;;

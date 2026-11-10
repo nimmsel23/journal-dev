@@ -1,3 +1,4 @@
+- 2026-11-10: C-012 Semver Baseline 0.2.0 + Promote-Tag `journal-v*` (PR #51).
 - 2026-11-10: fix(git): accidental `.worktrees/*` gitlinks entfernt + `.gitignore` — Gemini CI Agent Checkout (`No url found for submodule path .worktrees/…`) war die Rot-Ursache; Commit `c2bf199` auf `dev`.
 
 - 2026-11-10: fix(build): Rolldown-Preload-Guard nachgezogen (fitness/6pack/fuel/relax) — `rolldown@1.2.16` Pin, `fixRolldownPreloadMarker` in Root+habits Vite-Config, Post-Build-Scrub `scripts/fix-vite-preload-markers.mjs` an allen Hosting-Builds; viele `React.lazy`-Routen.

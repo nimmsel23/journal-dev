@@ -1,6 +1,6 @@
 {
   "name": "@vos/journal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "packageManager": "pnpm@11.3.0",
   "type": "module",
@@ -9,7 +9,7 @@
     "./views": "./src/views/JournalVosView.jsx",
     "./lib/db": "./src/lib/db/journal.js"
   },
-  "description": "Journal VOS \u2014 Journal + Habit PWA auf fuel-dev Shell (Firestore via fitness-aos)",
+  "description": "Journal VOS — Journal + Habit PWA auf fuel-dev Shell (Firestore via fitness-aos)",
   "scripts": {
     "dev": "VITE_APP_MODE=client vite --config vite.config.cjs",
     "build": "VITE_APP_MODE=client vite build --config vite.config.cjs",

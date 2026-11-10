@@ -190,10 +190,14 @@ module.exports = defineConfig(async ({ mode }) => {
       emptyOutDir: true,
       rollupOptions: {
         output: {
-          manualChunks: {
-            "vendor-react":    ["react", "react-dom"],
-            "vendor-query":    ["@tanstack/react-query"],
-            "vendor-firebase": ["firebase/app", "firebase/firestore", "firebase/auth"],
+          // Vite 8 / Rolldown: Objekt-Form von manualChunks wirft
+          // "Expected Function but received Object" (Live Deploy 42725191840).
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return undefined;
+            if (/node_modules\/(firebase|@firebase|idb)\//.test(id)) return "vendor-firebase";
+            if (id.includes("node_modules/@tanstack/")) return "vendor-query";
+            if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return "vendor-react";
+            return undefined;
           },
         },
       },

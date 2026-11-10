@@ -78,3 +78,32 @@ _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen sta
 - Erledigt: Aufgabe 5/C-003 Org `c46b3028` — Commit `23ad2b3` `docs/C-003-4-DEPOSIT-LUECKENLISTE.md` (Antwort: Nein ohne KI; 5×S/M/L; Belege `JournalV2View.jsx`/`journal.js`/`JournalV2Range.jsx`/`b33f924`); TODO/NEXT/RESULTS `225f568`/`ffef6c0`/`78680b6`; Anleitung abgehakt vitalos-prod `9b839bd`. CI Check (Journal) Run 42623845411 auf `59264cf`.
 - Offen/Weiter: PM/CEO-Frage Observe manuelle Deposits vs Smart-only (NEXT); eeb9d722 weiter blocked bis Deploy+Emulator `5f09bbb1`; C-007 `4b2781de` CTO-Nacharbeit.
 - Blocker: eeb9d722 Functions-Deploy-Gate (CEO/Owner); C-003 selbst ohne Blocker.
+
+## 2026-11-10 (Dienstag) — Abteilungsleiter-Lauf
+
+_Automatik (vos-al-log Vorlage 2026-11-10):_
+- Commits seit 2026-11-08: d7f3e02 chore(deps): major upgrades to React 19 / Vite 8 / Firebase 13
+2f3478b fix(deps): pin framer-motion@14.10.1 (minimumReleaseAge)
+25879a0 fix(deps): pin vite@6.4.5 (minimumReleaseAge)
+ac0aed1 chore(deps): minor/patch upgrades (ncu --target minor)
+a7e3560 fix(ci): backend-Checkout für fuel shared Stubs im Live-Deploy
+f2b8399 docs: auto-update NEXT.md
+2275dfe docs: auto-update RESULTS.md
+c60bc74 fix(ci): plan-dev Nachbar für habits Live-Deploy (planVersions)
+a6fc4cf docs: auto-update RESULTS.md
+68f7c4a fix(ci): 6pack-dev Nachbar für habits Live-Deploy (workoutDoc)
+00ed327 docs: auto-update NEXT.md
+952595e docs: auto-update RESULTS.md
+59f0dec chore(tooling): engines, Biome scripts-format, knip, smoke in Check
+a3474b2 fix(ci): fitness-dev Neighbor von dev (Bulk-Fix noch nicht auf master)
+ba71fc0 fix(ci): nur exercise-data statt build:kb-data (kein plan/6pack)
+- Offene PRs: 42	ci: Merge-Agent für automatische PR-Merges (kein Abweisen von PRs)	vibe/pr-merge-agent-aac181	DRAFT	2026-11-07T16:56:03Z
+- CI (letzte Läufe): completed	success	Auto-Promote dev -> master (Check (Journal))	Auto-Promote dev -> master (Check (Journal))	master	schedule	42730361943	8s	2026-11-10T00:42:38Z
+completed	failure	Gemini CI Agent	Gemini CI Agent	master	workflow_run	42725251493	9s	2026-11-10T00:02:52Z
+completed	failure	Live Deploy (Journal master)	Live Deploy (Journal master)	master	workflow_dispatch	42725191840	1m24s	2026-11-10T00:02:23Z
+- Arbeitsbaum: sauber
+
+_Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
+- Erledigt: NEXT Live-Deploy-Build — Root-Cause Run 42725191840 (`d7f3e02`): `apps/habits/vite.config.cjs` Objekt-`manualChunks` bricht Vite 8/Rolldown (`Expected Function but received Object`); Fix Funktionsform + Semver PATCH `1.0.0`→`1.0.1` (dieser Commit). Habits-Build lokal grün (`vendor-react|query|firebase` Chunks).
+- Offen/Weiter: Auto-Promote + Live Deploy nach Push beobachten (Firebase-13/React-19 Hosting-Abnahme); Org `d48d852d` Semver-Anzeige journal-vos erst nach grünem Live; `eeb9d722` weiter blocked (Emulator/`5f09bbb1`).
+- Blocker: `eeb9d722` Functions-Deploy-Gate (CEO/Owner); Live-Deploy selbst war code-behebbar (kein Secret-/Infra-Blocker).

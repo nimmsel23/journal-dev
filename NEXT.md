@@ -67,4 +67,4 @@
 - [ ] Gemini-Reparaturpfad nach dem Feld-Fix anhand eines isolierten roten Checks verifizieren: Diagnose, Commit, Check-Neustart und nachgelagerter Deploy.
 
 - [ ] Composer-Zuklapp Wiring in `JournalForm.jsx` erst nach CEO/CTO-Freigabe + Gerätetest (`composerCollapse.js` Vertrag); nicht vorziehen.
-- [ ] Org-Task eeb9d722 smartLogErrorText fail-closed: wartet auf Server-Fix 5f09bbb1 (Emulator-Beleg).
+- [x] 2026-11-10: Org-Task eeb9d722 smartLogErrorText fail-closed umgesetzt (`40c1fdc`).

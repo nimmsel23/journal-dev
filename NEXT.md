@@ -6,7 +6,7 @@
 - [x] CEO-Entscheid Versionspflege: Option B + Baseline `1.0.0` (2026-11-09); Tag `journal-v*` weiterhin optional.
 - [ ] Live Deploy nach Habits-Flavor (`dist-habits` / `#v2/habits`) + Rolldown-Guard beobachten; bei Grün `habit-vos` abnehmen + Org `d48d852d` (Header `1.0.1+sha`). Legacy `apps/habits` später aus Workspace/Dependabot räumen.
 - [x] 2026-11-10: Habits Live-Pfad auf Journal-Flavor umgestellt (kein 3‑MB-Shell-Entry mehr).
-- [ ] Org-Task eeb9d722 (smartLogErrorText fail-closed): wartet auf Deploy+Emulator-Beleg Server-Fix 5f09bbb1 (`5f2f694` lokal backend); danach Client-Mapping.
+- [x] 2026-11-10: Org-Task eeb9d722 smartLogErrorText fail-closed — `40c1fdc` `src/lib/smartLogErrorText.js` + Tests (CTO: Server `5f2f694` LIVE).
 - [ ] Smart Journal und Habits im Live-Preview gegen echtes Konto abnehmen:
   vier Tages-Deposits, Wochenvergleich und neue Default-Habits (nur bei frischem
   Konto, editieren/erledigen/löschen, kein Duplikat nach Reload). Core4-

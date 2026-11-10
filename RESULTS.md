@@ -1,6 +1,7 @@
 - 2026-11-10: C-012 Semver Baseline 0.2.0 + Promote-Tag `journal-v*` (PR #51).
 - 2026-11-10: fix(git): accidental `.worktrees/*` gitlinks entfernt + `.gitignore` — Gemini CI Agent Checkout (`No url found for submodule path .worktrees/…`) war die Rot-Ursache; Commit `c2bf199` auf `dev`.
 
+- 2026-11-10: fix(build): Flavor-Solo via `VITE_SOLO_TABS` — tote `lazy()`-Tabs aus Door/Voice/Game/Tent/Habits-Builds; Hub journal/v2 bleibt voll.
 - 2026-11-10: feat(habits): Hosting als Journal-Flavor — `deploy:habits` (`VITE_APP_FLAVOR=habits`, Default `#v2/habits`), `dist-habits` statt `apps/habits` Shell; Live-Deploy ohne Fitness/Fuel/6pack/Plan/KB-Nachbarn; `VITE_DEFAULT_MODE` für journal-v2.
 - 2026-11-10: fix(build): Rolldown-Preload-Guard nachgezogen (fitness/6pack/fuel/relax) — `rolldown@1.2.16` Pin, `fixRolldownPreloadMarker` in Root+habits Vite-Config, Post-Build-Scrub `scripts/fix-vite-preload-markers.mjs` an allen Hosting-Builds; viele `React.lazy`-Routen.
 - 2026-11-10: fix(habits): Vite 8 `manualChunks` Funktionsform — Live Deploy 42725191840 Build Journal (habits) wieder grün; Semver PATCH `1.0.1`.

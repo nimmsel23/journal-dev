@@ -116,6 +116,6 @@ _Automatik:_
 - Org: eeb9d722 +hit freigegeben (CTO 2026-11-10: Server-Fix 5f2f694 LIVE); d48d852d +lr Semver-Live-Check; TODO C-012 Baseline 0.2.0 (package.json bereits 0.2.0).
 
 _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
-- Erledigt: Org `eeb9d722` — `src/lib/smartLogErrorText.js` + `tests/smart-log-error-text.test.mjs` (INTERNAL/[0]/functions/* ohne Reason → fail-closed; Mapping Server-Reasons 5f2f694); `JournalV2View.jsx` importiert rein. 5/5 `node --test` lokal.
+- Erledigt: Org `eeb9d722` — Commit `40c1fdc` `src/lib/smartLogErrorText.js` + `tests/smart-log-error-text.test.mjs` (INTERNAL/[0]/functions/* ohne Reason → fail-closed; Mapping Server-Reasons 5f2f694); `JournalV2View.jsx` Import; Task done; 5/5 `node --test`.
 - Offen/Weiter: Org `d48d852d` Semver-Anzeige journal-vos (`0.2.0+sha` nach Live 42803023456); TODO C-012 DoD Tag `journal-v0.2.0` nach Promote; Guide-Queue leer.
 - Blocker: keine (eeb9d722 Emulator-Gate CTO-seitig entfallen).

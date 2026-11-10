@@ -83,7 +83,7 @@ Alte Flags `"1"`/`"0"` liest `asBool` weiter.
 `fitness/{uid}/habits` + `habitRecords`, Einstellungen/Maps/Profit `journal/{uid}/…` (Rule `journal/{uid}/**`,
 als Fragment in `firestore.rules.part`; vitalos bettet es in seine `firestore.rules` ein).
 
-**Flavors**: `VITE_APP_FLAVOR` (door/voice/game/tent/habits) setzt Manifest, Icons (`public/icons-*`), Titel und Splash. Habits-Solo: `VITE_DEFAULT_TAB=journal-v2` + `VITE_DEFAULT_MODE=habits`.
+**Flavors**: `VITE_APP_FLAVOR` (door/voice/game/tent/habits) setzt Manifest, Icons (`public/icons-*`), Titel und Splash. Habits-Solo: `VITE_DEFAULT_TAB=journal-v2` + `VITE_DEFAULT_MODE=habits`. Solo-Sites zusätzlich `VITE_SOLO_TABS=<tab>` (nur dieser lazy-Tab im Bundle).
 Details zu v2, Door, Game, Tent und Taskwarrior-Sync: [`JOURNAL-V2.md`](JOURNAL-V2.md).
 
 ## CI und Deploy

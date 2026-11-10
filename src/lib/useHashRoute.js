@@ -9,6 +9,8 @@ export const router = makeRouter({
   tabs: TAB_CONFIG.map((t) => t.key),
   defaultTab: import.meta.env.VITE_DEFAULT_TAB || "journal",
   gameDefault: import.meta.env.VITE_DEFAULT_GAME_MODE || "fire",
+  // Habits-Flavor: VITE_DEFAULT_MODE=habits → leerer Hash öffnet #v2/habits.
+  journalV2Default: import.meta.env.VITE_DEFAULT_MODE || "tag",
 });
 
 // Das Datum bleibt beim Tab-Wechsel erhalten, auch über Tabs hinweg, die keins im Hash führen (Door, Game).

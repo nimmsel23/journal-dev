@@ -3,9 +3,11 @@
 // Funktioniert offline: der Hash wird ausschließlich im Browser ausgewertet.
 
 // Pro Tab: Kurz-Alias, Modi (erster Eintrag = Standard, sofern kein defaultMode) und ob das Datum im Hash steht.
-export function routeMeta({ gameDefault = "fire" } = {}) {
+export function routeMeta({ gameDefault = "fire", journalV2Default = "tag" } = {}) {
+  const v2Modes = ["tag", "woche", "monat", "jahr", "habits"];
+  const v2Default = v2Modes.includes(journalV2Default) ? journalV2Default : "tag";
   return {
-    "journal-v2": { alias: "v2", modes: ["tag", "woche", "monat", "jahr", "habits"], defaultMode: "tag", hasDate: true },
+    "journal-v2": { alias: "v2", modes: v2Modes, defaultMode: v2Default, hasDate: true },
     "door-v2": { alias: "door2", modes: ["potential", "plan", "production", "profit"], defaultMode: "potential", hasDate: false },
     "game-v2": { alias: "game2", modes: ["fire", "focus", "freedom", "frame"], defaultMode: gameDefault, hasDate: false, shortForm: true },
     "voice-v2": { alias: "voice", modes: [], hasDate: false },
@@ -20,8 +22,8 @@ export function localToday(now = new Date()) {
   return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
 }
 
-export function makeRouter({ tabs, defaultTab, gameDefault = "fire", today = localToday } = {}) {
-  const meta = routeMeta({ gameDefault });
+export function makeRouter({ tabs, defaultTab, gameDefault = "fire", journalV2Default = "tag", today = localToday } = {}) {
+  const meta = routeMeta({ gameDefault, journalV2Default });
   const byAlias = Object.fromEntries(Object.entries(meta).map(([key, m]) => [m.alias, key]));
   const shortModes = Object.entries(meta).filter(([, m]) => m.shortForm).flatMap(([key, m]) => m.modes.map((mode) => [mode, key]));
   const info = (tab) => meta[tab] ?? { modes: [], hasDate: true };

@@ -76,6 +76,15 @@ test("Standardmodus je Tab, wenn keiner im Hash steht", () => {
   assert.equal(router.parse("#journal").mode, null);
 });
 
+test("journalV2Default steuert Habits-Flavor-Start (#v2 → habits)", () => {
+  const habitsRouter = makeRouter({ tabs: TABS, defaultTab: "journal-v2", journalV2Default: "habits", today: () => TODAY });
+  assert.equal(habitsRouter.parse("").mode, "habits");
+  assert.equal(habitsRouter.parse("#v2").mode, "habits");
+  assert.equal(habitsRouter.parse("#v2/woche").mode, "woche");
+  assert.equal(habitsRouter.build({ tab: "journal-v2", mode: "habits", date: TODAY }), "#v2/today");
+  assert.equal(habitsRouter.build({ tab: "journal-v2", mode: "tag", date: TODAY }), "#v2/tag/today");
+});
+
 test("build entspricht dem bisherigen Verhalten", () => {
   const dates = [null, "2026-10-17", TODAY];
   const cases = [

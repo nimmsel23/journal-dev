@@ -33,14 +33,14 @@ module.exports = defineConfig(async ({ mode }) => {
   const { vosChangelog } = await import("./scripts/vos-changelog/vos-changelog-vite.mjs");
   const env = loadEnv(mode, process.cwd(), "");
   const appMode = process.env.VITE_APP_MODE || env.VITE_APP_MODE || "coach";
-  // Flavor (door/voice/game/tent): eigenes App-Icon-Paket (public/icons-<flavor>), Name, Farben, Splash
-  // für das Hosting vos-door.web.app (pnpm run deploy:door). Default: Journal.
-  // Weitere Flavors: voice / game / tent (Raster-Apps auf vos-voice / vos-game / vos-tent), je eigenes Icon-Paket.
+  // Flavor (door/voice/game/tent/habits): eigenes App-Icon-Paket (public/icons-<flavor>), Name, Farben, Splash.
+  // Solo-Sites aus derselben Journal-Codebase (pnpm run deploy:<id>). Default: Journal.
   const FLAVORS = {
     door: { name: "The Door", short: "Door", dir: "icons-door" },
     voice: { name: "Voice", short: "Voice", dir: "icons-voice" },
     game: { name: "Game", short: "Game", dir: "icons-game" },
     tent: { name: "General's Tent", short: "Tent", dir: "icons-tent" },
+    habits: { name: "Habits", short: "Habits", dir: "icons-habits" },
   };
   const FL = FLAVORS[process.env.VITE_APP_FLAVOR || env.VITE_APP_FLAVOR];
   const DOOR = !!FL; // „Flavor-App“ (Name historisch von Door)
@@ -122,7 +122,7 @@ module.exports = defineConfig(async ({ mode }) => {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
           navigateFallback: `${BASE}index.html`,
           navigateFallbackDenylist: [/^\/api/, /^\/__\//],
-          globIgnores: ["**/*.map", ...["icons", "icons-door", "icons-voice", "icons-game", "icons-tent"].filter((d) => d !== (FL ? FL.dir : "icons")).map((d) => `${d}/**`)],
+          globIgnores: ["**/*.map", ...["icons", "icons-door", "icons-voice", "icons-game", "icons-tent", "icons-habits"].filter((d) => d !== (FL ? FL.dir : "icons")).map((d) => `${d}/**`)],
           // Nur Google Fonts cachen; Firebase/Auth/Firestore/Vertex bewusst ohne Route (immer Netzwerk)
           runtimeCaching: [
             {

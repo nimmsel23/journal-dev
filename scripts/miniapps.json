@@ -1,5 +1,5 @@
 {
-  "_note": "Flavor-Apps aus journal-dev: ein Codebestand, je Site ein Build mit VITE_APP_FLAVOR + VITE_DEFAULT_TAB (package.json deploy:<id>:build, deploy-master.yml). Ein Eintrag mit planned:true hat noch keine eigene Site (nur Tab in einer anderen App). Quelle für das Portal (vos-portal). Game-Maps (gameMap) sind Unterpfad-Apps auf der Site vos-game (gleiche Origin), gebaut mit scripts/build-game-maps.mjs.",
+  "_note": "Flavor-Apps aus journal-dev: ein Codebestand, je Site ein Build mit VITE_APP_FLAVOR + VITE_DEFAULT_TAB (+ optional VITE_DEFAULT_MODE; package.json deploy:<id>:build, deploy-master.yml). Ein Eintrag mit planned:true hat noch keine eigene Site (nur Tab in einer anderen App). Quelle für das Portal (vos-portal). Game-Maps (gameMap) sind Unterpfad-Apps auf der Site vos-game (gleiche Origin), gebaut mit scripts/build-game-maps.mjs.",
   "apps": [
     {
       "id": "journal",
@@ -72,10 +72,23 @@
       "paths": ["src/views/tent/"]
     },
     {
+      "id": "habits",
+      "target": "habits",
+      "site": "habit-vos",
+      "flavor": "habits",
+      "defaultTab": "journal-v2",
+      "defaultMode": "habits",
+      "name": "Habits",
+      "short": "Habits",
+      "description": "Habits Solo: Journal-v2-Modus habits (#v2/habits), Flavor-Build wie Door/Voice",
+      "accent": "#fb923c",
+      "paths": ["src/views/v2/JournalV2Habits.jsx", "src/views/v2/habitsModel.js"]
+    },
+    {
       "id": "habits-v1",
       "planned": true,
       "name": "Habits v1",
-      "description": "Habit-Tracking (v1), bisher Tab in Journal v1",
+      "description": "Habit-Tracking (v1), bisher Tab in Journal v1 — Legacy-Shell apps/habits nicht mehr Hosting-Quelle",
       "accent": "#a78bfa",
       "paths": ["src/views/HabitVosView.jsx"]
     },
@@ -98,8 +111,8 @@
     {
       "id": "habits-v2",
       "planned": true,
-      "name": "Habits v2",
-      "description": "Habits im Raster-Design, bisher Ansicht #v2/habits in Journal v2",
+      "name": "Habits v2 (Tab)",
+      "description": "Habits-Modus in Journal v2 / habit-vos Solo — gleiche View wie Flavor habits",
       "accent": "#1738ff",
       "paths": ["src/views/v2/JournalV2Habits.jsx"]
     },

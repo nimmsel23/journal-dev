@@ -1,0 +1,48 @@
+# C-011: Live-Smoke nach erfolgreichem Live-Deploy.
+# Eigener Workflow, kein Schritt in check/automerge und kein PR-Check.
+# Ein roter Lauf blockiert keinen Merge und färbt den Deploy-Lauf nicht um.
+# Der CTO-Tagesbericht liest: gh run list --workflow "Live Smoke (Journal)"
+# Aktiv erst, wenn diese Datei auf dem Default-Branch liegt.
+
+name: Live Smoke (Journal)
+
+on:
+  workflow_run:
+    workflows:
+      - Live Deploy (Journal master)
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-smoke-journal-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'master' &&
+      (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Live-Seite prüfen
+        run: |
+          set -euo pipefail
+          echo "Live-Smoke https://journal-vos.web.app nach ${{ github.event.workflow_run.name }} (${{ github.event.workflow_run.html_url }})"
+          mkdir -p "$RUNNER_TEMP/live-smoke"
+          cp scripts/live-smoke.mjs "$RUNNER_TEMP/live-smoke/live-smoke.mjs"
+          cd "$RUNNER_TEMP/live-smoke"
+          npm init -y
+          npm install --silent playwright@1.65.0
+          npx playwright install --with-deps chromium
+          node live-smoke.mjs "https://journal-vos.web.app"

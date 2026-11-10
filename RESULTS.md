@@ -1,3 +1,4 @@
+- 2026-11-10: Org `eeb9d722` — smartLogErrorText fail-closed (`src/lib/smartLogErrorText.js`, Tests; INTERNAL/[0] → Nutzertext „Smart Logging ist gerade nicht verfügbar“; Server-Reasons aus `5f2f694`).
 - 2026-11-10: C-012 Semver Baseline 0.2.0 + Promote-Tag `journal-v*` (PR #51).
 - 2026-11-10: fix(git): accidental `.worktrees/*` gitlinks entfernt + `.gitignore` — Gemini CI Agent Checkout (`No url found for submodule path .worktrees/…`) war die Rot-Ursache; Commit `c2bf199` auf `dev`.
 

@@ -1,3 +1,10 @@
+## 2026-11-10 — C-012 Semver Baseline 0.2.0 (CEO: Option B)
+
+- CEO-Entscheid C-012 (Org-Task `9545df26`) setzt die Baseline neu: `package.json` `version` `1.0.1` → `0.2.0`. `1.0.0` gilt erst beim Play-Store-Produktionsrelease; die Stände `1.0.0`/`1.0.1` (2026-11-09/10) sind damit abgelöst.
+- Option B bleibt: Version nur bewusst auf `dev` mitbumpen, Auto-Promote trägt sie nach `master`. Kein Autobump, kein Deploy in diesem Commit.
+- Anzeige bleibt `0.2.0+sha7` (`vite` → `__APP_VERSION__`).
+- Der Promote-Workflow setzt auf dem Promote-Commit den annotated Tag `journal-v<package.json version>` und überspringt ihn, wenn der Tag schon existiert (kein Verschieben).
+
 - 2026-11-10: fix(habits): Vite 8 `manualChunks` Funktionsform — Live Deploy 42725191840 Build Journal (habits) wieder grün; Semver PATCH `1.0.1`.
 - 2026-11-10: chore(deps) major stack align — React 19 / Vite 8.3.6 / plugin-react 6.2.1 / Firebase 13 (age-safe pins, pnpm-workspace overrides).
 

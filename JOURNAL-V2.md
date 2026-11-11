@@ -77,20 +77,14 @@ fitness-dev-Variante mit anderer `saveJournal`-Signatur (Tags als Array) durchsc
 
 | Befehl | Wirkung |
 |---|---|
-| `pnpm run deploy:cloud` / `deploy` / `firebase` | = `deploy:v2` → kanonisch **vos-journal.web.app** |
-| `pnpm run deploy:v2` | Build nach `dist-v2` mit `VITE_DEFAULT_TAB=journal-v2` + Deploy auf **vos-journal.web.app** (Target `v2`) |
-| `pnpm run deploy:journal-vos-redirect` | 301-Hülle auf **journal-vos.web.app** → vos-journal |
-| `pnpm run deploy:v2:build` | nur der v2-Build |
-| `pnpm run deploy:door` | Build nach `dist-door` mit `VITE_APP_FLAVOR=door` + `VITE_DEFAULT_TAB=door-v2` + Deploy auf **vos-door.web.app** (Target `door`) |
-| `pnpm run deploy:door:build` | nur der Door-Build |
-| `pnpm run deploy:voice` / `deploy:game` / `deploy:tent` (jeweils `…:build`) | Flavor-Apps auf **vos-voice / vos-game / vos-tent.web.app** (Targets `voice`/`game`/`tent`) |
-| `pnpm run deploy:all` (`deploy:all:build`) | baut v2 + Flavors und deployt inkl. journal-vos-Redirect |
-| `./deploy.sh [--pull] [--dry-run]` | Desktop-Prod `/opt/journal`: historisch `dist-firebase/` — Live-Kanon ist vos-journal (`dist-v2`) |
+| `pnpm run deploy:cloud` / `deploy` / `firebase` | = `deploy:v2` → kanonisch **vos-journal.web.app** (+ `/mini/*`) |
+| `pnpm run deploy:v2` | Root + Solo-Minis (`build-journal-minis.mjs`) → Target `v2` |
+| `pnpm run deploy:journal-vos-redirect` | 301-Hülle **journal-vos** → vos-journal |
+| `pnpm run deploy:door` / `voice` / `game` / `tent` / `habits` | nur noch Redirect-Sites → `/mini/<id>/` |
+| `pnpm run deploy:all` | baut vos-journal+minis und deployt inkl. aller 301-Targets |
 
-Targets: `firebase.json` + `.firebaserc` (`v2` → **`vos-journal`** kanonisch, `journal` → `journal-vos` nur Redirect,
-`door` → `vos-door`, `voice` → `vos-voice`, `game` → `vos-game`, `tent` → `vos-tent`). Alle Builds enthalten denselben Code und unterscheiden sich nur durch Start-Tab, Name, Icons
-und Farben. Die Seiten `vos-journal`, `vos-door`, `vos-voice`, `vos-game` und `vos-tent` wurden per `firebase hosting:sites:create` angelegt.
-Live-CI deployt `hosting:journal,v2,door,…` (`journal` = Redirect). Preview lokal: Channel auf Target `v2`.
+Targets: `v2` = **vos-journal** (Inhalt); `journal`/`door`/`voice`/`game`/`tent`/`habits` = 301.
+Solo-Icons: `https://vos-journal.web.app/mini/{door,voice,game,tent,habits}/` (eine OAuth-URI).
 
 ## Door v2 (Raster)
 
@@ -104,16 +98,11 @@ Live-CI deployt `hosting:journal,v2,door,…` (`journal` = Redirect). Preview lo
 - Bewusst weggelassen: Notizen/Bearbeiten, Lens-Auswahl (MoSCoW), War-Stack-Wizard, Reflexion schreiben.
 - Alle Modi haben Lade-, Fehler- (mit „Erneut versuchen“) und Leerzustand. Die alte v1-Ansicht bleibt unverändert.
 
-## Door als eigene App (vos-door.web.app)
+## Door als Solo-Icon (vos-journal/mini/door/)
 
-- **Icon-Paket** `public/icons-door/`: `icon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (Motiv in der
-  80-%-Sicherheitszone), `apple-touch-icon.png` (180), `favicon-32.png`, `favicon.ico` (32+48). Motiv: schwarzer Türrahmen,
-  blaue Tür, Griff, Papierhintergrund. Quelle sind `icon.svg`/`maskable.svg`, gerendert mit `rsvg-convert`.
-- **Flavor-Build:** `VITE_APP_FLAVOR=door` (in `vite.config.cjs`) setzt Manifest-Name „The Door“ / „Door“, Theme- und
-  Hintergrundfarbe Papier (`#f6f6f2`), die Door-Icons, den Titel, Apple-Web-App-Titel und einen hellen Splash (Plugin
-  `journal:flavor-html` ersetzt Strings in `index.html`). Im Door-Build sind `icons/**`, im Journal-Build `icons-door/**`
-  aus dem Service-Worker-Precache ausgenommen.
-- **Auth:** `vos-door.web.app` und `vos-door.firebaseapp.com` stehen in den autorisierten Domains von `fitness-aos`.
+- **Icon-Paket** `public/icons-door/` (wie bisher).
+- **Flavor-Build:** `VITE_APP_FLAVOR=door` + `VITE_BASE_PATH=/mini/door/` via `build-journal-minis.mjs`.
+- **Auth:** gleiche Origin wie vos-journal — keine Extra-OAuth-URI. Legacy `vos-door.web.app` → 301.
 
 ## Kalender: Fire Map
 

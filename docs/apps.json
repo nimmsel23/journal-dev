@@ -6,84 +6,104 @@
       "kind": "solo",
       "name": "Journal v1",
       "short": "Journal",
-      "description": "Timeline-Journal (v1) mit Tabs Smart Log, Habits und Door",
+      "description": "Timeline-Journal (v1) — Legacy-Alias journal-vos → 301 vos-journal",
       "accent": "#a78bfa",
       "site": "journal-vos",
       "url": "https://journal-vos.web.app",
       "tab": "journal",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "v2",
       "kind": "solo",
-      "name": "Journal v2",
-      "short": "Journal v2",
-      "description": "Raster-Journal: Tag, Woche, Monat, Smart Logger; dazu Habits v2 (#v2/habits)",
+      "name": "Journal",
+      "short": "Journal",
+      "description": "Kanonische Origin vos-journal; Solo-Icons unter /mini/*",
       "accent": "#1738ff",
       "site": "vos-journal",
       "url": "https://vos-journal.web.app",
       "tab": "journal-v2",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "door",
       "kind": "solo",
-      "name": "Door v2",
-      "short": "Door v2",
-      "description": "Door: Potential, Plan, Production, Profit im Raster-Design",
+      "name": "Door",
+      "short": "Door",
+      "description": "Solo-Icon unter vos-journal/mini/door/",
       "accent": "#1738ff",
-      "site": "vos-door",
-      "url": "https://vos-door.web.app",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app/mini/door/",
       "tab": "door-v2",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "voice",
       "kind": "solo",
-      "name": "Voice v2",
-      "short": "Voice v2",
-      "description": "Voice: Mental-Mastery-Sessions",
+      "name": "Voice",
+      "short": "Voice",
+      "description": "Solo-Icon unter vos-journal/mini/voice/",
       "accent": "#1738ff",
-      "site": "vos-voice",
-      "url": "https://vos-voice.web.app",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app/mini/voice/",
       "tab": "voice-v2",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "game",
       "kind": "solo",
-      "name": "Game v2",
-      "short": "Game v2",
-      "description": "Game: Frame, Freedom, Focus, Fire Maps",
+      "name": "Game",
+      "short": "Game",
+      "description": "Solo-Icon unter vos-journal/mini/game/",
       "accent": "#1738ff",
-      "site": "vos-game",
-      "url": "https://vos-game.web.app",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app/mini/game/",
       "tab": "game-v2",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "tent",
       "kind": "solo",
-      "name": "Tent v2",
-      "short": "Tent v2",
-      "description": "General's Tent: wöchentlicher Review",
+      "name": "Tent",
+      "short": "Tent",
+      "description": "Solo-Icon unter vos-journal/mini/tent/",
       "accent": "#1738ff",
-      "site": "vos-tent",
-      "url": "https://vos-tent.web.app",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app/mini/tent/",
       "tab": "tent-v2",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
+    },
+    {
+      "id": "habits",
+      "kind": "solo",
+      "name": "Habits",
+      "short": "Habits",
+      "description": "Solo-Icon unter vos-journal/mini/habits/",
+      "accent": "#fb923c",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app/mini/habits/",
+      "tab": "journal-v2",
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "habits-v1",
       "kind": "solo",
       "name": "Habits v1",
       "short": "Habits v1",
-      "description": "Habit-Tracking (v1), bisher Tab in Journal v1",
+      "description": "Habit-Tracking (v1), bisher Tab in Journal v1 — Legacy-Shell apps/habits nicht mehr Hosting-Quelle",
       "accent": "#a78bfa",
       "site": null,
       "url": null,
       "tab": null,
-      "planned": true
+      "planned": true,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "smart-log",
@@ -95,7 +115,8 @@
       "site": null,
       "url": null,
       "tab": null,
-      "planned": true
+      "planned": true,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "door-v1",
@@ -107,67 +128,75 @@
       "site": null,
       "url": null,
       "tab": null,
-      "planned": true
+      "planned": true,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "habits-v2",
       "kind": "solo",
-      "name": "Habits v2",
-      "short": "Habits v2",
-      "description": "Habits im Raster-Design, bisher Ansicht #v2/habits in Journal v2",
+      "name": "Habits v2 (Tab)",
+      "short": "Habits v2 (Tab)",
+      "description": "Habits-Modus in Journal v2 — gleiche View wie Flavor habits",
       "accent": "#1738ff",
       "site": null,
       "url": null,
       "tab": null,
-      "planned": true
+      "planned": true,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "game-frame",
       "kind": "solo",
       "name": "Game Frame",
       "short": "Frame",
-      "description": "Frame Map: das große Bild, Ausgangslage und Richtung (gleiche Origin wie Game v2)",
+      "description": "Frame Map unter vos-journal/mini/game/frame/",
       "accent": "#1738ff",
-      "site": "vos-game",
-      "url": "https://vos-game.web.app/frame/",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app/mini/game/frame/",
       "tab": "game-v2",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "game-freedom",
       "kind": "solo",
       "name": "Game Freedom",
       "short": "Freedom",
-      "description": "Freedom Map: Jahres- bis Quartalsziele (gleiche Origin wie Game v2)",
+      "description": "Freedom Map unter vos-journal/mini/game/freedom/",
       "accent": "#1738ff",
-      "site": "vos-game",
-      "url": "https://vos-game.web.app/freedom/",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app/mini/game/freedom/",
       "tab": "game-v2",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "game-focus",
       "kind": "solo",
       "name": "Game Focus",
       "short": "Focus",
-      "description": "Focus Map: Monats- bis Wochenziele (gleiche Origin wie Game v2)",
+      "description": "Focus Map unter vos-journal/mini/game/focus/",
       "accent": "#1738ff",
-      "site": "vos-game",
-      "url": "https://vos-game.web.app/focus/",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app/mini/game/focus/",
       "tab": "game-v2",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     },
     {
       "id": "game-fire",
       "kind": "solo",
       "name": "Game Fire",
       "short": "Fire",
-      "description": "Fire Map: Wochen- bis Tagesaufgaben (gleiche Origin wie Game v2)",
+      "description": "Fire Map unter vos-journal/mini/game/fire/",
       "accent": "#1738ff",
-      "site": "vos-game",
-      "url": "https://vos-game.web.app/fire/",
+      "site": "vos-journal",
+      "url": "https://vos-journal.web.app/mini/game/fire/",
       "tab": "game-v2",
-      "planned": false
+      "planned": false,
+      "bundledAuthDomain": "fitness-aos.firebaseapp.com"
     }
-  ]
+  ],
+  "pages": "https://nimmsel23.github.io/journal-dev/",
+  "bundledAuthDomain": "fitness-aos.firebaseapp.com"
 }

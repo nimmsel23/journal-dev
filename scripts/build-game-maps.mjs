@@ -1,4 +1,6 @@
-// Game-Maps als eigene Mini-Apps auf DERSELBEN Origin wie Game v2: vos-game.web.app/<map>/ (frame, freedom, focus, fire).
+// LEGACY: Game-Maps laufen jetzt unter vos-journal via scripts/build-journal-minis.mjs
+// (/mini/game/<map>/). Dieses Skript nicht mehr für Live-Deploy nutzen.
+// Historisch: vos-game.web.app/<map>/ (frame, freedom, focus, fire).
 // Gleiche Origin = gleicher Login, gleiche IndexedDB/Cache, keine neue Site, keine neue autorisierte Domain.
 //
 //   node scripts/build-game-maps.mjs [map …]     ohne Angabe: alle aus scripts/miniapps.json mit "gameMap"

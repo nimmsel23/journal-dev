@@ -12,11 +12,8 @@ Derselbe Code, sechs Builds (`VITE_APP_FLAVOR`/`VITE_DEFAULT_TAB`), je ein Hosti
 | App | Adresse | Startansicht |
 |---|---|---|
 | **Journal (kanonisch)** | **vos-journal.web.app** | `#v2` |
-| Journal Legacy-Alias | journal-vos.web.app → 301 vos-journal | — |
-| Door | vos-door.web.app | `#door2` |
-| Voice | vos-voice.web.app | `#voice` |
-| Game | vos-game.web.app | `#fire` |
-| Tent | vos-tent.web.app | `#tent2` |
+| Door / Voice / Game / Tent / Habits | **vos-journal.web.app/mini/&lt;id&gt;/** (Solo-Icon) | Flavor-Tab |
+| Legacy-Sites | vos-door, vos-voice, vos-game, vos-tent, habit-vos, journal-vos | 301 → oben |
 
 Die Tent-PWA kann eine eigene Firebase-Push-Erinnerung aktivieren. Sie nutzt
 eine separate Token-Lane (`apps.tent`), einen eigenen Service Worker und sendet

@@ -3,11 +3,7 @@
     {
       "target": "journal",
       "public": "hosting/journal-vos-redirect",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "redirects": [
         {
           "source": "**",
@@ -17,365 +13,127 @@
       ]
     },
     {
+      "target": "v2",
       "public": "dist-v2",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
+        { "source": "/mini/door/**", "destination": "/mini/door/index.html" },
+        { "source": "/mini/voice/**", "destination": "/mini/voice/index.html" },
+        { "source": "/mini/game/frame/**", "destination": "/mini/game/frame/index.html" },
+        { "source": "/mini/game/freedom/**", "destination": "/mini/game/freedom/index.html" },
+        { "source": "/mini/game/focus/**", "destination": "/mini/game/focus/index.html" },
+        { "source": "/mini/game/fire/**", "destination": "/mini/game/fire/index.html" },
+        { "source": "/mini/game/**", "destination": "/mini/game/index.html" },
+        { "source": "/mini/tent/**", "destination": "/mini/tent/index.html" },
+        { "source": "/mini/habits/**", "destination": "/mini/habits/index.html" },
+        { "source": "**", "destination": "/index.html" }
       ],
       "headers": [
         {
           "source": "/**",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
-            }
-          ]
+          "headers": [{ "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" }]
         },
         {
           "source": "**/*.@(js|css|woff2)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, immutable"
-            }
-          ]
+          "headers": [{ "key": "Cache-Control", "value": "max-age=31536000, immutable" }]
         },
         {
           "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
+          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+        },
+        {
+          "source": "/mini/**/sw.js",
+          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
         },
         {
           "source": "/journal-messaging-sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
+          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+        },
+        {
+          "source": "/mini/**/manifest.webmanifest",
+          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
         }
-      ],
-      "target": "v2"
+      ]
     },
     {
-      "public": "dist-door",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
+      "target": "door",
+      "public": "hosting/solo-redirect",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "redirects": [
         {
           "source": "**",
-          "destination": "/index.html"
+          "destination": "https://vos-journal.web.app/mini/door/",
+          "type": 301
         }
-      ],
-      "headers": [
-        {
-          "source": "/**",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(js|css|woff2)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, immutable"
-            }
-          ]
-        },
-        {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
-          "source": "/index.html",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
-          "source": "/manifest.webmanifest",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
-          "source": "/journal-messaging-sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        }
-      ],
-      "target": "door"
+      ]
     },
     {
-      "public": "dist-voice",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
+      "target": "voice",
+      "public": "hosting/solo-redirect",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "redirects": [
         {
           "source": "**",
-          "destination": "/index.html"
+          "destination": "https://vos-journal.web.app/mini/voice/",
+          "type": 301
         }
-      ],
-      "headers": [
-        {
-          "source": "/**",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(js|css|woff2)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, immutable"
-            }
-          ]
-        },
-        {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        }
-      ],
-      "target": "voice"
+      ]
     },
     {
-      "public": "dist-game",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
+      "target": "game",
+      "public": "hosting/solo-redirect",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "redirects": [
         {
-          "source": "/frame/**",
-          "destination": "/frame/index.html"
+          "source": "/frame{,/**}",
+          "destination": "https://vos-journal.web.app/mini/game/frame/",
+          "type": 301
         },
         {
-          "source": "/freedom/**",
-          "destination": "/freedom/index.html"
+          "source": "/freedom{,/**}",
+          "destination": "https://vos-journal.web.app/mini/game/freedom/",
+          "type": 301
         },
         {
-          "source": "/focus/**",
-          "destination": "/focus/index.html"
+          "source": "/focus{,/**}",
+          "destination": "https://vos-journal.web.app/mini/game/focus/",
+          "type": 301
         },
         {
-          "source": "/fire/**",
-          "destination": "/fire/index.html"
+          "source": "/fire{,/**}",
+          "destination": "https://vos-journal.web.app/mini/game/fire/",
+          "type": 301
         },
         {
           "source": "**",
-          "destination": "/index.html"
+          "destination": "https://vos-journal.web.app/mini/game/",
+          "type": 301
         }
-      ],
-      "headers": [
-        {
-          "source": "/**",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(js|css|woff2)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, immutable"
-            }
-          ]
-        },
-        {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
-          "source": "/@(frame|freedom|focus|fire)/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        }
-      ],
-      "target": "game"
+      ]
     },
     {
-      "public": "dist-tent",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
+      "target": "tent",
+      "public": "hosting/solo-redirect",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "redirects": [
         {
           "source": "**",
-          "destination": "/index.html"
+          "destination": "https://vos-journal.web.app/mini/tent/",
+          "type": 301
         }
-      ],
-      "headers": [
-        {
-          "source": "/**",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(js|css|woff2)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, immutable"
-            }
-          ]
-        },
-        {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
-          "source": "/tent-messaging-sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        }
-      ],
-      "target": "tent"
+      ]
     },
     {
-      "public": "dist-habits",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
+      "target": "habits",
+      "public": "hosting/solo-redirect",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "redirects": [
         {
           "source": "**",
-          "destination": "/index.html"
+          "destination": "https://vos-journal.web.app/mini/habits/",
+          "type": 301
         }
-      ],
-      "headers": [
-        {
-          "source": "/**",
-          "headers": [
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin-allow-popups"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(js|css|woff2)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, immutable"
-            }
-          ]
-        },
-        {
-          "source": "/sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
-          "source": "/index.html",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
-          "source": "/manifest.webmanifest",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        },
-        {
-          "source": "/journal-messaging-sw.js",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        }
-      ],
-      "target": "habits"
+      ]
     }
   ],
   "storage": {

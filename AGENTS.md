@@ -16,7 +16,7 @@ Stand 2026-11-09. Ausführlich: `~/vitalos/docs/DEPLOYMENT.md`.
 | Branch | Rolle | Lokal |
 |---|---|---|
 | `dev` | Edits und Previews (Preview-Channel `dev`, PR-Channel je PR) | ja — dieser Klon steht fest auf `dev` |
-| `master` | **Standalone-Prod** — Kanon **`vos-journal`** (Target `v2`); `journal-vos` = 301-Alias; Flavors `vos-door`/`vos-voice`/`vos-game`/`vos-tent`/`habit-vos`. Deploy nur per CI | nein, lokal nicht nötig |
+| `master` | **Standalone-Prod** — Kanon **`vos-journal`** (+ `/mini/{door,voice,game,tent,habits}`); Legacy-Sites nur 301. Deploy nur per CI | nein, lokal nicht nötig |
 | `vitalos` | **Legacy** (darf remote noch existieren) — kein Pin-Ziel mehr | nicht für Shell nutzen |
 
 - Release (automatisch): `dev` committen und pushen. Nach grünem Check promotet `automerge.yml` nach `master` und startet den Live-Deploy. Direkte Pushes auf `master` vermeiden; Hotfixes über `dev`.
@@ -45,7 +45,7 @@ Dieses Repo besitzt den Browser-Zugang auf den Taskwarrior-Sync und die
 browserseitigen Sync-Clients; der CORS-Proxy gehört zu `~/dev/backend/`. Die Clients (Door v2, TcSetup im Game) verwenden folgenden Weg:
 
 ```
-vos-door / vos-game / vos-voice / vos-tent / vos-journal / journal-vos / vitalos.web.app
+vos-journal (+ /mini/*) / Legacy-Redirects / vitalos.web.app
         │  Browser-Clients: src/lib/door/taskchampion.js, src/lib/door/taskwarrior.door.js
         ▼
 https://ideapad.tail7a15d6.ts.net/   ← Tailscale-Funnel-Root (internetöffentlich)

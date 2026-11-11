@@ -1,70 +1,87 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>journal-dev — Apps</title><style>
-:root{--bg:#0b0d12;--fg:#e8eaf0;--mut:#8b93a7;--card:#141822;--line:#232a3a}
+<title>journal-dev — Dev-Dashboard</title><style>
+:root{--bg:#0b0d12;--fg:#e8eaf0;--mut:#8b93a7;--card:#141822;--line:#232a3a;--ok:#34d399;--warn:#fbbf24;--bad:#f87171}
 @media(prefers-color-scheme:light){:root{--bg:#f5f6fa;--fg:#161a24;--mut:#5d667a;--card:#fff;--line:#dde1ea}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif;padding:24px 16px 48px}
-main{max-width:1000px;margin:0 auto}h1{font-size:22px;margin:0 0 4px}h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:28px 0 10px}
-p.sub{color:var(--mut);margin:0 0 16px}input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+main{max-width:1100px;margin:0 auto}h1{font-size:22px;margin:0 0 4px}h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:28px 0 10px}
+p.sub{color:var(--mut);margin:0 0 12px}nav.links{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+nav.links a{font-size:12px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:4px 10px;text-decoration:none}
+nav.links a:hover{color:var(--fg);border-color:var(--fg)}
+input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
 a.card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:12px 14px}
-a.card:hover{border-color:var(--accent)}b{display:block}small{color:var(--mut);display:block}.tag{display:inline-block;font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-top:6px}
+a.card:hover{border-color:var(--accent)}b{display:block}small{color:var(--mut);display:block;margin-top:2px}
+.tag{display:inline-block;font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-top:6px;margin-right:4px}
+.tag.ok{color:var(--ok);border-color:color-mix(in oklab,var(--ok) 40%,var(--line))}
+.tag.warn{color:var(--warn);border-color:color-mix(in oklab,var(--warn) 40%,var(--line))}
+.tag.bad{color:var(--bad);border-color:color-mix(in oklab,var(--bad) 40%,var(--line))}
 a.planned{opacity:.6;border-style:dashed;cursor:default}
-.hide{display:none}</style></head><body><main>
-<h1>journal-dev — Apps</h1><p class="sub">14 Apps, erzeugt aus mini-app.json, scripts/miniapps.json und .firebaserc. Nicht von Hand ändern.</p><input id="q" type="search" placeholder="Suchen …" autocomplete="off">
-<section><h2>Mini-Apps</h2><div class="grid"><a class="card" href="https://journal-vos.web.app" target="_blank" rel="noopener" style="--accent:#a78bfa" data-q="journal v1 timeline-journal (v1) mit tabs smart log, habits und door journal-vos ">
+.hide{display:none}
+.legend{font-size:12px;color:var(--mut);margin:8px 0 0;line-height:1.45}
+</style></head><body><main>
+<h1>journal-dev — Dev-Dashboard</h1>
+<p class="sub">15 Hosting-Apps aus mini-app.json / miniapps.json / .firebaserc · erzeugt 2026-11-11T11:17:02Z · Quelle: vos-portal (nicht von Hand editieren; Status-Overlay: portal/dev-status.json)</p>
+<nav class="links"><a href="https://github.com/nimmsel23/vitalos/blob/master/prod/coordination/PRODUCT.md" target="_blank" rel="noopener">Produkt (PRODUCT.md)</a><a href="https://github.com/nimmsel23/vitalos/blob/master/prod/coordination/README.md" target="_blank" rel="noopener">Koordination</a><a href="https://github.com/nimmsel23/vitalos/blob/master/prod/coordination/PRODUKT-BACKLOG.md" target="_blank" rel="noopener">Backlog</a><a href="https://github.com/nimmsel23/vitalos/blob/master/prod/coordination/CTO.md" target="_blank" rel="noopener">CTO</a><a href="https://nimmsel23.github.io/vitalos/" target="_blank" rel="noopener">Meta Pages</a><a href="https://nimmsel23.github.io/vitalos/dev-dashboard.html" target="_blank" rel="noopener">Dev-Dashboard</a><a href="https://nimmsel23.github.io/journal-dev/" target="_blank" rel="noopener">Repo Pages</a><a href="./apps.json" target="_blank" rel="noopener">apps.json</a></nav>
+<input id="q" type="search" placeholder="Suchen (Name, Site, auth, gate, rot) …" autocomplete="off">
+<p class="legend">Tags: auth:* = Login-Domain-Modell · gate:hard sperrt Offline · gate:local-first/soft = App ohne Login nutzbar · rot = offener Betriebsblocker</p>
+<section><h2>Mini-Apps</h2><div class="grid"><a class="card" href="https://journal-vos.web.app" target="_blank" rel="noopener" style="--accent:#a78bfa" data-q="journal v1 timeline-journal (v1) mit tabs smart log, habits und door journal-vos fitness-aos.firebaseapp.com">
   <b>Journal v1</b><small>Timeline-Journal (v1) mit Tabs Smart Log, Habits und Door</small>
-  <span class="tag">journal-vos</span> <span class="tag">Tab journal</span>
+  <span class="tag">journal-vos</span> <span class="tag">Tab journal</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card" href="https://vos-journal.web.app" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="journal v2 raster-journal: tag, woche, monat, smart logger; dazu habits v2 (#v2/habits) vos-journal ">
+<a class="card" href="https://vos-journal.web.app" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="journal v2 raster-journal: tag, woche, monat, smart logger; dazu habits v2 (#v2/habits) vos-journal fitness-aos.firebaseapp.com">
   <b>Journal v2</b><small>Raster-Journal: Tag, Woche, Monat, Smart Logger; dazu Habits v2 (#v2/habits)</small>
-  <span class="tag">vos-journal</span> <span class="tag">Tab journal-v2</span>
+  <span class="tag">vos-journal</span> <span class="tag">Tab journal-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card" href="https://vos-door.web.app" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="door v2 door: potential, plan, production, profit im raster-design vos-door ">
+<a class="card" href="https://vos-journal.web.app/mini/door/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="door v2 door: potential, plan, production, profit im raster-design vos-door fitness-aos.firebaseapp.com">
   <b>Door v2</b><small>Door: Potential, Plan, Production, Profit im Raster-Design</small>
-  <span class="tag">vos-door</span> <span class="tag">Tab door-v2</span>
+  <span class="tag">vos-journal/mini/door</span> <span class="tag">Tab door-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card" href="https://vos-voice.web.app" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="voice v2 voice: mental-mastery-sessions vos-voice ">
+<a class="card" href="https://vos-journal.web.app/mini/voice/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="voice v2 voice: mental-mastery-sessions vos-voice fitness-aos.firebaseapp.com">
   <b>Voice v2</b><small>Voice: Mental-Mastery-Sessions</small>
-  <span class="tag">vos-voice</span> <span class="tag">Tab voice-v2</span>
+  <span class="tag">vos-journal/mini/voice</span> <span class="tag">Tab voice-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card" href="https://vos-game.web.app" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game v2 game: frame, freedom, focus, fire maps vos-game ">
+<a class="card" href="https://vos-journal.web.app/mini/game/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game v2 game: frame, freedom, focus, fire maps vos-game fitness-aos.firebaseapp.com">
   <b>Game v2</b><small>Game: Frame, Freedom, Focus, Fire Maps</small>
-  <span class="tag">vos-game</span> <span class="tag">Tab game-v2</span>
+  <span class="tag">vos-journal/mini/game</span> <span class="tag">Tab game-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card" href="https://vos-tent.web.app" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="tent v2 general's tent: wöchentlicher review vos-tent ">
+<a class="card" href="https://vos-journal.web.app/mini/tent/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="tent v2 general's tent: wöchentlicher review vos-tent fitness-aos.firebaseapp.com">
   <b>Tent v2</b><small>General's Tent: wöchentlicher Review</small>
-  <span class="tag">vos-tent</span> <span class="tag">Tab tent-v2</span>
+  <span class="tag">vos-journal/mini/tent</span> <span class="tag">Tab tent-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card planned" style="--accent:#a78bfa" data-q="habits v1 habit-tracking (v1), bisher tab in journal v1  ">
-  <b>Habits v1</b><small>Habit-Tracking (v1), bisher Tab in Journal v1</small>
-   <span class="tag">geplant, noch keine eigene Site</span>
+<a class="card" href="https://vos-journal.web.app/mini/habits/" target="_blank" rel="noopener" style="--accent:#fb923c" data-q="habits habits solo: journal-v2-modus habits (#v2/habits), flavor-build wie door/voice habit-vos fitness-aos.firebaseapp.com">
+  <b>Habits</b><small>Habits Solo: Journal-v2-Modus habits (#v2/habits), Flavor-Build wie Door/Voice</small>
+  <span class="tag">vos-journal/mini/habits</span> <span class="tag">Tab journal-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card planned" style="--accent:#a78bfa" data-q="smart log ki-freihand-logging, bisher tab in journal v1  ">
+<a class="card planned" style="--accent:#a78bfa" data-q="habits v1 habit-tracking (v1), bisher tab in journal v1 — legacy-shell apps/habits nicht mehr hosting-quelle fitness-aos.firebaseapp.com">
+  <b>Habits v1</b><small>Habit-Tracking (v1), bisher Tab in Journal v1 — Legacy-Shell apps/habits nicht mehr Hosting-Quelle</small>
+   <span class="tag">geplant</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
+</a>
+<a class="card planned" style="--accent:#a78bfa" data-q="smart log ki-freihand-logging, bisher tab in journal v1 fitness-aos.firebaseapp.com">
   <b>Smart Log</b><small>KI-Freihand-Logging, bisher Tab in Journal v1</small>
-   <span class="tag">geplant, noch keine eigene Site</span>
+   <span class="tag">geplant</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card planned" style="--accent:#a78bfa" data-q="door v1 the door framework (v1), bisher tab in journal v1  ">
+<a class="card planned" style="--accent:#a78bfa" data-q="door v1 the door framework (v1), bisher tab in journal v1 fitness-aos.firebaseapp.com">
   <b>Door v1</b><small>The Door Framework (v1), bisher Tab in Journal v1</small>
-   <span class="tag">geplant, noch keine eigene Site</span>
+   <span class="tag">geplant</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card planned" style="--accent:#1738ff" data-q="habits v2 habits im raster-design, bisher ansicht #v2/habits in journal v2  ">
-  <b>Habits v2</b><small>Habits im Raster-Design, bisher Ansicht #v2/habits in Journal v2</small>
-   <span class="tag">geplant, noch keine eigene Site</span>
+<a class="card planned" style="--accent:#1738ff" data-q="habits v2 (tab) habits-modus in journal v2 / habit-vos solo — gleiche view wie flavor habits fitness-aos.firebaseapp.com">
+  <b>Habits v2 (Tab)</b><small>Habits-Modus in Journal v2 / habit-vos Solo — gleiche View wie Flavor habits</small>
+   <span class="tag">geplant</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card" href="https://vos-game.web.app/frame/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game frame frame map: das große bild, ausgangslage und richtung (gleiche origin wie game v2) vos-game ">
+<a class="card" href="https://vos-journal.web.app/mini/game/frame/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game frame frame map: das große bild, ausgangslage und richtung (gleiche origin wie game v2) vos-game fitness-aos.firebaseapp.com">
   <b>Game Frame</b><small>Frame Map: das große Bild, Ausgangslage und Richtung (gleiche Origin wie Game v2)</small>
-  <span class="tag">vos-game</span> <span class="tag">Tab game-v2</span>
+  <span class="tag">vos-journal/mini/game</span> <span class="tag">Tab game-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card" href="https://vos-game.web.app/freedom/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game freedom freedom map: jahres- bis quartalsziele (gleiche origin wie game v2) vos-game ">
+<a class="card" href="https://vos-journal.web.app/mini/game/freedom/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game freedom freedom map: jahres- bis quartalsziele (gleiche origin wie game v2) vos-game fitness-aos.firebaseapp.com">
   <b>Game Freedom</b><small>Freedom Map: Jahres- bis Quartalsziele (gleiche Origin wie Game v2)</small>
-  <span class="tag">vos-game</span> <span class="tag">Tab game-v2</span>
+  <span class="tag">vos-journal/mini/game</span> <span class="tag">Tab game-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card" href="https://vos-game.web.app/focus/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game focus focus map: monats- bis wochenziele (gleiche origin wie game v2) vos-game ">
+<a class="card" href="https://vos-journal.web.app/mini/game/focus/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game focus focus map: monats- bis wochenziele (gleiche origin wie game v2) vos-game fitness-aos.firebaseapp.com">
   <b>Game Focus</b><small>Focus Map: Monats- bis Wochenziele (gleiche Origin wie Game v2)</small>
-  <span class="tag">vos-game</span> <span class="tag">Tab game-v2</span>
+  <span class="tag">vos-journal/mini/game</span> <span class="tag">Tab game-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a>
-<a class="card" href="https://vos-game.web.app/fire/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game fire fire map: wochen- bis tagesaufgaben (gleiche origin wie game v2) vos-game ">
+<a class="card" href="https://vos-journal.web.app/mini/game/fire/" target="_blank" rel="noopener" style="--accent:#1738ff" data-q="game fire fire map: wochen- bis tagesaufgaben (gleiche origin wie game v2) vos-game fitness-aos.firebaseapp.com">
   <b>Game Fire</b><small>Fire Map: Wochen- bis Tagesaufgaben (gleiche Origin wie Game v2)</small>
-  <span class="tag">vos-game</span> <span class="tag">Tab game-v2</span>
+  <span class="tag">vos-journal/mini/game</span> <span class="tag">Tab game-v2</span><span class="tag">authDomain:fitness-aos.firebaseapp.com</span>
 </a></div></section>
 </main><script>const q=document.getElementById("q");q&&q.addEventListener("input",()=>{const v=q.value.toLowerCase();document.querySelectorAll("a.card").forEach(c=>c.classList.toggle("hide",!c.dataset.q.includes(v)));document.querySelectorAll("section").forEach(s=>s.classList.toggle("hide",!s.querySelector("a.card:not(.hide)")))})</script></body></html>

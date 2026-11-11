@@ -1,6 +1,5 @@
 # Standalone-Prod Journal: Push auf master deployt live (nur CI).
-# Hosting: v2 = kanonisch vos-journal; journal = 301 journal-vos→vos-journal;
-# door/voice/game/tent/habits = Flavor-Sites. Eine Codebase, keine Nachbar-Repos.
+# Hosting: v2 = vos-journal (+ /mini/* Solo-Icons); journal/door/voice/game/tent/habits = 301.
 #
 # Auslöser: push auf master und workflow_dispatch (automerge.yml) -> baut und deployt live (nur master).
 # Push auf `ci-test/**` -> reiner Build-Test, KEIN Deploy.

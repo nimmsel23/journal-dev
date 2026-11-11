@@ -21,19 +21,22 @@ Beide Workflows (`.github/workflows/preview-dev.yml`, `deploy-master.yml`) laufe
 
 ## Hosting-Targets
 
-Kanon (Owner 2026-11-11): **`vos-journal.web.app`**. `journal-vos.web.app` ist Legacy-Alias
-(301). Flavor-Sites (`vos-door` …) bleiben vorerst eigene Origins; langfristig können sie als
-Manifest-/Pfad-Icons unter `vos-journal` (gleiche Origin, eine OAuth-URI) laufen — siehe
+Kanon (Owner 2026-11-11): **`vos-journal.web.app`**. Solo-Icons unter `/mini/<id>/`
+(gleiche Origin, eine OAuth-URI). Legacy-Sites (`journal-vos`, `vos-door`, `vos-voice`,
+`vos-game`, `vos-tent`, `habit-vos`) sind nur noch 301 — siehe
 `~/vitalos/docs/HOSTING-TARGETS.md`.
 
 | Target | Site | Build-Ordner | Befehl |
 |---|---|---|---|
-| `v2` | **vos-journal.web.app** (kanonisch) | `dist-v2` | `pnpm run deploy:v2` (`deploy`, `deploy:cloud`, `firebase`) |
-| `journal` | journal-vos.web.app → 301 vos-journal | `hosting/journal-vos-redirect` | `pnpm run deploy:journal-vos-redirect` |
-| `door` | vos-door.web.app | `dist-door` | `pnpm run deploy:door` |
-| `voice` | vos-voice.web.app | `dist-voice` | `pnpm run deploy:voice` |
-| `game` | vos-game.web.app | `dist-game` | `pnpm run deploy:game` |
-| `tent` | vos-tent.web.app | `dist-tent` | `pnpm run deploy:tent` |
+| `v2` | **vos-journal.web.app** (+ `/mini/door|voice|game|tent|habits`) | `dist-v2` (+ minis) | `pnpm run deploy:v2` |
+| `journal` | journal-vos → 301 vos-journal | redirect | `deploy:journal-vos-redirect` |
+| `door` | vos-door → 301 `/mini/door/` | redirect | `deploy:door` (nur Redirect-Site) |
+| `voice` | vos-voice → 301 `/mini/voice/` | redirect | `deploy:voice` |
+| `game` | vos-game → 301 `/mini/game/` | redirect | `deploy:game` |
+| `tent` | vos-tent → 301 `/mini/tent/` | redirect | `deploy:tent` |
+| `habits` | habit-vos → 301 `/mini/habits/` | redirect | `deploy:habits` |
+
+Solo-Icons: Manifest unter `https://vos-journal.web.app/mini/<id>/` (gleiche Origin = eine OAuth-URI).
 
 - Nur bauen: `deploy:<name>:build` (z. B. `deploy:door:build`).
 - Alle Targets ausrollen: `pnpm run deploy:all` (`deploy:all:build` nur bauen; inkl. Redirect-Site).

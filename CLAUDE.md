@@ -90,7 +90,7 @@ Details zu v2, Door, Game, Tent und Taskwarrior-Sync: [`JOURNAL-V2.md`](JOURNAL-
 
 - **Preview-CI** (`preview-dev.yml`): Push auf `dev` oder PR → `pnpm install --frozen-lockfile`, `pnpm test`,
   `build:firebase`, Preview-Channel (24 h) mit Link per Telegram.
-- **Live-CI** (`deploy-master.yml`): Push auf `master` → Test, `build:cloud`, Deploy auf `journal-vos.web.app`.
+- **Live-CI** (`deploy-master.yml`): Push auf `master` → Test, Flavor-Builds, Deploy; kanonisch **`vos-journal.web.app`** (Target `v2`). `journal-vos` nur noch 301 → vos-journal.
 - **Lokaler Hook** `.githooks/post-commit`: ein Commit **auf `master`** mit Änderungen unter `src/`, `public/`,
   `index.html`, `vite.config*`, `package.json` oder `firebase.json` löst `npm run deploy` aus. Auf `dev` passiert nichts.
 - Sechs Hosting-Targets (`journal`, `v2`, `door`, `voice`, `game`, `tent`); Befehle in [`DEPLOYMENT.md`](DEPLOYMENT.md).

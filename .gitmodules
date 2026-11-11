@@ -6,3 +6,11 @@
 	path = aos-door
 	url = git@github.com:nimmsel23/aos-door.git
 	branch = master
+[submodule "aos-core4"]
+	path = aos-core4
+	url = git@github.com:nimmsel23/aos-core4.git
+	branch = master
+[submodule "aos-voice"]
+	path = aos-voice
+	url = git@github.com:nimmsel23/aos-voice.git
+	branch = master

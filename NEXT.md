@@ -5,7 +5,8 @@
 - [x] 2026-11-09: C-003 Lückenliste geliefert — `docs/C-003-4-DEPOSIT-LUECKENLISTE.md` (Org `c46b3028`); PM/CEO-Frage Observe manuelle Deposits vs Smart-only offen.
 - [x] CEO-Entscheid Versionspflege: Option B + Baseline `1.0.0` (2026-11-09); Tag `journal-v*` weiterhin optional.
 - [x] 2026-11-11: Org `d48d852d` Semver-Live journal-vos belegt (`0.2.0+031a78c`, Deploy 42803023456); C-012 Tag `journal-v0.2.0` da.
-- [ ] habit-vos Live-Abnahme (`dist-habits` / `#v2/habits`) + Rolldown-Guard; Legacy `apps/habits` später aus Workspace/Dependabot räumen.
+- [ ] Solo-Icons Live-Abnahme: `vos-journal.web.app/mini/{door,voice,game,tent,habits}/` + Legacy-301s; Habits `#v2/habits` + Rolldown-Guard; Legacy `apps/habits` später aus Workspace/Dependabot räumen.
+- [ ] Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).
 
 - [x] 2026-11-10: Habits Live-Pfad auf Journal-Flavor umgestellt (kein 3‑MB-Shell-Entry mehr).
 - [x] 2026-11-10: Org-Task eeb9d722 smartLogErrorText fail-closed — `40c1fdc` `src/lib/smartLogErrorText.js` + Tests (CTO: Server `5f2f694` LIVE).

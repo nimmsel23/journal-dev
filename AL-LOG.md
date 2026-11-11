@@ -119,3 +119,32 @@ _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen sta
 - Erledigt: Org `eeb9d722` — Commit `40c1fdc` `src/lib/smartLogErrorText.js` + `tests/smart-log-error-text.test.mjs` (INTERNAL/[0]/functions/* ohne Reason → fail-closed; Mapping Server-Reasons 5f2f694); `JournalV2View.jsx` Import; Task done; 5/5 `node --test`.
 - Offen/Weiter: Org `d48d852d` Semver-Anzeige journal-vos (`0.2.0+sha` nach Live 42803023456); TODO C-012 DoD Tag `journal-v0.2.0` nach Promote; Guide-Queue leer.
 - Blocker: keine (eeb9d722 Emulator-Gate CTO-seitig entfallen).
+
+## 2026-11-11 (Mittwoch) — Abteilungsleiter-Lauf
+
+_Automatik (vos-al-log Vorlage 2026-11-11):_
+- Commits seit 2026-11-08: 820c4d1 docs(al-log): eeb9d722 Beleg Commit 40c1fdc (Lauf 14:10)
+b358931 docs: auto-update NEXT.md
+6d40a5f docs: auto-update NEXT.md
+40c1fdc fix(smart-log): map unknown INTERNAL errors to fail-closed text
+031a78c fix(build): prune flavor bundles with VITE_SOLO_TABS
+d957d58 docs: auto-update CLAUDE.md
+d4e99e9 docs: auto-update RESULTS.md
+931dc9f docs: auto-update CLAUDE.md
+8b2a20c feat(habits): ship habit-vos as Journal flavor build
+f2d5359 docs: auto-update NEXT.md
+48f7e27 docs: auto-update RESULTS.md
+eb46a89 chore(version): C-012 Baseline 0.2.0 und Tag journal-v* beim Promote (#51)
+2687ed4 docs: RESULTS — Gemini checkout fix (.worktrees gitlinks)
+c2bf199 fix(git): drop accidental .worktrees gitlinks
+196c2ff fix(build): guard Vite preload markers against Rolldown hashes
+- Offene PRs: 42	ci: Merge-Agent für automatische PR-Merges (kein Abweisen von PRs)	vibe/pr-merge-agent-aac181	DRAFT	2026-11-07T16:56:03Z
+- CI (letzte Läufe): completed	success	Auto-Promote dev -> master (Check (Journal))	Auto-Promote dev -> master (Check (Journal))	master	schedule	42910113598	10s	2026-11-10T21:58:16Z
+completed	success	PR-AutoMerge (Dependabot -> dev)	PR-AutoMerge (Dependabot -> dev)	master	schedule	42899639860	9s	2026-11-10T20:53:21Z
+completed	success	Auto-Promote dev -> master (Check (Journal))	Auto-Promote dev -> master (Check (Journal))	master	schedule	42854600421	11s	2026-11-10T16:26:48Z
+- Arbeitsbaum: 1 uncommittete Pfade
+
+_Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
+- Erledigt: Org `d48d852d` Semver-Live — journal-vos Header `v0.2.0+031a78c` + Update-Dialog `Aktualisiert auf v0.2.0+031a78c` (Bundle `index-qZGbKdoO.js`); Live Deploy Run 42803023456 (`031a78c`); Tag `journal-v0.2.0`; Task done (C-012 Baseline 0.2.0).
+- Offen/Weiter: Guide-Queue leer; Org project:journal-dev pending 0; NEXT habit-vos-Abnahme + Smart-Journal-Konto-Check; tip `40c1fdc` noch nicht auf Live (nur bis `031a78c`).
+- Blocker: keine.

@@ -61,8 +61,8 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build Journal (kanonisch vos-journal / v2)
-        run: pnpm run deploy:v2:build
+      - name: Build Journal (Root; Minis im Live-Deploy)
+        run: pnpm run deploy:v2:root
 
       - name: Deploy Preview Channel
         id: firebase_deploy

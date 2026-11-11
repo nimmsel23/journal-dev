@@ -22,7 +22,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout Journal
         uses: actions/checkout@v7
@@ -49,5 +49,5 @@ jobs:
         continue-on-error: true
         run: pnpm run tooling:knip
 
-      - name: Build Journal
-        run: pnpm run deploy:v2:build
+      - name: Build Journal (Root; Minis nur im Live-Deploy)
+        run: pnpm run deploy:v2:root

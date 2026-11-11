@@ -1,3 +1,9 @@
+## 2026-11-11 — CI Simplicity: remove Gemini/Merge-Agent
+
+- Removed: gemini-ci-repair.yml
+- Spine bleibt: Check → automerge-pr (Dependabot) → automerge (dev→master) → Deploy.
+- Owner: complexity only in vitalos/prod (CI.md Kopf).
+
 - 2026-11-11: Submodul-Pin `aos-game` → `c8b9d0e` (Hub Chapter-Texte via v-html; live game-aos).
 - 2026-11-11: Submodule `aos-core4` + `aos-voice` (Pfad Root `aos-*/`, Branch `master`) — vier AOS-Pillars komplett; bewusst **nicht** unter `src/` (Journal-Frontend).
 - 2026-11-11: Submodul `aos-door` → `git@github.com:nimmsel23/aos-door.git` (Pfad `aos-door/`, Branch `master`); zusammen mit `aos-game` lokal + `origin/dev`.

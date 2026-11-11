@@ -1,0 +1,4 @@
+[submodule "aos-game"]
+	path = aos-game
+	url = git@github.com:nimmsel23/aos-game.git
+	branch = master

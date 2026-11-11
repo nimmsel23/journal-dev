@@ -1,5 +1,7 @@
 ## Zusammenführung seit 2026-11-06
 
+**Simplicity (Owner 2026-11-11):** So simpel wie möglich. Ausnahme nur `vitalos/prod`. CI-Spine: Check → automerge-pr → automerge → Deploy (CI.md §1).
+
 Habits-Hosting (`habit-vos`) ist ein Journal-Flavor-Build (`deploy:habits`, Default `#v2/habits`).
 `apps/habits` ist Legacy-Shell (nicht mehr Live-Deploy-Quelle). Node-Backend gehört
 ausschließlich nach `~/dev/backend/`. Siehe `docs/CONSOLIDATION.md`.

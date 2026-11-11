@@ -1,6 +1,6 @@
 # Standalone-Prod Journal: Push auf master deployt live (nur CI).
-# Alle Hosting-Targets (journal/v2/door/voice/game/tent/habits) sind Flavor-Builds
-# aus derselben Journal-Codebase — keine Nachbar-Repos, kein apps/habits-Shell.
+# Hosting: v2 = kanonisch vos-journal; journal = 301 journal-vos→vos-journal;
+# door/voice/game/tent/habits = Flavor-Sites. Eine Codebase, keine Nachbar-Repos.
 #
 # Auslöser: push auf master und workflow_dispatch (automerge.yml) -> baut und deployt live (nur master).
 # Push auf `ci-test/**` -> reiner Build-Test, KEIN Deploy.

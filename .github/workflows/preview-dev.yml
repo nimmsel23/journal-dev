@@ -61,8 +61,8 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build Journal
-        run: pnpm run build:firebase
+      - name: Build Journal (kanonisch vos-journal / v2)
+        run: pnpm run deploy:v2:build
 
       - name: Deploy Preview Channel
         id: firebase_deploy
@@ -72,7 +72,7 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FITNESS_AOS || secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: fitness-aos
           entryPoint: .
-          target: journal
+          target: v2
           channelId: ${{ github.event_name != 'pull_request' && 'dev' || '' }}
           expires: 24h
 

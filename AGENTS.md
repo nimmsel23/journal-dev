@@ -16,7 +16,7 @@ Stand 2026-11-09. Ausführlich: `~/vitalos/docs/DEPLOYMENT.md`.
 | Branch | Rolle | Lokal |
 |---|---|---|
 | `dev` | Edits und Previews (Preview-Channel `dev`, PR-Channel je PR) | ja — dieser Klon steht fest auf `dev` |
-| `master` | **Standalone-Prod** (Hosting-Targets `journal`, `v2`, `door`, `voice`, `game`, `tent` (journal-vos, vos-journal, vos-door, vos-voice, vos-game, vos-tent)); deployt nur per CI (`Live Deploy (Journal master)`) | nein, lokal nicht nötig |
+| `master` | **Standalone-Prod** — Kanon **`vos-journal`** (Target `v2`); `journal-vos` = 301-Alias; Flavors `vos-door`/`vos-voice`/`vos-game`/`vos-tent`/`habit-vos`. Deploy nur per CI | nein, lokal nicht nötig |
 | `vitalos` | **Legacy** (darf remote noch existieren) — kein Pin-Ziel mehr | nicht für Shell nutzen |
 
 - Release (automatisch): `dev` committen und pushen. Nach grünem Check promotet `automerge.yml` nach `master` und startet den Live-Deploy. Direkte Pushes auf `master` vermeiden; Hotfixes über `dev`.

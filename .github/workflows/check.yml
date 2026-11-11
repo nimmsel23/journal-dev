@@ -50,4 +50,4 @@ jobs:
         run: pnpm run tooling:knip
 
       - name: Build Journal
-        run: pnpm run build:firebase
+        run: pnpm run deploy:v2:build

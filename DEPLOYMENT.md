@@ -9,8 +9,9 @@ Entwicklung auf `dev`, Live auf `master`. Gebaut und deployt wird standalone (ke
 2. **Push auf `dev`** startet die Preview-CI: Test → `build:firebase` → Preview-Channel `dev`, 24 h gültig, Link per
    Telegram. Gleiches gilt für Pull Requests gegen `dev`/`master` (eigener Channel pro PR).
 3. **Prüfen** auf Handy/iPad mit dem Preview-Link.
-4. **Merge nach `master`** und Push startet die Live-CI: Test → `build:cloud` → Deploy auf **journal-vos.web.app**
-   (Target `journal`), danach Telegram-Nachricht.
+4. **Merge nach `master`** und Push startet die Live-CI: Test → Flavor-Builds → Deploy;
+   **kanonisch `vos-journal.web.app`** (Target `v2`). `journal-vos.web.app` ist nur noch
+   301-Redirect auf `vos-journal`. Danach Telegram-Nachricht.
 5. **Nach vitalos übernehmen** (siehe unten).
 
 Beide Workflows (`.github/workflows/preview-dev.yml`, `deploy-master.yml`) laufen nur bei Änderungen an `src/`,
@@ -20,19 +21,22 @@ Beide Workflows (`.github/workflows/preview-dev.yml`, `deploy-master.yml`) laufe
 
 ## Hosting-Targets
 
-Sechs Einträge in `firebase.json`/`.firebaserc`, alle aus demselben Code mit eigenem Start-Tab, Namen, Icons und Farben:
+Kanon (Owner 2026-11-11): **`vos-journal.web.app`**. `journal-vos.web.app` ist Legacy-Alias
+(301). Flavor-Sites (`vos-door` …) bleiben vorerst eigene Origins; langfristig können sie als
+Manifest-/Pfad-Icons unter `vos-journal` (gleiche Origin, eine OAuth-URI) laufen — siehe
+`~/vitalos/docs/HOSTING-TARGETS.md`.
 
 | Target | Site | Build-Ordner | Befehl |
 |---|---|---|---|
-| `journal` | journal-vos.web.app | `dist-firebase` | `pnpm run deploy:cloud` (`deploy`, `release`) |
-| `v2` | vos-journal.web.app | `dist-v2` | `pnpm run deploy:v2` |
+| `v2` | **vos-journal.web.app** (kanonisch) | `dist-v2` | `pnpm run deploy:v2` (`deploy`, `deploy:cloud`, `firebase`) |
+| `journal` | journal-vos.web.app → 301 vos-journal | `hosting/journal-vos-redirect` | `pnpm run deploy:journal-vos-redirect` |
 | `door` | vos-door.web.app | `dist-door` | `pnpm run deploy:door` |
 | `voice` | vos-voice.web.app | `dist-voice` | `pnpm run deploy:voice` |
 | `game` | vos-game.web.app | `dist-game` | `pnpm run deploy:game` |
 | `tent` | vos-tent.web.app | `dist-tent` | `pnpm run deploy:tent` |
 
 - Nur bauen: `deploy:<name>:build` (z. B. `deploy:door:build`).
-- Alle sechs bauen und mit einem `firebase deploy` ausrollen: `pnpm run deploy:all` (`deploy:all:build` nur bauen).
+- Alle Targets ausrollen: `pnpm run deploy:all` (`deploy:all:build` nur bauen; inkl. Redirect-Site).
 - `pnpm run release` = `vos-release-pr journal` (Alt-Gen-PR-Weg), **kein** Versionsbump.
 - **Semver (CEO C-012, Option B):** Anzeige = `package.json` `version` + Build-SHA
   (`vite` → `__APP_VERSION__`). Baseline `0.2.0` (`1.0.0` erst beim Play-Store-Produktionsrelease;
@@ -43,7 +47,7 @@ Sechs Einträge in `firebase.json`/`.firebaserc`, alle aus demselben Code mit ei
   existiert der Tag, bleibt er liegen.
 - Lokale Vorschau über einen 24-h-Channel `preview` (Link per Telegram, Zugangsdaten aus `~/.env/fitness.env`):
   `pnpm run deploy:preview` (`scripts/deploy-preview.mjs`).
-- CI und `deploy:cloud` deployen nur das Target `journal`; die anderen fünf nur über die Befehle oben.
+- CI (`deploy-master.yml`) deployt Redirect + `v2` + Flavors. Lokal `deploy`/`deploy:cloud` = nur kanonisches `v2`.
 - Firebase veröffentlicht ausschließlich aus dem jeweiligen Build-Ordner. Ein `firebase deploy` kann im Aufräumschritt
   mit „Timed out“ enden (Exit 2), obwohl das Release schon live ist.
 

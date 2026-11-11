@@ -11,8 +11,8 @@ Derselbe Code, sechs Builds (`VITE_APP_FLAVOR`/`VITE_DEFAULT_TAB`), je ein Hosti
 
 | App | Adresse | Startansicht |
 |---|---|---|
-| Journal (v1 + v2) | journal-vos.web.app | Journal-Timeline |
-| Journal v2 „Raster“ | vos-journal.web.app | `#v2` |
+| **Journal (kanonisch)** | **vos-journal.web.app** | `#v2` |
+| Journal Legacy-Alias | journal-vos.web.app → 301 vos-journal | — |
 | Door | vos-door.web.app | `#door2` |
 | Voice | vos-voice.web.app | `#voice` |
 | Game | vos-game.web.app | `#fire` |
@@ -35,8 +35,9 @@ pnpm test
 pnpm run build:cloud
 ```
 
-Entwickelt wird auf `dev`. Ein Push auf `dev` baut in der CI einen 24-h-Preview-Channel, ein Push auf `master` deployt
-`journal-vos.web.app`. Befehle, Targets und der Weg nach vitalos: [`DEPLOYMENT.md`](DEPLOYMENT.md).
+Entwickelt wird auf `dev`. Ein Push auf `dev` baut in der CI einen 24-h-Preview-Channel, ein Push auf `master`
+deployt kanonisch **`vos-journal.web.app`** (`journal-vos` nur Redirect). Befehle und Targets:
+[`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Docs
 

@@ -1,3 +1,4 @@
+- 2026-11-11: Submodul `aos-door` → `git@github.com:nimmsel23/aos-door.git` (Pfad `aos-door/`, Branch `master`); zusammen mit `aos-game` lokal + `origin/dev`.
 - 2026-11-11: Submodul `aos-game` → `git@github.com:nimmsel23/aos-game.git` (Pfad `aos-game/`, Branch `master`, Pin `620f4df`); lokal + `origin/dev`.
 - 2026-11-11: Solo-Icons auf **vos-journal/mini/{door,voice,game,tent,habits}/** (`build-journal-minis.mjs`); Legacy-Sites vos-door/voice/game/tent + habit-vos → 301. Game-Maps unter `/mini/game/<map>/`.
 - 2026-11-11: Kanon-Hosting **vos-journal.web.app** (Target `v2`); `journal-vos` → 301-Redirect.

@@ -2,3 +2,7 @@
 	path = aos-game
 	url = git@github.com:nimmsel23/aos-game.git
 	branch = master
+[submodule "aos-door"]
+	path = aos-door
+	url = git@github.com:nimmsel23/aos-door.git
+	branch = master

@@ -5,6 +5,7 @@
 - [x] 2026-11-09: C-003 Lückenliste geliefert — `docs/C-003-4-DEPOSIT-LUECKENLISTE.md` (Org `c46b3028`); PM/CEO-Frage Observe manuelle Deposits vs Smart-only offen.
 - [x] CEO-Entscheid Versionspflege: Option B + Baseline `1.0.0` (2026-11-09); Tag `journal-v*` weiterhin optional.
 - [x] 2026-11-11: Org `d48d852d` Semver-Live journal-vos belegt (`0.2.0+031a78c`, Deploy 42803023456); C-012 Tag `journal-v0.2.0` da.
+- [x] 2026-11-12: Org `0e25e4c4` automerge-pr Retarget master→dev (`375e122`); Folge-Port andere Repos = CTO/`c1f9b6ce`.
 - [ ] Solo-Icons Live-Abnahme: `vos-journal.web.app/mini/{door,voice,game,tent,habits}/` + Legacy-301s; Habits `#v2/habits` + Rolldown-Guard; Legacy `apps/habits` später aus Workspace/Dependabot räumen.
 - [ ] Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).
 

@@ -1,6 +1,7 @@
 import { X, Calendar, Check, Save, History, Brain, PenLine } from "lucide-react";
 import { useSwipeToDismiss } from "@fitness/hooks/useSwipeToDismiss.js";
 import { ICON_COMPONENTS_MAP, getRollingDays } from "./utils";
+import { IS_STORE_BUILD } from "./storeEdition.js";
 
 export default function HabitSidebar({
   selectedHabitId,
@@ -92,7 +93,7 @@ export default function HabitSidebar({
           {journalText ? (
             <p className="text-xs font-bold leading-relaxed text-slate-100/80 line-clamp-3 whitespace-pre-wrap">{journalText}</p>
           ) : (
-            <p className="text-xs font-bold leading-relaxed text-slate-400 opacity-50 italic">Tippen, um die Memoirs zu öffnen</p>
+            <p className="text-xs font-bold leading-relaxed text-slate-400 opacity-50 italic">{IS_STORE_BUILD ? "Tippen, um die Notiz zu öffnen" : "Tippen, um die Memoirs zu öffnen"}</p>
           )}
         </button>
 

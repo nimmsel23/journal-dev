@@ -34,6 +34,8 @@ import {
 import Core4Layout from "./Core4Layout";
 import DailyFourLayout from "./DailyFourLayout.jsx";
 import PushSettingsModal from "./PushSettingsModal";
+import { IS_STORE_BUILD } from "./storeEdition.js";
+import { planStarterHabits, starterAssignments } from "./dailyStarterModel.js";
 import { usePushNotifications } from "./usePushNotifications";
 
 export default function Habits({ user = null, selectedDate: controlledDate = null, onSelectedDateChange = null, onOpenSkill = null }) {
@@ -58,7 +60,11 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
   const [isJournalSaving, setIsJournalSaving] = useState(false);
   const [journalModalOpen, setJournalModalOpen] = useState(false);
   const [memoirWrittenIds, setMemoirWrittenIds] = useState(new Set());
-  const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem("habits-layout-mode") || "daily-four");
+  const [layoutMode, setLayoutMode] = useState(() => {
+    const saved = localStorage.getItem("habits-layout-mode") || "daily-four";
+    // Store-Build kennt die Core4-Ansicht (Body/Being/Balance/Business) nicht.
+    return IS_STORE_BUILD && saved === "core4" ? "daily-four" : saved;
+  });
   const [dailyExecution, setDailyExecution] = useState(null);
   const [dailyConfig, setDailyConfig] = useState(null);
   const [dailyRetry, setDailyRetry] = useState(0);
@@ -230,6 +236,31 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
     }
   }
 
+  // Ein-Klick-Start: vier Starter-Habits anlegen (bestehender addHabit-Pfad) und den vier Ebenen zuordnen.
+  async function quickStartDaily() {
+    if (selectedDate !== localToday()) throw new Error("daily_assignments_change_today_only");
+    setDailySaving(true);
+    try {
+      const planned = planStarterHabits(await getHabits());
+      const ids = {};
+      for (const item of planned) {
+        if (item.existingId) continue;
+        const ref = await addHabit(item.name, item.icon, null, DEFAULT_FREQUENCY);
+        ids[item.dimension] = ref.id;
+      }
+      const fresh = await getHabits();
+      const assignments = starterAssignments(planned, ids);
+      const result = await saveDailyExecutionAssignments(assignments, fresh, selectedDate);
+      const [execution, config] = await Promise.all([getDailyExecution(selectedDate), getDailyExecutionConfig()]);
+      if (execution.date === selectedDateRef.current) setDailyExecution(execution);
+      setDailyConfig(config);
+      await load();
+      return result;
+    } finally {
+      setDailySaving(false);
+    }
+  }
+
   async function toggleDailyCompletion(dimension, completed) {
     setDailySaving(true);
     setDailyError("");
@@ -313,7 +344,7 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
     if (!newHabit.trim()) return;
     setSaving(true);
     try {
-      await addHabit(newHabit.trim(), selectedIcon, selectedCategory, selectedFrequency);
+      await addHabit(newHabit.trim(), selectedIcon, IS_STORE_BUILD ? null : selectedCategory, selectedFrequency);
       setNewHabit("");
       setSelectedIcon('Activity');
       setSelectedFrequency(DEFAULT_FREQUENCY);
@@ -367,7 +398,7 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
           <h1 className="text-2xl font-black text-slate-100 sm:text-3xl">VitalOS · Dein Tag</h1>
           <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900 px-3 py-2 shadow-xl">
             <button type="button" onClick={() => { setLayoutMode("v1"); localStorage.setItem("habits-layout-mode", "v1"); }} className="rounded-xl border border-white/10 p-2 text-slate-400 hover:text-white" title="Alle Habits" aria-label="Alle Habits"><LayoutGrid size={16} /></button>
-            <button type="button" onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }} className="rounded-xl border border-white/10 p-2 text-slate-400 hover:text-white" title="Bisherige Core4-Ansicht" aria-label="Bisherige Core4-Ansicht"><Smartphone size={16} /></button>
+            {!IS_STORE_BUILD && <button type="button" onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }} className="rounded-xl border border-white/10 p-2 text-slate-400 hover:text-white" title="Bisherige Core4-Ansicht" aria-label="Bisherige Core4-Ansicht"><Smartphone size={16} /></button>}
             <button type="button" onClick={() => setPushModalOpen(true)} className={`rounded-xl border border-white/10 p-2 ${push.settings?.enabled ? "text-orange-300" : "text-slate-400"}`} title="Erinnerungen" aria-label="Erinnerungen"><Bell size={16} /></button>
           </div>
         </div>
@@ -386,6 +417,7 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
           onLinkSkillRecord={linkSkillRecord}
           onOpenSkill={onOpenSkill}
           onOpenAllHabits={() => { setLayoutMode("v1"); localStorage.setItem("habits-layout-mode", "v1"); }}
+          onQuickStart={quickStartDaily}
           onOpenJournal={(habit) => {
             setSelectedHabitId(habit.uuid);
             setSelectedSidebarDate(selectedDate);
@@ -421,13 +453,15 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
             >
               <LayoutGrid size={16} />
             </button>
-            <button
-              onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }}
-              className={`p-1.5 rounded-xl border transition-all ${layoutMode === 'core4' ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
-              title="Core4 Minimal-Ansicht" aria-label="Core4 Minimal-Ansicht"
-            >
-              <Smartphone size={16} />
-            </button>
+            {!IS_STORE_BUILD && (
+              <button
+                onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }}
+                className={`p-1.5 rounded-xl border transition-all ${layoutMode === 'core4' ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
+                title="Core4 Minimal-Ansicht" aria-label="Core4 Minimal-Ansicht"
+              >
+                <Smartphone size={16} />
+              </button>
+            )}
             <button
               onClick={() => { setLayoutMode("daily-four"); localStorage.setItem("habits-layout-mode", "daily-four"); }}
               className="rounded-xl border border-white/10 p-1.5 text-slate-400 transition-all hover:border-orange-400 hover:text-orange-300"
@@ -522,13 +556,15 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
             >
               <LayoutGrid size={16} />
             </button>
-            <button
-              onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }}
-              className={`p-1.5 rounded-xl border transition-all ${layoutMode === 'core4' ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
-              title="Core4 Minimal-Ansicht" aria-label="Core4 Minimal-Ansicht"
-            >
-              <Smartphone size={16} />
-            </button>
+            {!IS_STORE_BUILD && (
+              <button
+                onClick={() => { setLayoutMode("core4"); localStorage.setItem("habits-layout-mode", "core4"); }}
+                className={`p-1.5 rounded-xl border transition-all ${layoutMode === 'core4' ? 'bg-orange-400 text-black border-orange-400' : 'bg-slate-900 text-slate-400 border-white/10 hover:border-orange-400'}`}
+                title="Core4 Minimal-Ansicht" aria-label="Core4 Minimal-Ansicht"
+              >
+                <Smartphone size={16} />
+              </button>
+            )}
             <button
               onClick={() => { setLayoutMode("daily-four"); localStorage.setItem("habits-layout-mode", "daily-four"); }}
               className="p-1.5 rounded-xl border border-white/10 text-slate-400 transition-all hover:border-orange-400 hover:text-orange-300"
@@ -593,7 +629,7 @@ export default function Habits({ user = null, selectedDate: controlledDate = nul
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400">
-                  Offene Memoirs ({outstandingMemoirs.length})
+                  {IS_STORE_BUILD ? "Offene Notizen" : "Offene Memoirs"} ({outstandingMemoirs.length})
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

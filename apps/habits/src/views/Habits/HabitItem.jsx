@@ -1,5 +1,6 @@
 import { Edit, Check, Trash2, Sparkles, GripVertical } from "lucide-react";
 import { ICON_OPTIONS, ICON_COMPONENTS_MAP, CATEGORY_OPTIONS, CATEGORY_LABEL_MAP, formatFrequency } from "./utils";
+import { IS_STORE_BUILD } from "./storeEdition.js";
 import { isLocalMode } from "@habits-db";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -89,7 +90,7 @@ export default function HabitItem({
                       );
                   })}
               </div>
-              <div className="flex flex-wrap gap-2">
+              {!IS_STORE_BUILD && <div className="flex flex-wrap gap-2">
                   {CATEGORY_OPTIONS.map(cat => (
                       <button type="button" key={cat.key}
                           onMouseDown={(e) => e.preventDefault()}
@@ -98,7 +99,7 @@ export default function HabitItem({
                           {cat.label}
                       </button>
                   ))}
-              </div>
+              </div>}
               <FrequencyPicker frequency={editingFrequency} onChange={setEditingFrequency} compact />
             </div>
           ) : (
@@ -108,7 +109,7 @@ export default function HabitItem({
                 return IconComponent && <IconComponent size={16} className="text-slate-400 shrink-0" />;
               })()}
               <div className="text-sm font-black text-slate-100 truncate">{h.name}</div>
-              {h.category && CATEGORY_LABEL_MAP[h.category] && (
+              {!IS_STORE_BUILD && h.category && CATEGORY_LABEL_MAP[h.category] && (
                 <span className="text-[8px] font-black px-1.5 py-0.5 bg-slate-800 text-slate-400 rounded-full border border-white/10 uppercase tracking-tighter shrink-0">
                   {CATEGORY_LABEL_MAP[h.category]}
                 </span>

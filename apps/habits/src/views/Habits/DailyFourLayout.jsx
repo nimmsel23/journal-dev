@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Check, ChevronDown, Settings2 } from "lucide-react";
 import { DAILY_DIMENSIONS } from "./dailyExecutionModel.js";
 import { localToday } from "@utils";
+import { IS_STORE_BUILD } from "./storeEdition.js";
 
 const SKILLS = [
   ["fitness", "Fitness"],
-  ["fuel", "Nutrition"],
+  ["fuel", "Ernährung"],
   ["relax", "Relax"],
   ["journal", "Journal"],
   ["plan", "Planner"],
@@ -19,6 +20,11 @@ function assignmentFor(config, snapshot, dimension) {
     habitId: typeof stored === "string" ? stored : stored.habitId || "",
     skillLinks: Array.isArray(stored.skillLinks) ? stored.skillLinks : [],
   };
+}
+
+function germanDate(date) {
+  const parsed = new Date(`${date}T12:00:00`);
+  return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
 }
 
 export default function DailyFourLayout({
@@ -37,10 +43,12 @@ export default function DailyFourLayout({
   onOpenSkill,
   onOpenJournal,
   onOpenAllHabits,
+  onQuickStart,
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({});
   const [message, setMessage] = useState("");
+  const [starting, setStarting] = useState(false);
   const [fitnessChooserFor, setFitnessChooserFor] = useState(null);
   const [fitnessSessions, setFitnessSessions] = useState([]);
   const [fitnessSessionsLoading, setFitnessSessionsLoading] = useState(false);
@@ -98,6 +106,22 @@ export default function DailyFourLayout({
       setEditing(false);
     } catch (cause) {
       setMessage(cause?.message || "Die Zuordnungen konnten nicht gespeichert werden.");
+    }
+  };
+
+  const quickStart = async () => {
+    if (starting) return;
+    setStarting(true);
+    setMessage("");
+    try {
+      await onQuickStart();
+      draftDirty.current = false;
+      setMessage("Dein Tag ist eingerichtet. Du kannst die Gewohnheiten jederzeit ändern.");
+      setEditing(false);
+    } catch (cause) {
+      setMessage(cause?.message || "Der Start konnte nicht eingerichtet werden. Bitte prüfe deine Verbindung und versuche es erneut.");
+    } finally {
+      setStarting(false);
     }
   };
 
@@ -161,7 +185,7 @@ export default function DailyFourLayout({
   return (
     <section className="mx-auto max-w-3xl space-y-5 text-slate-100" aria-label="Tägliche vier Gewohnheiten">
       <header className="rounded-3xl border border-white/10 bg-slate-950 p-5 sm:p-7">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Daily Execution · {date}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{IS_STORE_BUILD ? `Heute · ${germanDate(date)}` : `Daily Execution · ${date}`}</p>
         <div className="mt-3 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-2xl font-black">Dein Tag in vier Ebenen</h2>
@@ -264,8 +288,17 @@ export default function DailyFourLayout({
       {todayDay && config && (!configured || editing) && (
         <section className="rounded-3xl border border-white/10 bg-slate-950 p-5 sm:p-7" aria-label="Vier tägliche Gewohnheiten festlegen">
           <h3 className="text-lg font-bold">Vier Gewohnheiten festlegen</h3>
-          <p className="mt-1 text-sm text-slate-400">Wähle vier verschiedene bestehende Habits. Die Zuordnung ist unabhängig von Body, Being, Balance und Business.</p>
-          {activeHabits.length < DAILY_DIMENSIONS.length && <div className="mt-3 rounded-xl border border-amber-300/20 bg-amber-950/20 p-3 text-sm text-amber-100">Du brauchst vier bestehende Gewohnheiten. <button type="button" onClick={onOpenAllHabits} className="underline underline-offset-2">Gewohnheiten anlegen</button></div>}
+          <p className="mt-1 text-sm text-slate-400">Wähle vier verschiedene bestehende Habits.{!IS_STORE_BUILD && " Die Zuordnung ist unabhängig von Body, Being, Balance und Business."}</p>
+          {activeHabits.length < DAILY_DIMENSIONS.length && (IS_STORE_BUILD && onQuickStart
+            ? <div className="mt-3 rounded-xl border border-orange-300/30 bg-orange-950/20 p-4 text-sm text-orange-100">
+              <p className="font-semibold">Schnell starten</p>
+              <p className="mt-1 text-orange-100/80">Wir legen vier einfache Gewohnheiten für dich an: 10 Min. Bewegung, 5 Min. Lesen, Kurz Journal schreiben und 2 Min. Atmen. Du kannst sie später ändern.</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button type="button" disabled={starting || saving} onClick={quickStart} className="rounded-xl bg-orange-300 px-4 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40">{starting ? "Richte ein …" : "Mit diesen vier starten"}</button>
+                <button type="button" onClick={onOpenAllHabits} className="underline underline-offset-2">Eigene Gewohnheiten anlegen</button>
+              </div>
+            </div>
+            : <div className="mt-3 rounded-xl border border-amber-300/20 bg-amber-950/20 p-3 text-sm text-amber-100">Du brauchst vier bestehende Gewohnheiten. <button type="button" onClick={onOpenAllHabits} className="underline underline-offset-2">Gewohnheiten anlegen</button></div>)}
           <div className="mt-5 space-y-4">
             {DAILY_DIMENSIONS.map(({ key, label }) => (
               <div key={key} className="grid gap-2 sm:grid-cols-[1fr_1fr]">

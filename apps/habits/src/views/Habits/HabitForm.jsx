@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import { ICON_OPTIONS, ICON_COMPONENTS_MAP, CATEGORY_OPTIONS } from "./utils";
+import { IS_STORE_BUILD } from "./storeEdition.js";
 import FrequencyPicker from "./FrequencyPicker";
 
 export default function HabitForm({ newHabit, setNewHabit, selectedIcon, setSelectedIcon, selectedCategory, setSelectedCategory, selectedFrequency, setSelectedFrequency, onAdd, saving }) {
@@ -33,7 +34,7 @@ export default function HabitForm({ newHabit, setNewHabit, selectedIcon, setSele
               })}
           </div>
       </div>
-      <div>
+      {!IS_STORE_BUILD && <div>
           <div className="label-caps !mb-2 text-slate-400">Kategorie</div>
           <div className="flex flex-wrap gap-2">
               {CATEGORY_OPTIONS.map(cat => (
@@ -43,7 +44,7 @@ export default function HabitForm({ newHabit, setNewHabit, selectedIcon, setSele
                   </button>
               ))}
           </div>
-      </div>
+      </div>}
       <div className="mt-4">
           <div className="label-caps !mb-2 text-slate-400">Frequenz</div>
           <FrequencyPicker frequency={selectedFrequency} onChange={setSelectedFrequency} />

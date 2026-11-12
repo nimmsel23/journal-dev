@@ -2,10 +2,12 @@
 // Aufgerufen aus lib/db/journal.js (saveJournal/updateJournal); Ziel ist die in Door v2 gewählte Quelle
 // (Backend, Google Tasks oder Taskwarrior – source.js). Erster Satz bzw. erste Zeile = Titel.
 import { door, getSource } from "./source.js";
+import { IS_STORE_BUILD } from "../storeEdition.js";
 
 // +hot, +potential und +door legen alle ein Potential-Item an.
 export const HOT_TAGS = ["hot", "potential", "door"];
-export const hasHotTag = (tags) => (tags || []).some((t) => HOT_TAGS.includes(String(t).replace(/^\+/, "").toLowerCase()));
+// Store-Build: kein Door-/Taskwarrior-Routing — +hot bleibt dort ein gewöhnliches Tag.
+export const hasHotTag = (tags) => !IS_STORE_BUILD && (tags || []).some((t) => HOT_TAGS.includes(String(t).replace(/^\+/, "").toLowerCase()));
 
 export function hotTitle(text) {
   const line = String(text || "").split("\n").map((l) => l.trim()).find(Boolean) || "";

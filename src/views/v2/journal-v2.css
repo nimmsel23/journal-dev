@@ -557,3 +557,10 @@
 .jv2-search-hit:hover { background: var(--soft); }
 .jv2-search-hit-time { flex: 0 0 44px; opacity: 0.7; }
 .jv2-search-hit span:last-child { line-height: 1.5; }
+
+/* Store-Edition: ruhigere Anmutung — Systemschrift statt Monospace, keine Großbuchstaben.
+   Raster, Ränder und Funktionen bleiben unverändert (kein Redesign). */
+.jv2.jv2-store { --mono: "Archivo", system-ui, sans-serif; }
+.jv2.jv2-store, .jv2.jv2-store * { text-transform: none; font-stretch: 100%; }
+.jv2.jv2-store .jv2-dayno { font-weight: 800; letter-spacing: 0; }
+.jv2.jv2-store .jv2-body h3 { font-weight: 700; line-height: 1.15; }

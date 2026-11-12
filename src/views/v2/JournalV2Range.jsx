@@ -5,6 +5,7 @@ import {
   isSameMonth, startOfMonth, startOfISOWeek, startOfYear,
 } from "date-fns";
 import { de } from "date-fns/locale";
+import { IS_STORE_BUILD } from "../../lib/storeEdition.js";
 
 const iso = (d) => format(d, "yyyy-MM-dd");
 const DAILY_DEPOSIT_LABELS = Object.freeze({ body: "Body", business: "Business", balance: "Balance", being: "Being" });
@@ -60,7 +61,8 @@ export function WeekView({ day, entries, habits, events = new Map(), onPick }) {
       previous: new Set(previousEntries.filter(hasDeposit).map((entry) => entry.date)),
     };
   });
-  const hasAnyDeposits = depositRows.some((row) => row.current.size || row.previous.size);
+  // Store-Build: keine 4B-Bereichsspur (Body/Business/Balance/Being) und kein Smart-Log-Hinweis.
+  const hasAnyDeposits = !IS_STORE_BUILD && depositRows.some((row) => row.current.size || row.previous.size);
   return (
     <div className="jv2-week">
       <div className="jv2-wsum" role="status">
@@ -80,7 +82,7 @@ export function WeekView({ day, entries, habits, events = new Map(), onPick }) {
           <small>Vorwoche {row.previous.size}/7</small>
         </div>)}
         <p>Zeigt, was in deinen Einträgen vorkommt. Keine Bewertung und keine Einträge werden ergänzt.</p>
-      </section> : loggedDays > 0 && <p className="jv2-wdeposits-hint">Die Bereichsspur füllt sich, sobald du Smart-Log-Einträge mit Tages-Deposits übernimmst.</p>}
+      </section> : !IS_STORE_BUILD && loggedDays > 0 && <p className="jv2-wdeposits-hint">Die Bereichsspur füllt sich, sobald du Smart-Log-Einträge mit Tages-Deposits übernimmst.</p>}
       {weekKeys.map((key, i) => {
         const d = days[i];
         const list = byDate.get(key) || [];

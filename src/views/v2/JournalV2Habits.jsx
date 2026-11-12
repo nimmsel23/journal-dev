@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { CATEGORIES, DEFAULT_FREQUENCY, WEEKDAYS, dueOnDate, habitStats } from './habitsModel.js';
+import { IS_STORE_BUILD } from '../../lib/storeEdition.js';
 
 function HabitEditor({ habit, onSave, onCancel, pending }) {
   const id = useId();
@@ -19,11 +20,13 @@ function HabitEditor({ habit, onSave, onCancel, pending }) {
       <fieldset disabled={pending}>
         <label htmlFor={`${id}-name`}>Name</label>
         <input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} placeholder="Neues Habit …" required />
-        <label htmlFor={`${id}-category`}>Core4-Kategorie</label>
-        <select id={`${id}-category`} value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">Ohne Kategorie</option>
-          {CATEGORIES.map((c) => <option key={c} value={c}>{c[0].toUpperCase() + c.slice(1)}</option>)}
-        </select>
+        {!IS_STORE_BUILD && <>
+          <label htmlFor={`${id}-category`}>Core4-Kategorie</label>
+          <select id={`${id}-category`} value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="">Ohne Kategorie</option>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{c[0].toUpperCase() + c.slice(1)}</option>)}
+          </select>
+        </>}
         <label htmlFor={`${id}-frequency`}>Frequenz</label>
         <select id={`${id}-frequency`} value={frequency.type} onChange={(e) => setFrequency({ ...frequency, type: e.target.value })}>
           <option value="daily">Täglich</option><option value="weekly">Wochentage</option><option value="monthly">Monatsziel</option>
@@ -68,7 +71,7 @@ export default function HabitsView({ date, today, habits, onToggle, onAdd, onUpd
               <div className="jv2-hmain">
                 <h3>{h.name}</h3>
                 <div className="jv2-hstats">
-                  {h.category && <span>{h.category}</span>}
+                  {!IS_STORE_BUILD && h.category && <span>{h.category}</span>}
                   {stats.monthly ? <span>Monatsziel {stats.monthHits}/{stats.target}</span> : <><span>Serie {stats.streak}</span><span>{stats.rate} % · {stats.hits}/{stats.total} geplant</span></>}
                   {!dueOnDate(h, date) && <span>An diesem Tag nicht geplant</span>}
                 </div>

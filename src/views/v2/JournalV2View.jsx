@@ -27,6 +27,7 @@ import { fetchEvents } from "./gcal.js";
 import { useGoogle } from "../../lib/google/useGoogle.js";
 import { googleErrorText } from "../../lib/google/tokens.js";
 import { smartLogErrorText } from "../../lib/smartLogErrorText.js";
+import { IS_STORE_BUILD } from "../../lib/storeEdition.js";
 import "./journal-v2.css";
 
 const HABIT_LIMIT = 5;
@@ -93,8 +94,10 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   // Timeline-Raster (Drag auf die versteckte Timeline): 60 / 30 / 15 Minuten
   const [grain, setGrain] = useSetting("jv2:grain", 30, (v) => ([60, 30, 15].includes(Number(v)) ? Number(v) : undefined));
   // Smart Logger: Freitext → Analyse → prüfbare Tages-Deposits und Tracker-Vorschläge → Übernehmen
-  const [smart, setSmart] = useSetting("jv2:smart", false, asBool);
-  useEffect(() => { if (startSmart) setSmart(true); }, [startSmart, setSmart]);
+  // Store-Build: kein KI-Aufruf (Datenschutzerklärung: keine KI) — Smart Log bleibt aus, auch bei gespeicherter Einstellung.
+  const [smartSetting, setSmart] = useSetting("jv2:smart", false, asBool);
+  const smart = !IS_STORE_BUILD && smartSetting;
+  useEffect(() => { if (startSmart && !IS_STORE_BUILD) setSmart(true); }, [startSmart, setSmart]);
   const [analysis, setAnalysis] = useState(null);
   const [depositEdit, setDepositEdit] = useState(null);
   const [depositSaving, setDepositSaving] = useState(false);
@@ -207,8 +210,9 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   });
 
   // Google Calendar (nur lesen): Termine zum Reviewen. Verbindung gemeinsam mit Google Tasks (lib/google)
-  const google = useGoogle();
-  const calOn = google.connected;
+  // Store-Build: kein Google (sensibler OAuth-Scope) — weder Skript vorladen noch Kalender abfragen.
+  const google = useGoogle({ prepare: !IS_STORE_BUILD });
+  const calOn = !IS_STORE_BUILD && google.connected;
   const [calMsg, setCalMsg] = useState("");
   // Standard: nur Fire Map; „alle“ zeigt jeden in Google ausgewählten Kalender
   const [calAll, setCalAll] = useSetting("jv2:cal-all", false, asBool);
@@ -475,7 +479,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
 
   return (
     <div className="jv2-page">
-      <article className="jv2" aria-label="Journal v2">
+      <article className={`jv2${IS_STORE_BUILD ? " jv2-store" : ""}`} aria-label={IS_STORE_BUILD ? "Journal" : "Journal v2"}>
         <div className="jv2-modes jv2-modes1" role="tablist" aria-label="Ansicht">
           {MODES.map(([key, label]) => (
             <button key={key} type="button" role="tab" aria-selected={mode === key} onClick={() => onModeChange(key)}>{label}</button>
@@ -483,7 +487,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         </div>
         <div className="jv2-modes" role="group" aria-label="Habits und Sprünge">
           <button type="button" aria-pressed={mode === "habits"} onClick={() => onModeChange("habits")}>Habits</button>
-          {LINKS.map(([href, label]) => onNavigateJournal
+          {!IS_STORE_BUILD && LINKS.map(([href, label]) => onNavigateJournal
             ? <button key={href} type="button" onClick={() => onNavigateJournal(href === "#door2" ? "door-v2" : "game-v2")}>{label}</button>
             : <a key={href} href={href}>{label}</a>)}
         </div>
@@ -578,7 +582,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
         {list.map((e) => {
           const { title, body } = splitEntry(e.text);
           const tags = e.tags || [];
-          const dailyDeposits = e.smartLog?.applied?.daily_deposits;
+          const dailyDeposits = IS_STORE_BUILD ? null : e.smartLog?.applied?.daily_deposits;
           const savedDepositCount = dailyDeposits ? DAILY_DEPOSITS.filter(([key]) => String(dailyDeposits[key] || "").trim()).length : 0;
           return (
             <div key={e.id} className={`jv2-entry${tags.includes("offen") ? " open" : ""}`}>
@@ -672,7 +676,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           ))}
         </div>
         <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>
-          <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Tages-Deposits und Tracker-Einträge überführen">✦</button>
+          {!IS_STORE_BUILD && <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Tages-Deposits und Tracker-Einträge überführen">✦</button>}
           {smart ? (
             <textarea
               id="jv2-input"
@@ -702,18 +706,18 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           <ul>
             <li><b>+wort</b> im Eintragstext wird zum Tag. <b>+fitness / +fuel / +relax</b> ordnen den Eintrag dem jeweiligen Skill-Journal zu — die Chips über dem Eingabefeld sind dieselbe Abkürzung, das Tag bleibt reines Zuordnungsmerkmal (keine Pflichtfelder).</li>
             <li><b>/fit</b> ist das Schnellerfassungs-Kürzel: es wird direkt im Text zu <b>+fitness</b> expandiert (Datum = Zeitpunkt des Loggings).</li>
-            <li><b>+hot / +potential / +door</b> legt den Eintrag zusätzlich als Potential-Item in Door › Potential (Hot List) an — Titel ist die erste Zeile.</li>
+            {!IS_STORE_BUILD && <li><b>+hot / +potential / +door</b> legt den Eintrag zusätzlich als Potential-Item in Door › Potential (Hot List) an — Titel ist die erste Zeile.</li>}
             <li>Tag-Chip am Eintrag anklicken oder in der Suche <b>+wort</b> tippen: filtert nach Tags (Zeitraum 30 Tage bis Alles).</li>
-            <li><b>✦ Smart Log</b> (1 KI-Analyse/Tag) zerlegt Freitext in bearbeitbare Vorschläge für vier Tages-Deposits und Eintrag, Mahlzeiten, Wasser, Habits, Fitness, Relax und Kalender — nichts wird ohne Bestätigung übernommen.</li>
-            <li><b>+termin Titel:</b> Termin als Eintrag reviewen — Kalender verbinden (unten), dann am Termin auf „Rückblick →" klicken; das Tag wird vorbelegt.</li>
+            {!IS_STORE_BUILD && <li><b>✦ Smart Log</b> (1 KI-Analyse/Tag) zerlegt Freitext in bearbeitbare Vorschläge für vier Tages-Deposits und Eintrag, Mahlzeiten, Wasser, Habits, Fitness, Relax und Kalender — nichts wird ohne Bestätigung übernommen.</li>}
+            {!IS_STORE_BUILD && <li><b>+termin Titel:</b> Termin als Eintrag reviewen — Kalender verbinden (unten), dann am Termin auf „Rückblick →" klicken; das Tag wird vorbelegt.</li>}
           </ul>
         </details>
         {smart && !analysis && uid && draft.trim() && <button type="button" className="jv2-link" onClick={saveDraftWithoutAI} disabled={busy}>Ohne KI im Journal speichern</button>}
 
         </>}
 
-        {(calMsg || google.error) && <div className="jv2-empty" role="alert">{calMsg || google.error}</div>}
-        <div className="jv2-foot">
+        {!IS_STORE_BUILD && (calMsg || google.error) && <div className="jv2-empty" role="alert">{calMsg || google.error}</div>}
+        {!IS_STORE_BUILD && <div className="jv2-foot">
           <span>Journal v2 · Raster</span>
           {uid && (calOn
             ? <>
@@ -724,7 +728,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             : <button type="button" className="jv2-link" disabled={google.busy} onClick={connect}>Kalender verbinden</button>)}
           <a href="#door2" onClick={(event) => { if (onNavigateJournal) { event.preventDefault(); onNavigateJournal("door-v2"); } }}>Door →</a>
           <a href="#journal" onClick={(event) => { if (onNavigateJournal) { event.preventDefault(); onNavigateJournal("journal"); } }}>← v1</a>
-        </div>
+        </div>}
       </article>
       <TimelineOverlay
         drag={timeline.drag}

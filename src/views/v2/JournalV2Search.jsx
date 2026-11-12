@@ -6,6 +6,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addDays, format, parseISO } from "date-fns";
+import { IS_STORE_BUILD } from "../../lib/storeEdition.js";
 import { de } from "date-fns/locale";
 import { getJournalHistory, getJournalRange } from "../../lib/db/journal.js";
 import { excerptFor, parseSearchQuery, searchEntries } from "../../lib/journalSearch.js";
@@ -38,7 +39,7 @@ export default function SearchView({ uid, today, onPick, initialQuery = "" }) {
         <input
           type="search"
           value={query}
-          placeholder="Suche im Journal … (+fuel, +hot … filtert nach Tags)"
+          placeholder={IS_STORE_BUILD ? "Suche im Journal … (+fuel, +fitness … filtert nach Tags)" : "Suche im Journal … (+fuel, +hot … filtert nach Tags)"}
           aria-label="Journal durchsuchen"
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -49,7 +50,7 @@ export default function SearchView({ uid, today, onPick, initialQuery = "" }) {
         </div>
       </div>
       <p className="jv2-search-hint">
-        Wörter werden gemeinsam gesucht (Groß-/Kleinschreibung egal). <code>+wort</code> filtert nach Tags — z. B. <code>+fuel</code> (Ernährung), <code>+fitness</code>, <code>+relax</code>, <code>+hot</code>.
+        Wörter werden gemeinsam gesucht (Groß-/Kleinschreibung egal). <code>+wort</code> filtert nach Tags — z. B. <code>+fuel</code> (Ernährung), <code>+fitness</code>, <code>+relax</code>{!IS_STORE_BUILD && <>, <code>+hot</code></>}.
       </p>
       {results.isPending && active && <p className="jv2-search-empty">Durchsuche den Zeitraum …</p>}
       {results.isError && <p className="jv2-search-empty">Der Zeitraum konnte nicht geladen werden — offline? Der sichtbare Bereich funktioniert mit dem lokalen Cache.</p>}

@@ -1,3 +1,8 @@
+## 2026-11-12 — CI: Gemini + Merge-Agent wiederhergestellt
+
+- Restored: gemini-ci-repair.yml (Owner: volle Automatisierung)
+- Simplicity ≠ bestehende Auto-Schienen killen.
+
 ## 2026-11-12 — automerge-pr: Dependabot base=master → base=dev
 
 - Org `0e25e4c4` / Tracking `c1f9b6ce`: vor Squash nur `dependabot/*`-PRs mit `base=master` auf `base=dev` retargeten (`gh pr edit --base dev`); Draft #42 bleibt unberührt.

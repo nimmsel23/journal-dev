@@ -177,3 +177,15 @@ _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen sta
 - Erledigt: Org `0e25e4c4` (Tracking `c1f9b6ce`) — `375e122` `automerge-pr.yml`: vor Squash Dependabot `base=master`→`base=dev` retargeten (nur `dependabot/*`; #42 unberührt). Check (Journal) Run 43132767870 success; Guide CTO-Nachtauftrag 1 abgehakt.
 - Offen/Weiter: Folge-Port Retarget-SSOT in andere Automerges (CTO/`c1f9b6ce`); Guide-Queue leer; Draft #42 unangetastet; NEXT Solo-Icons/habit-vos-Abnahme.
 - Blocker: keine.
+
+## 2026-11-12 (Donnerstag, 14:10) — Abteilungsleiter-Lauf
+
+_Automatik:_
+- Commits seit 02:10-Log: fd7c197 ci restore Gemini/Merge-Agent; c22c061/05a5ed8 Store-Builds; cab4817 Standalone-Konzept; Live Deploy master success Run 43199684868; Check(dev) 43199494441 success.
+- Offene PRs: 42 Draft (pr-merge-agent).
+- Guide-Queue leer; Org project:journal-dev pending 0; NEXT Solo-Icons/habit-vos-Abnahme.
+
+_Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
+- Erledigt: NEXT Solo-Icons Live-Abnahme — mini/{door,voice,game,tent,habits}/ 200 + Icons; Legacy-301s (vos-* / habit-vos / journal-vos); Habits `journalV2Default=habits` + Rolldown-Guard (`index-CBz3OlDt.js`, `__VITE_PRELOAD__`=0); Live Deploy 43199684868 / `cab4817`.
+- Offen/Weiter: Legacy `apps/habits` Workspace/Dependabot-Räumen; Owner OAuth-URIs auf vos-journal; Smart-Journal/Habits Konto-Abnahme; Draft #42 unangetastet; CTO/`c1f9b6ce` Folge-Port.
+- Blocker: keine.

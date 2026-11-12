@@ -6,7 +6,8 @@
 - [x] CEO-Entscheid Versionspflege: Option B + Baseline `1.0.0` (2026-11-09); Tag `journal-v*` weiterhin optional.
 - [x] 2026-11-11: Org `d48d852d` Semver-Live journal-vos belegt (`0.2.0+031a78c`, Deploy 42803023456); C-012 Tag `journal-v0.2.0` da.
 - [x] 2026-11-12: Org `0e25e4c4` automerge-pr Retarget master→dev (`375e122`); Folge-Port andere Repos = CTO/`c1f9b6ce`.
-- [ ] Solo-Icons Live-Abnahme: `vos-journal.web.app/mini/{door,voice,game,tent,habits}/` + Legacy-301s; Habits `#v2/habits` + Rolldown-Guard; Legacy `apps/habits` später aus Workspace/Dependabot räumen.
+- [x] 2026-11-12: Solo-Icons Live-Abnahme — `vos-journal.web.app/mini/{door,voice,game,tent,habits}/` HTTP 200 + Solo-Icons; Legacy vos-door/voice/game/tent + habit-vos + journal-vos → 301; Habits `journalV2Default=habits` + Rolldown-Runtime/`__VITE_PRELOAD__`=0 (Live Deploy 43199684868 / `cab4817`).
+- [ ] Legacy `apps/habits` später aus Workspace/Dependabot räumen (nach Live-Flavor-Abnahme).
 - [ ] Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).
 
 - [x] 2026-11-10: Habits Live-Pfad auf Journal-Flavor umgestellt (kein 3‑MB-Shell-Entry mehr).

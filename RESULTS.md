@@ -1,3 +1,8 @@
+## 2026-11-12 — automerge-pr: Dependabot base=master → base=dev
+
+- Org `0e25e4c4` / Tracking `c1f9b6ce`: vor Squash nur `dependabot/*`-PRs mit `base=master` auf `base=dev` retargeten (`gh pr edit --base dev`); Draft #42 bleibt unberührt.
+- Commit `375e122` auf `dev`; Check (Journal) Run 43132767870 success. SSOT für Folge-Port anderer Automerges.
+
 ## 2026-11-11 — CI Simplicity: remove Gemini/Merge-Agent
 
 - Removed: gemini-ci-repair.yml

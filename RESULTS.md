@@ -1,3 +1,9 @@
+## 2026-11-12 — Solo-Icons / habit-vos Live-Abnahme
+
+- Live Deploy Run 43199684868 (`cab4817`, last-modified 10:23Z): `vos-journal.web.app/mini/{door,voice,game,tent,habits}/` → 200; Icons/Manifest 200; Game-Maps `/mini/game/{fire,focus,freedom,frame}/` → 200.
+- Legacy-301: vos-door/voice/game/tent → `/mini/.../`; habit-vos → `/mini/habits/`; journal-vos → `vos-journal.web.app`.
+- Habits-Bundle `index-CBz3OlDt.js`: `journalV2Default=habits`, `appId/appName=habits/Habits`, Rolldown-Runtime geladen, `__VITE_PRELOAD__` Count 0.
+
 ## 2026-11-12 — CI: Gemini + Merge-Agent wiederhergestellt
 
 - Restored: gemini-ci-repair.yml (Owner: volle Automatisierung)

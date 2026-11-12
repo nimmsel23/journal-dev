@@ -148,3 +148,32 @@ _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen sta
 - Erledigt: Org `d48d852d` Semver-Live — journal-vos Header `v0.2.0+031a78c` + Update-Dialog `Aktualisiert auf v0.2.0+031a78c` (Bundle `index-qZGbKdoO.js`); Live Deploy Run 42803023456 (`031a78c`); Tag `journal-v0.2.0`; Task done (C-012 Baseline 0.2.0).
 - Offen/Weiter: Guide-Queue leer; Org project:journal-dev pending 0; NEXT habit-vos-Abnahme + Smart-Journal-Konto-Check; tip `40c1fdc` noch nicht auf Live (nur bis `031a78c`).
 - Blocker: keine.
+
+## 2026-11-12 (Donnerstag) — Abteilungsleiter-Lauf
+
+_Automatik (vos-al-log Vorlage 2026-11-12):_
+- Commits seit 2026-11-08: cc707d7 docs(agents): simplicity pointer — CI.md §1 spine
+4872fbf ci: drop Gemini repair and Merge-Agent (simplicity)
+bb17cb5 chore: aos-game Submodul-Pin auf Chapter-Hub-Fix
+dcfa869 chore: aos-core4 und aos-voice als Submodule einbinden
+3ab3e92 chore: aos-door als Submodul unter aos-door/ einbinden
+239dbd3 chore: aos-game als Submodul unter aos-game/ einbinden
+bffdaf7 fix(ci): Header-Tests und Builds an Mini-Redirects anpassen
+37d58fd feat(hosting): Solo-Icons unter vos-journal/mini/*
+6572453 docs: auto-update NEXT.md
+4cebb71 docs: auto-update RESULTS.md
+db9772a fix(hosting): vos-journal canonical, journal-vos 301 redirect
+349e599 docs: auto-update RESULTS.md
+e9c2cf9 docs: auto-update CLAUDE.md
+8107be2 docs(al-log): Lauf 2026-11-11 — Org d48d852d Semver-Live 0.2.0+031a78c belegt
+cf7c183 docs: auto-update RESULTS.md
+- Offene PRs: 42	ci: Merge-Agent für automatische PR-Merges (kein Abweisen von PRs)	vibe/pr-merge-agent-aac181	DRAFT	2026-11-07T16:56:03Z
+- CI (letzte Läufe): completed	success	Auto-Promote dev -> master (Check (Journal))	Auto-Promote dev -> master (Check (Journal))	master	schedule	43121966818	10s	2026-11-11T23:43:16Z
+completed	success	PR-AutoMerge (Dependabot -> dev)	PR-AutoMerge (Dependabot -> dev)	master	schedule	43114398451	9s	2026-11-11T22:45:23Z
+completed	failure	npm_and_yarn in /functions for fast-xml-parser - Update #1696536182	Dependabot Updates	master	dynamic	43080160107	41s	2026-11-11T18:41:30Z
+- Arbeitsbaum: 2 uncommittete Pfade
+
+_Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
+- Erledigt: Org `0e25e4c4` (Tracking `c1f9b6ce`) — `375e122` `automerge-pr.yml`: vor Squash Dependabot `base=master`→`base=dev` retargeten (nur `dependabot/*`; #42 unberührt). Check (Journal) Run 43132767870 success; Guide CTO-Nachtauftrag 1 abgehakt.
+- Offen/Weiter: Folge-Port Retarget-SSOT in andere Automerges (CTO/`c1f9b6ce`); Guide-Queue leer; Draft #42 unangetastet; NEXT Solo-Icons/habit-vos-Abnahme.
+- Blocker: keine.

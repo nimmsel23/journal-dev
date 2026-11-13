@@ -1,0 +1,343 @@
+{
+ "evidence": {
+  "generated_at": "2026-11-13T00:09:16+00:00",
+  "repo": "nimmsel23/journal-dev",
+  "meta": {
+   "name": "journal-dev",
+   "description": "VOS Journal PWA",
+   "html_url": "https://github.com/nimmsel23/journal-dev",
+   "pushed_at": "2026-11-13T00:08:50Z",
+   "default_branch": "master",
+   "visibility": "public",
+   "pages_url": null
+  },
+  "package": {
+   "name": "@vos/journal",
+   "version": "0.2.0"
+  },
+  "branches": {
+   "main": "master",
+   "has_dev": true,
+   "dev_behind": 0,
+   "dev_ahead": 1,
+   "oldest_unpromoted": "2026-11-13T01:08:48+01:00",
+   "dev_head": "f43401f 2026-11-13T01:08:48+01:00",
+   "master_head": "d49f97a 2026-11-12T23:09:49+01:00"
+  },
+  "commits": [
+   {
+    "sha": "f43401f",
+    "date": "2026-11-13T01:08:48+01:00",
+    "author": "Alpha",
+    "subject": "feat(ci): Living Dashboard als GitHub Page"
+   },
+   {
+    "sha": "d49f97a",
+    "date": "2026-11-12T23:09:49+01:00",
+    "author": "nimmdaniel",
+    "subject": "ci: Merge-Agent fuer automatische PR-Merges (kein Abweisen von PRs) (#42)"
+   },
+   {
+    "sha": "2b260cc",
+    "date": "2026-11-12T14:14:50+01:00",
+    "author": "Alpha",
+    "subject": "docs(al-log): Lauf 2026-11-12 14:10 — Solo-Icons Live-Abnahme belegt"
+   },
+   {
+    "sha": "0c06808",
+    "date": "2026-11-12T14:14:43+01:00",
+    "author": "Alpha",
+    "subject": "docs: auto-update RESULTS.md"
+   },
+   {
+    "sha": "cab4817",
+    "date": "2026-11-12T11:20:25+01:00",
+    "author": "Alpha",
+    "subject": "docs: Konzept finale Standalone-Variante vos-journal (Entwurf)"
+   },
+   {
+    "sha": "05a5ed8",
+    "date": "2026-11-12T11:19:37+01:00",
+    "author": "Alpha",
+    "subject": "feat(habits): Dein Tag im Store-Build deutsch, ohne 4B/Core4, Ein-Klick-Start (Quelle apps/habits)"
+   },
+   {
+    "sha": "c22c061",
+    "date": "2026-11-12T11:18:14+01:00",
+    "author": "Alpha",
+    "subject": "feat(journal): Store-Build ohne Door/Game/Focus, KI, Google-Kalender, 4B; ruhigere Optik"
+   },
+   {
+    "sha": "fd7c197",
+    "date": "2026-11-12T02:19:08+01:00",
+    "author": "Alpha",
+    "subject": "ci: restore Gemini repair + Merge-Agent (full automation)"
+   },
+   {
+    "sha": "2645604",
+    "date": "2026-11-12T02:13:13+01:00",
+    "author": "Alpha",
+    "subject": "docs(al-log): Lauf 2026-11-12 — Org 0e25e4c4 automerge retarget belegt"
+   },
+   {
+    "sha": "9fa2f9a",
+    "date": "2026-11-12T02:13:01+01:00",
+    "author": "Alpha",
+    "subject": "docs: auto-update NEXT.md"
+   },
+   {
+    "sha": "c29288e",
+    "date": "2026-11-12T02:13:00+01:00",
+    "author": "Alpha",
+    "subject": "docs: auto-update RESULTS.md"
+   },
+   {
+    "sha": "375e122",
+    "date": "2026-11-12T02:11:30+01:00",
+    "author": "Alpha",
+    "subject": "ci(automerge-pr): retarget Dependabot PRs base=master → base=dev"
+   },
+   {
+    "sha": "cc707d7",
+    "date": "2026-11-11T19:14:18+01:00",
+    "author": "Alpha",
+    "subject": "docs(agents): simplicity pointer — CI.md §1 spine"
+   },
+   {
+    "sha": "4872fbf",
+    "date": "2026-11-11T19:11:31+01:00",
+    "author": "Alpha",
+    "subject": "ci: drop Gemini repair and Merge-Agent (simplicity)"
+   },
+   {
+    "sha": "bb17cb5",
+    "date": "2026-11-11T18:31:17+01:00",
+    "author": "Alpha",
+    "subject": "chore: aos-game Submodul-Pin auf Chapter-Hub-Fix"
+   },
+   {
+    "sha": "dcfa869",
+    "date": "2026-11-11T17:00:49+01:00",
+    "author": "Alpha",
+    "subject": "chore: aos-core4 und aos-voice als Submodule einbinden"
+   },
+   {
+    "sha": "3ab3e92",
+    "date": "2026-11-11T16:57:13+01:00",
+    "author": "Alpha",
+    "subject": "chore: aos-door als Submodul unter aos-door/ einbinden"
+   },
+   {
+    "sha": "239dbd3",
+    "date": "2026-11-11T16:56:34+01:00",
+    "author": "Alpha",
+    "subject": "chore: aos-game als Submodul unter aos-game/ einbinden"
+   },
+   {
+    "sha": "bffdaf7",
+    "date": "2026-11-11T14:18:28+01:00",
+    "author": "Alpha",
+    "subject": "fix(ci): Header-Tests und Builds an Mini-Redirects anpassen"
+   },
+   {
+    "sha": "37d58fd",
+    "date": "2026-11-11T14:13:34+01:00",
+    "author": "Alpha",
+    "subject": "feat(hosting): Solo-Icons unter vos-journal/mini/*"
+   }
+  ],
+  "activity": [
+   {
+    "day": "2026-10-24",
+    "n": 10
+   },
+   {
+    "day": "2026-10-25",
+    "n": 15
+   },
+   {
+    "day": "2026-10-26",
+    "n": 12
+   },
+   {
+    "day": "2026-10-27",
+    "n": 0
+   },
+   {
+    "day": "2026-10-28",
+    "n": 7
+   },
+   {
+    "day": "2026-10-29",
+    "n": 15
+   },
+   {
+    "day": "2026-10-30",
+    "n": 0
+   },
+   {
+    "day": "2026-10-31",
+    "n": 22
+   },
+   {
+    "day": "2026-11-01",
+    "n": 9
+   },
+   {
+    "day": "2026-11-02",
+    "n": 4
+   },
+   {
+    "day": "2026-11-03",
+    "n": 21
+   },
+   {
+    "day": "2026-11-04",
+    "n": 29
+   },
+   {
+    "day": "2026-11-05",
+    "n": 28
+   },
+   {
+    "day": "2026-11-06",
+    "n": 38
+   },
+   {
+    "day": "2026-11-07",
+    "n": 28
+   },
+   {
+    "day": "2026-11-08",
+    "n": 3
+   },
+   {
+    "day": "2026-11-09",
+    "n": 42
+   },
+   {
+    "day": "2026-11-10",
+    "n": 22
+   },
+   {
+    "day": "2026-11-11",
+    "n": 17
+   },
+   {
+    "day": "2026-11-12",
+    "n": 11
+   },
+   {
+    "day": "2026-11-13",
+    "n": 1
+   }
+  ],
+  "workflows": [
+   {
+    "name": "Check (Journal)",
+    "branch": "dev",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-13T00:08:52Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334700132",
+    "sha": "f43401f"
+   },
+   {
+    "name": "Gemini CI Agent",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-12T22:11:17Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43317547988",
+    "sha": "d49f97a"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-12T22:09:52Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43317312899",
+    "sha": "d49f97a"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-12T22:09:52Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43317312881",
+    "sha": "d49f97a"
+   },
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-12T20:53:57Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43304835832",
+    "sha": "2b260cc"
+   },
+   {
+    "name": "Preview (Journal dev)",
+    "branch": "dev",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-12T10:18:22Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43199176422",
+    "sha": "c22c061"
+   }
+  ],
+  "issues": [],
+  "pulls": [],
+  "live_sites": [
+   "https://habit-vos.web.app",
+   "https://journal-vos.web.app",
+   "https://vos-door.web.app",
+   "https://vos-game.web.app",
+   "https://vos-journal.web.app",
+   "https://vos-tent.web.app",
+   "https://vos-voice.web.app"
+  ]
+ },
+ "assessment": {
+  "status": "green",
+  "signals": [],
+  "ai": {
+   "headline": "Aktive Entwicklung auf dev, CI-Lauf für Living Dashboard in Bearbeitung",
+   "lage": "Der `dev`-Branch ist einen Commit (`f43401f`) vor `master`, welcher zuletzt den Merge-Agent (`d49f97a`) aktualisierte. Ein `Check (Journal)` Workflow für den neuesten `dev`-Commit läuft aktuell. Mehrere Dokumentations- und Feature-Commits wurden in den letzten 24 Stunden getätigt.",
+   "auffaelligkeiten": [
+    {
+     "level": "hoch",
+     "text": "Der Workflow \"Check (Journal)\" für den neuesten `dev`-Commit f43401f ist noch \"in_progress\"."
+    },
+    {
+     "level": "info",
+     "text": "Ein Living Dashboard als GitHub Page wurde mit Commit f43401f eingeführt."
+    },
+    {
+     "level": "mittel",
+     "text": "Mehrere offene Prüfpunkte für Smart Journal, Habits und Push-Reminder sind in NEXT.md dokumentiert."
+    }
+   ],
+   "naechste_schritte": [
+    "Prüfen des \"Check (Journal)\" Workflows für f43401f auf Abschluss und Ergebnis.",
+    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto, wie in NEXT.md beschrieben.",
+    "Prüfen von syncTrackerHabits im Browser gegen ein echtes Konto gemäß NEXT.md."
+   ],
+   "veraendert": "Dies ist die erste Einschätzung für das Repository.",
+   "fragen": [
+    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (Console)?",
+    "Benötigt die Daily-Four-Auswertung eine Frist, analog zu `requiredBeforeHour` (Entscheidung Daniel)?"
+   ],
+   "model": "gemini-2.5-flash"
+  },
+  "ai_at": "2026-11-13T00:09:18+00:00"
+ }
+}

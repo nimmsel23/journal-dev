@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-13T00:12:46+00:00",
+  "generated_at": "2026-11-13T01:12:53+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-13T00:12:22Z",
+   "pushed_at": "2026-11-13T01:12:36Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -19,12 +19,18 @@
    "main": "master",
    "has_dev": true,
    "dev_behind": 0,
-   "dev_ahead": 1,
+   "dev_ahead": 2,
    "oldest_unpromoted": "2026-11-13T01:12:20+01:00",
-   "dev_head": "2fe31b2 2026-11-13T01:12:20+01:00",
+   "dev_head": "cc4b7b3 2026-11-13T02:12:34+01:00",
    "master_head": "f43401f 2026-11-13T01:08:48+01:00"
   },
   "commits": [
+   {
+    "sha": "cc4b7b3",
+    "date": "2026-11-13T02:12:34+01:00",
+    "author": "Alpha",
+    "subject": "chore(habits): retire legacy workspace and dependency updates"
+   },
    {
     "sha": "2fe31b2",
     "date": "2026-11-13T01:12:20+01:00",
@@ -138,12 +144,6 @@
     "date": "2026-11-11T16:56:34+01:00",
     "author": "Alpha",
     "subject": "chore: aos-game als Submodul unter aos-game/ einbinden"
-   },
-   {
-    "sha": "bffdaf7",
-    "date": "2026-11-11T14:18:28+01:00",
-    "author": "Alpha",
-    "subject": "fix(ci): Header-Tests und Builds an Mini-Redirects anpassen"
    }
   ],
   "activity": [
@@ -229,19 +229,59 @@
    },
    {
     "day": "2026-11-13",
-    "n": 2
+    "n": 3
    }
   ],
   "workflows": [
+   {
+    "name": "Preview (Journal dev)",
+    "branch": "dev",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-13T01:12:38Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343151317",
+    "sha": "cc4b7b3"
+   },
    {
     "name": "Check (Journal)",
     "branch": "dev",
     "event": "push",
     "status": "in_progress",
     "conclusion": null,
-    "created_at": "2026-11-13T00:12:24Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43335184365",
-    "sha": "2fe31b2"
+    "created_at": "2026-11-13T01:12:38Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343151315",
+    "sha": "cc4b7b3"
+   },
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "skipped",
+    "created_at": "2026-11-13T00:12:50Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43335245626",
+    "sha": "f43401f"
+   },
+   {
+    "name": "Gemini CI Agent",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-13T00:12:50Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43335245572",
+    "sha": "f43401f"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "skipped",
+    "created_at": "2026-11-13T00:12:50Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43335245562",
+    "sha": "f43401f"
    },
    {
     "name": "Live Deploy (Journal master)",
@@ -252,46 +292,6 @@
     "created_at": "2026-11-13T00:09:40Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334806379",
     "sha": "f43401f"
-   },
-   {
-    "name": "Gemini CI Agent",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-13T00:09:30Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334783409",
-    "sha": "d49f97a"
-   },
-   {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-13T00:09:30Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334783215",
-    "sha": "d49f97a"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "skipped",
-    "created_at": "2026-11-13T00:09:30Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334782914",
-    "sha": "d49f97a"
-   },
-   {
-    "name": "Preview (Journal dev)",
-    "branch": "dev",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-12T10:18:22Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43199176422",
-    "sha": "c22c061"
    }
   ],
   "issues": [],
@@ -310,30 +310,34 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Entwicklung auf dev fortgesetzt, Living Dashboard auf master bereitgestellt",
-   "lage": "Der `dev`-Branch ist mit Commit `2fe31b2` einen Commit vor `master`. `master` wurde zuletzt mit `f43401f` aktualisiert, was das Living Dashboard als GitHub Page bereitstellt. Ein `Check (Journal)` Workflow für den neuesten `dev`-Commit `2fe31b2` läuft aktuell.",
+   "headline": "Dev-Branch weiterentwickelt, Workflows für neuen Commit laufen",
+   "lage": "Der `dev`-Branch ist mit Commit `cc4b7b3` zwei Commits vor `master`. `master` wurde zuletzt mit `f43401f` aktualisiert, was das Living Dashboard als GitHub Page bereitstellt. Für den neuesten `dev`-Commit `cc4b7b3` laufen aktuell die Workflows `Preview (Journal dev)` und `Check (Journal)`.",
    "auffaelligkeiten": [
     {
-     "level": "hoch",
-     "text": "Der `Check (Journal)` Workflow für den neuesten `dev`-Commit `2fe31b2` ist noch `in_progress`."
+     "level": "info",
+     "text": "Der `dev`-Branch ist nun zwei Commits vor `master` (Head `cc4b7b3`)."
     },
     {
      "level": "info",
-     "text": "Das Living Dashboard als GitHub Page wurde erfolgreich auf `master` bereitgestellt (`f43401f`)."
+     "text": "Die Workflows \"Preview (Journal dev)\" und \"Check (Journal)\" für den neuesten `dev`-Commit `cc4b7b3` sind noch in Bearbeitung."
+    },
+    {
+     "level": "info",
+     "text": "Der Punkt \"Legacy `apps/habits` aus Workspace/Dependabot und Root-Lockfile-Importern genommen\" in `NEXT.md` wurde mit `cc4b7b3` abgeschlossen."
     }
    ],
    "naechste_schritte": [
-    "Prüfen des \"Check (Journal)\" Workflows für `2fe31b2` auf Abschluss und Ergebnis.",
+    "Prüfen der Workflows \"Preview (Journal dev)\" und \"Check (Journal)\" für `cc4b7b3` auf Abschluss und Ergebnis.",
     "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto, wie in `NEXT.md` beschrieben.",
     "Prüfen von `syncTrackerHabits` im Browser gegen ein echtes Konto gemäß `NEXT.md`."
    ],
-   "veraendert": "Der `dev`-Branch hat einen neuen Head-Commit (`2fe31b2`), und `master` wurde mit `f43401f` aktualisiert, wodurch das Living Dashboard als GitHub Page bereitgestellt wurde.",
+   "veraendert": "Der `dev`-Branch ist um einen Commit (`cc4b7b3`) weiterentwickelt und nun zwei Commits vor `master`, wobei die zugehörigen CI-Läufe für den neuen Head noch in Bearbeitung sind.",
    "fragen": [
-    "Soll Daniel die OAuth-URIs auf nur noch `vos-journal` straffen (Console), wie in `NEXT.md` vermerkt?",
-    "Benötigt die Daily-Four-Auswertung eine Frist, wie in `NEXT.md` als offene Entscheidung vermerkt?"
+    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
+    "Owner: Entscheiden, ob die Daily-Four-Auswertung eine Frist benötigt (`requiredBeforeHour`)."
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-13T00:12:48+00:00"
+  "ai_at": "2026-11-13T01:12:56+00:00"
  }
 }

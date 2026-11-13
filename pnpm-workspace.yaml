@@ -1,5 +1,4 @@
-packages:
-  - apps/habits
+packages: []
 
 # Standalone Journal dependency settings.
 allowBuilds:

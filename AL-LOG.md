@@ -189,3 +189,32 @@ _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen sta
 - Erledigt: NEXT Solo-Icons Live-Abnahme — mini/{door,voice,game,tent,habits}/ 200 + Icons; Legacy-301s (vos-* / habit-vos / journal-vos); Habits `journalV2Default=habits` + Rolldown-Guard (`index-CBz3OlDt.js`, `__VITE_PRELOAD__`=0); Live Deploy 43199684868 / `cab4817`.
 - Offen/Weiter: Legacy `apps/habits` Workspace/Dependabot-Räumen; Owner OAuth-URIs auf vos-journal; Smart-Journal/Habits Konto-Abnahme; Draft #42 unangetastet; CTO/`c1f9b6ce` Folge-Port.
 - Blocker: keine.
+
+## 2026-11-13 (Freitag) — Abteilungsleiter-Lauf
+
+_Automatik (vos-al-log Vorlage 2026-11-13):_
+- Commits seit 2026-11-08: 2fe31b2 chore(journal): portal.mjs synchronisiert, dist-habits/ ignoriert
+f43401f feat(ci): Living Dashboard als GitHub Page
+d49f97a ci: Merge-Agent fuer automatische PR-Merges (kein Abweisen von PRs) (#42)
+2b260cc docs(al-log): Lauf 2026-11-12 14:10 — Solo-Icons Live-Abnahme belegt
+0c06808 docs: auto-update RESULTS.md
+cab4817 docs: Konzept finale Standalone-Variante vos-journal (Entwurf)
+05a5ed8 feat(habits): Dein Tag im Store-Build deutsch, ohne 4B/Core4, Ein-Klick-Start (Quelle apps/habits)
+c22c061 feat(journal): Store-Build ohne Door/Game/Focus, KI, Google-Kalender, 4B; ruhigere Optik
+fd7c197 ci: restore Gemini repair + Merge-Agent (full automation)
+2645604 docs(al-log): Lauf 2026-11-12 — Org 0e25e4c4 automerge retarget belegt
+9fa2f9a docs: auto-update NEXT.md
+c29288e docs: auto-update RESULTS.md
+375e122 ci(automerge-pr): retarget Dependabot PRs base=master → base=dev
+cc707d7 docs(agents): simplicity pointer — CI.md §1 spine
+4872fbf ci: drop Gemini repair and Merge-Agent (simplicity)
+- Offene PRs: (keine offenen PRs / gh nicht verfuegbar)
+- CI (letzte Läufe): completed	skipped	PR-AutoMerge (Dependabot -> dev)	PR-AutoMerge (Dependabot -> dev)	master	workflow_run	43335245626	1s	2026-11-13T00:12:50Z
+completed	success	Gemini CI Agent	Gemini CI Agent	master	workflow_run	43335245572	10s	2026-11-13T00:12:50Z
+completed	skipped	Auto-Promote dev -> master (Check (Journal))	Auto-Promote dev -> master (Check (Journal))	master	workflow_run	43335245562	7s	2026-11-13T00:12:50Z
+- Arbeitsbaum: sauber
+
+_Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
+- Erledigt: NEXT Legacy-Habits Workspace/Dependabot bereinigt, Root-Lockfile aktualisiert; Live-Voraussetzung `cab4817` / Deploy 43199684868. 30/30 Tests + Frozen-Lockfile/YAML grün; Commit auf Basis `2fe31b2`.
+- Offen/Weiter: Check (Journal) für diesen dev-Push prüfen; Owner OAuth-URIs und echte Konto-Abnahme bleiben offen (NEXT; Live-Basis `cab4817`).
+- Blocker: keine; zusätzliche Worktrees gemäß Repo-Regel vermieden (Guide-Abweichung).

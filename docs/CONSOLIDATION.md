@@ -1,13 +1,15 @@
 # Quellzuständigkeit seit 2026-11-06
 
-`habits` gehört zu `journal-dev`. Live-Hosting `habit-vos` kommt aus dem Journal-Flavor-Build
-(`pnpm run deploy:habits` → `dist-habits`, Default-Tab `journal-v2` / Modus `habits`).
-`apps/habits` bleibt als Legacy-Shell im Tree (Quellen/Tests), ist aber nicht mehr
-Deploy-Quelle. Firebase-Target `habits` zeigt auf `dist-habits`.
+`habits` gehört zu `journal-dev`. Live-Hosting kommt aus dem Journal-Hub
+(`pnpm run deploy:v2:build` → `dist-v2/mini/habits/`, Default `#v2/habits`).
+`habit-vos` leitet auf diese Mini-Route um. `apps/habits` bleibt als Legacy-Shell
+im Tree (Quellen/Tests), ist aber seit 2026-11-13 weder Workspace-Paket noch
+Dependabot-Ziel. Installationen und Dependency-Updates betreffen nur den
+Journal-Root; das Root-Lockfile enthält keinen Legacy-Habits-Importer mehr.
 
 Der Node-Backend-Quellstand liegt in `~/dev/backend/`: Hono-Server am Repo-Root, Cloud Functions unter `functions/fitness` und `functions/journal`, TaskChampion-CORS-Proxy unter `scripts/`. Der bisherige Hono-Startpfad bleibt bis zum gemeinsamen Backend-Release kompatibel. Functions-Quellen und Paket-Manifeste liegen ausschließlich im Backend; die alten Frontend-Ordner behalten nur unbearbeitete Konfigurations-/Lockfile-Reste. Neue Backend-Änderungen ausschließlich dort. Die Functions-Deployment-Blöcke wurden aus den Frontend-Manifesten entfernt.
 
-Lockfiles werden auf ausdrücklichen Nutzerwunsch in diesem Schritt nicht bearbeitet. Workspace-Installationen in den angepassten Standalone-Workflows verwenden deshalb vorerst `--no-frozen-lockfile`. Backend-Tests werden in diesem Schritt nicht ausgeführt. Die Frontend-CI führt nur Frontend-Tests aus; Functions-Testdateien gehören zum gemeinsamen Backend. Backend-CI folgt mit dessen Release.
+Beim ursprünglichen Backend-Umzug wurden Lockfiles auf ausdrücklichen Nutzerwunsch nicht bearbeitet. Die damaligen Standalone-Workflows verwendeten deshalb `--no-frozen-lockfile`; die aktuelle Journal-CI verwendet `--frozen-lockfile`. Backend-Tests werden in diesem Schritt nicht ausgeführt. Die Frontend-CI führt nur Frontend-Tests aus; Functions-Testdateien gehören zum gemeinsamen Backend. Backend-CI folgt mit dessen Release.
 
 Alte Learn-/Habits-Repos und Shell-Gitlinks bleiben bis zum expliziten Release erhalten. Die Entwicklung erfolgt nur noch im jeweiligen neuen Owner. Keine Services neu starten oder Produktionscheckouts direkt bearbeiten.
 

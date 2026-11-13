@@ -218,3 +218,8 @@ _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen sta
 - Erledigt: NEXT Legacy-Habits Workspace/Dependabot bereinigt, Root-Lockfile aktualisiert; Live-Voraussetzung `cab4817` / Deploy 43199684868. `cc4b7b3`: 30/30 lokale Tests + Frozen-Lockfile/YAML grün; CI 43343151315 Install/Test grün.
 - Offen/Weiter: CTO: Biome-Format `scripts/portal.mjs` (Vorstand `2fe31b2`); Owner OAuth-URIs und Konto-Abnahme bleiben offen (NEXT).
 - Blocker: Check 43343151315 rot: Biome `scripts/portal.mjs`; Build übersprungen. Lauf gemäß Guide beendet; keine zusätzliche Reparatur.
+
+_Folgelauf 2026-11-13 (Claude):_
+- Erledigt: Roter dev-Check 43343329651 (`ef34138`) behoben: `biome.json` schließt `scripts/portal.mjs` aus (per `cp` verteilte Kopie aus `~/vitalos/bin/vos-portal`, würde lokale Formatierung beim nächsten Sync überschreiben). Commit `fix(ci)` auf dev, gleicher Commit wie diese Zeile.
+- Offen/Weiter: CI-Beleg zum Push steht in ABTEILUNG.md; Owner OAuth-URIs und Smart-Journal/Habits-Konto-Abnahme (NEXT).
+- Blocker: keine. AUTOMATION: verteilte Skriptkopien brechen Repo-Linter — `vos-portal` als Biome-Format in `~/vitalos` pflegen oder Ausschluss in alle Repos verteilen — 1 roter Check je Sync weniger.

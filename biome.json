@@ -22,7 +22,8 @@
       "!**/ios",
       "!**/coverage",
       "!**/pnpm-lock.yaml",
-      "!**/.firebase"
+      "!**/.firebase",
+      "!scripts/portal.mjs"
     ]
   },
   "formatter": {

@@ -215,6 +215,6 @@ completed	skipped	Auto-Promote dev -> master (Check (Journal))	Auto-Promote dev 
 - Arbeitsbaum: sauber
 
 _Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
-- Erledigt: NEXT Legacy-Habits Workspace/Dependabot bereinigt, Root-Lockfile aktualisiert; Live-Voraussetzung `cab4817` / Deploy 43199684868. 30/30 Tests + Frozen-Lockfile/YAML grün; Commit auf Basis `2fe31b2`.
-- Offen/Weiter: Check (Journal) für diesen dev-Push prüfen; Owner OAuth-URIs und echte Konto-Abnahme bleiben offen (NEXT; Live-Basis `cab4817`).
-- Blocker: keine; zusätzliche Worktrees gemäß Repo-Regel vermieden (Guide-Abweichung).
+- Erledigt: NEXT Legacy-Habits Workspace/Dependabot bereinigt, Root-Lockfile aktualisiert; Live-Voraussetzung `cab4817` / Deploy 43199684868. `cc4b7b3`: 30/30 lokale Tests + Frozen-Lockfile/YAML grün; CI 43343151315 Install/Test grün.
+- Offen/Weiter: CTO: Biome-Format `scripts/portal.mjs` (Vorstand `2fe31b2`); Owner OAuth-URIs und Konto-Abnahme bleiben offen (NEXT).
+- Blocker: Check 43343151315 rot: Biome `scripts/portal.mjs`; Build übersprungen. Lauf gemäß Guide beendet; keine zusätzliche Reparatur.

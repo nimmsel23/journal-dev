@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-13T12:35:06+00:00",
+  "generated_at": "2026-11-13T13:12:01+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-13T01:14:28Z",
+   "pushed_at": "2026-11-13T13:11:39Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -19,12 +19,18 @@
    "main": "master",
    "has_dev": true,
    "dev_behind": 0,
-   "dev_ahead": 3,
+   "dev_ahead": 4,
    "oldest_unpromoted": "2026-11-13T01:12:20+01:00",
-   "dev_head": "ef34138 2026-11-13T02:13:51+01:00",
+   "dev_head": "f14bd12 2026-11-13T14:11:36+01:00",
    "master_head": "f43401f 2026-11-13T01:08:48+01:00"
   },
   "commits": [
+   {
+    "sha": "f14bd12",
+    "date": "2026-11-13T14:11:36+01:00",
+    "author": "Alpha",
+    "subject": "fix(ci): Biome ignoriert verteilte Kopie scripts/portal.mjs"
+   },
    {
     "sha": "ef34138",
     "date": "2026-11-13T02:13:51+01:00",
@@ -138,12 +144,6 @@
     "date": "2026-11-11T17:00:49+01:00",
     "author": "Alpha",
     "subject": "chore: aos-core4 und aos-voice als Submodule einbinden"
-   },
-   {
-    "sha": "3ab3e92",
-    "date": "2026-11-11T16:57:13+01:00",
-    "author": "Alpha",
-    "subject": "chore: aos-door als Submodul unter aos-door/ einbinden"
    }
   ],
   "activity": [
@@ -229,10 +229,20 @@
    },
    {
     "day": "2026-11-13",
-    "n": 4
+    "n": 5
    }
   ],
   "workflows": [
+   {
+    "name": "Check (Journal)",
+    "branch": "dev",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-13T13:11:41Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43431548812",
+    "sha": "f14bd12"
+   },
    {
     "name": "Merge-Agent",
     "branch": "master",
@@ -274,16 +284,6 @@
     "sha": "f43401f"
    },
    {
-    "name": "Check (Journal)",
-    "branch": "dev",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "failure",
-    "created_at": "2026-11-13T01:13:58Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343329651",
-    "sha": "ef34138"
-   },
-   {
     "name": "Preview (Journal dev)",
     "branch": "dev",
     "event": "push",
@@ -304,7 +304,19 @@
     "sha": "f43401f"
    }
   ],
-  "issues": [],
+  "issues": [
+   {
+    "number": 52,
+    "title": "Dashboard-Lage: rot",
+    "created_at": "2026-11-13T12:35:23Z",
+    "updated_at": "2026-11-13T12:35:23Z",
+    "labels": [
+     "dashboard"
+    ],
+    "url": "https://github.com/nimmsel23/journal-dev/issues/52",
+    "author": "github-actions[bot]"
+   }
+  ],
   "pulls": [],
   "live_sites": [
    "https://habit-vos.web.app",
@@ -317,44 +329,33 @@
   ]
  },
  "assessment": {
-  "status": "red",
-  "signals": [
-   {
-    "level": "red",
-    "key": "ci:Check (Journal):dev",
-    "text": "„Check (Journal)“ auf dev ist rot (failure, ef34138)",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343329651"
-   }
-  ],
+  "status": "green",
+  "signals": [],
   "ai": {
-   "headline": "Dev-Branch CI rot für ef34138; 3 Commits voraus",
-   "lage": "Der `dev`-Branch ist mit Commit `ef34138` drei Commits vor `master`. Der Workflow `Check (Journal)` für `ef34138` ist fehlgeschlagen. Zuvor wurde der `Preview (Journal dev)` für `cc4b7b3` erfolgreich abgeschlossen. `master` wurde zuletzt mit `f43401f` aktualisiert.",
+   "headline": "Dev-Branch 4 Commits voraus; CI für f14bd12 läuft, Issue #52 offen",
+   "lage": "Der `dev`-Branch ist mit Commit `f14bd12` vier Commits vor `master`. Der Workflow `Check (Journal)` für `f14bd12` ist aktuell `in_progress`. Ein neues Issue #52 'Dashboard-Lage: rot' wurde automatisch erstellt.",
    "auffaelligkeiten": [
     {
      "level": "hoch",
-     "text": "Der Workflow „Check (Journal)“ auf dem `dev`-Branch ist für Commit `ef34138` fehlgeschlagen (failure, https://github.com/nimmsel23/journal-dev/actions/runs/43343329651)."
+     "text": "Der `Check (Journal)` Workflow für den aktuellen `dev`-Head `f14bd12` ist `in_progress`. Gleichzeitig wurde Issue #52 'Dashboard-Lage: rot' durch einen Bot erstellt."
     },
     {
      "level": "info",
-     "text": "Der `dev`-Branch ist 3 Commits vor `master`."
-    },
-    {
-     "level": "info",
-     "text": "Der Workflow `Preview (Journal dev)` für Commit `cc4b7b3` wurde erfolgreich abgeschlossen."
+     "text": "Der `dev`-Branch ist nun vier Commits vor `master`."
     }
    ],
    "naechste_schritte": [
-    "Analysieren des Fehlers im Workflow \"Check (Journal)\" für ef34138.",
+    "Warten auf Abschluss des Workflows 'Check (Journal)' für f14bd12 und prüfen des Ergebnisses.",
     "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto, wie in NEXT.md beschrieben.",
     "Prüfen von syncTrackerHabits im Browser gegen ein echtes Konto gemäß NEXT.md."
    ],
-   "veraendert": "Der Workflow `Check (Journal)` für Commit `ef34138` ist von 'läuft' auf 'fehlgeschlagen' gewechselt.",
+   "veraendert": "Der `dev`-Branch ist nun vier Commits vor `master`, und ein neuer `Check (Journal)` Workflow für `f14bd12` ist `in_progress`, während Issue #52 'Dashboard-Lage: rot' eröffnet wurde.",
    "fragen": [
-    "Sollen die OAuth-URIs auf nur noch vos-journal gestrafft werden (Console)?",
-    "Benötigt die Daily-Four-Auswertung eine Frist?"
+    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
+    "Ob die Daily-Four-Auswertung eine Frist braucht, ist offen (Entscheidung Daniel)."
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-13T12:35:10+00:00"
+  "ai_at": "2026-11-13T13:12:03+00:00"
  }
 }

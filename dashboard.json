@@ -1,15 +1,15 @@
 {
  "evidence": {
-  "generated_at": "2026-11-13T00:09:16+00:00",
+  "generated_at": "2026-11-13T00:12:46+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-13T00:08:50Z",
+   "pushed_at": "2026-11-13T00:12:22Z",
    "default_branch": "master",
    "visibility": "public",
-   "pages_url": null
+   "pages_url": "https://nimmsel23.github.io/journal-dev/"
   },
   "package": {
    "name": "@vos/journal",
@@ -20,11 +20,17 @@
    "has_dev": true,
    "dev_behind": 0,
    "dev_ahead": 1,
-   "oldest_unpromoted": "2026-11-13T01:08:48+01:00",
-   "dev_head": "f43401f 2026-11-13T01:08:48+01:00",
-   "master_head": "d49f97a 2026-11-12T23:09:49+01:00"
+   "oldest_unpromoted": "2026-11-13T01:12:20+01:00",
+   "dev_head": "2fe31b2 2026-11-13T01:12:20+01:00",
+   "master_head": "f43401f 2026-11-13T01:08:48+01:00"
   },
   "commits": [
+   {
+    "sha": "2fe31b2",
+    "date": "2026-11-13T01:12:20+01:00",
+    "author": "Alpha",
+    "subject": "chore(journal): portal.mjs synchronisiert, dist-habits/ ignoriert"
+   },
    {
     "sha": "f43401f",
     "date": "2026-11-13T01:08:48+01:00",
@@ -138,12 +144,6 @@
     "date": "2026-11-11T14:18:28+01:00",
     "author": "Alpha",
     "subject": "fix(ci): Header-Tests und Builds an Mini-Redirects anpassen"
-   },
-   {
-    "sha": "37d58fd",
-    "date": "2026-11-11T14:13:34+01:00",
-    "author": "Alpha",
-    "subject": "feat(hosting): Solo-Icons unter vos-journal/mini/*"
    }
   ],
   "activity": [
@@ -229,7 +229,7 @@
    },
    {
     "day": "2026-11-13",
-    "n": 1
+    "n": 2
    }
   ],
   "workflows": [
@@ -239,8 +239,18 @@
     "event": "push",
     "status": "in_progress",
     "conclusion": null,
-    "created_at": "2026-11-13T00:08:52Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334700132",
+    "created_at": "2026-11-13T00:12:24Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43335184365",
+    "sha": "2fe31b2"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-13T00:09:40Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334806379",
     "sha": "f43401f"
    },
    {
@@ -249,39 +259,29 @@
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-12T22:11:17Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43317547988",
+    "created_at": "2026-11-13T00:09:30Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334783409",
     "sha": "d49f97a"
    },
    {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
-    "event": "push",
+    "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-12T22:09:52Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43317312899",
-    "sha": "d49f97a"
-   },
-   {
-    "name": "Live Deploy (Journal master)",
-    "branch": "master",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-12T22:09:52Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43317312881",
+    "created_at": "2026-11-13T00:09:30Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334783215",
     "sha": "d49f97a"
    },
    {
     "name": "PR-AutoMerge (Dependabot -> dev)",
     "branch": "master",
-    "event": "schedule",
+    "event": "workflow_run",
     "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-12T20:53:57Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43304835832",
-    "sha": "2b260cc"
+    "conclusion": "skipped",
+    "created_at": "2026-11-13T00:09:30Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334782914",
+    "sha": "d49f97a"
    },
    {
     "name": "Preview (Journal dev)",
@@ -310,34 +310,30 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Aktive Entwicklung auf dev, CI-Lauf für Living Dashboard in Bearbeitung",
-   "lage": "Der `dev`-Branch ist einen Commit (`f43401f`) vor `master`, welcher zuletzt den Merge-Agent (`d49f97a`) aktualisierte. Ein `Check (Journal)` Workflow für den neuesten `dev`-Commit läuft aktuell. Mehrere Dokumentations- und Feature-Commits wurden in den letzten 24 Stunden getätigt.",
+   "headline": "Entwicklung auf dev fortgesetzt, Living Dashboard auf master bereitgestellt",
+   "lage": "Der `dev`-Branch ist mit Commit `2fe31b2` einen Commit vor `master`. `master` wurde zuletzt mit `f43401f` aktualisiert, was das Living Dashboard als GitHub Page bereitstellt. Ein `Check (Journal)` Workflow für den neuesten `dev`-Commit `2fe31b2` läuft aktuell.",
    "auffaelligkeiten": [
     {
      "level": "hoch",
-     "text": "Der Workflow \"Check (Journal)\" für den neuesten `dev`-Commit f43401f ist noch \"in_progress\"."
+     "text": "Der `Check (Journal)` Workflow für den neuesten `dev`-Commit `2fe31b2` ist noch `in_progress`."
     },
     {
      "level": "info",
-     "text": "Ein Living Dashboard als GitHub Page wurde mit Commit f43401f eingeführt."
-    },
-    {
-     "level": "mittel",
-     "text": "Mehrere offene Prüfpunkte für Smart Journal, Habits und Push-Reminder sind in NEXT.md dokumentiert."
+     "text": "Das Living Dashboard als GitHub Page wurde erfolgreich auf `master` bereitgestellt (`f43401f`)."
     }
    ],
    "naechste_schritte": [
-    "Prüfen des \"Check (Journal)\" Workflows für f43401f auf Abschluss und Ergebnis.",
-    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto, wie in NEXT.md beschrieben.",
-    "Prüfen von syncTrackerHabits im Browser gegen ein echtes Konto gemäß NEXT.md."
+    "Prüfen des \"Check (Journal)\" Workflows für `2fe31b2` auf Abschluss und Ergebnis.",
+    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto, wie in `NEXT.md` beschrieben.",
+    "Prüfen von `syncTrackerHabits` im Browser gegen ein echtes Konto gemäß `NEXT.md`."
    ],
-   "veraendert": "Dies ist die erste Einschätzung für das Repository.",
+   "veraendert": "Der `dev`-Branch hat einen neuen Head-Commit (`2fe31b2`), und `master` wurde mit `f43401f` aktualisiert, wodurch das Living Dashboard als GitHub Page bereitgestellt wurde.",
    "fragen": [
-    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (Console)?",
-    "Benötigt die Daily-Four-Auswertung eine Frist, analog zu `requiredBeforeHour` (Entscheidung Daniel)?"
+    "Soll Daniel die OAuth-URIs auf nur noch `vos-journal` straffen (Console), wie in `NEXT.md` vermerkt?",
+    "Benötigt die Daily-Four-Auswertung eine Frist, wie in `NEXT.md` als offene Entscheidung vermerkt?"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-13T00:09:18+00:00"
+  "ai_at": "2026-11-13T00:12:48+00:00"
  }
 }

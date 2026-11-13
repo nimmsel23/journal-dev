@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-13T01:14:14+00:00",
+  "generated_at": "2026-11-13T12:35:06+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-13T01:13:56Z",
+   "pushed_at": "2026-11-13T01:14:28Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -234,44 +234,54 @@
   ],
   "workflows": [
    {
+    "name": "Merge-Agent",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-13T10:01:58Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43405960425",
+    "sha": "f43401f"
+   },
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-13T09:41:05Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43403363331",
+    "sha": "f43401f"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-13T09:34:59Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43402518650",
+    "sha": "f43401f"
+   },
+   {
     "name": "Gemini CI Agent",
     "branch": "master",
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-13T01:14:00Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343333846",
+    "created_at": "2026-11-13T01:14:28Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343394045",
     "sha": "f43401f"
    },
    {
     "name": "Check (Journal)",
     "branch": "dev",
     "event": "push",
-    "status": "in_progress",
-    "conclusion": null,
+    "status": "completed",
+    "conclusion": "failure",
     "created_at": "2026-11-13T01:13:58Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343329651",
     "sha": "ef34138"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "skipped",
-    "created_at": "2026-11-13T01:13:11Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343223980",
-    "sha": "f43401f"
-   },
-   {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "skipped",
-    "created_at": "2026-11-13T01:13:11Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343223858",
-    "sha": "f43401f"
    },
    {
     "name": "Preview (Journal dev)",
@@ -307,37 +317,44 @@
   ]
  },
  "assessment": {
-  "status": "green",
-  "signals": [],
+  "status": "red",
+  "signals": [
+   {
+    "level": "red",
+    "key": "ci:Check (Journal):dev",
+    "text": "„Check (Journal)“ auf dev ist rot (failure, ef34138)",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343329651"
+   }
+  ],
   "ai": {
-   "headline": "Dev-Branch 3 Commits voraus, Preview für cc4b7b3 erfolgreich, Check für ef34138 läuft",
-   "lage": "Der `dev`-Branch ist mit Commit `ef34138` drei Commits vor `master`. `master` wurde zuletzt mit `f43401f` aktualisiert, was das Living Dashboard als GitHub Page bereitstellt. Für den Commit `cc4b7b3` wurde der Workflow `Preview (Journal dev)` erfolgreich abgeschlossen, während `Check (Journal)` für den neuesten `dev`-Commit `ef34138` aktuell läuft.",
+   "headline": "Dev-Branch CI rot für ef34138; 3 Commits voraus",
+   "lage": "Der `dev`-Branch ist mit Commit `ef34138` drei Commits vor `master`. Der Workflow `Check (Journal)` für `ef34138` ist fehlgeschlagen. Zuvor wurde der `Preview (Journal dev)` für `cc4b7b3` erfolgreich abgeschlossen. `master` wurde zuletzt mit `f43401f` aktualisiert.",
    "auffaelligkeiten": [
     {
-     "level": "info",
-     "text": "Der `dev`-Branch ist nun 3 Commits vor `master`, angeführt von `ef34138`."
+     "level": "hoch",
+     "text": "Der Workflow „Check (Journal)“ auf dem `dev`-Branch ist für Commit `ef34138` fehlgeschlagen (failure, https://github.com/nimmsel23/journal-dev/actions/runs/43343329651)."
     },
     {
      "level": "info",
-     "text": "Der Workflow \"Preview (Journal dev)\" für Commit `cc4b7b3` wurde erfolgreich abgeschlossen."
+     "text": "Der `dev`-Branch ist 3 Commits vor `master`."
     },
     {
      "level": "info",
-     "text": "Der Workflow \"Check (Journal)\" läuft aktuell für den neuesten `dev`-Commit `ef34138`."
+     "text": "Der Workflow `Preview (Journal dev)` für Commit `cc4b7b3` wurde erfolgreich abgeschlossen."
     }
    ],
    "naechste_schritte": [
-    "Prüfen des Workflows \"Check (Journal)\" für `ef34138` auf Abschluss und Ergebnis.",
-    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto, wie in `NEXT.md` beschrieben.",
-    "Prüfen von `syncTrackerHabits` im Browser gegen ein echtes Konto gemäß `NEXT.md`."
+    "Analysieren des Fehlers im Workflow \"Check (Journal)\" für ef34138.",
+    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto, wie in NEXT.md beschrieben.",
+    "Prüfen von syncTrackerHabits im Browser gegen ein echtes Konto gemäß NEXT.md."
    ],
-   "veraendert": "Der `dev`-Branch ist nun 3 Commits vor `master` und der Workflow `Preview (Journal dev)` für `cc4b7b3` wurde erfolgreich abgeschlossen.",
+   "veraendert": "Der Workflow `Check (Journal)` für Commit `ef34138` ist von 'läuft' auf 'fehlgeschlagen' gewechselt.",
    "fragen": [
-    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
-    "Ob die Daily-Four-Auswertung eine Frist braucht, ist offen (Entscheidung Daniel)."
+    "Sollen die OAuth-URIs auf nur noch vos-journal gestrafft werden (Console)?",
+    "Benötigt die Daily-Four-Auswertung eine Frist?"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-13T01:14:16+00:00"
+  "ai_at": "2026-11-13T12:35:10+00:00"
  }
 }

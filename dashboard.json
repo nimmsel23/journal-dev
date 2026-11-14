@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-13T13:12:01+00:00",
+  "generated_at": "2026-11-14T01:13:44+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-13T13:11:39Z",
+   "pushed_at": "2026-11-14T01:13:23Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -19,12 +19,24 @@
    "main": "master",
    "has_dev": true,
    "dev_behind": 0,
-   "dev_ahead": 4,
-   "oldest_unpromoted": "2026-11-13T01:12:20+01:00",
-   "dev_head": "f14bd12 2026-11-13T14:11:36+01:00",
-   "master_head": "f43401f 2026-11-13T01:08:48+01:00"
+   "dev_ahead": 2,
+   "oldest_unpromoted": "2026-11-14T02:13:05+01:00",
+   "dev_head": "e7b09ea 2026-11-14T02:13:18+01:00",
+   "master_head": "f14bd12 2026-11-13T14:11:36+01:00"
   },
   "commits": [
+   {
+    "sha": "e7b09ea",
+    "date": "2026-11-14T02:13:18+01:00",
+    "author": "Alpha",
+    "subject": "fix(habits): versteckte Tracker-Spiegel-Habits in v2, Tent und Door ausblenden"
+   },
+   {
+    "sha": "a86c34a",
+    "date": "2026-11-14T02:13:05+01:00",
+    "author": "Alpha",
+    "subject": "docs: auto-update NEXT.md"
+   },
    {
     "sha": "f14bd12",
     "date": "2026-11-13T14:11:36+01:00",
@@ -132,25 +144,9 @@
     "date": "2026-11-11T19:11:31+01:00",
     "author": "Alpha",
     "subject": "ci: drop Gemini repair and Merge-Agent (simplicity)"
-   },
-   {
-    "sha": "bb17cb5",
-    "date": "2026-11-11T18:31:17+01:00",
-    "author": "Alpha",
-    "subject": "chore: aos-game Submodul-Pin auf Chapter-Hub-Fix"
-   },
-   {
-    "sha": "dcfa869",
-    "date": "2026-11-11T17:00:49+01:00",
-    "author": "Alpha",
-    "subject": "chore: aos-core4 und aos-voice als Submodule einbinden"
    }
   ],
   "activity": [
-   {
-    "day": "2026-10-24",
-    "n": 10
-   },
    {
     "day": "2026-10-25",
     "n": 15
@@ -230,17 +226,41 @@
    {
     "day": "2026-11-13",
     "n": 5
+   },
+   {
+    "day": "2026-11-14",
+    "n": 2
    }
   ],
   "workflows": [
+   {
+    "name": "Preview (Journal dev)",
+    "branch": "dev",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-14T01:13:25Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43539256989",
+    "sha": "e7b09ea"
+   },
    {
     "name": "Check (Journal)",
     "branch": "dev",
     "event": "push",
     "status": "in_progress",
     "conclusion": null,
-    "created_at": "2026-11-13T13:11:41Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43431548812",
+    "created_at": "2026-11-14T01:13:25Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43539256709",
+    "sha": "e7b09ea"
+   },
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-13T23:39:23Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43528717497",
     "sha": "f14bd12"
    },
    {
@@ -249,19 +269,9 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-13T10:01:58Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43405960425",
-    "sha": "f43401f"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-13T09:41:05Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43403363331",
-    "sha": "f43401f"
+    "created_at": "2026-11-13T23:23:22Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43526741783",
+    "sha": "f14bd12"
    },
    {
     "name": "Auto-Promote dev -> master (Check (Journal))",
@@ -269,29 +279,9 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-13T09:34:59Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43402518650",
-    "sha": "f43401f"
-   },
-   {
-    "name": "Gemini CI Agent",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-13T01:14:28Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343394045",
-    "sha": "f43401f"
-   },
-   {
-    "name": "Preview (Journal dev)",
-    "branch": "dev",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-13T01:12:38Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43343151317",
-    "sha": "cc4b7b3"
+    "created_at": "2026-11-13T22:54:18Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43523025452",
+    "sha": "f14bd12"
    },
    {
     "name": "Live Deploy (Journal master)",
@@ -299,24 +289,22 @@
     "event": "workflow_dispatch",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-13T00:09:40Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43334806379",
+    "created_at": "2026-11-13T13:12:31Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43431672224",
+    "sha": "f14bd12"
+   },
+   {
+    "name": "Gemini CI Agent",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-13T13:12:23Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43431652822",
     "sha": "f43401f"
    }
   ],
-  "issues": [
-   {
-    "number": 52,
-    "title": "Dashboard-Lage: rot",
-    "created_at": "2026-11-13T12:35:23Z",
-    "updated_at": "2026-11-13T12:35:23Z",
-    "labels": [
-     "dashboard"
-    ],
-    "url": "https://github.com/nimmsel23/journal-dev/issues/52",
-    "author": "github-actions[bot]"
-   }
-  ],
+  "issues": [],
   "pulls": [],
   "live_sites": [
    "https://habit-vos.web.app",
@@ -332,30 +320,34 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Dev-Branch 4 Commits voraus; CI für f14bd12 läuft, Issue #52 offen",
-   "lage": "Der `dev`-Branch ist mit Commit `f14bd12` vier Commits vor `master`. Der Workflow `Check (Journal)` für `f14bd12` ist aktuell `in_progress`. Ein neues Issue #52 'Dashboard-Lage: rot' wurde automatisch erstellt.",
+   "headline": "Dev-Branch 2 Commits voraus; CI für e7b09ea läuft; Issue #52 geschlossen",
+   "lage": "Der `dev`-Branch ist mit Commit `e7b09ea` zwei Commits vor `master`. Zwei Workflows (`Preview (Journal dev)` und `Check (Journal)`) für `e7b09ea` sind aktuell `in_progress`. Issue #52 ist nicht mehr in der Evidenz und somit geschlossen.",
    "auffaelligkeiten": [
     {
      "level": "hoch",
-     "text": "Der `Check (Journal)` Workflow für den aktuellen `dev`-Head `f14bd12` ist `in_progress`. Gleichzeitig wurde Issue #52 'Dashboard-Lage: rot' durch einen Bot erstellt."
+     "text": "Zwei CI-Workflows für den aktuellen `dev`-Head `e7b09ea` sind in Bearbeitung."
     },
     {
      "level": "info",
-     "text": "Der `dev`-Branch ist nun vier Commits vor `master`."
+     "text": "Der `master`-Branch wurde auf `f14bd12` aktualisiert, was durch den erfolgreichen Workflow 'Auto-Promote dev -> master (Check (Journal))' bestätigt wird."
+    },
+    {
+     "level": "info",
+     "text": "Issue #52 'Dashboard-Lage: rot' ist nicht mehr in der Evidenz und somit geschlossen."
     }
    ],
    "naechste_schritte": [
-    "Warten auf Abschluss des Workflows 'Check (Journal)' für f14bd12 und prüfen des Ergebnisses.",
+    "Warten auf Abschluss der Workflows 'Preview (Journal dev)' und 'Check (Journal)' für `e7b09ea`.",
     "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto, wie in NEXT.md beschrieben.",
-    "Prüfen von syncTrackerHabits im Browser gegen ein echtes Konto gemäß NEXT.md."
+    "Prüfen von (Legacy) `syncTrackerHabits` im Browser gegen ein echtes Konto gemäß NEXT.md."
    ],
-   "veraendert": "Der `dev`-Branch ist nun vier Commits vor `master`, und ein neuer `Check (Journal)` Workflow für `f14bd12` ist `in_progress`, während Issue #52 'Dashboard-Lage: rot' eröffnet wurde.",
+   "veraendert": "Der `dev`-Branch ist nun zwei Commits vor `master` (zuvor vier), `master` wurde auf `f14bd12` aktualisiert, und Issue #52 ist geschlossen.",
    "fragen": [
-    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
-    "Ob die Daily-Four-Auswertung eine Frist braucht, ist offen (Entscheidung Daniel)."
+    "Entscheiden, ob die OAuth-URIs in der Console auf nur noch `vos-journal` gestrafft werden sollen.",
+    "Entscheiden, ob die Daily-Four-Auswertung eine Frist benötigt."
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-13T13:12:03+00:00"
+  "ai_at": "2026-11-14T01:13:46+00:00"
  }
 }

@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-14T11:43:38+00:00",
+  "generated_at": "2026-11-14T17:58:48+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-14T01:14:11Z",
+   "pushed_at": "2026-11-14T17:58:30Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -21,10 +21,16 @@
    "dev_behind": 0,
    "dev_ahead": 0,
    "oldest_unpromoted": null,
-   "dev_head": "e7b09ea 2026-11-14T02:13:18+01:00",
-   "master_head": "e7b09ea 2026-11-14T02:13:18+01:00"
+   "dev_head": "04836dc 2026-11-14T18:58:28+01:00",
+   "master_head": "04836dc 2026-11-14T18:58:28+01:00"
   },
   "commits": [
+   {
+    "sha": "04836dc",
+    "date": "2026-11-14T18:58:28+01:00",
+    "author": "Alpha",
+    "subject": "chore: AL-LOG.md entfernt"
+   },
    {
     "sha": "e7b09ea",
     "date": "2026-11-14T02:13:18+01:00",
@@ -138,18 +144,12 @@
     "date": "2026-11-11T19:14:18+01:00",
     "author": "Alpha",
     "subject": "docs(agents): simplicity pointer — CI.md §1 spine"
-   },
-   {
-    "sha": "4872fbf",
-    "date": "2026-11-11T19:11:31+01:00",
-    "author": "Alpha",
-    "subject": "ci: drop Gemini repair and Merge-Agent (simplicity)"
    }
   ],
   "activity": [
    {
     "day": "2026-10-25",
-    "n": 11
+    "n": 3
    },
    {
     "day": "2026-10-26",
@@ -229,19 +229,39 @@
    },
    {
     "day": "2026-11-14",
-    "n": 2
+    "n": 3
    }
   ],
   "workflows": [
    {
+    "name": "Check (Journal)",
+    "branch": "dev",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-14T17:58:32Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986455",
+    "sha": "04836dc"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-14T17:58:32Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986355",
+    "sha": "04836dc"
+   },
+   {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
-    "event": "schedule",
+    "event": "push",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-14T10:58:41Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43587787840",
-    "sha": "e7b09ea"
+    "created_at": "2026-11-14T17:58:32Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986348",
+    "sha": "04836dc"
    },
    {
     "name": "Merge-Agent",
@@ -249,8 +269,8 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-14T10:51:22Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43587234740",
+    "created_at": "2026-11-14T16:54:16Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43618137724",
     "sha": "e7b09ea"
    },
    {
@@ -259,8 +279,8 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-14T06:39:10Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43567382845",
+    "created_at": "2026-11-14T14:15:35Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43603921612",
     "sha": "e7b09ea"
    },
    {
@@ -274,16 +294,6 @@
     "sha": "e7b09ea"
    },
    {
-    "name": "Live Deploy (Journal master)",
-    "branch": "master",
-    "event": "workflow_dispatch",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-14T01:14:13Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43539341860",
-    "sha": "e7b09ea"
-   },
-   {
     "name": "Preview (Journal dev)",
     "branch": "dev",
     "event": "push",
@@ -291,16 +301,6 @@
     "conclusion": "success",
     "created_at": "2026-11-14T01:13:25Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43539256989",
-    "sha": "e7b09ea"
-   },
-   {
-    "name": "Check (Journal)",
-    "branch": "dev",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-14T01:13:25Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43539256709",
     "sha": "e7b09ea"
    }
   ],
@@ -320,16 +320,16 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Dev-Branch mit Master synchronisiert; CI für e7b09ea erfolgreich abgeschlossen",
-   "lage": "Der `dev`-Branch ist nun mit `master` synchronisiert, beide stehen auf Commit `e7b09ea`. Die zuvor laufenden Workflows `Preview (Journal dev)` und `Check (Journal)` für `e7b09ea` wurden erfolgreich abgeschlossen.",
+   "headline": "Branches dev und master auf 04836dc synchronisiert; Workflows laufen",
+   "lage": "Die Branches `dev` und `master` sind auf Commit `04836dc` synchronisiert. Für diesen Commit laufen aktuell die Workflows `Check (Journal)` auf `dev` und `Live Deploy (Journal master)` auf `master`.",
    "auffaelligkeiten": [
     {
-     "level": "hoch",
-     "text": "Der `dev`-Branch ist mit `master` synchronisiert (0 Commits voraus, 0 Commits zurück)."
+     "level": "info",
+     "text": "Die Workflows `Check (Journal)` auf `dev` und `Live Deploy (Journal master)` auf `master` für Commit `04836dc` sind noch `in_progress`."
     },
     {
      "level": "info",
-     "text": "Die Workflows 'Preview (Journal dev)' und 'Check (Journal)' für Commit `e7b09ea` sind erfolgreich abgeschlossen."
+     "text": "Die Datei `AL-LOG.md` wurde mit Commit `04836dc` entfernt."
     }
    ],
    "naechste_schritte": [
@@ -337,13 +337,13 @@
     "Prüfen von (Legacy) `syncTrackerHabits` im Browser gegen ein echtes Konto.",
     "Prüfen, ob Push-Reminder-Auswertung `hidden`/System-Habits ausschließt."
    ],
-   "veraendert": "Der `dev`-Branch ist nun mit `master` synchronisiert, und die zuvor laufenden CI-Workflows für `e7b09ea` wurden erfolgreich abgeschlossen.",
+   "veraendert": "Die Branches `dev` und `master` wurden auf den neueren Commit `04836dc` synchronisiert, nachdem der `Auto-Promote` Workflow erfolgreich abgeschlossen wurde.",
    "fragen": [
-    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (Console)?",
-    "Benötigt die Daily-Four-Auswertung eine `requiredBeforeHour`-Frist?"
+    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
+    "Entscheiden, ob die Daily-Four-Auswertung eine Frist benötigt."
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-14T11:43:40+00:00"
+  "ai_at": "2026-11-14T17:58:50+00:00"
  }
 }

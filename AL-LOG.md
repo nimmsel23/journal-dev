@@ -223,3 +223,32 @@ _Folgelauf 2026-11-13 (Claude):_
 - Erledigt: Roter dev-Check 43343329651 (`ef34138`) behoben: `biome.json` schließt `scripts/portal.mjs` aus (per `cp` verteilte Kopie aus `~/vitalos/bin/vos-portal`, würde lokale Formatierung beim nächsten Sync überschreiben). Commit `fix(ci)` auf dev, gleicher Commit wie diese Zeile.
 - Offen/Weiter: CI-Beleg zum Push steht in ABTEILUNG.md; Owner OAuth-URIs und Smart-Journal/Habits-Konto-Abnahme (NEXT).
 - Blocker: keine. AUTOMATION: verteilte Skriptkopien brechen Repo-Linter — `vos-portal` als Biome-Format in `~/vitalos` pflegen oder Ausschluss in alle Repos verteilen — 1 roter Check je Sync weniger.
+
+## 2026-11-14 (Samstag) — Abteilungsleiter-Lauf
+
+_Automatik (vos-al-log Vorlage 2026-11-14):_
+- Commits seit 2026-11-08: f14bd12 fix(ci): Biome ignoriert verteilte Kopie scripts/portal.mjs
+ef34138 docs(al-log): record cc4b7b3 CI formatting blocker
+cc4b7b3 chore(habits): retire legacy workspace and dependency updates
+2fe31b2 chore(journal): portal.mjs synchronisiert, dist-habits/ ignoriert
+f43401f feat(ci): Living Dashboard als GitHub Page
+d49f97a ci: Merge-Agent fuer automatische PR-Merges (kein Abweisen von PRs) (#42)
+2b260cc docs(al-log): Lauf 2026-11-12 14:10 — Solo-Icons Live-Abnahme belegt
+0c06808 docs: auto-update RESULTS.md
+cab4817 docs: Konzept finale Standalone-Variante vos-journal (Entwurf)
+05a5ed8 feat(habits): Dein Tag im Store-Build deutsch, ohne 4B/Core4, Ein-Klick-Start (Quelle apps/habits)
+c22c061 feat(journal): Store-Build ohne Door/Game/Focus, KI, Google-Kalender, 4B; ruhigere Optik
+fd7c197 ci: restore Gemini repair + Merge-Agent (full automation)
+2645604 docs(al-log): Lauf 2026-11-12 — Org 0e25e4c4 automerge retarget belegt
+9fa2f9a docs: auto-update NEXT.md
+c29288e docs: auto-update RESULTS.md
+- Offene PRs: (keine offenen PRs / gh nicht verfuegbar)
+- CI (letzte Läufe): completed	success	PR-AutoMerge (Dependabot -> dev)	PR-AutoMerge (Dependabot -> dev)	master	schedule	43528717497	12s	2026-11-13T23:39:23Z
+completed	success	Merge-Agent	Merge-Agent	master	schedule	43526741783	9s	2026-11-13T23:23:22Z
+completed	success	Auto-Promote dev -> master (Check (Journal))	Auto-Promote dev -> master (Check (Journal))	master	schedule	43523025452	8s	2026-11-13T22:54:18Z
+- Arbeitsbaum: sauber
+
+_Vom AL ausfüllen (knapp & belegbar, je 1–3 Zeilen, Commit-/PR-Referenzen statt Erzählung):_
+- Erledigt: Bugfix (Freeze-konform) `fix(habits)` (dieser Commit): versteckte Tracker-Habits aus Legacy `ef51b88` (`hidden`/`systemTracker`) erscheinen nicht mehr in v2-Habits/Zähler, Smart-Abgleich, Tent-Scores und Door-Production (`habitsModel.isUserHabit`, an der Quelle `getHabitsRange`). Tests 193/193 lokal. Vorlauf `f14bd12` ist live (Live Deploy 43431672224).
+- Offen/Weiter: dev-Check + Auto-Promote/Live-Deploy dieses Commits; Abnahme am echten Konto (Tracker-Einträge weg); Owner OAuth-URIs; Smart-Journal/Habits-Konto-Abnahme (NEXT).
+- Blocker: keine. Hinweis: Biome/esbuild lokal im Headless-Lauf nicht freigegeben, Format/Build belegt die CI.

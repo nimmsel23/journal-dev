@@ -3,7 +3,7 @@
 import { collection, doc, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
 import { getUid } from '../../lib/db/core.js';
-import { habitFields } from './habitsModel.js';
+import { habitFields, isUserHabit } from './habitsModel.js';
 import { track } from '../../lib/offline.js';
 import { getDocsFast } from '../../lib/db/fastDocs.js';
 
@@ -25,7 +25,7 @@ export async function getHabitsRange(from, to, onLate) {
     const habit = { ...snap.data(), uuid: snap.id };
     const records = byHabit.get(habit.uuid) || [];
     return { ...habit, records, hasRecord: (date) => records.some((r) => r.date === date && r.completion === 'DONE') };
-  }).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.name).localeCompare(String(b.name)));
+  }).filter(isUserHabit).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.name).localeCompare(String(b.name)));
 }
 
 export async function addHabit(draft) {

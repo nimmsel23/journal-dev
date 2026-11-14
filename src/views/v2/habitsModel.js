@@ -19,6 +19,14 @@ export function habitFields(draft) {
   return { name, category, frequency: { type: frequency.type, weekdays, timesPerPeriod } };
 }
 
+// Eigene Habits des Nutzers. Versteckte System-Habits (hidden / systemTracker:
+// fitness|fuel|relax) hat das Legacy-apps/habits (ef51b88, live bis 2026-11-10)
+// als Tracker-Spiegel angelegt; sie gehören in keine Liste, Zählung oder Wertung.
+// Archivierte (deleted) bleiben eigene Habits — das Archiv filtert separat.
+export function isUserHabit(habit) {
+  return Boolean(habit) && !habit.hidden && !habit.systemTracker;
+}
+
 export function dueOnDate(habit, date) {
   const frequency = habit.frequency || DEFAULT_FREQUENCY;
   return frequency.type !== 'weekly' || !frequency.weekdays?.length || frequency.weekdays.includes(parseISO(date).getDay());

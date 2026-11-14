@@ -9,13 +9,13 @@
 // dieselben Datensätze, und alles bleibt Free-Kern (kein Premium, kein KI).
 // Vollzüge des Tages: getHabitsRange(today, today) liefert nur heute-datierte
 // Records; sichtbar sind keine gelöschten/versteckten/Tracker-System-Habits
-// (Regel wie trackerHabitModel.isVisibleHabit in apps/habits) und nur heute
-// fällige Habits (dueOnDate wie habitsModel.habitStats).
+// (habitsModel.isUserHabit) und nur heute fällige Habits (dueOnDate wie
+// habitsModel.habitStats).
 import { getHabitsRange } from "../../views/v2/habitsDb.js";
-import { dueOnDate } from "../../views/v2/habitsModel.js";
+import { dueOnDate, isUserHabit } from "../../views/v2/habitsModel.js";
 import { localToday } from "../db/core.js";
 
-const isVisibleHabit = (habit) => Boolean(habit) && !habit.deleted && !habit.hidden && !habit.systemTracker;
+const isVisibleHabit = (habit) => isUserHabit(habit) && !habit.deleted;
 
 /** Sichtbare, heute fällige Habits mit heutigem DONE-Stand; leer ohne uid. */
 export async function fetchHabitsToday(uid) {

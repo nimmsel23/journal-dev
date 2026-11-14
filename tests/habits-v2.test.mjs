@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
-import { habitFields, dueOnDate, habitStats } from '../src/views/v2/habitsModel.js';
+import { habitFields, dueOnDate, habitStats, isUserHabit } from '../src/views/v2/habitsModel.js';
 
 const habit = (done, extra = {}) => ({ records: done.map((date) => ({ date, completion: 'DONE' })), hasRecord: (date) => done.includes(date), ...extra });
 test('scheduled streak skips rest days and allows the current scheduled day to be open', () => {
@@ -36,7 +36,7 @@ const dbSource = readFileSync(new URL('../src/views/v2/habitsDb.js', import.meta
 function fakeDb() {
   const writes = [], reads = [];
   const fake = {
-    db: {}, getUid: () => 'isolated-test-user', habitFields,
+    db: {}, getUid: () => 'isolated-test-user', habitFields, isUserHabit,
     serverTimestamp: () => 'timestamp',
     doc: (_, ...path) => path.join('/'), collection: (_, ...path) => path.join('/'),
     where: (...args) => args, query: (...args) => args,
@@ -45,7 +45,10 @@ function fakeDb() {
     getDocs: async (ref) => {
       reads.push(ref);
       return typeof ref === 'string'
-        ? { docs: [{ id: 'existing', data: () => ({ name: 'Read', deleted: true, icon: 'Book', order: 7 }) }] }
+        ? { docs: [
+          { id: 'existing', data: () => ({ name: 'Read', deleted: true, icon: 'Book', order: 7 }) },
+          { id: 'tracker-fitness', data: () => ({ name: 'Training (Tracker)', hidden: true, systemTracker: 'fitness' }) },
+        ] }
         : { docs: [{ data: () => ({ habitId: 'existing', date: '2025-01-03', completion: 'DONE' }) }] };
     },
   };
@@ -54,9 +57,10 @@ function fakeDb() {
   const api = runInNewContext(`${dbSource}\n({getHabitsRange,addHabit,updateHabit,setHabitArchived})`, fake);
   return { api, writes, reads };
 }
-test('historical load uses the requested range, retains archived habits and attaches records', async () => {
+test('historical load uses the requested range, retains archived habits, drops tracker mirrors and attaches records', async () => {
   const { api, reads } = fakeDb();
   const list = await api.getHabitsRange('2025-01-01', '2025-01-28');
+  assert.deepEqual(list.map((h) => h.uuid), ['existing']);
   assert.equal(list[0].deleted, true);
   assert.equal(list[0].hasRecord('2025-01-03'), true);
   assert.deepEqual(JSON.parse(JSON.stringify(reads[1])), ['fitness/isolated-test-user/habitRecords', ['date', '>=', '2025-01-01'], ['date', '<=', '2025-01-28']]);
@@ -71,4 +75,12 @@ test('editing and archive/restore merge without overwriting icon, order or recor
   assert.ok(writes.every(([, fields]) => !('icon' in fields) && !('order' in fields) && !('records' in fields)));
   assert.equal(writes[1][1].deleted, true);
   assert.equal(writes[2][1].deleted, false);
+});
+test('isUserHabit blendet versteckte Tracker-Spiegel aus, Archiv bleibt eigenes Habit', () => {
+  assert.equal(isUserHabit({ name: 'Lesen' }), true);
+  assert.equal(isUserHabit({ name: 'Lesen', deleted: true }), true);
+  assert.equal(isUserHabit({ name: 'Training (Tracker)', hidden: true, systemTracker: 'fitness' }), false);
+  assert.equal(isUserHabit({ name: 'Alt', systemTracker: 'fuel' }), false);
+  assert.equal(isUserHabit({ name: 'Versteckt', hidden: true }), false);
+  assert.equal(isUserHabit(null), false);
 });

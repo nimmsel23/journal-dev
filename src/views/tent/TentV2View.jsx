@@ -12,6 +12,7 @@ import { useLiveSnap } from "../../lib/useLiveSnap.js";
 import SyncBadge from "../../components/SyncBadge.jsx";
 import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 import * as tc from "../../lib/door/taskchampion.js";
+import { isUserHabit } from "../v2/habitsModel.js";
 import { useJournalPushNotifications } from "../../hooks/useJournalPushNotifications.js";
 import "../door/v2/door-v2.css";
 import "../game/game-v2.css";
@@ -29,7 +30,7 @@ const read = (k) => { try { return JSON.parse(localStorage.getItem(k)) || {}; } 
 
 function useScores(uid, from, to, enabled) {
   // Habits cache-first per Listener (offline: lokaler Stand)
-  const habits = useLiveSnap(!!uid, (next, fail) => db.watchHabits(120, (hs) => next(hs.filter((h) => !h.deleted)), fail), [uid]);
+  const habits = useLiveSnap(!!uid, (next, fail) => db.watchHabits(120, (hs) => next(hs.filter((h) => !h.deleted && isUserHabit(h))), fail), [uid]);
   const qc = useQueryClient();
   // Hintergrund-Sync der Taskwarrior-Replik → Scores neu rechnen
   useEffect(() => tc.onChange(() => qc.invalidateQueries({ queryKey: ["tv2-tw"] })), [qc]);

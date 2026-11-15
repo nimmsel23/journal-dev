@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-14T17:58:48+00:00",
+  "generated_at": "2026-11-15T12:13:15+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-14T17:58:30Z",
+   "pushed_at": "2026-11-14T17:59:03Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -148,12 +148,8 @@
   ],
   "activity": [
    {
-    "day": "2026-10-25",
-    "n": 3
-   },
-   {
     "day": "2026-10-26",
-    "n": 12
+    "n": 10
    },
    {
     "day": "2026-10-27",
@@ -230,37 +226,31 @@
    {
     "day": "2026-11-14",
     "n": 3
+   },
+   {
+    "day": "2026-11-15",
+    "n": 0
    }
   ],
   "workflows": [
    {
-    "name": "Check (Journal)",
-    "branch": "dev",
-    "event": "push",
-    "status": "in_progress",
-    "conclusion": null,
-    "created_at": "2026-11-14T17:58:32Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986455",
-    "sha": "04836dc"
-   },
-   {
-    "name": "Live Deploy (Journal master)",
+    "name": "PR-AutoMerge (Dependabot -> dev)",
     "branch": "master",
-    "event": "push",
-    "status": "in_progress",
-    "conclusion": null,
-    "created_at": "2026-11-14T17:58:32Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986355",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-15T11:09:18Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43707529297",
     "sha": "04836dc"
    },
    {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
-    "event": "push",
+    "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-14T17:58:32Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986348",
+    "created_at": "2026-11-15T08:27:45Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43694617216",
     "sha": "04836dc"
    },
    {
@@ -269,19 +259,9 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-14T16:54:16Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43618137724",
-    "sha": "e7b09ea"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-14T14:15:35Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43603921612",
-    "sha": "e7b09ea"
+    "created_at": "2026-11-15T07:53:15Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43691938019",
+    "sha": "04836dc"
    },
    {
     "name": "Gemini CI Agent",
@@ -289,9 +269,29 @@
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-14T01:14:25Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43539361556",
-    "sha": "e7b09ea"
+    "created_at": "2026-11-14T17:59:48Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43624093749",
+    "sha": "04836dc"
+   },
+   {
+    "name": "Check (Journal)",
+    "branch": "dev",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-14T17:58:32Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986455",
+    "sha": "04836dc"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-14T17:58:32Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986355",
+    "sha": "04836dc"
    },
    {
     "name": "Preview (Journal dev)",
@@ -320,16 +320,20 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Branches dev und master auf 04836dc synchronisiert; Workflows laufen",
-   "lage": "Die Branches `dev` und `master` sind auf Commit `04836dc` synchronisiert. Für diesen Commit laufen aktuell die Workflows `Check (Journal)` auf `dev` und `Live Deploy (Journal master)` auf `master`.",
+   "headline": "Branches dev/master synchronisiert, alle Workflows erfolgreich abgeschlossen",
+   "lage": "Die Branches `dev` und `master` sind auf Commit `04836dc` synchronisiert. Alle zugehörigen CI-Workflows, inklusive `Check (Journal)` und `Live Deploy (Journal master)`, wurden erfolgreich abgeschlossen.",
    "auffaelligkeiten": [
     {
      "level": "info",
-     "text": "Die Workflows `Check (Journal)` auf `dev` und `Live Deploy (Journal master)` auf `master` für Commit `04836dc` sind noch `in_progress`."
+     "text": "Die Datei `AL-LOG.md` wurde mit Commit `04836dc` entfernt."
     },
     {
      "level": "info",
-     "text": "Die Datei `AL-LOG.md` wurde mit Commit `04836dc` entfernt."
+     "text": "Mehrere Automatisierungs-Workflows wie `PR-AutoMerge (Dependabot -> dev)`, `Auto-Promote dev -> master (Check (Journal))` und `Merge-Agent` wurden erfolgreich ausgeführt."
+    },
+    {
+     "level": "info",
+     "text": "Die Dokumentation in `NEXT.md` bestätigt, dass `syncTrackerHabits` nun nur noch im Legacy-`apps/habits` läuft und `hidden`/`systemTracker` Habits in v2-Listen ausgeblendet werden."
     }
    ],
    "naechste_schritte": [
@@ -337,13 +341,13 @@
     "Prüfen von (Legacy) `syncTrackerHabits` im Browser gegen ein echtes Konto.",
     "Prüfen, ob Push-Reminder-Auswertung `hidden`/System-Habits ausschließt."
    ],
-   "veraendert": "Die Branches `dev` und `master` wurden auf den neueren Commit `04836dc` synchronisiert, nachdem der `Auto-Promote` Workflow erfolgreich abgeschlossen wurde.",
+   "veraendert": "Die in der letzten Einschätzung als 'laufend' bezeichneten Workflows `Check (Journal)` und `Live Deploy (Journal master)` wurden erfolgreich abgeschlossen.",
    "fragen": [
-    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
-    "Entscheiden, ob die Daily-Four-Auswertung eine Frist benötigt."
+    "Sollen die OAuth-URIs in der Console auf nur noch `vos-journal` gestrafft werden?",
+    "Benötigt die Daily-Four-Auswertung eine Frist, ähnlich `requiredBeforeHour`?"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-14T17:58:50+00:00"
+  "ai_at": "2026-11-15T12:13:17+00:00"
  }
 }

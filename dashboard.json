@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-16T11:36:05+00:00",
+  "generated_at": "2026-11-16T13:06:08+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-16T11:35:44Z",
+   "pushed_at": "2026-11-16T11:36:25Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -234,14 +234,14 @@
   ],
   "workflows": [
    {
-    "name": "Check (Journal)",
-    "branch": "dev",
-    "event": "push",
-    "status": "in_progress",
-    "conclusion": null,
-    "created_at": "2026-11-16T11:35:46Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43859127752",
-    "sha": "90195b9"
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-16T11:38:44Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43859565499",
+    "sha": "a3e4d88"
    },
    {
     "name": "Gemini CI Agent",
@@ -249,19 +249,29 @@
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-16T10:00:10Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43844839948",
+    "created_at": "2026-11-16T11:36:26Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43859225603",
     "sha": "a3e4d88"
    },
    {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
-    "event": "push",
+    "event": "workflow_run",
     "status": "completed",
     "conclusion": "failure",
-    "created_at": "2026-11-16T09:58:34Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43844604048",
+    "created_at": "2026-11-16T11:36:26Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43859225566",
     "sha": "a3e4d88"
+   },
+   {
+    "name": "Check (Journal)",
+    "branch": "dev",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-16T11:35:46Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43859127752",
+    "sha": "90195b9"
    },
    {
     "name": "Live Deploy (Journal master)",
@@ -272,16 +282,6 @@
     "created_at": "2026-11-16T09:58:34Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43844603997",
     "sha": "a3e4d88"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "skipped",
-    "created_at": "2026-11-16T09:49:48Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43843279037",
-    "sha": "04836dc"
    },
    {
     "name": "Check (Journal)",
@@ -374,7 +374,28 @@
     "sha": "e7b09ea"
    }
   ],
-  "issues": [],
+  "issues": [
+   {
+    "number": 56,
+    "title": "Auftrag CEO: master wieder in dev mergen, Auto-Promote rot",
+    "created_at": "2026-11-16T11:55:22Z",
+    "updated_at": "2026-11-16T11:55:22Z",
+    "labels": [],
+    "url": "https://github.com/nimmsel23/journal-dev/issues/56",
+    "author": "nimmsel23"
+   },
+   {
+    "number": 55,
+    "title": "Dashboard-Lage: rot",
+    "created_at": "2026-11-16T11:36:24Z",
+    "updated_at": "2026-11-16T11:36:24Z",
+    "labels": [
+     "dashboard"
+    ],
+    "url": "https://github.com/nimmsel23/journal-dev/issues/55",
+    "author": "github-actions[bot]"
+   }
+  ],
   "pulls": [],
   "live_sites": [
    "https://habit-vos.web.app",
@@ -393,7 +414,7 @@
     "level": "red",
     "key": "ci:Auto-Promote dev -> master (Check (Journal)):master",
     "text": "„Auto-Promote dev -> master (Check (Journal))“ auf master ist rot (failure, a3e4d88)",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43844604048"
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43859225566"
    },
    {
     "level": "red",
@@ -402,34 +423,38 @@
    }
   ],
   "ai": {
-   "headline": "Auto-Promote fehlgeschlagen, Branches dev/master divergiert",
-   "lage": "Die Branches `dev` und `master` sind divergiert, mit `dev` 4 Commits voraus und `master` 1 Commit zurück. Der `Auto-Promote dev -> master (Check (Journal))` Workflow auf `master` (a3e4d88) ist fehlgeschlagen, was die Synchronisation blockiert. Der `Check (Journal)` Workflow auf `dev` (90195b9) läuft aktuell noch.",
+   "headline": "Auto-Promote fehlgeschlagen, Branches divergiert, Owner hat Issue erstellt",
+   "lage": "Die Branches `dev` und `master` sind divergiert, mit `dev` 4 Commits voraus und `master` 1 Commit zurück. Der `Auto-Promote dev -> master (Check (Journal))` Workflow auf `master` (a3e4d88) ist fehlgeschlagen. Der `Check (Journal)` Workflow auf `dev` (90195b9) wurde erfolgreich abgeschlossen. Issue #56 wurde vom Owner zur Adressierung dieser Probleme erstellt.",
    "auffaelligkeiten": [
     {
      "level": "hoch",
-     "text": "Workflow „Auto-Promote dev -> master (Check (Journal))“ auf master (a3e4d88) ist fehlgeschlagen (https://github.com/nimmsel23/journal-dev/actions/runs/43844604048)."
+     "text": "Der Workflow `Auto-Promote dev -> master (Check (Journal))` auf `master` (a3e4d88) ist fehlgeschlagen (failure)."
     },
     {
      "level": "hoch",
-     "text": "Die Branches `dev` und `master` sind divergiert (dev 4 Commits voraus, master 1 Commit zurück), was den Auto-Promote blockiert."
+     "text": "Die Branches `dev` und `master` sind divergiert (4 Commits voraus, 1 Commit hinterher), was den Auto-Promote blockiert."
     },
     {
      "level": "info",
-     "text": "Der `Check (Journal)` Workflow auf dem aktuellen dev-Head `90195b9` ist noch in Bearbeitung."
+     "text": "Issue #56 'Auftrag CEO: master wieder in dev mergen, Auto-Promote rot' wurde vom Owner erstellt."
+    },
+    {
+     "level": "info",
+     "text": "Issue #55 'Dashboard-Lage: rot' wurde vom github-actions[bot] erstellt."
     }
    ],
    "naechste_schritte": [
     "Analysieren der Ursache für den Fehlschlag des Workflows `Auto-Promote dev -> master (Check (Journal))` auf `a3e4d88`.",
     "Beheben der Divergenz zwischen `dev` und `master`.",
-    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto."
+    "Prüfen der offenen Punkte in `NEXT.md`, insbesondere 'Smart Journal und Habits im Live-Preview gegen echtes Konto abnehmen'."
    ],
-   "veraendert": "Gegenüber der letzten Einschätzung sind die Branches `dev` und `master` divergiert, und der `Auto-Promote dev -> master` Workflow ist fehlgeschlagen.",
+   "veraendert": "Der Workflow `Check (Journal)` auf `dev` (90195b9), der zuvor lief, ist nun erfolgreich abgeschlossen, und Issue #56 wurde vom Owner zur Adressierung der Divergenz und des fehlgeschlagenen Auto-Promotes erstellt.",
    "fragen": [
-    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console)?",
-    "Ob die Daily-Four-Auswertung eine Frist braucht, ist offen (Entscheidung Daniel)?"
+    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
+    "Entscheidung Daniel: Benötigt die Daily-Four-Auswertung eine Frist?"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-16T11:36:08+00:00"
+  "ai_at": "2026-11-16T13:06:12+00:00"
  }
 }

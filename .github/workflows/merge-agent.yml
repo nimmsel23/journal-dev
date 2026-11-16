@@ -7,6 +7,9 @@ name: Merge-Agent
 # nur ein [merge-agent]-Kommentar (einmalig pro PR).
 # Head-Branch wird nur bei dependabot/* nach dem Merge geloescht (niemals
 # master/dev/vitalos/main - die Sync-PRs haben master als Head!).
+# head=dev ist der Auto-Promote (automerge.yml): der mergt selbst mit
+# --merge und zieht dev danach auf denselben Commit. Ein Squash hier wuerde
+# neue SHAs erzeugen und dev/master auseinanderlaufen lassen.
 # Trigger: pull_request, Cron alle 15 Min. (nur auf dem Default-Branch aktiv),
 # workflow_dispatch. Cron als Minutenliste, weil GitHub "*/15 * * * *" als
 # ungueltig ablehnt und das ganze Workflow-File dann nicht mehr laedt.
@@ -61,6 +64,11 @@ jobs:
               --jq ".[] | select(.isDraft == false) | select(.headRepositoryOwner.login == \"$owner\") | [.number, .headRefName, .headRefOid, .mergeable, .mergeStateStatus, .title] | @tsv" \
               2>/dev/null | while IFS=$'\t' read -r pr head sha mergeable state title; do
               echo "::group::PR #$pr ($title) base=$base head=$head mergeable=$mergeable state=$state"
+
+              if [ "$head" = "dev" ]; then
+                echo "Head dev gehoert dem Auto-Promote (automerge.yml) - kein Squash."
+                echo "::endgroup::"; continue
+              fi
 
               conclusions=$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100" --jq '[.check_runs[] | .conclusion] | join(" ")' 2>/dev/null || true)
               states=$(gh api "repos/$repo/commits/$sha/status?per_page=100" --jq '[.statuses[] | .state] | join(" ")' 2>/dev/null || true)

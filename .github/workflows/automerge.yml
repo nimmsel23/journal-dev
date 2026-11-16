@@ -90,8 +90,26 @@ jobs:
             local sha="$1" hit
             hit=$(gh run list -R "$REPO" --workflow "$DEPLOY_FILE" --commit "$sha" --limit 10 \
               --json status,conclusion \
-              --jq '[.[] | select(.conclusion=="success" or .status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="pending")] | length')
+              --jq '[.[] | select(.conclusion=="success" or .status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="pending" or .status=="requested")] | length')
             [ "${hit:-0}" != "0" ]
+          }
+
+          # Ein Merge mit PAT (SYNC_TOKEN) ist ein echter Push und startet
+          # deploy-master.yml selbst. Der Lauf steht oft noch nicht in der API.
+          # Warten, und nur dispatchen, wenn keiner erscheint (GITHUB_TOKEN-Merge
+          # loest keinen Push-Workflow aus). cancel-in-progress am Deploy bleibt
+          # aus: ein zweiter Lauf wuerde den ersten sonst mitten im Firebase-Deploy abbrechen.
+          dispatch_after_merge() {
+            local sha="$1" i
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if deploy_already "$sha"; then
+                echo "Live-Deploy fuer $sha ist schon eingetragen."
+                return 0
+              fi
+              sleep 5
+            done
+            echo "Kein Live-Deploy fuer $sha nach dem Merge -> Dispatch."
+            dispatch_deploy
           }
 
           align_dev() {
@@ -409,8 +427,8 @@ jobs:
             fi
             git fetch -q origin master
             after=$(git rev-parse origin/master)
-            if [ "$before" != "$after" ] && ! deploy_already "$after"; then
-              dispatch_deploy
+            if [ "$before" != "$after" ]; then
+              dispatch_after_merge "$after"
             fi
             align_dev
             tag_promoted "$(git rev-parse origin/master)"

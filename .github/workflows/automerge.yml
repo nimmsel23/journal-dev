@@ -77,6 +77,9 @@ jobs:
         timeout-minutes: 45
         run: |
           set -euo pipefail
+          # gh pr list --head vergleicht nur den Branch-Namen, auch ueber Forks
+          # (owner:branch kennt es nicht). Dieses Repo ist oeffentlich und forkbar.
+          owner="${REPO%%/*}"
 
           dispatch_deploy() {
             echo "Live-Deploy per Dispatch."
@@ -248,10 +251,38 @@ jobs:
             : > "$mark"
           }
 
+          # stdout: Nummer des offenen PR nimmsel23:dev -> master, sonst leer.
+          # Ein Fork-Branch namens dev darf hier nicht gewinnen.
+          own_dev_pr_number() {
+            local json
+            json=$(GH_TOKEN="$PROMOTE_TOKEN" gh pr list -R "$REPO" --base master --head dev --state open \
+              --json number,headRefName,isCrossRepository,headRepository,headRepositoryOwner)
+            printf '%s' "$json" | jq -r --arg repo "$REPO" --arg owner "$owner" '
+              [ .[]
+                | select(.headRefName=="dev")
+                | select(.isCrossRepository==false)
+                | select(.headRepositoryOwner.login==$owner)
+                | select((.headRepository.nameWithOwner // "")==$repo)
+              ][0].number // empty'
+          }
+
+          # Zweiter Parameter: verlangter Kopf-SHA. Leer heisst: Repo und Branch reichen.
+          pr_is_own_dev() {
+            local pr="$1" want="${2:-}" json
+            json=$(GH_TOKEN="$PROMOTE_TOKEN" gh pr view "$pr" -R "$REPO" \
+              --json headRefName,headRefOid,isCrossRepository,headRepository,headRepositoryOwner)
+            printf '%s' "$json" | jq -e --arg repo "$REPO" --arg owner "$owner" --arg sha "$want" '
+              .headRefName=="dev"
+              and .isCrossRepository==false
+              and (.headRepositoryOwner.login==$owner)
+              and ((.headRepository.nameWithOwner // "")==$repo)
+              and ($sha=="" or .headRefOid==$sha)
+            ' >/dev/null
+          }
+
           ensure_pr() {
             local pr url
-            pr=$(GH_TOKEN="$PROMOTE_TOKEN" gh pr list -R "$REPO" --base master --head dev --state open \
-              --json number,headRefName --jq '[.[] | select(.headRefName=="dev")][0].number // empty')
+            pr=$(own_dev_pr_number)
             if [ -n "$pr" ]; then
               echo "Bestehender PR #$pr." >&2
               echo "$pr"
@@ -276,6 +307,10 @@ jobs:
             for i in $(seq 1 60); do
               git fetch -q origin dev
               head_now=$(git rev-parse origin/dev)
+              if ! pr_is_own_dev "$pr"; then
+                echo "::error::PR #$pr ist nicht ${REPO}:dev. Kein Close, kein Merge, kein Deploy."
+                return 1
+              fi
               verdict=$(classify_pr "$pr")
               gate=$(gate_for "$pr" "$head_now")
               echo "PR #$pr: rollup=$verdict gate=$gate head=$head_now (Versuch $i)."
@@ -341,6 +376,10 @@ jobs:
             git fetch -q origin master dev
             before=$(git rev-parse origin/master)
             if [ "$verdict" != "merged" ]; then
+              if ! pr_is_own_dev "$pr" "$(git rev-parse origin/dev)"; then
+                echo "::error::PR #$pr ist nicht ${REPO}:dev auf $(git rev-parse origin/dev). Kein Merge."
+                return 1
+              fi
               if ! git merge-base --is-ancestor "$before" "$(git rev-parse origin/dev)"; then
                 echo "::error::dev und master sind auseinandergelaufen, bevor der PR gemergt werden konnte."
                 return 1
@@ -363,6 +402,10 @@ jobs:
                 echo "::error::Merge von PR #$pr fehlgeschlagen."
                 return 1
               fi
+            fi
+            if ! pr_is_own_dev "$pr"; then
+              echo "::error::PR #$pr ist nicht ${REPO}:dev. Kein Deploy."
+              return 1
             fi
             git fetch -q origin master
             after=$(git rev-parse origin/master)
@@ -404,8 +447,7 @@ jobs:
           inprog=$(printf '%s' "$runs" | jq '[.workflow_runs[] | select(.status!="completed")] | length')
           any_success=$(printf '%s' "$runs" | jq '[.workflow_runs[] | select(.conclusion=="success")] | length')
           any_fail=$(printf '%s' "$runs" | jq '[.workflow_runs[] | select(.conclusion=="failure" or .conclusion=="cancelled" or .conclusion=="timed_out")] | length')
-          open_pr=$(GH_TOKEN="$PROMOTE_TOKEN" gh pr list -R "$REPO" --base master --head dev --state open \
-            --json number,headRefName --jq '[.[] | select(.headRefName=="dev")][0].number // empty')
+          open_pr=$(own_dev_pr_number)
           echo "Check-Laeufe auf $dev: push_ok=$push_ok in_progress=$inprog success=$any_success fail=$any_fail open_pr=${open_pr:-none}"
 
           if [ "$inprog" != "0" ] && [ -z "$open_pr" ]; then

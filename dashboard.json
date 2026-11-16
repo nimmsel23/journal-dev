@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-15T12:13:15+00:00",
+  "generated_at": "2026-11-16T11:36:05+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-14T17:59:03Z",
+   "pushed_at": "2026-11-16T11:35:44Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -18,13 +18,37 @@
   "branches": {
    "main": "master",
    "has_dev": true,
-   "dev_behind": 0,
-   "dev_ahead": 0,
-   "oldest_unpromoted": null,
-   "dev_head": "04836dc 2026-11-14T18:58:28+01:00",
-   "master_head": "04836dc 2026-11-14T18:58:28+01:00"
+   "dev_behind": 1,
+   "dev_ahead": 4,
+   "oldest_unpromoted": "2026-11-16T06:48:11Z",
+   "dev_head": "90195b9 2026-11-16T11:35:40Z",
+   "master_head": "a3e4d88 2026-11-16T10:58:31+01:00"
   },
   "commits": [
+   {
+    "sha": "90195b9",
+    "date": "2026-11-16T11:35:40Z",
+    "author": "Cursor Agent",
+    "subject": "dashboard: Check und Dashboard starten"
+   },
+   {
+    "sha": "bedea1d",
+    "date": "2026-11-16T11:33:31Z",
+    "author": "Cursor Agent",
+    "subject": "dashboard: Check und Dashboard auf dev starten"
+   },
+   {
+    "sha": "e097aa7",
+    "date": "2026-11-16T11:26:41Z",
+    "author": "Cursor Agent",
+    "subject": "dashboard: master-Push baut ebenfalls dev"
+   },
+   {
+    "sha": "cf9fed9",
+    "date": "2026-11-16T06:48:11Z",
+    "author": "dependabot[bot]",
+    "subject": "deps: bump @vitejs/plugin-react (#53)"
+   },
    {
     "sha": "04836dc",
     "date": "2026-11-14T18:58:28+01:00",
@@ -120,37 +144,9 @@
     "date": "2026-11-12T02:13:13+01:00",
     "author": "Alpha",
     "subject": "docs(al-log): Lauf 2026-11-12 — Org 0e25e4c4 automerge retarget belegt"
-   },
-   {
-    "sha": "9fa2f9a",
-    "date": "2026-11-12T02:13:01+01:00",
-    "author": "Alpha",
-    "subject": "docs: auto-update NEXT.md"
-   },
-   {
-    "sha": "c29288e",
-    "date": "2026-11-12T02:13:00+01:00",
-    "author": "Alpha",
-    "subject": "docs: auto-update RESULTS.md"
-   },
-   {
-    "sha": "375e122",
-    "date": "2026-11-12T02:11:30+01:00",
-    "author": "Alpha",
-    "subject": "ci(automerge-pr): retarget Dependabot PRs base=master → base=dev"
-   },
-   {
-    "sha": "cc707d7",
-    "date": "2026-11-11T19:14:18+01:00",
-    "author": "Alpha",
-    "subject": "docs(agents): simplicity pointer — CI.md §1 spine"
    }
   ],
   "activity": [
-   {
-    "day": "2026-10-26",
-    "n": 10
-   },
    {
     "day": "2026-10-27",
     "n": 0
@@ -230,38 +226,22 @@
    {
     "day": "2026-11-15",
     "n": 0
+   },
+   {
+    "day": "2026-11-16",
+    "n": 4
    }
   ],
   "workflows": [
    {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-15T11:09:18Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43707529297",
-    "sha": "04836dc"
-   },
-   {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-15T08:27:45Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43694617216",
-    "sha": "04836dc"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-15T07:53:15Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43691938019",
-    "sha": "04836dc"
+    "name": "Check (Journal)",
+    "branch": "dev",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-16T11:35:46Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43859127752",
+    "sha": "90195b9"
    },
    {
     "name": "Gemini CI Agent",
@@ -269,19 +249,19 @@
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-14T17:59:48Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43624093749",
-    "sha": "04836dc"
+    "created_at": "2026-11-16T10:00:10Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43844839948",
+    "sha": "a3e4d88"
    },
    {
-    "name": "Check (Journal)",
-    "branch": "dev",
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
     "event": "push",
     "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-14T17:58:32Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986455",
-    "sha": "04836dc"
+    "conclusion": "failure",
+    "created_at": "2026-11-16T09:58:34Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43844604048",
+    "sha": "a3e4d88"
    },
    {
     "name": "Live Deploy (Journal master)",
@@ -289,9 +269,99 @@
     "event": "push",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-14T17:58:32Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43623986355",
+    "created_at": "2026-11-16T09:58:34Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43844603997",
+    "sha": "a3e4d88"
+   },
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "skipped",
+    "created_at": "2026-11-16T09:49:48Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43843279037",
     "sha": "04836dc"
+   },
+   {
+    "name": "Check (Journal)",
+    "branch": "codex/ci-fix-journal-dev-promote",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-16T09:49:10Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43843186097",
+    "sha": "750ac85"
+   },
+   {
+    "name": "Merge-Agent",
+    "branch": "codex/ci-fix-journal-dev-promote",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-16T09:49:10Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43843186090",
+    "sha": "750ac85"
+   },
+   {
+    "name": "Gemini CI Agent",
+    "branch": "codex/ci-fix-journal-dev-promote",
+    "event": "pull_request_target",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-16T09:49:09Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43843183375",
+    "sha": "750ac85"
+   },
+   {
+    "name": "Merge-Agent",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-16T07:08:04Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43821634935",
+    "sha": "04836dc"
+   },
+   {
+    "name": "Merge-Agent",
+    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-6f5e12e2e5",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-16T06:47:17Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43819179694",
+    "sha": "f794f03"
+   },
+   {
+    "name": "Preview (Journal dev)",
+    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-6f5e12e2e5",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "skipped",
+    "created_at": "2026-11-16T06:47:17Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43819179660",
+    "sha": "f794f03"
+   },
+   {
+    "name": "Check (Journal)",
+    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-6f5e12e2e5",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-16T06:47:17Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43819179587",
+    "sha": "f794f03"
+   },
+   {
+    "name": "Gemini CI Agent",
+    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-6f5e12e2e5",
+    "event": "pull_request_target",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-16T06:47:15Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43819176361",
+    "sha": "f794f03"
    },
    {
     "name": "Preview (Journal dev)",
@@ -317,37 +387,49 @@
   ]
  },
  "assessment": {
-  "status": "green",
-  "signals": [],
+  "status": "red",
+  "signals": [
+   {
+    "level": "red",
+    "key": "ci:Auto-Promote dev -> master (Check (Journal)):master",
+    "text": "„Auto-Promote dev -> master (Check (Journal))“ auf master ist rot (failure, a3e4d88)",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43844604048"
+   },
+   {
+    "level": "red",
+    "key": "diverged",
+    "text": "dev und master sind auseinandergelaufen (4 vor, 1 hinter) — Auto-Promote kann nicht vorspulen"
+   }
+  ],
   "ai": {
-   "headline": "Branches dev/master synchronisiert, alle Workflows erfolgreich abgeschlossen",
-   "lage": "Die Branches `dev` und `master` sind auf Commit `04836dc` synchronisiert. Alle zugehörigen CI-Workflows, inklusive `Check (Journal)` und `Live Deploy (Journal master)`, wurden erfolgreich abgeschlossen.",
+   "headline": "Auto-Promote fehlgeschlagen, Branches dev/master divergiert",
+   "lage": "Die Branches `dev` und `master` sind divergiert, mit `dev` 4 Commits voraus und `master` 1 Commit zurück. Der `Auto-Promote dev -> master (Check (Journal))` Workflow auf `master` (a3e4d88) ist fehlgeschlagen, was die Synchronisation blockiert. Der `Check (Journal)` Workflow auf `dev` (90195b9) läuft aktuell noch.",
    "auffaelligkeiten": [
     {
-     "level": "info",
-     "text": "Die Datei `AL-LOG.md` wurde mit Commit `04836dc` entfernt."
+     "level": "hoch",
+     "text": "Workflow „Auto-Promote dev -> master (Check (Journal))“ auf master (a3e4d88) ist fehlgeschlagen (https://github.com/nimmsel23/journal-dev/actions/runs/43844604048)."
+    },
+    {
+     "level": "hoch",
+     "text": "Die Branches `dev` und `master` sind divergiert (dev 4 Commits voraus, master 1 Commit zurück), was den Auto-Promote blockiert."
     },
     {
      "level": "info",
-     "text": "Mehrere Automatisierungs-Workflows wie `PR-AutoMerge (Dependabot -> dev)`, `Auto-Promote dev -> master (Check (Journal))` und `Merge-Agent` wurden erfolgreich ausgeführt."
-    },
-    {
-     "level": "info",
-     "text": "Die Dokumentation in `NEXT.md` bestätigt, dass `syncTrackerHabits` nun nur noch im Legacy-`apps/habits` läuft und `hidden`/`systemTracker` Habits in v2-Listen ausgeblendet werden."
+     "text": "Der `Check (Journal)` Workflow auf dem aktuellen dev-Head `90195b9` ist noch in Bearbeitung."
     }
    ],
    "naechste_schritte": [
-    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto.",
-    "Prüfen von (Legacy) `syncTrackerHabits` im Browser gegen ein echtes Konto.",
-    "Prüfen, ob Push-Reminder-Auswertung `hidden`/System-Habits ausschließt."
+    "Analysieren der Ursache für den Fehlschlag des Workflows `Auto-Promote dev -> master (Check (Journal))` auf `a3e4d88`.",
+    "Beheben der Divergenz zwischen `dev` und `master`.",
+    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto."
    ],
-   "veraendert": "Die in der letzten Einschätzung als 'laufend' bezeichneten Workflows `Check (Journal)` und `Live Deploy (Journal master)` wurden erfolgreich abgeschlossen.",
+   "veraendert": "Gegenüber der letzten Einschätzung sind die Branches `dev` und `master` divergiert, und der `Auto-Promote dev -> master` Workflow ist fehlgeschlagen.",
    "fragen": [
-    "Sollen die OAuth-URIs in der Console auf nur noch `vos-journal` gestrafft werden?",
-    "Benötigt die Daily-Four-Auswertung eine Frist, ähnlich `requiredBeforeHour`?"
+    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console)?",
+    "Ob die Daily-Four-Auswertung eine Frist braucht, ist offen (Entscheidung Daniel)?"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-15T12:13:17+00:00"
+  "ai_at": "2026-11-16T11:36:08+00:00"
  }
 }

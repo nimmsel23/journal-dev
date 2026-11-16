@@ -1,15 +1,31 @@
-# Auto-Promote dev -> master (ersetzt den alten PR-basierten Auto-Merge).
+# Auto-Promote dev -> master.
 # Ziel: nichts bleibt auf dev liegen. Ablauf:
-#   Check auf dev gruen            -> master wird per Fast-Forward auf dev gezogen, Live-Deploy per Dispatch
-#   dev hinter master              -> dev wird per Fast-Forward auf master gezogen
-#   beide haben eigene Commits     -> roter Lauf (kommt nur nach direktem Push auf master vor): von Hand mit normalem Push zusammenfuehren
-# Rot bleibt liegen (kein Promote). Ein Zeitplan (alle 30 Min) faengt haengende Faelle ab. Fast-Forward statt Merge-Commit auf master, weil der Branch-Schutz den Check
-# `check` fuer genau diesen Commit verlangt. Pushes mit GITHUB_TOKEN loesen keine Workflows aus -> der Deploy
-# wird per workflow_dispatch gestartet. Laeuft aus dem Default-Branch; die Datei muss dort liegen.
-# Zusaetzlich: annotated Tag journal-v<package.json version> auf dem Commit, der auf master liegt
-# (direkt nach dem Fast-Forward, und beim spaeteren Abgleich, falls der Tag noch fehlt - der erste
-# Promote dieser Datei laeuft noch aus dem bisherigen Stand auf master). Existiert der Tag, wird er
-# uebersprungen und nicht verschoben. Derselbe GITHUB_TOKEN wie der Branch-Push.
+#   Check auf dev gruen und per push ausgeloest
+#       -> master per Fast-Forward (git push). Der Branch-Schutz akzeptiert
+#          diesen Check-Kontext "check" auf genau diesem Commit.
+#   Check gruen, aber nur per workflow_dispatch
+#       -> git push antwortet GH006 "Required status check check is expected".
+#          Ein Dispatch-Lauf steht in der Checks-API als success und zaehlt
+#          fuer den Schutz trotzdem nicht (Beleg: Promote-Job 133166006634,
+#          Run 43827914354, auf cf9fed96; der einzige Check dort ist
+#          workflow_dispatch, Run 43819287294, nach dem Dependabot-Squash
+#          #53 in Run 43819268494). Stattdessen PR dev -> master und
+#          gh pr merge --merge, sobald ein pull_request-Check "check" gruen
+#          ist. Danach wird dev per Fast-Forward auf denselben Commit gezogen
+#          (dev ist nicht geschuetzt). Ein GITHUB_TOKEN-Push auf dev schiebt den
+#          offenen PR vor, ohne einen zaehlbaren Check zu starten; der PR wird
+#          dann einmal pro Kopf-SHA geschlossen und mit dem Promote-Token neu
+#          geoeffnet. Rebase erzeugt bei GitHub neue SHAs, die Zweige liefen
+#          auseinander.
+#   dev hinter master
+#       -> dev per Fast-Forward nachziehen. Ein promote-Merge loest keinen
+#          Push-Deploy aus; fehlt der Live-Deploy, wird er hier nachgezogen.
+#   beide haben eigene Commits -> roter Lauf (nur nach direktem Push auf master).
+# Rot bleibt liegen. Zeitplan alle 30 Min. GITHUB_TOKEN-Pushes loesen keine
+# Workflows aus -> der Live-Deploy wird per workflow_dispatch gestartet.
+# Annotated Tag journal-v<package.json version> auf dem Commit, der auf master
+# liegt. Existiert der Tag, wird er uebersprungen und nicht verschoben.
+# Laeuft aus dem Default-Branch; die Datei muss dort liegen.
 
 name: Auto-Promote dev -> master (Check (Journal))
 
@@ -27,6 +43,7 @@ permissions:
   contents: write   # Branches fast-forwarden und refs/tags/journal-v* anlegen
   actions: write
   checks: read
+  pull-requests: write
 
 concurrency:
   group: auto-promote-${{ github.repository }}
@@ -41,7 +58,13 @@ jobs:
        (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch'))
     runs-on: ubuntu-latest
     env:
+      # Checkout-Push bleibt das GITHUB_TOKEN (actions/checkout). gh fuer den
+      # Promote-PR nimmt das merge-agent-Muster: PAT, falls das Secret existiert,
+      # sonst GITHUB_TOKEN. Nur ein PAT startet den pull_request-Check von selbst.
+      # Ein mit GITHUB_TOKEN geoeffneter PR bleibt auf "Approve workflows" stehen,
+      # und der Dispatch-Check erfuellt den Schutz nicht.
       GH_TOKEN: ${{ github.token }}
+      PROMOTE_TOKEN: ${{ secrets.SYNC_TOKEN || github.token }}
       REPO: ${{ github.repository }}
       DEPLOY_FILE: deploy-master.yml
       CHECK_FILE: check.yml
@@ -51,11 +74,40 @@ jobs:
           fetch-depth: 0
           ref: dev
       - name: Abgleichen
-        timeout-minutes: 10
+        timeout-minutes: 45
         run: |
           set -euo pipefail
-          git fetch -q origin master dev
-          master=$(git rev-parse origin/master); dev=$(git rev-parse origin/dev)
+
+          dispatch_deploy() {
+            echo "Live-Deploy per Dispatch."
+            gh workflow run "$DEPLOY_FILE" -R "$REPO" --ref master
+          }
+
+          deploy_already() {
+            local sha="$1" hit
+            hit=$(gh run list -R "$REPO" --workflow "$DEPLOY_FILE" --commit "$sha" --limit 10 \
+              --json status,conclusion \
+              --jq '[.[] | select(.conclusion=="success" or .status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="pending")] | length')
+            [ "${hit:-0}" != "0" ]
+          }
+
+          align_dev() {
+            git fetch -q origin master dev
+            local m d
+            m=$(git rev-parse origin/master)
+            d=$(git rev-parse origin/dev)
+            if [ "$m" != "$d" ] && git merge-base --is-ancestor "$d" "$m"; then
+              echo "dev per Fast-Forward auf $m ziehen."
+              git push origin "${m}:refs/heads/dev"
+              git fetch -q origin dev
+              d=$(git rev-parse origin/dev)
+            fi
+            if [ "$m" != "$d" ]; then
+              echo "::error::dev ($d) und master ($m) sind nicht identisch."
+              return 1
+            fi
+            echo "dev == master == $m"
+          }
 
           # Annotated Tag journal-v<version> auf einem Commit, der auf master liegt.
           # Idempotent: ein vorhandener Tag bleibt, auch wenn er auf einen aelteren Commit zeigt.
@@ -91,14 +143,252 @@ jobs:
             echo "Tag ${tag} auf ${sha} gesetzt."
           }
 
-          if [ "$master" = "$dev" ]; then
-            echo "dev == master, nichts zu tun."
-            tag_promoted "$master"
-            exit 0
-          fi
+          # stdout: merged | ready | wait | red | held
+          classify_pr() {
+            local pr="$1" json mstate draft head state
+            json=$(GH_TOKEN="$PROMOTE_TOKEN" gh pr view "$pr" -R "$REPO" \
+              --json state,mergeStateStatus,isDraft,headRefOid,statusCheckRollup)
+            state=$(printf '%s' "$json" | jq -r '.state')
+            mstate=$(printf '%s' "$json" | jq -r '.mergeStateStatus')
+            draft=$(printf '%s' "$json" | jq -r '.isDraft')
+            head=$(printf '%s' "$json" | jq -r '.headRefOid')
+            echo "PR #$pr state=$state merge=$mstate draft=$draft head=$head" >&2
+            if [ "$state" = "MERGED" ]; then
+              echo merged
+              return 0
+            fi
+            local pending=0 eligible=0 red=0 held=0 status concl url run event
+            while IFS=$'\t' read -r status concl url; do
+              [ -n "${status}${concl}${url}" ] || continue
+              case "$(printf '%s' "$status" | tr '[:upper:]' '[:lower:]')" in
+                completed) ;;
+                action_required) held=1 ;;
+                *) pending=1 ;;
+              esac
+              case "$(printf '%s' "$concl" | tr '[:upper:]' '[:lower:]')" in
+                success) ;;
+                failure|cancelled|timed_out|startup_failure) red=1 ;;
+                action_required) held=1 ;;
+              esac
+              if [ "$(printf '%s' "$concl" | tr '[:upper:]' '[:lower:]')" = "success" ] && [ -n "$url" ]; then
+                run=$(printf '%s' "$url" | sed -n 's#.*/runs/\([0-9][0-9]*\)/.*#\1#p')
+                if [ -n "$run" ]; then
+                  event=$(gh api "repos/$REPO/actions/runs/$run" --jq '.event')
+                  echo "Check-Lauf $run event=$event" >&2
+                  case "$event" in
+                    push|pull_request) eligible=1 ;;
+                  esac
+                fi
+              fi
+            done < <(printf '%s' "$json" | jq -r '
+              [.statusCheckRollup[]? | select(.name=="check")
+                | [(.status // ""), (.conclusion // ""), (.detailsUrl // .targetUrl // "")] | @tsv]
+              | .[]')
+            if [ "$red" = 1 ] && [ "$pending" = 0 ] && [ "$eligible" = 0 ]; then
+              echo red
+              return 0
+            fi
+            if [ "$pending" = 1 ]; then
+              echo wait
+              return 0
+            fi
+            if [ "$held" = 1 ]; then
+              echo held
+              return 0
+            fi
+            if [ "$eligible" = 1 ]; then
+              echo ready
+              return 0
+            fi
+            echo wait
+          }
+
+          # stdout: held | in_flight | eligible | none
+          # pull_request-Laeufe haengen oft am Test-Merge-SHA, nicht am Branch-Kopf.
+          # action_required erscheint dort auch, wenn der Rollup keinen Check-Run hat.
+          gate_for() {
+            local pr="$1" sha="$2" merge_sha runs extra
+            merge_sha=$(gh api "repos/$REPO/pulls/$pr" --jq '.merge_commit_sha // empty')
+            runs=$(gh run list -R "$REPO" --workflow "$CHECK_FILE" --commit "$sha" --limit 20 \
+              --json databaseId,event,status,conclusion,headSha)
+            if [ -n "$merge_sha" ] && [ "$merge_sha" != "$sha" ]; then
+              extra=$(gh run list -R "$REPO" --workflow "$CHECK_FILE" --commit "$merge_sha" --limit 20 \
+                --json databaseId,event,status,conclusion,headSha)
+              runs=$(jq -n --argjson a "$runs" --argjson b "$extra" '$a + $b | unique_by(.databaseId)')
+            fi
+            printf '%s' "$runs" | jq -r --arg sha "$sha" --arg merge "$merge_sha" '
+              def on_head: (.headSha == $sha or ($merge != "" and .headSha == $merge));
+              def countable: (.event == "push" or .event == "pull_request");
+              def held: (.conclusion == "action_required" or .status == "action_required" or .status == "waiting");
+              def live: (.status == "queued" or .status == "in_progress" or .status == "pending" or .status == "requested");
+              [ .[] | select(on_head and countable) ] | sort_by(.databaseId) | reverse | .[0] as $latest
+              | if $latest == null then "none"
+                elif ($latest | live) then "in_flight"
+                elif ($latest | held) then "held"
+                elif ($latest.status == "completed" and $latest.conclusion == "success") then "eligible"
+                elif ($latest.conclusion == "failure" or $latest.conclusion == "cancelled" or $latest.conclusion == "timed_out") then "red"
+                else "none"
+                end'
+          }
+
+          # Ein GITHUB_TOKEN-Push auf dev (Dependabot-Squash) schiebt den PR-Kopf
+          # vor, startet aber keinen zaehlbaren pull_request-Lauf. Schliessen und
+          # Oeffnen mit dem Promote-Token feuert pull_request: reopened als dieser
+          # Token, einmal pro Kopf-SHA.
+          reopen_pr() {
+            local pr="$1" sha="$2" mark
+            mark="${RUNNER_TEMP:-/tmp}/promote-reopen-$sha"
+            if [ -e "$mark" ]; then
+              return 1
+            fi
+            echo "PR #$pr auf $sha ohne zaehlbaren Check. Schliesse und oeffne ihn mit dem Promote-Token neu." >&2
+            GH_TOKEN="$PROMOTE_TOKEN" gh pr close "$pr" -R "$REPO" \
+              --comment "Promote oeffnet diesen PR neu, damit der Check als pull_request laeuft. Ein Update von dev per GITHUB_TOKEN startet diesen Check nicht." || return 1
+            GH_TOKEN="$PROMOTE_TOKEN" gh pr reopen "$pr" -R "$REPO" || return 1
+            : > "$mark"
+          }
+
+          ensure_pr() {
+            local pr url
+            pr=$(GH_TOKEN="$PROMOTE_TOKEN" gh pr list -R "$REPO" --base master --head dev --state open \
+              --json number,headRefName --jq '[.[] | select(.headRefName=="dev")][0].number // empty')
+            if [ -n "$pr" ]; then
+              echo "Bestehender PR #$pr." >&2
+              echo "$pr"
+              return 0
+            fi
+            url=$(GH_TOKEN="$PROMOTE_TOKEN" gh pr create -R "$REPO" --base master --head dev --draft \
+              --title "promote: dev nach master" \
+              --body "Automatischer Promote. Der Check auf dev ist gruen. Ein per workflow_dispatch gelaufener Check erfuellt den Branch-Schutz auf master nicht. Dieser PR wird gemergt, sobald der pull_request-Check check gruen ist. Danach zeigt dev auf denselben Commit wie master.")
+            echo "$url" >&2
+            printf '%s\n' "$url" | sed -n 's#.*/pull/\([0-9][0-9]*\).*#\1#p'
+          }
+
+          promote_via_pr() {
+            local pr verdict before after i head_now merged_ok gate none_sha none_for
+            none_sha=
+            none_for=0
+            pr=$(ensure_pr)
+            if [ -z "$pr" ]; then
+              echo "::error::Promote-PR dev -> master liess sich nicht oeffnen."
+              return 1
+            fi
+            for i in $(seq 1 60); do
+              git fetch -q origin dev
+              head_now=$(git rev-parse origin/dev)
+              verdict=$(classify_pr "$pr")
+              gate=$(gate_for "$pr" "$head_now")
+              echo "PR #$pr: rollup=$verdict gate=$gate head=$head_now (Versuch $i)."
+              # Der juengste zaehlbare Lauf gewinnt. Ein aelteres action_required
+              # im Rollup bleibt liegen, nachdem der Promote-Token neu geoeffnet hat.
+              case "$gate" in
+                in_flight) verdict=wait ;;
+                eligible) [ "$verdict" = "red" ] || verdict=ready ;;
+                held) [ "$verdict" = "ready" ] || verdict=held ;;
+                red) verdict=red ;;
+              esac
+              case "$verdict" in
+                merged) break ;;
+                ready)
+                  if [ "$head_now" != "$(GH_TOKEN="$PROMOTE_TOKEN" gh pr view "$pr" -R "$REPO" --json headRefOid --jq '.headRefOid')" ]; then
+                    echo "dev hat sich bewegt, weiter warten."
+                    sleep 30
+                    continue
+                  fi
+                  break
+                  ;;
+                red)
+                  echo "Check auf dem Promote-PR ist rot -> bleibt offen, kein Merge."
+                  return 0
+                  ;;
+                held)
+                  if reopen_pr "$pr" "$head_now"; then
+                    sleep 45
+                    continue
+                  fi
+                  echo "::error::Der pull_request-Check wartet auf manuelle Freigabe (Approve workflows). Der Promote-Token startet den Lauf nicht selbst."
+                  return 1
+                  ;;
+                wait)
+                  if [ "$gate" = "in_flight" ]; then
+                    none_sha=$head_now
+                    none_for=0
+                    sleep 30
+                    continue
+                  fi
+                  if [ "$none_sha" != "$head_now" ]; then
+                    none_sha=$head_now
+                    none_for=0
+                  fi
+                  none_for=$((none_for + 1))
+                  if [ "$none_for" -ge 2 ] && reopen_pr "$pr" "$head_now"; then
+                    none_for=0
+                    sleep 45
+                    continue
+                  fi
+                  sleep 30
+                  ;;
+                *)
+                  echo "::error::Unbekannter PR-Status '$verdict'."
+                  return 1
+                  ;;
+              esac
+            done
+            if [ "$verdict" = "wait" ]; then
+              echo "::error::Promote-PR #$pr: kein push- oder pull_request-Check wurde gruen (Timeout)."
+              return 1
+            fi
+            git fetch -q origin master dev
+            before=$(git rev-parse origin/master)
+            if [ "$verdict" != "merged" ]; then
+              if ! git merge-base --is-ancestor "$before" "$(git rev-parse origin/dev)"; then
+                echo "::error::dev und master sind auseinandergelaufen, bevor der PR gemergt werden konnte."
+                return 1
+              fi
+              if [ "$(GH_TOKEN="$PROMOTE_TOKEN" gh pr view "$pr" -R "$REPO" --json isDraft --jq '.isDraft')" = "true" ]; then
+                GH_TOKEN="$PROMOTE_TOKEN" gh pr ready "$pr" -R "$REPO"
+              fi
+              merged_ok=0
+              for i in 1 2 3 4 5; do
+                if GH_TOKEN="$PROMOTE_TOKEN" gh pr merge "$pr" -R "$REPO" --merge \
+                  --subject "promote: dev nach master (#$pr)" \
+                  --body "Check per pull_request ist gruen. Merge-Commit statt git push, danach dev auf denselben Commit."; then
+                  merged_ok=1
+                  break
+                fi
+                echo "Merge von PR #$pr noch nicht durch (Versuch $i)." >&2
+                sleep 5
+              done
+              if [ "$merged_ok" != 1 ]; then
+                echo "::error::Merge von PR #$pr fehlgeschlagen."
+                return 1
+              fi
+            fi
+            git fetch -q origin master
+            after=$(git rev-parse origin/master)
+            if [ "$before" != "$after" ] && ! deploy_already "$after"; then
+              dispatch_deploy
+            fi
+            align_dev
+            tag_promoted "$(git rev-parse origin/master)"
+          }
+
+          git fetch -q origin master dev
+          master=$(git rev-parse origin/master)
+          dev=$(git rev-parse origin/dev)
+          [ "$master" = "$dev" ] && { echo "dev == master, nichts zu tun."; tag_promoted "$master"; exit 0; }
 
           if git merge-base --is-ancestor "$dev" "$master"; then
             echo "dev ist hinter master -> dev per Fast-Forward nachziehen."
+            msg=$(git log -1 --format=%s origin/master)
+            case "$msg" in
+              promote:*)
+                if ! deploy_already "$master"; then
+                  echo "Promote-Merge $master hat noch keinen Live-Deploy."
+                  dispatch_deploy
+                fi
+                ;;
+            esac
             git push origin "${master}:refs/heads/dev"
             tag_promoted "$master"
             exit 0
@@ -109,15 +399,40 @@ jobs:
             exit 1
           fi
 
-          # Nur ein Check, den ein normaler Push ausgeloest hat, erfuellt den Branch-Schutz; per Dispatch gestartete Checks nicht.
-          res=$(gh api "repos/$REPO/commits/$dev/check-runs" --jq '[.check_runs[]|select(.name=="check")]|first|if .==null then "none" elif .status!="completed" then "pending" else .conclusion end')
-          case "$res" in
-            success)
-              echo "Check gruen auf $dev -> master per Fast-Forward, Live-Deploy per Dispatch."
-              git push origin "${dev}:refs/heads/master"
-              gh workflow run "$DEPLOY_FILE" -R "$REPO" --ref master
+          runs=$(gh api "repos/$REPO/actions/workflows/$CHECK_FILE/runs?head_sha=$dev&per_page=30")
+          push_ok=$(printf '%s' "$runs" | jq '[.workflow_runs[] | select(.event=="push" and .conclusion=="success")] | length')
+          inprog=$(printf '%s' "$runs" | jq '[.workflow_runs[] | select(.status!="completed")] | length')
+          any_success=$(printf '%s' "$runs" | jq '[.workflow_runs[] | select(.conclusion=="success")] | length')
+          any_fail=$(printf '%s' "$runs" | jq '[.workflow_runs[] | select(.conclusion=="failure" or .conclusion=="cancelled" or .conclusion=="timed_out")] | length')
+          open_pr=$(GH_TOKEN="$PROMOTE_TOKEN" gh pr list -R "$REPO" --base master --head dev --state open \
+            --json number,headRefName --jq '[.[] | select(.headRefName=="dev")][0].number // empty')
+          echo "Check-Laeufe auf $dev: push_ok=$push_ok in_progress=$inprog success=$any_success fail=$any_fail open_pr=${open_pr:-none}"
+
+          if [ "$inprog" != "0" ] && [ -z "$open_pr" ]; then
+            echo "Check fuer $dev laeuft noch/fehlt -> naechster Lauf (workflow_run oder Zeitplan) uebernimmt."
+            exit 0
+          fi
+          if [ "$any_success" = "0" ] && [ -z "$open_pr" ]; then
+            if [ "$any_fail" != "0" ]; then
+              echo "Check auf $dev ist rot -> bleibt auf dev liegen."
+            else
+              echo "Check fuer $dev laeuft noch/fehlt -> naechster Lauf (workflow_run oder Zeitplan) uebernimmt."
+            fi
+            exit 0
+          fi
+
+          if [ "$push_ok" != "0" ] && [ "$inprog" = "0" ]; then
+            echo "Check per push gruen auf $dev -> master per Fast-Forward, Live-Deploy per Dispatch."
+            if git push origin "${dev}:refs/heads/master"; then
+              dispatch_deploy
               tag_promoted "$dev"
-              ;;
-            none|pending) echo "Check fuer $dev laeuft noch/fehlt -> naechster Lauf (workflow_run oder Zeitplan) uebernimmt." ;;
-            *) echo "Check auf $dev ist '$res' -> bleibt auf dev liegen (rot)." ;;
-          esac
+              exit 0
+            fi
+            echo "Fast-Forward abgelehnt, weiter mit PR-Merge."
+          elif [ "$push_ok" != "0" ]; then
+            echo "push-Check auf $dev ist gruen, ein weiterer Lauf ist noch offen -> PR-Merge."
+          else
+            echo "Kein push-Check auf $dev (workflow_dispatch zaehlt fuer den Branch-Schutz nicht) -> PR-Merge."
+          fi
+
+          promote_via_pr

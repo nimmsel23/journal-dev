@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-17T13:48:26+00:00",
+  "generated_at": "2026-11-17T16:05:09+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-17T07:45:22Z",
+   "pushed_at": "2026-11-17T16:04:55Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -21,10 +21,16 @@
    "dev_behind": 0,
    "dev_ahead": 0,
    "oldest_unpromoted": null,
-   "dev_head": "0ef9932 2026-11-17T07:43:23Z",
-   "master_head": "0ef9932 2026-11-17T07:43:23Z"
+   "dev_head": "1ec178f 2026-11-17T17:04:45+01:00",
+   "master_head": "1ec178f 2026-11-17T17:04:45+01:00"
   },
   "commits": [
+   {
+    "sha": "1ec178f",
+    "date": "2026-11-17T17:04:45+01:00",
+    "author": "nimmsel23",
+    "subject": "org-bot: Workflow installieren (Org-Autonomie 16.11.2026)"
+   },
    {
     "sha": "0ef9932",
     "date": "2026-11-17T07:43:23Z",
@@ -138,12 +144,6 @@
     "date": "2026-11-12T11:19:37+01:00",
     "author": "Alpha",
     "subject": "feat(habits): Dein Tag im Store-Build deutsch, ohne 4B/Core4, Ein-Klick-Start (Quelle apps/habits)"
-   },
-   {
-    "sha": "c22c061",
-    "date": "2026-11-12T11:18:14+01:00",
-    "author": "Alpha",
-    "subject": "feat(journal): Store-Build ohne Door/Game/Focus, KI, Google-Kalender, 4B; ruhigere Optik"
    }
   ],
   "activity": [
@@ -229,18 +229,38 @@
    },
    {
     "day": "2026-11-17",
-    "n": 1
+    "n": 2
    }
   ],
   "workflows": [
    {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-17T16:04:48Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44121623696",
+    "sha": "1ec178f"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-17T16:04:48Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44121623484",
+    "sha": "1ec178f"
+   },
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-17T10:45:42Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44067795268",
+    "created_at": "2026-11-17T14:35:54Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44104862035",
     "sha": "0ef9932"
    },
    {
@@ -252,26 +272,6 @@
     "created_at": "2026-11-17T08:55:27Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44050882943",
     "sha": "0ef9932"
-   },
-   {
-    "name": "Live Deploy (Journal master)",
-    "branch": "master",
-    "event": "workflow_dispatch",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-17T07:45:23Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44041141408",
-    "sha": "0ef9932"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "skipped",
-    "created_at": "2026-11-17T07:45:14Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44041117871",
-    "sha": "a3e4d88"
    },
    {
     "name": "Gemini CI Agent",
@@ -362,31 +362,9 @@
     "created_at": "2026-11-16T06:47:15Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43819176361",
     "sha": "f794f03"
-   },
-   {
-    "name": "Preview (Journal dev)",
-    "branch": "dev",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-14T01:13:25Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43539256989",
-    "sha": "e7b09ea"
    }
   ],
-  "issues": [
-   {
-    "number": 55,
-    "title": "Dashboard-Lage: rot",
-    "created_at": "2026-11-16T11:36:24Z",
-    "updated_at": "2026-11-17T07:45:11Z",
-    "labels": [
-     "dashboard"
-    ],
-    "url": "https://github.com/nimmsel23/journal-dev/issues/55",
-    "author": "github-actions[bot]"
-   }
-  ],
+  "issues": [],
   "pulls": [],
   "live_sites": [
    "https://habit-vos.web.app",
@@ -402,23 +380,30 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Promotion dev -> master erfolgreich, Branches synchronisiert, Dashboard-Issue offen",
-   "lage": "Der Workflow „Auto-Promote dev -> master (Check (Journal))“ auf master (0ef9932) ist erfolgreich durchgelaufen. Die dev- und master-Branches sind nun synchronisiert. Ein neues Issue #55 „Dashboard-Lage: rot“ wurde von einem Bot erstellt.",
+   "headline": "Branches synchronisiert, neuer Promote-Commit, Dashboard-Issue #55 nicht mehr offen",
+   "lage": "Die dev- und master-Branches sind bei Commit `1ec178f` synchronisiert. Der Workflow „Auto-Promote dev -> master (Check (Journal))“ ist erfolgreich durchgelaufen. Das zuvor gemeldete Issue #55 „Dashboard-Lage: rot“ ist nicht mehr in der Evidenz vorhanden.",
    "auffaelligkeiten": [
     {
-     "level": "hoch",
-     "text": "Issue #55 „Dashboard-Lage: rot“ wurde von github-actions[bot] erstellt und ist noch offen, was auf ein Problem mit der Dashboard-Funktionalität hindeutet."
+     "level": "mittel",
+     "text": "Das in der letzten Einschätzung erwähnte Issue #55 „Dashboard-Lage: rot“ ist nicht mehr in der Evidenz gelistet."
+    },
+    {
+     "level": "info",
+     "text": "Der Workflow „Live Deploy (Journal master)“ für Commit `1ec178f` ist aktuell in Bearbeitung."
     }
    ],
    "naechste_schritte": [
-    "Untersuchen der Ursache für Issue #55 „Dashboard-Lage: rot“.",
-    "Verifizieren der Dashboard-Funktionalität nach dem erfolgreichen Promote.",
-    "Schließen von Issue #55, falls das Problem behoben ist."
+    "Verifizieren des Abschlusses des Workflows „Live Deploy (Journal master)“.",
+    "Prüfen der Dashboard-Funktionalität, da Issue #55 nicht mehr offen ist und es mehrere Dashboard-bezogene Commits gab.",
+    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto (gemäß `NEXT.md`)."
    ],
-   "veraendert": "Der Workflow „Auto-Promote dev -> master (Check (Journal))“ ist erfolgreich abgeschlossen, und die dev- und master-Branches sind synchronisiert.",
-   "fragen": [],
+   "veraendert": "Das in der letzten Einschätzung erwähnte Issue #55 „Dashboard-Lage: rot“ ist nicht mehr in der Evidenz vorhanden, und ein neuer Commit `1ec178f` wurde erfolgreich promoted.",
+   "fragen": [
+    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (Console), wie in `NEXT.md` vermerkt?",
+    "Benötigt die Daily-Four-Auswertung eine Frist, wie in `NEXT.md` diskutiert?"
+   ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-17T13:48:29+00:00"
+  "ai_at": "2026-11-17T16:05:12+00:00"
  }
 }

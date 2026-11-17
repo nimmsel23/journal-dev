@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-17T07:44:53+00:00",
+  "generated_at": "2026-11-17T13:48:26+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-17T07:44:35Z",
+   "pushed_at": "2026-11-17T07:45:22Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -19,10 +19,10 @@
    "main": "master",
    "has_dev": true,
    "dev_behind": 0,
-   "dev_ahead": 5,
-   "oldest_unpromoted": "2026-11-16T06:48:11Z",
+   "dev_ahead": 0,
+   "oldest_unpromoted": null,
    "dev_head": "0ef9932 2026-11-17T07:43:23Z",
-   "master_head": "a3e4d88 2026-11-16T10:58:31+01:00"
+   "master_head": "0ef9932 2026-11-17T07:43:23Z"
   },
   "commits": [
    {
@@ -234,34 +234,14 @@
   ],
   "workflows": [
    {
-    "name": "Check (Journal)",
-    "branch": "dev",
-    "event": "push",
-    "status": "in_progress",
-    "conclusion": null,
-    "created_at": "2026-11-17T07:44:37Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44041037212",
-    "sha": "0ef9932"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-17T04:34:29Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44018120114",
-    "sha": "a3e4d88"
-   },
-   {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
     "event": "schedule",
     "status": "completed",
-    "conclusion": "failure",
-    "created_at": "2026-11-17T02:06:56Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44000579204",
-    "sha": "a3e4d88"
+    "conclusion": "success",
+    "created_at": "2026-11-17T10:45:42Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44067795268",
+    "sha": "0ef9932"
    },
    {
     "name": "Merge-Agent",
@@ -269,8 +249,28 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-17T00:49:55Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43990792564",
+    "created_at": "2026-11-17T08:55:27Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44050882943",
+    "sha": "0ef9932"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-17T07:45:23Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44041141408",
+    "sha": "0ef9932"
+   },
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "skipped",
+    "created_at": "2026-11-17T07:45:14Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44041117871",
     "sha": "a3e4d88"
    },
    {
@@ -279,19 +279,19 @@
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-16T11:36:26Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43859225603",
+    "created_at": "2026-11-17T07:45:14Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44041117817",
     "sha": "a3e4d88"
    },
    {
-    "name": "Live Deploy (Journal master)",
-    "branch": "master",
+    "name": "Check (Journal)",
+    "branch": "dev",
     "event": "push",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-16T09:58:34Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43844603997",
-    "sha": "a3e4d88"
+    "created_at": "2026-11-17T07:44:37Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44041037212",
+    "sha": "0ef9932"
    },
    {
     "name": "Check (Journal)",
@@ -376,19 +376,10 @@
   ],
   "issues": [
    {
-    "number": 56,
-    "title": "Auftrag CEO: master wieder in dev mergen, Auto-Promote rot",
-    "created_at": "2026-11-16T11:55:22Z",
-    "updated_at": "2026-11-16T11:55:22Z",
-    "labels": [],
-    "url": "https://github.com/nimmsel23/journal-dev/issues/56",
-    "author": "nimmsel23"
-   },
-   {
     "number": 55,
     "title": "Dashboard-Lage: rot",
     "created_at": "2026-11-16T11:36:24Z",
-    "updated_at": "2026-11-16T13:06:26Z",
+    "updated_at": "2026-11-17T07:45:11Z",
     "labels": [
      "dashboard"
     ],
@@ -408,49 +399,26 @@
   ]
  },
  "assessment": {
-  "status": "red",
-  "signals": [
-   {
-    "level": "red",
-    "key": "ci:Auto-Promote dev -> master (Check (Journal)):master",
-    "text": "„Auto-Promote dev -> master (Check (Journal))“ auf master ist rot (failure, a3e4d88)",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44000579204"
-   },
-   {
-    "level": "yellow",
-    "key": "promote",
-    "text": "5 Commit(s) auf dev seit 1.0 Tagen nicht auf master promotet"
-   }
-  ],
+  "status": "green",
+  "signals": [],
   "ai": {
-   "headline": "Auto-Promote auf master fehlgeschlagen, dev 5 Commits voraus mit neuem Merge",
-   "lage": "Der Workflow „Auto-Promote dev -> master (Check (Journal))“ auf master (a3e4d88) ist erneut fehlgeschlagen. Die dev-Branch ist 5 Commits voraus und hat den aktuellen master-Stand (a3e4d88) in Commit 0ef9932 gemergt. Ein „Check (Journal)“-Workflow auf dev (0ef9932) läuft aktuell.",
+   "headline": "Promotion dev -> master erfolgreich, Branches synchronisiert, Dashboard-Issue offen",
+   "lage": "Der Workflow „Auto-Promote dev -> master (Check (Journal))“ auf master (0ef9932) ist erfolgreich durchgelaufen. Die dev- und master-Branches sind nun synchronisiert. Ein neues Issue #55 „Dashboard-Lage: rot“ wurde von einem Bot erstellt.",
    "auffaelligkeiten": [
     {
      "level": "hoch",
-     "text": "„Auto-Promote dev -> master (Check (Journal))“ auf master ist rot (failure, a3e4d88)"
-    },
-    {
-     "level": "mittel",
-     "text": "5 Commit(s) auf dev seit 1.0 Tagen nicht auf master promotet"
-    },
-    {
-     "level": "info",
-     "text": "Der Workflow \"Check (Journal)\" auf dev (Commit 0ef9932) ist aktuell in Bearbeitung."
+     "text": "Issue #55 „Dashboard-Lage: rot“ wurde von github-actions[bot] erstellt und ist noch offen, was auf ein Problem mit der Dashboard-Funktionalität hindeutet."
     }
    ],
    "naechste_schritte": [
-    "Analysieren der Ursache für den Fehlschlag des Workflows „Auto-Promote dev -> master (Check (Journal))“ auf a3e4d88.",
-    "Prüfen des Status des aktuell laufenden „Check (Journal)“-Workflows auf dev (0ef9932).",
-    "Beheben der Promotion-Blockade, um die 5 Commits von dev auf master zu bringen."
+    "Untersuchen der Ursache für Issue #55 „Dashboard-Lage: rot“.",
+    "Verifizieren der Dashboard-Funktionalität nach dem erfolgreichen Promote.",
+    "Schließen von Issue #55, falls das Problem behoben ist."
    ],
-   "veraendert": "Die dev-Branch ist nun 5 Commits voraus und hat den aktuellen master-Stand (a3e4d88) in Commit 0ef9932 gemergt; ein neuer \"Check (Journal)\"-Workflow auf dev läuft.",
-   "fragen": [
-    "Entscheiden, ob die Daily-Four-Auswertung eine 'requiredBeforeHour'-Frist benötigt.",
-    "Entscheiden, ob die OAuth-URIs auf nur noch 'vos-journal' gestrafft werden sollen."
-   ],
+   "veraendert": "Der Workflow „Auto-Promote dev -> master (Check (Journal))“ ist erfolgreich abgeschlossen, und die dev- und master-Branches sind synchronisiert.",
+   "fragen": [],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-17T07:44:55+00:00"
+  "ai_at": "2026-11-17T13:48:29+00:00"
  }
 }

@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-17T16:05:09+00:00",
+  "generated_at": "2026-11-18T13:24:05+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-17T16:04:55Z",
+   "pushed_at": "2026-11-17T16:05:24Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -148,12 +148,8 @@
   ],
   "activity": [
    {
-    "day": "2026-10-28",
-    "n": 7
-   },
-   {
     "day": "2026-10-29",
-    "n": 15
+    "n": 9
    },
    {
     "day": "2026-10-30",
@@ -230,27 +226,31 @@
    {
     "day": "2026-11-17",
     "n": 2
+   },
+   {
+    "day": "2026-11-18",
+    "n": 0
    }
   ],
   "workflows": [
    {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
-    "event": "push",
+    "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-17T16:04:48Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44121623696",
+    "created_at": "2026-11-18T10:13:38Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44283359888",
     "sha": "1ec178f"
    },
    {
-    "name": "Live Deploy (Journal master)",
+    "name": "Merge-Agent",
     "branch": "master",
-    "event": "push",
-    "status": "in_progress",
-    "conclusion": null,
-    "created_at": "2026-11-17T16:04:48Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44121623484",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-18T08:36:06Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44268404871",
     "sha": "1ec178f"
    },
    {
@@ -259,19 +259,9 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-17T14:35:54Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44104862035",
-    "sha": "0ef9932"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-17T08:55:27Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44050882943",
-    "sha": "0ef9932"
+    "created_at": "2026-11-18T04:30:04Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44237741062",
+    "sha": "1ec178f"
    },
    {
     "name": "Gemini CI Agent",
@@ -279,9 +269,19 @@
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-17T07:45:14Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44041117817",
-    "sha": "a3e4d88"
+    "created_at": "2026-11-17T16:06:28Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44121941631",
+    "sha": "1ec178f"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-17T16:04:48Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44121623484",
+    "sha": "1ec178f"
    },
    {
     "name": "Check (Journal)",
@@ -380,30 +380,34 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Branches synchronisiert, neuer Promote-Commit, Dashboard-Issue #55 nicht mehr offen",
-   "lage": "Die dev- und master-Branches sind bei Commit `1ec178f` synchronisiert. Der Workflow „Auto-Promote dev -> master (Check (Journal))“ ist erfolgreich durchgelaufen. Das zuvor gemeldete Issue #55 „Dashboard-Lage: rot“ ist nicht mehr in der Evidenz vorhanden.",
+   "headline": "Branches synchronisiert, Promote und Live Deploy erfolgreich, keine offenen Issues",
+   "lage": "Die dev- und master-Branches sind bei Commit `1ec178f` synchronisiert. Die Workflows „Auto-Promote dev -> master (Check (Journal))“ und „Live Deploy (Journal master)“ wurden erfolgreich abgeschlossen. Es sind keine offenen Issues in der Evidenz vorhanden.",
    "auffaelligkeiten": [
     {
-     "level": "mittel",
-     "text": "Das in der letzten Einschätzung erwähnte Issue #55 „Dashboard-Lage: rot“ ist nicht mehr in der Evidenz gelistet."
+     "level": "info",
+     "text": "Mehrere Commits (`90195b9`, `bedea1d`, `e097aa7`, `f43401f`) weisen auf Dashboard-bezogene Änderungen hin."
     },
     {
-     "level": "info",
-     "text": "Der Workflow „Live Deploy (Journal master)“ für Commit `1ec178f` ist aktuell in Bearbeitung."
+     "level": "mittel",
+     "text": "Die Abnahme von Smart Journal und Habits im Live-Preview gegen ein echtes Konto ist laut `NEXT.md` noch ausstehend."
+    },
+    {
+     "level": "mittel",
+     "text": "Mehrere Punkte in `NEXT.md` bezüglich Legacy `syncTrackerHabits`, Push-Reminder-Auswertung und Mindest-Log-UI sind noch offen."
     }
    ],
    "naechste_schritte": [
-    "Verifizieren des Abschlusses des Workflows „Live Deploy (Journal master)“.",
-    "Prüfen der Dashboard-Funktionalität, da Issue #55 nicht mehr offen ist und es mehrere Dashboard-bezogene Commits gab.",
-    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto (gemäß `NEXT.md`)."
+    "Prüfen der Dashboard-Funktionalität nach den jüngsten Commits.",
+    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto (gemäß `NEXT.md`).",
+    "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto (gemäß `NEXT.md`)."
    ],
-   "veraendert": "Das in der letzten Einschätzung erwähnte Issue #55 „Dashboard-Lage: rot“ ist nicht mehr in der Evidenz vorhanden, und ein neuer Commit `1ec178f` wurde erfolgreich promoted.",
+   "veraendert": "Der Workflow „Live Deploy (Journal master)“ ist erfolgreich durchgelaufen, was den Verifizierungsschritt aus der letzten Einschätzung abschließt.",
    "fragen": [
-    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (Console), wie in `NEXT.md` vermerkt?",
-    "Benötigt die Daily-Four-Auswertung eine Frist, wie in `NEXT.md` diskutiert?"
+    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (gemäß `NEXT.md`)?",
+    "Benötigt die Daily-Four-Auswertung eine Frist (gemäß `NEXT.md`)?"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-17T16:05:12+00:00"
+  "ai_at": "2026-11-18T13:24:08+00:00"
  }
 }

@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-18T13:24:05+00:00",
+  "generated_at": "2026-11-19T13:51:06+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-17T16:05:24Z",
+   "pushed_at": "2026-11-18T13:24:22Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -148,10 +148,6 @@
   ],
   "activity": [
    {
-    "day": "2026-10-29",
-    "n": 9
-   },
-   {
     "day": "2026-10-30",
     "n": 0
    },
@@ -230,17 +226,31 @@
    {
     "day": "2026-11-18",
     "n": 0
+   },
+   {
+    "day": "2026-11-19",
+    "n": 0
    }
   ],
   "workflows": [
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-19T13:25:26Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44533296966",
+    "sha": "1ec178f"
+   },
    {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-18T10:13:38Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44283359888",
+    "created_at": "2026-11-19T08:52:27Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44491318598",
     "sha": "1ec178f"
    },
    {
@@ -249,18 +259,8 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-18T08:36:06Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44268404871",
-    "sha": "1ec178f"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-18T04:30:04Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44237741062",
+    "created_at": "2026-11-19T04:32:29Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44459025989",
     "sha": "1ec178f"
    },
    {
@@ -380,34 +380,34 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Branches synchronisiert, Promote und Live Deploy erfolgreich, keine offenen Issues",
-   "lage": "Die dev- und master-Branches sind bei Commit `1ec178f` synchronisiert. Die Workflows „Auto-Promote dev -> master (Check (Journal))“ und „Live Deploy (Journal master)“ wurden erfolgreich abgeschlossen. Es sind keine offenen Issues in der Evidenz vorhanden.",
+   "headline": "Branches synchronisiert, Automatisierung läuft, offene Abnahmen in NEXT.md",
+   "lage": "Die dev- und master-Branches sind weiterhin bei Commit `1ec178f` synchronisiert. Die Workflows „Auto-Promote dev -> master (Check (Journal))“ und „Live Deploy (Journal master)“ wurden erfolgreich abgeschlossen. Es sind keine offenen Issues oder Pull Requests vorhanden.",
    "auffaelligkeiten": [
     {
      "level": "info",
-     "text": "Mehrere Commits (`90195b9`, `bedea1d`, `e097aa7`, `f43401f`) weisen auf Dashboard-bezogene Änderungen hin."
+     "text": "Die Push-Reminder-Auswertung muss `hidden`- und System-Habits ausschließen, um unerwünschte Erinnerungen zu vermeiden (gemäß `NEXT.md`)."
     },
     {
-     "level": "mittel",
-     "text": "Die Abnahme von Smart Journal und Habits im Live-Preview gegen ein echtes Konto ist laut `NEXT.md` noch ausstehend."
+     "level": "info",
+     "text": "Die Mindest-Log-UI für den Fokus-Sperrmodus ist noch unangeschlossen (gemäß `NEXT.md`)."
     },
     {
-     "level": "mittel",
-     "text": "Mehrere Punkte in `NEXT.md` bezüglich Legacy `syncTrackerHabits`, Push-Reminder-Auswertung und Mindest-Log-UI sind noch offen."
+     "level": "info",
+     "text": "Der Shell-Header (vitalos) zeigt die Daily Four ohne 'relax'; eine Angleichung an `dailyFour.js`-Domains wäre ein Shell-Handoff (gemäß `NEXT.md`)."
     }
    ],
    "naechste_schritte": [
-    "Prüfen der Dashboard-Funktionalität nach den jüngsten Commits.",
     "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto (gemäß `NEXT.md`).",
-    "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto (gemäß `NEXT.md`)."
+    "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto (gemäß `NEXT.md`).",
+    "Prüfen der „Als Door der Woche“-Funktion im Browser gegen echte Daten (gemäß `NEXT.md`)."
    ],
-   "veraendert": "Der Workflow „Live Deploy (Journal master)“ ist erfolgreich durchgelaufen, was den Verifizierungsschritt aus der letzten Einschätzung abschließt.",
+   "veraendert": "Seit der letzten Einschätzung wurden die Branches nicht weiterentwickelt, jedoch liefen die automatisierten Workflows „PR-AutoMerge (Dependabot -> dev)“ und „Merge-Agent“ erfolgreich durch.",
    "fragen": [
-    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (gemäß `NEXT.md`)?",
-    "Benötigt die Daily-Four-Auswertung eine Frist (gemäß `NEXT.md`)?"
+    "Entscheiden, ob die Daily-Four-Auswertung eine Frist benötigt (gemäß `NEXT.md`).",
+    "Straffen der OAuth-URIs auf nur noch `vos-journal` in der Console (gemäß `NEXT.md`)."
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-18T13:24:08+00:00"
+  "ai_at": "2026-11-19T13:51:08+00:00"
  }
 }

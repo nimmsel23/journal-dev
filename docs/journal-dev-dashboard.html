@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>journal-dev — App</title>
+<style>
+:root{--bg:#f6f6f2;--card:#fff;--fg:#161616;--muted:#5c6158;--line:#e4e2d8;--accent:#1738ff;--ok:#1e7d45;--okbg:#e6f4ea;--warn:#8a5a00;--warnbg:#fff4d6}
+@media (prefers-color-scheme:dark){:root{--bg:#12140f;--card:#1c1e18;--fg:#f3f1e8;--muted:#a8aa9e;--line:#2c2e26;--accent:#8aa2ff;--ok:#7fd49c;--okbg:#17321f;--warn:#f0c060;--warnbg:#3a2e10}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:28px 16px 64px}
+h1{font-size:1.7rem;line-height:1.25;margin:0 0 8px}
+h2{font-size:1.15rem;margin:32px 0 8px;padding-top:8px;border-top:1px solid var(--line)}
+.lede,.meta{color:var(--muted)}
+.lede{margin:0 0 8px}
+a{color:var(--accent)}
+nav.toc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:18px 0}
+nav.toc ol{margin:6px 0 0;padding-left:20px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card);margin:12px 0}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.93rem}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--line)}
+th{background:rgba(127,127,127,.07)}
+tr:last-child td{border-bottom:0}
+code{font-size:.88em}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600;background:var(--okbg);color:var(--ok)}
+.pill.warn{background:var(--warnbg);color:var(--warn)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.cards div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.cards b{display:block}
+.cards span{color:var(--muted);font-size:.85rem}
+footer{margin-top:36px;color:var(--muted);font-size:.82rem;border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>journal-dev</h1>
+<p class="lede">Eine React-PWA (Vite, Tailwind, TanStack Query) für das VitalOS-Journal: Tageslog, Habits, Door, Game, Voice und Tent. Daten in Firestore, Oberfläche offline-first. Stand der Quellen: 19. November 2026.</p>
+<p class="meta">Kanon <a href="https://vos-journal.web.app">vos-journal.web.app</a> · Paket <code>@vos/journal</code> 0.2.0 · Tiefe: <a href="https://github.com/nimmsel23/journal-dev/blob/dev/JOURNAL-V2.md">JOURNAL-V2.md</a>, <a href="https://github.com/nimmsel23/journal-dev/blob/dev/DEPLOYMENT.md">DEPLOYMENT.md</a></p>
+</header>
+
+<nav class="toc" aria-label="Inhalt"><strong>Inhalt</strong>
+<ol>
+<li><a href="#module">Module</a></li>
+<li><a href="#aufruf">Aufruf</a></li>
+<li><a href="#hosting">Hosting</a></li>
+<li><a href="#stand">Implementierungsstand</a></li>
+<li><a href="#fallen">Stolperstellen</a></li>
+</ol>
+</nav>
+
+<section id="module">
+<h2>Module</h2>
+<p>Der Client liest und schreibt lokal. Firestore-Writes laufen über <code>track()</code> und werden nicht awaited. Routing ist der URL-Hash (<code>src/lib/hashRoute.js</code>, <code>src/lib/useHashRoute.js</code>). Tabs registriert <code>src/routes.js</code>.</p>
+<div class="tbl"><table>
+<thead><tr><th>Fläche</th><th>Code</th><th>Was sie tut</th></tr></thead>
+<tbody>
+<tr><td>Journal v2</td><td><code>src/views/v2/</code></td><td>Tag, Woche, Monat, Jahr, Habits. Eingabe mit <code>+tag</code> (<code>/fit</code> wird zu <code>+fitness</code>). Zeitleiste per Ziehen an der Uhrzeit.</td></tr>
+<tr><td>Suche</td><td><code>JournalV2Search.jsx</code>, <code>src/lib/journalSearch.js</code></td><td>Freitext und <code>+tag</code>-Filter über geladene Einträge. Siehe Stolperstelle Hash.</td></tr>
+<tr><td>Smart Log</td><td><code>src/lib/smartJournalApply.js</code>, <code>smartLogErrorText.js</code></td><td>Freitext → Callable → Vorschau → bestätigte Übernahme. Unbekannte <code>INTERNAL</code>-Fehler werden fail-closed.</td></tr>
+<tr><td>Habits</td><td><code>habitsModel.js</code>, <code>habitsDb.js</code></td><td>Serie, Quote, Frequenz, Archiv. <code>isUserHabit</code> blendet <code>hidden</code> und <code>systemTracker</code> aus.</td></tr>
+<tr><td>Door v2</td><td><code>src/views/door/v2/</code>, <code>src/lib/door/</code></td><td>Potential, Plan, Production, Profit. Quellen: Backend, Google Tasks (lokaler Store + Outbox), Taskwarrior.</td></tr>
+<tr><td>Game v2</td><td><code>src/views/game/</code></td><td>Frame, Freedom, Focus (Firestore-Dokumente), Fire (Taskwarrior + Fire-Map-Kalender).</td></tr>
+<tr><td>Voice</td><td><code>src/views/voice/</code></td><td>Stop, Submit, Struggle, Strike. Jede Phase ein Journal-Eintrag, Tags <code>voice</code> und Phasenname.</td></tr>
+<tr><td>Tent v2</td><td><code>src/views/tent/</code></td><td>Wochenreview. Abschluss ist ein Journal-Eintrag mit Tag <code>tent</code>.</td></tr>
+<tr><td>Journal v1</td><td><code>src/components/Journal/</code>, <code>JournalVosView.jsx</code></td><td>Timeline. Bleibt im Hub-Build erhalten.</td></tr>
+<tr><td>Google</td><td><code>src/lib/google/</code></td><td>Ein Token-Dienst für Tasks und Kalender. Server-Refresh, wenn die Callable da ist, sonst Popup etwa eine Stunde.</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section id="aufruf">
+<h2>Aufruf</h2>
+<div class="cards">
+<div><b>#v2</b><span>Tag. Datum <code>today</code> oder <code>YYYY-MM-DD</code>.</span></div>
+<div><b>#v2/woche</b><span>#v2/monat · #v2/jahr · #v2/habits</span></div>
+<div><b>#door2</b><span>/plan · /production · /profit</span></div>
+<div><b>#game2</b><span>Kurzformen #fire #focus #freedom #frame</span></div>
+<div><b>#voice</b><span>Tab voice-v2. #game2/voice landet hier.</span></div>
+<div><b>#tent2</b><span>optional mit Datum</span></div>
+</div>
+<p>Habits-Solo setzt <code>VITE_DEFAULT_MODE=habits</code>, dann öffnet ein leerer Hash <code>#v2/habits</code>. <code>VITE_SOLO_TABS</code> mit einem Tab-Key lässt die anderen <code>lazy()</code>-Imports aus dem Bundle.</p>
+</section>
+
+<section id="hosting">
+<h2>Hosting</h2>
+<p>Projekt <code>fitness-aos</code>. Inhalt ist Target <code>v2</code> (<code>dist-v2</code>). Solo-PWAs baut <code>scripts/build-journal-minis.mjs</code> nach <code>dist-v2/mini/</code>. Befehl: <code>pnpm run deploy:v2:build</code>.</p>
+<div class="tbl"><table>
+<thead><tr><th>Oberfläche</th><th>Adresse</th><th>Legacy</th></tr></thead>
+<tbody>
+<tr><td>Journal</td><td>vos-journal.web.app</td><td>journal-vos → 301</td></tr>
+<tr><td>Door, Voice, Game, Tent, Habits</td><td>/mini/&lt;id&gt;/</td><td>vos-door, vos-voice, vos-game, vos-tent, habit-vos → 301 auf die Mini-Route</td></tr>
+<tr><td>Game-Maps</td><td>/mini/game/frame|freedom|focus|fire/</td><td>vos-game/&lt;map&gt; → 301</td></tr>
+</tbody>
+</table></div>
+<p><code>deploy:door</code> und die Geschwister deployen die Redirect-Site. <code>deploy:&lt;id&gt;:build</code> erzeugt keinen Ordner; der Hinweis im Script zeigt auf <code>deploy:v2:build</code>.</p>
+</section>
+
+<section id="stand">
+<h2>Implementierungsstand</h2>
+<div class="tbl"><table>
+<thead><tr><th>Thema</th><th>Stand</th></tr></thead>
+<tbody>
+<tr><td>Hub und Solo-Minis</td><td><span class="pill">im Client</span> Eine Codebase, Flavor über <code>VITE_APP_FLAVOR</code> und <code>VITE_SOLO_TABS</code>.</td></tr>
+<tr><td>Offline</td><td><span class="pill">im Client</span> Journal, Habits, Game-Maps, Door-Google-Tasks (Store + Outbox), Taskwarrior-Outbox. Erste Replik und Google-Login brauchen einmal Netz.</td></tr>
+<tr><td>Habits-Filter</td><td><span class="pill">im Client</span> v2-Liste, Tent und Door „Habits heute“ ignorieren Tracker-Spiegel. Der Schreiber <code>syncTrackerHabits</code> liegt in <code>apps/habits</code>.</td></tr>
+<tr><td>Legacy-Shell <code>apps/habits</code></td><td><span class="pill warn">kein Live-Hosting</span> Quellen bleiben im Tree. Live-Habits ist <code>/mini/habits/</code>.</td></tr>
+<tr><td>Store-Edition</td><td><span class="pill warn">Schalter da, Wrapper nicht hier</span> <code>VITE_VOS_EDITION</code> store/observe/operate oder <code>VITE_VOS_PRODUCT_BUILD=1</code> blendet Door-Sprünge, Smart Log, Kalender, +hot und die 4B-Spur aus. Der Wrapper ist <code>docs/FINAL-VARIANT.md</code> (Entwurf).</td></tr>
+<tr><td>Suche</td><td><span class="pill warn">Ansicht da, Hash hält sie nicht</span> <code>mode === "suche"</code> rendert die Ansicht. <code>parse("#v2/suche")</code> ergibt Modus <code>tag</code>.</td></tr>
+<tr><td>Journal v1</td><td><span class="pill">unverändert im Hub</span> Solo-Builds mit einem anderen <code>VITE_SOLO_TABS</code> lassen den Tab weg.</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section id="fallen">
+<h2>Stolperstellen</h2>
+<ul>
+<li>Hash ist die einzige Quelle für Tab, Modus und Datum. <code>navigate</code> liest den Hash im selben Tick erneut, zwei Aufrufe überschreiben sich nicht.</li>
+<li><code>#v2/suche</code> bleibt nicht stehen. Die Modusleiste schreibt den Hash, der Parser setzt <code>tag</code>.</li>
+<li>Jahr ist <code>#v2/jahr</code>. Ein Klick auf einen Tag setzt den Modus auf <code>tag</code>, der Monatskopf auf <code>monat</code>.</li>
+<li>v2 importiert Journal-CRUD aus <code>src/lib/db/journal.js</code>, nicht über <code>@journal-db</code>.</li>
+<li>Entwürfe: Tastendruck nach <code>localStorage</code>, Speichern entprellt (<code>draftStore.js</code>, <code>useAutosaveField.js</code>). Blur allein ist nicht der Speicherzeitpunkt.</li>
+<li>Lokal ist <code>node_modules</code> oft ein Symlink auf den vitalos-Workspace. Builds, die <code>pnpm run</code> einen Install-Check auslösen lassen, können daran hängen. CI installiert mit <code>--frozen-lockfile</code>; <code>package.json</code> und Lock gehören in denselben Commit.</li>
+<li>Vite 8 / Rolldown: <code>fixRolldownPreloadMarker</code> und <code>scripts/fix-vite-preload-markers.mjs</code> bleiben. Ohne sie bleibt ein Hash an <code>__VITE_PRELOAD__</code> und das Bundle ist kein gültiges JavaScript.</li>
+</ul>
+</section>
+
+<footer>Quellen dieser Seite: <code>src/routes.js</code>, <code>src/lib/hashRoute.js</code>, <code>src/lib/storeEdition.js</code>, <code>src/lib/smartLogErrorText.js</code>, <code>src/views/v2/habitsModel.js</code>, <code>scripts/build-journal-minis.mjs</code>, <code>firebase.json</code>, <code>package.json</code>. Die GitHub-Page unter <a href="https://nimmsel23.github.io/journal-dev/">nimmsel23.github.io/journal-dev</a> baut <code>.github/workflows/dashboard.yml</code> aus Branch <code>dev</code>.</footer>
+</div>
+</body>
+</html>

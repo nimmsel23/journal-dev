@@ -21,7 +21,7 @@ sonntags zur gewählten Ortszeit, solange der aktuelle Tent noch offen ist
 (Standard 14:00, Zeitzone Europe/Vienna). Details stehen in `functions/index.js`
 und `src/hooks/useJournalPushNotifications.js`.
 
-Navigation ist der URL-Hash, zum Beispiel `#v2/woche/2026-10-17`, `#door2/plan`, `#focus`. Alle Hashes: [`JOURNAL-V2.md`](JOURNAL-V2.md).
+Navigation ist der URL-Hash, zum Beispiel `#v2/woche/2026-10-17`, `#v2/jahr`, `#door2/plan`, `#voice`, `#focus`. Alle Hashes, Solo-Builds und der Store-Schalter: [`JOURNAL-V2.md`](JOURNAL-V2.md). Überblick über Module und Stand: [`docs/journal-dev-dashboard.html`](docs/journal-dev-dashboard.html).
 
 ## Entwickeln
 
@@ -42,6 +42,7 @@ deployt kanonisch **`vos-journal.web.app`** (`journal-vos` nur Redirect). Befehl
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | Architektur und Arbeitsregeln für Claude Code |
 | [`JOURNAL-V2.md`](JOURNAL-V2.md) | v2, Habits, Door, Game, Tent, Taskwarrior-Sync |
+| [`docs/journal-dev-dashboard.html`](docs/journal-dev-dashboard.html) | App: Features, Module, Implementierungsstand |
 | [`DEPLOYMENT.md`](DEPLOYMENT.md) | CI, Hosting-Targets, Release nach vitalos |
 | [`STANDALONE.md`](STANDALONE.md) | Standalone-Build und lokale Kopien |
 | [`RESULTS.md`](RESULTS.md) | Session-Log |

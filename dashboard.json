@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-19T13:51:06+00:00",
+  "generated_at": "2026-11-19T16:09:42+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-18T13:24:22Z",
+   "pushed_at": "2026-11-19T16:09:20Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -19,12 +19,18 @@
    "main": "master",
    "has_dev": true,
    "dev_behind": 0,
-   "dev_ahead": 0,
-   "oldest_unpromoted": null,
-   "dev_head": "1ec178f 2026-11-17T17:04:45+01:00",
+   "dev_ahead": 1,
+   "oldest_unpromoted": "2026-11-19T16:08:52Z",
+   "dev_head": "44fb448 2026-11-19T16:08:52Z",
    "master_head": "1ec178f 2026-11-17T17:04:45+01:00"
   },
   "commits": [
+   {
+    "sha": "44fb448",
+    "date": "2026-11-19T16:08:52Z",
+    "author": "Cursor Agent",
+    "subject": "docs: Solo-Builds, Hash und App-Dashboard an den Client angleichen"
+   },
    {
     "sha": "1ec178f",
     "date": "2026-11-17T17:04:45+01:00",
@@ -138,12 +144,6 @@
     "date": "2026-11-12T11:20:25+01:00",
     "author": "Alpha",
     "subject": "docs: Konzept finale Standalone-Variante vos-journal (Entwurf)"
-   },
-   {
-    "sha": "05a5ed8",
-    "date": "2026-11-12T11:19:37+01:00",
-    "author": "Alpha",
-    "subject": "feat(habits): Dein Tag im Store-Build deutsch, ohne 4B/Core4, Ein-Klick-Start (Quelle apps/habits)"
    }
   ],
   "activity": [
@@ -229,10 +229,70 @@
    },
    {
     "day": "2026-11-19",
-    "n": 0
+    "n": 1
    }
   ],
   "workflows": [
+   {
+    "name": "Check (Journal)",
+    "branch": "dev",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-19T16:09:22Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562874402",
+    "sha": "44fb448"
+   },
+   {
+    "name": "Check (Journal)",
+    "branch": "cursor/bc-ed9a7ff5-bd0d-4b24-a2a8-a29e8ced1750-8959",
+    "event": "pull_request",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-19T16:09:10Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562836021",
+    "sha": "44fb448"
+   },
+   {
+    "name": "Org-Bot (PR anlegen & mergen)",
+    "branch": "cursor/bc-ed9a7ff5-bd0d-4b24-a2a8-a29e8ced1750-8959",
+    "event": "pull_request_target",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-19T16:09:10Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562835974",
+    "sha": "44fb448"
+   },
+   {
+    "name": "Merge-Agent",
+    "branch": "cursor/bc-ed9a7ff5-bd0d-4b24-a2a8-a29e8ced1750-8959",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-19T16:09:10Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562835812",
+    "sha": "44fb448"
+   },
+   {
+    "name": "Gemini CI Agent",
+    "branch": "cursor/bc-ed9a7ff5-bd0d-4b24-a2a8-a29e8ced1750-8959",
+    "event": "pull_request_target",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-19T16:09:10Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562835267",
+    "sha": "44fb448"
+   },
+   {
+    "name": "Merge-Agent",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-19T13:56:59Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44538555377",
+    "sha": "1ec178f"
+   },
    {
     "name": "PR-AutoMerge (Dependabot -> dev)",
     "branch": "master",
@@ -254,16 +314,6 @@
     "sha": "1ec178f"
    },
    {
-    "name": "Merge-Agent",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-19T04:32:29Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44459025989",
-    "sha": "1ec178f"
-   },
-   {
     "name": "Gemini CI Agent",
     "branch": "master",
     "event": "workflow_run",
@@ -282,16 +332,6 @@
     "created_at": "2026-11-17T16:04:48Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44121623484",
     "sha": "1ec178f"
-   },
-   {
-    "name": "Check (Journal)",
-    "branch": "dev",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-17T07:44:37Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44041037212",
-    "sha": "0ef9932"
    },
    {
     "name": "Check (Journal)",
@@ -365,7 +405,20 @@
    }
   ],
   "issues": [],
-  "pulls": [],
+  "pulls": [
+   {
+    "number": 58,
+    "title": "docs: Solo-Builds, Hash und App-Dashboard an den Client angleichen",
+    "created_at": "2026-11-19T16:09:05Z",
+    "updated_at": "2026-11-19T16:09:18Z",
+    "labels": [],
+    "url": "https://github.com/nimmsel23/journal-dev/pull/58",
+    "author": "vitalos-org-bot[bot]",
+    "head": "cursor/bc-ed9a7ff5-bd0d-4b24-a2a8-a29e8ced1750-8959",
+    "base": "master",
+    "draft": false
+   }
+  ],
   "live_sites": [
    "https://habit-vos.web.app",
    "https://journal-vos.web.app",
@@ -380,34 +433,34 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Branches synchronisiert, Automatisierung läuft, offene Abnahmen in NEXT.md",
-   "lage": "Die dev- und master-Branches sind weiterhin bei Commit `1ec178f` synchronisiert. Die Workflows „Auto-Promote dev -> master (Check (Journal))“ und „Live Deploy (Journal master)“ wurden erfolgreich abgeschlossen. Es sind keine offenen Issues oder Pull Requests vorhanden.",
+   "headline": "dev ist vor master, PR #58 offen, Check (Journal) läuft",
+   "lage": "Der dev-Branch ist mit Commit `44fb448` einen Commit vor master. master verbleibt bei `1ec178f`. Pull Request #58 ist offen und ein \"Check (Journal)\"-Workflow für den dev-Branch läuft noch.",
    "auffaelligkeiten": [
     {
-     "level": "info",
-     "text": "Die Push-Reminder-Auswertung muss `hidden`- und System-Habits ausschließen, um unerwünschte Erinnerungen zu vermeiden (gemäß `NEXT.md`)."
+     "level": "hoch",
+     "text": "Der dev-Branch ist mit Commit `44fb448` einen Commit vor master, was auf eine ausstehende Promotion hindeutet."
+    },
+    {
+     "level": "mittel",
+     "text": "Der Workflow \"Check (Journal)\" für den aktuellen dev-Head `44fb448` ist noch \"in_progress\"."
     },
     {
      "level": "info",
-     "text": "Die Mindest-Log-UI für den Fokus-Sperrmodus ist noch unangeschlossen (gemäß `NEXT.md`)."
-    },
-    {
-     "level": "info",
-     "text": "Der Shell-Header (vitalos) zeigt die Daily Four ohne 'relax'; eine Angleichung an `dailyFour.js`-Domains wäre ein Shell-Handoff (gemäß `NEXT.md`)."
+     "text": "Pull Request #58 (\"docs: Solo-Builds, Hash und App-Dashboard an den Client angleichen\") ist offen und zielt auf master ab."
     }
    ],
    "naechste_schritte": [
+    "Warten auf Abschluss des Workflows \"Check (Journal)\" für Commit `44fb448`.",
     "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto (gemäß `NEXT.md`).",
-    "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto (gemäß `NEXT.md`).",
-    "Prüfen der „Als Door der Woche“-Funktion im Browser gegen echte Daten (gemäß `NEXT.md`)."
+    "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto (gemäß `NEXT.md`)."
    ],
-   "veraendert": "Seit der letzten Einschätzung wurden die Branches nicht weiterentwickelt, jedoch liefen die automatisierten Workflows „PR-AutoMerge (Dependabot -> dev)“ und „Merge-Agent“ erfolgreich durch.",
+   "veraendert": "Der dev-Branch ist nicht mehr mit master synchronisiert und es gibt einen offenen Pull Request #58.",
    "fragen": [
-    "Entscheiden, ob die Daily-Four-Auswertung eine Frist benötigt (gemäß `NEXT.md`).",
-    "Straffen der OAuth-URIs auf nur noch `vos-journal` in der Console (gemäß `NEXT.md`)."
+    "Soll die Daily-Four-Auswertung eine Frist benötigen (gemäß `NEXT.md`)?",
+    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (gemäß `NEXT.md`)?"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-19T13:51:08+00:00"
+  "ai_at": "2026-11-19T16:09:44+00:00"
  }
 }

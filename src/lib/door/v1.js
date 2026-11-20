@@ -205,3 +205,5 @@ export async function fetchReflections() {
     })
     .sort(byCreatedDesc);
 }
+
+export const rescheduleHit = gt.rescheduleHit;

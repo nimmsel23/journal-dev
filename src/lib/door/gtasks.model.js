@@ -214,6 +214,12 @@ export function createDoorModel(store, { kick = () => {} } = {}) {
       if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date || "")) throw new Error("title_required");
       return write(() => ({ id: store.insert(LIST_PRODUCTION, { title, due: dueOf(date) }), title }));
     },
+    rescheduleHit: async (id, date) => {
+      const task = store.find(LIST_PRODUCTION, id);
+      if (!task) throw new Error("daily_hit_not_found");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "") || Number.isNaN(Date.parse(dueOf(date))) || new Date(dueOf(date)).toISOString().slice(0, 10) !== date) throw new Error("invalid_date");
+      return write(() => store.patch(LIST_PRODUCTION, id, { due: dueOf(date) }));
+    },
     fetchHitsWeek: async (base) => hitsWeek(base),
 
     // ── Profit (nur lesend) ──

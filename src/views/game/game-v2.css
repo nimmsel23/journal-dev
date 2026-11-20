@@ -3,10 +3,10 @@
 .gv2-step { display: grid; gap: 8px; padding: 14px; border-bottom: 1px solid var(--ink); }
 .gv2-q { font-size: 15px; line-height: 1.3; }
 .gv2-hint { font-family: var(--mono); font-size: 11px; opacity: .65; line-height: 1.4; }
-.gv2-step textarea {
+.gv2-step textarea, .gv2-step input, .gv2-step select {
   width: 100%; font: inherit; padding: 10px 12px; border: 2px solid var(--ink); background: #fff; color: var(--ink); border-radius: 0;
 }
-.gv2-step textarea:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
+.gv2-step textarea:focus-visible, .gv2-step input:focus-visible, .gv2-step select:focus-visible { outline: 3px solid var(--sig); outline-offset: -3px; }
 .gv2-step .dv2-qs { margin-top: 0; }
 .gv2-step .dv2-qs button { min-height: 40px; padding: 0 12px; }
 .gv2-epi { margin: 0; padding: 10px 14px; font-style: italic; border-bottom: 1px solid var(--ink); }
@@ -24,3 +24,8 @@
 .gv2-mandel-ring { position: absolute; inset: 0; pointer-events: none; }
 .gv2-mandel-t { position: absolute; left: 0; right: 0; bottom: max(24px, env(safe-area-inset-bottom)); text-align: center; color: #fff; font: 600 clamp(28px, 8vw, 56px)/1 system-ui, sans-serif; text-shadow: 0 2px 12px #000; pointer-events: none; }
 .gv2-mandel-x { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(0,0,0,.45); color: #fff; font-size: 20px; }
+
+.gv2-step label { display: grid; gap: 6px; min-width: 0; }
+.gv2-step input, .gv2-step select { box-sizing: border-box; min-width: 0; }
+
+.gv2-action { display: grid; align-items: center; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; padding: 14px; text-align: left; font-size: 14px; min-height: 48px; }

@@ -10,6 +10,7 @@ import { addDays, endOfISOWeek, format, startOfDay, startOfISOWeek } from "date-
 import { de } from "date-fns/locale";
 import * as tc from "../../lib/door/taskchampion.js";
 import { weekDoor } from "../../lib/door/weekDoor.js";
+import FireDomains from "./FireDomains.jsx";
 import TcSetup, { tcError } from "./TcSetup.jsx";
 import AutosaveArea from "./AutosaveArea.jsx";
 import { usePersistedText } from "../../lib/useAutosaveField.js";
@@ -240,6 +241,7 @@ export default function GameMapPanel({ map, uid }) {
         {q.isFetching && <span>lädt …</span>}
       </div>
       {err && <div className="dv2-empty" role="alert">{err}</div>}
+      <FireDomains all={all} uid={uid} busy={act.isPending} onToggle={toggle} onAdd={({ text, domain, date }) => act.mutateAsync(() => tc.commit(tc.newTaskOps(text, { tags: ["fire"], props: { domain, due: String(Math.floor(new Date(`${date}T00:00:00`).getTime() / 1000)) } }).ops))} />
       <section>
         <h4 className="dv2-sec">Door der Woche <span>{door?.domain || ""}</span></h4>
         {door
@@ -256,7 +258,7 @@ export default function GameMapPanel({ map, uid }) {
         {extra.length > 0 && <h4 className="dv2-sec">Weitere Hits <span>{extra.length}</span></h4>}
         {extra.map((t) => <HitRow key={t.uuid} t={t} busy={act.isPending} onToggle={toggle} />)}
       </section>
-      <p className="gv2-epi">Diese vier Hits gehören zur gewählten Door. Die Fire Map umfasst deine Wochenaktionen in Body, Being, Balance und Business. Der 4×4 Structured Blaze ist der Rahmen für vier Aktionen je Domain; diese Ansicht zeigt keine vollständige Domain-Auswertung.</p>
+      <p className="gv2-epi">Die vier Big Rocks gehören zur gewählten Door. Oben siehst du die Wochenaktionen aller vier Domains; jede Aktion wird dort einmal gezählt.</p>
       <FireCalendar />
       <form className="dv2-compose" onSubmit={add}>
         <input aria-label="Neuer Strike" placeholder="Weiterer Strike (heute) …" value={draft} onChange={(e) => setDraft(e.target.value)} />

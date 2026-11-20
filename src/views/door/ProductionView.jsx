@@ -3,11 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addWeeks } from "date-fns";
 import { Hammer, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
-import { fetchDailyWeek, toggleDailyHit, addHitOnDate, fetchHitsWeek } from "../../lib/door/v1.js";
+import { fetchDailyWeek, toggleDailyHit, rescheduleHit, addHitOnDate, fetchHitsWeek } from "../../lib/door/v1.js";
 
 const WEEKLY_HIT_TARGET = 20;
 
-const DAY_LABELS = { mon: "Montag", tue: "Dienstag", wed: "Mittwoch", thu: "Donnerstag", fri: "Freitag" };
+const DAY_LABELS = { mon: "Montag", tue: "Dienstag", wed: "Mittwoch", thu: "Donnerstag", fri: "Freitag", sat: "Samstag", sun: "Sonntag" };
 
 export default function ProductionView() {
   const qc = useQueryClient();
@@ -35,6 +35,16 @@ export default function ProductionView() {
       qc.invalidateQueries({ queryKey: ["door-production-summary"] });
     },
     onError: (err) => setError(err?.message || "Hit konnte nicht aktualisiert werden."),
+  });
+
+  const moveMutation = useMutation({
+    mutationFn: ({ id, date }) => rescheduleHit(id, date),
+    onMutate: () => setError(""),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["door-production"] });
+      qc.invalidateQueries({ queryKey: ["door-production-summary"] });
+    },
+    onError: (err) => setError(err?.message || "Hit konnte nicht verschoben werden."),
   });
 
   const [drafts, setDrafts] = useState({});
@@ -118,6 +128,15 @@ export default function ProductionView() {
                         <Check className="h-3.5 w-3.5" />
                       </button>
                     </div>
+                    <select
+                      aria-label={`Tag für ${item.label || item.fact || "Hit"}`}
+                      value={plan.dates[day]}
+                      disabled={moveMutation.isPending}
+                      onChange={(event) => moveMutation.mutate({ id: item.id, date: event.target.value })}
+                      className="mt-2 w-full rounded border border-slate-700 bg-slate-950 p-1 text-xs text-slate-400"
+                    >
+                      {Object.entries(plan.dates).filter(([key]) => !["sat", "sun"].includes(key) || key === day).map(([key, date]) => <option key={key} value={date}>{DAY_LABELS[key] || key}{key === "fri" ? " · Puffer" : ""}</option>)}
+                    </select>
                     {item.kind === "big" && item.obstacle ? (
                       <div className="mt-1 text-[10px] text-slate-500">Obstacle: {item.obstacle}</div>
                     ) : null}

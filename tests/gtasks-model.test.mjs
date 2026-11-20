@@ -107,3 +107,15 @@ test("Notiz hängt unter die Marker-Zeile; unbekannter Task → task_not_found",
   assert.equal(u.description, "erste\nzweite");
   await assert.rejects(model.addNote("nope", "x"), /task_not_found/);
 });
+
+test("Production: manual rescheduling preserves identity and completion; invalid dates do not write", async () => {
+  const { model, store } = mk();
+  const { id } = await model.addHitOnDate("2026-11-16", "Manual hit");
+  await model.toggleDailyHit(id);
+  await model.rescheduleHit(id, "2026-11-20");
+  assert.equal(store.find(PR, id).due, "2026-11-20T00:00:00.000Z");
+  assert.equal(store.find(PR, id).status, "completed");
+  await assert.rejects(model.rescheduleHit(id, "2026-02-30"), /invalid_date/);
+  await assert.rejects(model.rescheduleHit("missing", "2026-11-20"), /daily_hit_not_found/);
+  assert.equal(store.find(PR, id).due, "2026-11-20T00:00:00.000Z");
+});

@@ -38,3 +38,5 @@ export const peek = {
   hitsWeek: (...a) => m().peek.hitsWeek(...a),
   profit: () => m().peek.profit(),
 };
+
+export const rescheduleHit = (...a) => m().rescheduleHit(...a);

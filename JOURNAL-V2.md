@@ -4,6 +4,18 @@ Zweite Oberfläche für das VOS-Journal, neben der alten Timeline (v1). Schweize
 Papierweiß, Schwarz, Signalblau (`#1738ff`), Archivo (schmal) + Martian Mono. Alles unter
 `src/views/v2/`, Styles gekapselt unter `.jv2` (`journal-v2.css`). v1 bleibt unverändert nutzbar.
 
+## Produktmaßstab (Owner 2026-11-20)
+
+TickTick und Day One definieren gemeinsam den funktionalen Mindestumfang. Warrior dient zusätzlich als Referenz für Planen, Ausführen und Review; AlphaOS bleibt der inhaltliche Rahmen. Das bestehende Design bleibt erhalten. Andere Vorbilder können gezielte Verbesserungen liefern. Funktionsumfang bedeutet einen nutzbaren Ablauf einschließlich Speicherung, Wiederfinden, Offline-Verhalten und Fehlerbehandlung; vorhandener Code ist noch kein Nachweis vollständiger Parität.
+
+- **TickTick:** schnelle Erfassung (auch Sprache und Datumerkennung), Listen/Tags/Filter, Prioritäten und Unteraufgaben, flexible Wiederholungen und Erinnerungen, Kalender/Terminplanung, Habits, Fokus/Pomodoro, Auswertungen, geräteübergreifender Sync und Integrationen. Plattformabhängige Funktionen separat prüfen.
+- **Day One:** mehrere Journale, formatierte Einträge und Medien (Foto, Video, Audio/Transkription, Dokumente/Scans und Zeichnungen), Vorlagen/Prompts, Suche/Tags/Favoriten, Erinnerungen/Streaks, Rückblicke, Kalender/Karten/Medienansichten, Kontextdaten, Import/Export, Backups, Sperre und Ende-zu-Ende-Verschlüsselung, geräteübergreifende Nutzung, Automationen und reflektierende Assistenz. Eine Anmeldesperre ist kein E2EE-Nachweis.
+- **Warrior/AlphaOS:** Potential → Plan → Production → Profit; Domino Door und vier War-Stack-Hits, Hit List getrennt von Routine; Frame → Freedom → Focus → Fire und wöchentlicher General’s Tent. Aktionen werden bewusst einer Domain und einem Termin zugeordnet, nicht automatisch verteilt.
+
+Stand dieser Entwicklungsrunde: Journal-Suche, Kalenderansichten, Habits, Entwürfe, Google-Anbindung und Medien-Code sind vorhanden; Taskwarrior und Google Tasks besitzen unterschiedliche Datenwege. Das ist eine Grundlage, keine abgeschlossene Funktionsprüfung. Fire wurde um echte Wochenaktionen je Domain ergänzt, Door v1 um manuelle Umplanung. Noch offen ist eine vollständige, einzeln belegte Paritätsprüfung über die offiziellen Funktionslisten einschließlich nativer Funktionen. Keine Funktion allein aufgrund dieser Liste als erledigt markieren.
+
+Quellen (2026-11-20 geprüft): [TickTick Features](https://ticktick.com/features), [Day One vollständige Funktionsliste](https://dayoneapp.com/plans/), [Warrior Do List](https://docs.wakeupwarrior.com/article/241-what-is-how-to-use-the-do-list). Für die weitere Entwicklung jedes fehlende Verhalten gegen diese Quellen und den aktiven App-Pfad prüfen; bestehende Implementierungen bevorzugen.
+
 ## Aufruf
 
 Hash-Route, gleiche Datenquelle wie v1 (Firestore `fitness/{uid}/…`):

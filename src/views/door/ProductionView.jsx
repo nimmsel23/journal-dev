@@ -67,6 +67,8 @@ export default function ProductionView() {
         ) : null}
       </div>
 
+      <p className="text-sm text-slate-400">Wochenziel: 4 × 4 Hits · Montag bis Donnerstag je 4 Hits. Freitag ist Puffer – spätestens dann abschließen.</p>
+
       {error ? (
         <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>
       ) : null}
@@ -86,6 +88,9 @@ export default function ProductionView() {
                 {DAY_LABELS[day] || day}
                 {plan?.dates?.[day] ? <span className="ml-2 text-xs font-normal text-slate-500">{plan.dates[day].slice(8, 10)}.{plan.dates[day].slice(5, 7)}.</span> : null}
               </h3>
+              <p className="mb-3 text-xs text-slate-500">
+                {day === "fri" ? "Puffer · letzte offene Hits abschließen" : `${items.filter((item) => item.done).length}/4 Hits erledigt`}
+              </p>
               <ul className="space-y-2">
                 {items.map((item) => (
                   <li

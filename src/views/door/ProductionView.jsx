@@ -5,7 +5,7 @@ import { Hammer, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { fetchDailyWeek, toggleDailyHit, addHitOnDate, fetchHitsWeek } from "../../lib/door/v1.js";
 
-const WEEKLY_HIT_TARGET = 16;
+const WEEKLY_HIT_TARGET = 20;
 
 const DAY_LABELS = { mon: "Montag", tue: "Dienstag", wed: "Mittwoch", thu: "Donnerstag", fri: "Freitag" };
 
@@ -71,7 +71,7 @@ export default function ProductionView() {
         ) : null}
       </div>
 
-      <p className="text-sm text-slate-400">Wochenziel: 4 × 4 Hits · Montag bis Donnerstag je 4 Hits. Freitag ist Puffer – spätestens dann abschließen.</p>
+      <p className="text-sm text-slate-400">Hit List: 4 Big Rocks aus dem War Stack zuerst, dann 16 Little Rocks, zuletzt Routine (Sand). Plane deine Hits manuell für Montag bis Donnerstag; Freitag bleibt Puffer.</p>
 
       {error ? (
         <div role="alert" className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>
@@ -93,7 +93,7 @@ export default function ProductionView() {
                 {plan?.dates?.[day] ? <span className="ml-2 text-xs font-normal text-slate-500">{plan.dates[day].slice(8, 10)}.{plan.dates[day].slice(5, 7)}.</span> : null}
               </h3>
               <p className="mb-3 text-xs text-slate-500">
-                {day === "fri" ? "Puffer · letzte offene Hits abschließen" : `${items.filter((item) => item.done).length}/4 Hits erledigt`}
+                {day === "fri" ? "Puffer · letzte offene Hits abschließen" : `${items.filter((item) => item.done).length}/${items.length} geplante Hits erledigt`}
               </p>
               <ul className="space-y-2">
                 {items.map((item) => (

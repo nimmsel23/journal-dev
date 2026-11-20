@@ -9,10 +9,10 @@ const ProductionView = lazy(() => import("./ProductionView.jsx"));
 const ProfitView = lazy(() => import("./ProfitView.jsx"));
 
 const SUB_TABS = [
-  { key: "potential", label: "Potential", Icon: Flame, View: PotentialView },
-  { key: "plan", label: "Plan", Icon: LayoutGrid, View: PlanView },
-  { key: "production", label: "Production", Icon: Hammer, View: ProductionView },
-  { key: "profit", label: "Profit", Icon: Trophy, View: ProfitView },
+  { key: "potential", label: "Potential", hint: "Hot List: Möglichkeiten sammeln, ohne sie schon auszuführen.", Icon: Flame, View: PotentialView },
+  { key: "plan", label: "Plan", hint: "Door War: die wichtigste Door wählen. Im War Stack vier messbare Hits mit Fact, Obstacle, Strike und Responsibility klären.", Icon: LayoutGrid, View: PlanView },
+  { key: "production", label: "Production", hint: "Hit List: Big Rocks zuerst, dann Little Rocks, zuletzt Sand. Die Tage legst du selbst fest.", Icon: Hammer, View: ProductionView },
+  { key: "profit", label: "Profit", hint: "Ergebnisse prüfen: Was wurde erreicht, was hast du gelernt und was änderst du daraus?", Icon: Trophy, View: ProfitView },
 ];
 
 // subTab/onSubTab optional: die VitalOS-Shell steuert die Phase von außen (Hash, Kontextmenü);
@@ -58,6 +58,7 @@ export default function DoorView({ subTab: controlledTab, onSubTab }) {
             </button>
           ))}
         </nav>
+        <p className="text-sm text-slate-400">{active.hint}</p>
       </header>
 
       {g.error ? (

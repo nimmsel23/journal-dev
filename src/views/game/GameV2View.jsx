@@ -7,7 +7,7 @@ import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 import "../door/v2/door-v2.css";
 import "./game-v2.css";
 
-const MODES = [["fire", "Fire"], ["focus", "Focus"], ["freedom", "Freedom"], ["frame", "Frame"]];
+const MODES = [["frame", "Frame"], ["freedom", "Freedom"], ["focus", "Focus"], ["fire", "Fire"]];
 // Mini-App je Map (vos-game.web.app/<map>/): VITE_GAME_SOLO fixiert die Map, keine Map-Leiste, keine Links zu anderen Apps.
 const SOLO_MAP = import.meta.env.VITE_GAME_SOLO || "";
 const SUB = Object.fromEntries(Object.entries(MAPS).map(([k, v]) => [k, v.sub]));
@@ -49,6 +49,7 @@ export default function GameV2View({ user, mode = "fire", onModeChange = () => {
             <span><b>{MODES[idx][1]}</b><br />{SUB[current]}</span>
           </div>
         </div>
+        <p className="gv2-epi">Frame: ehrlicher Standort → Freedom: 10-Jahres-IPW und Jahresziel → Focus: nächste Mission → Fire: konkrete Wochenaktionen. Im General’s Tent Ergebnisse, Lektionen, Kurskorrektur und neue Ziele prüfen.</p>
         <SyncBadge />
         {!user && <AuthDemoHelper>Lokale Taskwarrior-Daten bleiben nutzbar. Für deine Cloud-Maps und geräteübergreifende Speicherung kannst du dich anmelden.</AuthDemoHelper>}
         <GameMapPanel key={current} map={current} uid={user?.uid ?? null} />

@@ -22,7 +22,7 @@ import { googleErrorText } from "../../lib/google/tokens.js";
 import { asBool, useSetting } from "../../lib/useSetting.js";
 
 export const MAPS = {
-  fire: { label: "Fire", sub: "Woche · 4 Hits", tag: "fire", hint: "Welche Door öffnest du diese Woche – mit welchen 4 Hits?" },
+  fire: { label: "Fire", sub: "Weekly War · vier Domains", tag: "fire", hint: "Welche konkreten Aktionen bringen Body, Being, Balance und Business diese Woche voran?" },
   focus: { label: "Focus", sub: "Monthly · Weekly", hint: "Was muss diesen Monat anders sein?" },
   freedom: { label: "Freedom", sub: "IPW · Annual · Quarterly", hint: "Wofür machst du das alles?" },
   frame: { label: "Frame", sub: "Standort · Domains", hint: "Wo stehst du jetzt – Body, Being, Balance, Business?" },
@@ -247,7 +247,7 @@ export default function GameMapPanel({ map, uid }) {
           : <div className="dv2-empty">Noch keine Door gewählt. <a className="dv2-link" href="#door2/plan">Im Plan wählen →</a></div>}
       </section>
       <section>
-        <h4 className="dv2-sec">4 Hits zum Öffnen <span>{doneN}/4</span></h4>
+        <h4 className="dv2-sec">War Stack · 4 Big Rocks <span>{doneN}/4</span></h4>
         {slots.map((t, i) => t
           ? <HitRow key={t.uuid} t={t} busy={act.isPending} onToggle={toggle} />
           : (
@@ -256,6 +256,7 @@ export default function GameMapPanel({ map, uid }) {
         {extra.length > 0 && <h4 className="dv2-sec">Weitere Hits <span>{extra.length}</span></h4>}
         {extra.map((t) => <HitRow key={t.uuid} t={t} busy={act.isPending} onToggle={toggle} />)}
       </section>
+      <p className="gv2-epi">Diese vier Hits gehören zur gewählten Door. Die Fire Map umfasst deine Wochenaktionen in Body, Being, Balance und Business. Der 4×4 Structured Blaze ist der Rahmen für vier Aktionen je Domain; diese Ansicht zeigt keine vollständige Domain-Auswertung.</p>
       <FireCalendar />
       <form className="dv2-compose" onSubmit={add}>
         <input aria-label="Neuer Strike" placeholder="Weiterer Strike (heute) …" value={draft} onChange={(e) => setDraft(e.target.value)} />

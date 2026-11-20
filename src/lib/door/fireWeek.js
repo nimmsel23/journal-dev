@@ -7,11 +7,13 @@ export function fireWeek(all, now = new Date()) {
   const to = endOfISOWeek(now).getTime() / 1000;
   const within = (value) => Number(value) >= from && Number(value) <= to;
   const tasks = all.filter((t) => (t.status === "pending" || t.status === "completed")
-    && !tagged(t, "door") && (tagged(t, "fire") || tagged(t, "hit") || t.alphatype === "bigrock")
+    && !tagged(t, "door") && (tagged(t, "fire") || tagged(t, "hit") || tagged(t, "br") || tagged(t, "lr") || t.alphatype === "bigrock")
     && (within(t.due) || (t.status === "completed" && within(t.end))));
   const groups = Object.fromEntries([...FIRE_DOMAINS, "unassigned"].map((d) => [d, []]));
   for (const task of tasks) {
-    const domain = String(task.domain || "").toLowerCase().trim();
+    const explicit = String(task.domain || "").toLowerCase().trim();
+    const project = String(task.project || "").split(".")[0].toLowerCase();
+    const domain = FIRE_DOMAINS.includes(explicit) ? explicit : project;
     groups[FIRE_DOMAINS.includes(domain) ? domain : "unassigned"].push(task);
   }
   return groups;

@@ -1,3 +1,11 @@
+## 2026-11-20 — Journal-Neuerungen gegen aos-door/aos-game geprüft
+
+- Read-only-Vergleich der Journal-Submodule: aos-door `3f502e7`, aos-game `c8b9d0e`; HEADs entsprechen den Kopien unter `~/aos`. Keine Submodule, privaten Aufgaben oder laufenden Dienste geändert.
+- Door Firebase: `firebase/app/src/lib/weekplan.js` verteilt Hits in `ensureWeekPlan` und `syncWeekPlanHits` automatisch auf Mo–Do. `views/production.js` bietet für Wochenplan-Hits nur Toggle, keine manuelle Tagesumplanung. Abweichung von der Owner-Vorgabe; die Journal-Neuerung ist dort nicht enthalten.
+- Game: `public/fire/app.js` besitzt bereits vier Domain-Karten sowie lokalen Task-Editor; `public/fire/index.html` bietet due/scheduled. `src/firestore-map-api.js` antwortet für Taskwarrior-Workbench in Firebase mit 501; Cloud-Maps und lokale Tasks sind getrennte Datenwege.
+- Rückkorrektur im Journal: `fireWeek.js` berücksichtigt jetzt kanonische `+br`/`+lr`-Tasks sowie Domain aus Projektwurzel, wenn keine gültige explizite Domain vorliegt. Test schützt explizite Domain vor Projekt-Fallback.
+- Prüfung: 7 Journal Fire-/weekDoor-Tests und 7 aos-game Routing-/Tent-Tests bestanden; keine Live-/Konto-Abnahme und kein Deploy. Stand der fremden Arbeitsverzeichnisse blieb erhalten.
+
 ## 2026-11-12 — Solo-Icons / habit-vos Live-Abnahme
 
 - Live Deploy Run 43199684868 (`cab4817`, last-modified 10:23Z): `vos-journal.web.app/mini/{door,voice,game,tent,habits}/` → 200; Icons/Manifest 200; Game-Maps `/mini/game/{fire,focus,freedom,frame}/` → 200.

@@ -1,5 +1,7 @@
 # CI-Agent — offener Betriebspunkt
 
+- [ ] 2026-11-20: aos-door Firebase an manuelle Wochenplanung angleichen (automatische Mo–Do-Verteilung entfernen, manuelle Tagesumplanung ergänzen); auf autorisierter Dev-Quelle arbeiten, bestehende Pläne erhalten. aos-game Cloud-Workbench bleibt vom lokalen Taskwarrior getrennt; keine Parität behaupten.
+
 
 <!-- coo-dispatch-002-c003 -->
 - [x] 2026-11-09: C-003 Lückenliste geliefert — `docs/C-003-4-DEPOSIT-LUECKENLISTE.md` (Org `c46b3028`); PM/CEO-Frage Observe manuelle Deposits vs Smart-only offen.

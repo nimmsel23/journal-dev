@@ -18,3 +18,12 @@ test("Fire groups weekly actions once per domain, preserving completed and unass
  assert.deepEqual(groups.unassigned.map(t=>t.uuid), ["c"]);
  assert.equal(Object.values(groups).flat().length, 3);
 });
+
+test("AlphaOS br/lr tags and project domains remain visible without a hit/fire tag", () => {
+ const groups = fireWeek([
+  {uuid:"br", status:"pending", tag_br:"x", project:"Body.training", due},
+  {uuid:"lr", status:"pending", tag_lr:"x", domain:"balance", project:"business.sales", due},
+ ], now);
+ assert.deepEqual(groups.body.map(t => t.uuid), ["br"]);
+ assert.deepEqual(groups.balance.map(t => t.uuid), ["lr"]);
+});

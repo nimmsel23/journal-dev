@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-19T16:09:42+00:00",
+  "generated_at": "2026-11-20T08:40:17+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-19T16:09:20Z",
+   "pushed_at": "2026-11-20T08:39:58Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -19,12 +19,48 @@
    "main": "master",
    "has_dev": true,
    "dev_behind": 0,
-   "dev_ahead": 1,
-   "oldest_unpromoted": "2026-11-19T16:08:52Z",
-   "dev_head": "44fb448 2026-11-19T16:08:52Z",
-   "master_head": "1ec178f 2026-11-17T17:04:45+01:00"
+   "dev_ahead": 6,
+   "oldest_unpromoted": "2026-11-20T09:07:35+01:00",
+   "dev_head": "08bd2a4 2026-11-20T09:39:49+01:00",
+   "master_head": "44fb448 2026-11-19T16:08:52Z"
   },
   "commits": [
+   {
+    "sha": "08bd2a4",
+    "date": "2026-11-20T09:39:49+01:00",
+    "author": "Alpha",
+    "subject": "Merge remote-tracking branch 'origin/dev' into dev"
+   },
+   {
+    "sha": "575850e",
+    "date": "2026-11-20T09:26:23+01:00",
+    "author": "Alpha",
+    "subject": "fix(game): include AlphaOS rock tags and project domains in Fire week"
+   },
+   {
+    "sha": "35a9d41",
+    "date": "2026-11-20T09:23:49+01:00",
+    "author": "Alpha",
+    "subject": "feat(journal): add domain weekly actions and manual hit scheduling"
+   },
+   {
+    "sha": "1f1fa97",
+    "date": "2026-11-20T09:15:58+01:00",
+    "author": "Alpha",
+    "subject": "fix(journal): align Door and Game guidance with AlphaOS flow"
+   },
+   {
+    "sha": "2111f7f",
+    "date": "2026-11-20T09:09:11+01:00",
+    "author": "Alpha",
+    "subject": "fix(door): report toggle errors and measure weekly goal against 16 hits"
+   },
+   {
+    "sha": "2199735",
+    "date": "2026-11-20T09:07:35+01:00",
+    "author": "Alpha",
+    "subject": "fix(door): clarify four-day production target and Friday buffer"
+   },
    {
     "sha": "44fb448",
     "date": "2026-11-19T16:08:52Z",
@@ -108,52 +144,12 @@
     "date": "2026-11-13T02:12:34+01:00",
     "author": "Alpha",
     "subject": "chore(habits): retire legacy workspace and dependency updates"
-   },
-   {
-    "sha": "2fe31b2",
-    "date": "2026-11-13T01:12:20+01:00",
-    "author": "Alpha",
-    "subject": "chore(journal): portal.mjs synchronisiert, dist-habits/ ignoriert"
-   },
-   {
-    "sha": "f43401f",
-    "date": "2026-11-13T01:08:48+01:00",
-    "author": "Alpha",
-    "subject": "feat(ci): Living Dashboard als GitHub Page"
-   },
-   {
-    "sha": "d49f97a",
-    "date": "2026-11-12T23:09:49+01:00",
-    "author": "nimmdaniel",
-    "subject": "ci: Merge-Agent fuer automatische PR-Merges (kein Abweisen von PRs) (#42)"
-   },
-   {
-    "sha": "2b260cc",
-    "date": "2026-11-12T14:14:50+01:00",
-    "author": "Alpha",
-    "subject": "docs(al-log): Lauf 2026-11-12 14:10 — Solo-Icons Live-Abnahme belegt"
-   },
-   {
-    "sha": "0c06808",
-    "date": "2026-11-12T14:14:43+01:00",
-    "author": "Alpha",
-    "subject": "docs: auto-update RESULTS.md"
-   },
-   {
-    "sha": "cab4817",
-    "date": "2026-11-12T11:20:25+01:00",
-    "author": "Alpha",
-    "subject": "docs: Konzept finale Standalone-Variante vos-journal (Entwurf)"
    }
   ],
   "activity": [
    {
-    "day": "2026-10-30",
-    "n": 0
-   },
-   {
     "day": "2026-10-31",
-    "n": 22
+    "n": 7
    },
    {
     "day": "2026-11-01",
@@ -230,25 +226,89 @@
    {
     "day": "2026-11-19",
     "n": 1
+   },
+   {
+    "day": "2026-11-20",
+    "n": 6
    }
   ],
   "workflows": [
+   {
+    "name": "Preview (Journal dev)",
+    "branch": "dev",
+    "event": "push",
+    "status": "in_progress",
+    "conclusion": null,
+    "created_at": "2026-11-20T08:40:00Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44704361779",
+    "sha": "08bd2a4"
+   },
    {
     "name": "Check (Journal)",
     "branch": "dev",
     "event": "push",
     "status": "in_progress",
     "conclusion": null,
-    "created_at": "2026-11-19T16:09:22Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562874402",
+    "created_at": "2026-11-20T08:40:00Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44704361736",
+    "sha": "08bd2a4"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-20T08:36:04Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44703845083",
     "sha": "44fb448"
+   },
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-20T03:27:50Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44667885173",
+    "sha": "44fb448"
+   },
+   {
+    "name": "Merge-Agent",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-20T03:19:17Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44666916706",
+    "sha": "44fb448"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-19T16:10:11Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44563022743",
+    "sha": "44fb448"
+   },
+   {
+    "name": "Gemini CI Agent",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-19T16:10:00Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562988757",
+    "sha": "1ec178f"
    },
    {
     "name": "Check (Journal)",
     "branch": "cursor/bc-ed9a7ff5-bd0d-4b24-a2a8-a29e8ced1750-8959",
     "event": "pull_request",
-    "status": "in_progress",
-    "conclusion": null,
+    "status": "completed",
+    "conclusion": "success",
     "created_at": "2026-11-19T16:09:10Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562836021",
     "sha": "44fb448"
@@ -277,61 +337,11 @@
     "name": "Gemini CI Agent",
     "branch": "cursor/bc-ed9a7ff5-bd0d-4b24-a2a8-a29e8ced1750-8959",
     "event": "pull_request_target",
-    "status": "in_progress",
-    "conclusion": null,
+    "status": "completed",
+    "conclusion": "success",
     "created_at": "2026-11-19T16:09:10Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562835267",
     "sha": "44fb448"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-19T13:56:59Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44538555377",
-    "sha": "1ec178f"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-19T13:25:26Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44533296966",
-    "sha": "1ec178f"
-   },
-   {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-19T08:52:27Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44491318598",
-    "sha": "1ec178f"
-   },
-   {
-    "name": "Gemini CI Agent",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-17T16:06:28Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44121941631",
-    "sha": "1ec178f"
-   },
-   {
-    "name": "Live Deploy (Journal master)",
-    "branch": "master",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-17T16:04:48Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44121623484",
-    "sha": "1ec178f"
    },
    {
     "name": "Check (Journal)",
@@ -362,63 +372,10 @@
     "created_at": "2026-11-16T09:49:09Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43843183375",
     "sha": "750ac85"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-6f5e12e2e5",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-16T06:47:17Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43819179694",
-    "sha": "f794f03"
-   },
-   {
-    "name": "Preview (Journal dev)",
-    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-6f5e12e2e5",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "skipped",
-    "created_at": "2026-11-16T06:47:17Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43819179660",
-    "sha": "f794f03"
-   },
-   {
-    "name": "Check (Journal)",
-    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-6f5e12e2e5",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-16T06:47:17Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43819179587",
-    "sha": "f794f03"
-   },
-   {
-    "name": "Gemini CI Agent",
-    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-6f5e12e2e5",
-    "event": "pull_request_target",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-16T06:47:15Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43819176361",
-    "sha": "f794f03"
    }
   ],
   "issues": [],
-  "pulls": [
-   {
-    "number": 58,
-    "title": "docs: Solo-Builds, Hash und App-Dashboard an den Client angleichen",
-    "created_at": "2026-11-19T16:09:05Z",
-    "updated_at": "2026-11-19T16:09:18Z",
-    "labels": [],
-    "url": "https://github.com/nimmsel23/journal-dev/pull/58",
-    "author": "vitalos-org-bot[bot]",
-    "head": "cursor/bc-ed9a7ff5-bd0d-4b24-a2a8-a29e8ced1750-8959",
-    "base": "master",
-    "draft": false
-   }
-  ],
+  "pulls": [],
   "live_sites": [
    "https://habit-vos.web.app",
    "https://journal-vos.web.app",
@@ -433,34 +390,34 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "dev ist vor master, PR #58 offen, Check (Journal) läuft",
-   "lage": "Der dev-Branch ist mit Commit `44fb448` einen Commit vor master. master verbleibt bei `1ec178f`. Pull Request #58 ist offen und ein \"Check (Journal)\"-Workflow für den dev-Branch läuft noch.",
+   "headline": "dev ist 6 Commits vor master, Workflows für 08bd2a4 laufen",
+   "lage": "Der dev-Branch ist mit Commit `08bd2a4` sechs Commits vor master, der bei `44fb448` steht. Die Workflows \"Preview (Journal dev)\" und \"Check (Journal)\" für dev (`08bd2a4`) sind aktuell in Bearbeitung.",
    "auffaelligkeiten": [
     {
      "level": "hoch",
-     "text": "Der dev-Branch ist mit Commit `44fb448` einen Commit vor master, was auf eine ausstehende Promotion hindeutet."
-    },
-    {
-     "level": "mittel",
-     "text": "Der Workflow \"Check (Journal)\" für den aktuellen dev-Head `44fb448` ist noch \"in_progress\"."
+     "text": "Workflows \"Preview (Journal dev)\" und \"Check (Journal)\" für den dev-Branch (Commit `08bd2a4`) sind noch `in_progress`."
     },
     {
      "level": "info",
-     "text": "Pull Request #58 (\"docs: Solo-Builds, Hash und App-Dashboard an den Client angleichen\") ist offen und zielt auf master ab."
+     "text": "dev ist 6 Commits vor master."
+    },
+    {
+     "level": "info",
+     "text": "Mehrere offene Punkte in `NEXT.md` bezüglich Funktionalität und Konfiguration."
     }
    ],
    "naechste_schritte": [
-    "Warten auf Abschluss des Workflows \"Check (Journal)\" für Commit `44fb448`.",
+    "Warten auf Abschluss der Workflows \"Preview (Journal dev)\" und \"Check (Journal)\" für Commit `08bd2a4`.",
     "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto (gemäß `NEXT.md`).",
     "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto (gemäß `NEXT.md`)."
    ],
-   "veraendert": "Der dev-Branch ist nicht mehr mit master synchronisiert und es gibt einen offenen Pull Request #58.",
+   "veraendert": "Der dev-Branch hat sechs neue Commits erhalten und ist nun sechs Commits vor master, der auf `44fb448` aktualisiert wurde; Pull Request #58 ist nicht mehr in der Evidenz.",
    "fragen": [
-    "Soll die Daily-Four-Auswertung eine Frist benötigen (gemäß `NEXT.md`)?",
-    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (gemäß `NEXT.md`)?"
+    "Soll die Daily-Four-Auswertung eine Frist (`requiredBeforeHour`) erhalten? (gemäß `NEXT.md`)",
+    "Sollen die OAuth-URIs in der Console auf nur noch `vos-journal` gestrafft werden? (gemäß `NEXT.md`)"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-19T16:09:44+00:00"
+  "ai_at": "2026-11-20T08:40:19+00:00"
  }
 }

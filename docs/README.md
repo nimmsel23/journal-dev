@@ -10,5 +10,6 @@ VitalOS journal PWA with daily journaling, habits, calendar and the Door, Game, 
 ## Documentation
 
 - [Journal v2](../JOURNAL-V2.md)
+- [Dev-Dashboard](journal-dev-dashboard.html)
 - [Repository README](../README.md)
 - [Source repository](https://github.com/nimmsel23/journal-dev)

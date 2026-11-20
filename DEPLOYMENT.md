@@ -38,8 +38,8 @@ Kanon (Owner 2026-11-11): **`vos-journal.web.app`**. Solo-Icons unter `/mini/<id
 
 Solo-Icons: Manifest unter `https://vos-journal.web.app/mini/<id>/` (gleiche Origin = eine OAuth-URI).
 
-- Nur bauen: `deploy:<name>:build` (z. B. `deploy:door:build`).
-- Alle Targets ausrollen: `pnpm run deploy:all` (`deploy:all:build` nur bauen; inkl. Redirect-Site).
+- Solo-Inhalt bauen: `pnpm run deploy:v2:build` (Root `dist-v2` plus `scripts/build-journal-minis.mjs` → `dist-v2/mini/<id>/` und `dist-v2/mini/game/<map>/`). `deploy:door:build`, `deploy:voice:build`, `deploy:game:build`, `deploy:tent:build` und `deploy:habits:build` erzeugen keinen Build; sie drucken nur den Verweis auf `deploy:v2:build`. `deploy:door` ohne `:build` (und die Geschwister) deployen die 301-Site.
+- Alle Targets ausrollen: `pnpm run deploy:all` (`deploy:all:build` ist `deploy:v2:build`; der Deploy umfasst die Redirect-Sites und `v2`).
 - `pnpm run release` = `vos-release-pr journal` (Alt-Gen-PR-Weg), **kein** Versionsbump.
 - **Semver (CEO C-012, Option B):** Anzeige = `package.json` `version` + Build-SHA
   (`vite` → `__APP_VERSION__`). Baseline `0.2.0` (`1.0.0` erst beim Play-Store-Produktionsrelease;

@@ -22,28 +22,38 @@ Hash-Route, gleiche Datenquelle wie v1 (Firestore `fitness/{uid}/…`):
 
 | URL-Hash | Ansicht |
 |---|---|
-| `#v2` / `#v2/today` / `#v2/2026-10-17` | Tag |
+| `#v2` / `#v2/today` / `#v2/2026-10-17` | Tag (Standardmodus, im Hash weggelassen) |
 | `#v2/woche/<datum>` | Woche (7 Zeilen, Mo–So) |
 | `#v2/monat/<datum>` | Monat (Raster mit KW) |
+| `#v2/jahr` / `#v2/jahr/<datum>` | Jahr (zwölf Monate; Monatskopf → Monat, Tag → Tag) |
 | `#v2/habits/<datum>` | Habits (28 Tage bis zum Datum) |
+| `#voice` | Voice (eigener Tab `voice-v2`; `#game2/voice` landet dort) |
 
 Door (Potential/Plan/Production/Profit) hat eigene Hashes: `#door2` (Potential), `#door2/plan`, `#door2/production`,
 `#door2/profit`. Links: im Journal-v2-Footer „Door →“, im Door-v2-Footer „← Journal“.
 
 **Routing:** Die URL ist die einzige Quelle für Tab, Modus und Datum (kein eigener State, funktioniert offline).
-`src/lib/hashRoute.js` hält die Tab-Tabelle (Alias `v2`/`door2`/`game2`/`tent2`, Modi, ob das Datum im Hash steht) und
+`src/lib/hashRoute.js` hält die Tab-Tabelle (Alias `v2`/`door2`/`game2`/`voice`/`tent2`, Modi, ob das Datum im Hash steht) und
 parst/baut den Hash; `src/lib/useHashRoute.js` liefert `{ tab, mode, date, setDate, setMode, navigate }`. Tab-Keys
-(`journal-v2`, `door-v2`, `game-v2`, `tent-v2`) stehen in `src/routes.js` (`bare: true` = ohne App-Header); die Views
+(`journal-v2`, `door-v2`, `game-v2`, `voice-v2`, `tent-v2`) stehen in `src/routes.js` (`bare: true` = ohne App-Header); die Views
 bekommen `mode`/`date` und die Setter über `getProps`. Ein Hash ohne bekannten Tab fällt auf den Start-Tab, der per
-Build-Variable `VITE_DEFAULT_TAB` gesetzt wird (siehe Deploy). Das Datum bleibt beim Tab-Wechsel erhalten. Der Parser ist
-gegen das frühere Verhalten getestet (`tests/hash-route.test.mjs`).
+Build-Variable `VITE_DEFAULT_TAB` gesetzt wird (siehe Deploy). `VITE_DEFAULT_MODE=habits` macht `habits` zum Standard von
+`#v2` (Habits-Solo). `VITE_SOLO_TABS` mit genau einem Tab-Key lässt `routes.js` nur diesen Tab ins Bundle (`===`, damit
+Rolldown die übrigen `lazy()`-Imports streicht); leer = Hub mit allen Tabs (`src/lib/soloTabs.js`). Das Datum bleibt beim
+Tab-Wechsel erhalten. Der Parser ist gegen das frühere Verhalten getestet (`tests/hash-route.test.mjs`).
+
+**Suche:** Die Modusleiste bietet „Suche“. `JournalV2Search.jsx` rendert, wenn `mode === "suche"` ist (Freitext über
+Einträge, `+tag` filtert Tags, Fenster 30/90/365 Tage oder die letzten 500 via `getJournalHistory`; Logik in
+`src/lib/journalSearch.js`). `suche` fehlt in `routeMeta`. `navigate({ mode: "suche" })` schreibt `#v2/suche/today`,
+`parse` davon liefert den Standardmodus `tag`. `#v2/suche` ist damit kein haltbarer Aufruf.
 
 ## Dateien
 
 | Datei | Zweck |
 |---|---|
 | `JournalV2View.jsx` | Shell: Modusleiste, Tag-Ansicht, Eingabe, Smart Logger, Queries |
-| `JournalV2Range.jsx` | Wochen- und Monatsansicht (nur Darstellung) |
+| `JournalV2Range.jsx` | Wochen-, Monats- und Jahresansicht (`YearView`, nur Darstellung) |
+| `JournalV2Search.jsx` | Suche-Ansicht (siehe Aufruf: Hash hält den Modus `suche` nicht) |
 | `JournalV2Habits.jsx` | Habits-Ansicht: Heute-Toggle, Serie, Quote, 28-Tage-Raster, anlegen/archivieren |
 | `TimelineDrag.jsx` | Versteckte Timeline (Hook `useTimelineDrag` + `TimelineOverlay`) |
 | `gcal.js` | Google-Calendar-Lesezugriff |
@@ -58,16 +68,17 @@ fitness-dev-Variante mit anderer `saveJournal`-Signatur (Tags als Array) durchsc
 ## Features
 
 - **Tag:** Habit-Leiste (erste 5 Habits, Namen brechen um), Einträge nach lokaler Uhrzeit, Eingabe mit
-  `+tag`-Syntax, Löschen mit ×. Tag `offen` färbt einen Eintrag blau. Kalendertermine stehen schraffiert dazwischen.
+  `+tag`-Syntax (`/fit` im Text wird zu `+fitness`), Löschen mit ×. Tag `offen` färbt einen Eintrag blau. Kalendertermine stehen schraffiert dazwischen.
 - **Woche / Monat:** Letzter Eintrag, Anzahl Einträge und Termine, Habit-Kästchen bzw. -Balken; Klick springt in den Tag.
-- **Habits:** alle Habits. Serie = aufeinanderfolgende erledigte Tage bis zum gewählten Tag (ist dieser noch offen, bis gestern).
+- **Jahr:** zwölf Monatskacheln mit Tageszellen (`YearView` in `JournalV2Range.jsx`). Die Zahl am Monat ist die Eintragsanzahl; der Monatskopf wechselt in den Monat, ein Tag in den Tag. Datenfenster ist das Kalenderjahr (`rangeFor("jahr")`).
+- **Habits:** alle sichtbaren Habits. Serie = aufeinanderfolgende erledigte Tage bis zum gewählten Tag (ist dieser noch offen, bis gestern).
   Quote = erledigte Tage / 28. Archivieren setzt nur `deleted: true`, Records bleiben. Navigation in 7-Tage-Schritten.
 - **Versteckte Timeline (Drag):** Uhrzeit eines Eintrags anfassen und ziehen → seitlich erscheint eine Timeline
   (Zeile = Stunde, Zellen = Halbe/Viertel). Raster 1 h / 30 min / 15 min beim Ziehen durch Darüberfahren der Kopfzeile
   wählbar (`jv2:grain`, per `useSetting`). Loslassen setzt `time` (`setJournalTime`), außerhalb loslassen bricht ab.
   Tastatur: Fokus auf die Uhrzeit, Pfeil hoch/runter verschiebt um das Raster. Umsetzung mit Pointer Events
   (`touch-action: none`, `setPointerCapture`), bewusst ohne dnd-kit; Touch auf dem iPad ist ungetestet.
-- **Smart Logger (✦ in der Eingabezeile):** ausdrücklicher Freitext-Aufruf → serverseitige Firebase Callable `analyzeSmartLog` (Gemini 2.5 Flash) → bearbeitbare Vorschau → Übernahme in Journal, Nutrition, Habits, Fitness, Relax und bei bestätigten Planvorschlägen Google Kalender. Das Wochenkontingent begrenzt nur KI-Aufrufe; manuelles Speichern bleibt davon unabhängig. Die Request-ID wird je Nutzer und Journaldatum lokal behalten und bei Wiederholung oder Reload wiederverwendet. Sie wird bei Textänderung oder erfolgreicher Übernahme gelöscht. So liefert der Server denselben gespeicherten Erfolg zurück, statt Gemini erneut aufzurufen. Kontingentreservierung und Request-Sperre sind transaktional und auch bei gleichzeitigen Requests wirksam. Entwürfe und Originaltext bleiben separat erhalten. Nach einem gestarteten, aber unklar beendeten Gemini-Aufruf bleibt der Request dauerhaft gesperrt und die Wochenreservierung bestehen, um eine mögliche Doppelberechnung zu vermeiden; der Text kann weiterhin ohne KI gespeichert werden.
+- **Smart Logger (✦ in der Eingabezeile):** ausdrücklicher Freitext-Aufruf → serverseitige Firebase Callable `analyzeSmartLog` (Gemini 2.5 Flash) → bearbeitbare Vorschau → Übernahme in Journal, Nutrition, Habits, Fitness, Relax und bei bestätigten Planvorschlägen Google Kalender. Das Wochenkontingent begrenzt nur KI-Aufrufe; manuelles Speichern bleibt davon unabhängig. Die Request-ID wird je Nutzer und Journaldatum lokal behalten und bei Wiederholung oder Reload wiederverwendet. Sie wird bei Textänderung oder erfolgreicher Übernahme gelöscht. So liefert der Server denselben gespeicherten Erfolg zurück, statt Gemini erneut aufzurufen. Kontingentreservierung und Request-Sperre sind transaktional und auch bei gleichzeitigen Requests wirksam. Entwürfe und Originaltext bleiben separat erhalten. Nach einem gestarteten, aber unklar beendeten Gemini-Aufruf bleibt der Request dauerhaft gesperrt und die Wochenreservierung bestehen, um eine mögliche Doppelberechnung zu vermeiden; der Text kann weiterhin ohne KI gespeichert werden. Fehlertexte bildet `src/lib/smartLogErrorText.js`: bekannte `smart_log_*`-Gründe werden zu deutschen Hinweisen (Kontingent, Sperre, Schema, Uhrzeit). Unbekannte Functions-`INTERNAL`-Rohfehler sowie `smart_log_provider_not_configured`, Timeout, `unavailable` und `unreachable` liefern den festen Satz `SMART_LOG_FAIL_CLOSED` (Entwurf bleibt, Speichern ohne KI). Getestet in `tests/smart-log-error-text.test.mjs`.
 - **Google Calendar:** gemeinsamer Token-Dienst für Kalender-Lesen und bestätigte Smart-Log-Termine. Die Verbindung verwendet `calendar.readonly`, `calendar.events.owned` und `tasks`; Google-Refresh-Tokens bleiben serverseitig in Firestore. Bei fehlender Kalender-Schreibberechtigung zeigt der Planner-Vorschlag die Aktion „Google Kalender verbinden / Berechtigung aktualisieren“; die Function lehnt Tokens ohne alle benötigten Scopes ab. Standardansicht: nur der Kalender „Fire Map“ (Taskwarrior-Termine `[TW today]`/`[TW overdue]`, von `firectl gcal due` gepusht); „Alle Kalender“ im Footer zeigt jeden in Google ausgewählten Kalender,
   abgelehnte/abgesagte Termine entfallen. „Rückblick →“ legt einen Eintrag mit Tag `termin` an. Voraussetzung im
   GCP-Projekt `fitness-aos`: Calendar API aktiviert (ist es) und Scope im OAuth-Zustimmungsbildschirm bzw. Testnutzer.
@@ -261,7 +272,7 @@ Perioden wechselt man per ← → (`mapDb.js`: `periodKey`/`shiftPeriod`). Die Q
 
 **Fire (Taskwarrior)** = die Woche nach dem Door-Framework: **eine Door** (`+door`, mit `domain`) und ihre **4 Hits/Strikes/Bigrocks** (`+hit` bzw. `alphatype:bigrock`, Platz = `hit_number` 1–4, diese Woche fällig oder erledigt). Leere Plätze legen beim „Add“ einen Task an (`+hit`, `alphatype:bigrock`, `hit_number`, `domain` und `domino_door` von der Door, fällig heute). Hits lassen sich abhaken und wieder öffnen. Darunter: Termine aus Google Calendar „Fire Map“ (lesend, `[TW …]`-Spiegel ausgeblendet), „weiterer Strike“ (`+fire`) und die übrigen offenen Strikes (überfällig/heute/Woche). Ohne gewählte Door verweist die Ansicht auf Door v2 → Plan.
 
-**Voice** (`VoicePanel.jsx`, Fragen aus `voiceData.js` = `~/aos/voice/phases.py`): vier Phasen Stop/Submit/Struggle/Strike, jede Phase wird als Journal-Eintrag (Tags `voice`, `<phase>`) gespeichert.
+**Voice** ist der Tab `voice-v2`: Shell `src/views/voice/VoiceV2View.jsx`, Session in `VoicePanel.jsx` (Fragen aus `voiceData.js`). Vier Phasen Stop/Submit/Struggle/Strike; jede fertige Phase wird als Journal-Eintrag mit den Tags `voice` und `<phase>` und der id `voice_<session>_<phase>` gespeichert. Aufruf und Hosting: Abschnitt „Solo-Icons“.
 
 ## Tent v2 (`#tent2`)
 
@@ -275,21 +286,24 @@ Perioden wechselt man per ← → (`mapDb.js`: `periodKey`/`shiftPeriod`). Die Q
 - Zustimmungsbildschirm (Scopes `calendar.readonly`, `tasks`, ggf. Testnutzer) nur in der Cloud Console; JavaScript-Ursprünge der OAuth-Clients nur bei `origin_mismatch` nötig (Firebase-Popup läuft über `authDomain`).
 - vitalos: Umstellung auf direkten Zugriff auf `journal-dev` (Symlink/Pnpmfile/Checkout statt Submodul + Branch `vitalos`) ist nur besprochen, nicht umgesetzt.
 
-## Weitere Apps: Voice, Game, Tent
+## Solo-Icons und Flavor-Builds
 
-Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste `FLAVORS` in `vite.config.cjs`) mit eigenem Icon-Paket, Manifest, Splash und Hosting-Target.
+Dieselbe Codebase. Inhalt liegt auf dem Target `v2` (`vos-journal.web.app`). Door, Voice, Game, Tent und Habits sind Solo-PWAs unter `/mini/<id>/` (gleiche Origin, eine OAuth-URI). Die alten Sites sind 301-Hüllen (`firebase.json`, Sites in `.firebaserc`). `pnpm run deploy:door` / `voice` / `game` / `tent` / `habits` veröffentlichen diese Redirects. `deploy:<id>:build` druckt den Verweis auf `pnpm run deploy:v2:build`.
 
-| App | Site | Start | Befehl | Icons |
+| App | Pfad auf vos-journal | Start-Hash | Legacy (301) | Solo-Env |
 |---|---|---|---|---|
-| Voice | vos-voice.web.app | `#voice` (`VITE_DEFAULT_GAME_MODE=voice`) | `pnpm run deploy:voice` | `public/icons-voice` |
-| Game | vos-game.web.app | `#fire` | `pnpm run deploy:game` | `public/icons-game` |
-| Tent | vos-tent.web.app | `#tent2` | `pnpm run deploy:tent` | `public/icons-tent` |
+| Door | `/mini/door/` | `#door2` | vos-door | `VITE_APP_FLAVOR=door`, `VITE_DEFAULT_TAB=door-v2`, `VITE_SOLO_TABS=door-v2` |
+| Voice | `/mini/voice/` | `#voice` | vos-voice | `flavor=voice`, `VITE_DEFAULT_TAB=voice-v2`, `VITE_SOLO_TABS=voice-v2` |
+| Game | `/mini/game/` | `#game2` (Standard `fire`, Kurzform `#fire`) | vos-game; `/frame` `/freedom` `/focus` `/fire` → `/mini/game/<map>/` | `flavor=game`, `VITE_SOLO_TABS=game-v2` |
+| Game-Maps | `/mini/game/<frame\|freedom\|focus\|fire>/` | die jeweilige Map | siehe Game-Redirects | zusätzlich `VITE_GAME_SOLO` und `VITE_DEFAULT_GAME_MODE` |
+| Tent | `/mini/tent/` | `#tent2` | vos-tent | `flavor=tent`, `VITE_DEFAULT_TAB=tent-v2`, `VITE_SOLO_TABS=tent-v2` |
+| Habits | `/mini/habits/` | `#v2/habits` | habit-vos | `flavor=habits`, `VITE_DEFAULT_TAB=journal-v2`, `VITE_DEFAULT_MODE=habits`, `VITE_SOLO_TABS=journal-v2` |
 
-- Icons erzeugt `scripts/make-flavor-icons.sh` (rsvg-convert + ImageMagick, Raster-Stil).
-- `pnpm run deploy:all` baut und deployt jetzt alle sechs Targets (journal, v2, door, voice, game, tent).
-- Auth-Domains (`*.web.app`, `*.firebaseapp.com`) sind registriert, der TaskChampion-CORS-Proxy kennt die Origins.
-- OAuth-Client-Ursprünge der neuen Sites (für Google Calendar/Tasks) nur in der Cloud Console eintragbar.
-- Die ältere Vue-PWA `~/voice-dev` (Target `voice` in ihrem eigenen Firebase-Projekt) bleibt unberührt.
+Gebaut wird das in `scripts/build-journal-minis.mjs` (nach dem Root-Build von `dist-v2`). Flavor-Name, Icons (`public/icons-<flavor>`), Splash und Manifest kommen aus `FLAVORS` in `vite.config.cjs`. Icons erzeugt `scripts/make-flavor-icons.sh`. `pnpm run deploy:all` rollt Redirect-Sites und `v2` gemeinsam aus. Der TaskChampion-CORS-Proxy muss die Origins kennen (siehe `AGENTS.md`).
+
+## Store-Edition (Client-Schalter)
+
+`src/lib/storeEdition.js`: `IS_STORE_BUILD` ist wahr, wenn `VITE_VOS_EDITION` `store`, `observe` oder `operate` ist, oder wenn `VITE_VOS_PRODUCT_BUILD=1`. Owner-Builds setzen keines von beidem; die Oberfläche bleibt dann vollständig. Im Store-Build ausgeblendet: Door-/Game-Sprünge, Smart Log (auch eine gespeicherte `jv2:smart`-Einstellung und `startSmart`), Google-Kalender (`useGoogle({ prepare: false })`), `+hot`-Routing (`hasHotTag` in `hotFromJournal.js`) und die 4B-Bereichsspur (Body/Being/Balance/Business) in der Woche. Die Habits-Liste zeigt dann keine Core4-Kategorie. Der Produkt-Wrapper, der diese Variablen setzen soll, ist in `docs/FINAL-VARIANT.md` als Entwurf beschrieben und liegt nicht in diesem Repo.
 
 
 ## Habits v2 · Erweiterung 2026-10-22
@@ -309,6 +323,7 @@ Wie die Door-App: derselbe Code, eigener Flavor-Build (`VITE_APP_FLAVOR`, Liste 
   parallele Bedienung und werden erst nach bestätigtem Schreiben übernommen.
 - In Habits über den eingebauten JournalAppWrapper und den Einstieg „Habits v2“.
   Eingebettete Links bleiben beim Host; standalone bleiben #door2/#journal gültig.
+- **Versteckte Tracker-Spiegel:** `isUserHabit` (`habitsModel.js`) liefert `false`, sobald `hidden` oder `systemTracker` gesetzt ist. Archivierte Habits (`deleted`) bleiben eigene Habits. Die Live-Liste (`habitsDb.js` `getHabitsRange`), Tent (`TentV2View`) und Door Production „Habits heute“ (`habitsToday.js`, nur lesen, Vollzug bleibt im Journal) nutzen diesen Filter. Angelegt hat die Spiegel `ensureTrackerHabits` / `syncTrackerHabits` in `apps/habits/src/db/index.js`. Live-Hosting ist der Journal-Flavor (`docs/CONSOLIDATION.md`); dieser Pfad schreibt die Spiegel nicht.
 
 ## Offline-first (Game, Voice, Journal-Schreiben)
 

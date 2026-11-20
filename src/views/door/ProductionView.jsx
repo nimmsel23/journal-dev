@@ -5,6 +5,8 @@ import { Hammer, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { fetchDailyWeek, toggleDailyHit, addHitOnDate, fetchHitsWeek } from "../../lib/door/v1.js";
 
+const WEEKLY_HIT_TARGET = 16;
+
 const DAY_LABELS = { mon: "Montag", tue: "Dienstag", wed: "Mittwoch", thu: "Donnerstag", fri: "Freitag" };
 
 export default function ProductionView() {
@@ -24,16 +26,18 @@ export default function ProductionView() {
     staleTime: 15_000,
   });
 
+  const [error, setError] = useState("");
   const toggleMutation = useMutation({
+    onMutate: () => setError(""),
     mutationFn: (id) => toggleDailyHit(id, base),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["door-production"] });
       qc.invalidateQueries({ queryKey: ["door-production-summary"] });
     },
+    onError: (err) => setError(err?.message || "Hit konnte nicht aktualisiert werden."),
   });
 
   const [drafts, setDrafts] = useState({});
-  const [error, setError] = useState("");
   const addMutation = useMutation({
     mutationFn: ({ day, text }) => addHitOnDate(plan?.dates?.[day], text),
     onSuccess: (_, { day }) => {
@@ -63,14 +67,14 @@ export default function ProductionView() {
         </span>
         <span>Google Tasks · „Door · Production“</span>
         {summary ? (
-          <span>{summary.completed_hits}/{summary.total_hits} Hits erledigt ({Math.round((summary.completion_rate || 0) * 100)}%)</span>
+          <span>{summary.completed_hits}/{WEEKLY_HIT_TARGET} Hits erledigt ({Math.min(100, Math.round(summary.completed_hits / WEEKLY_HIT_TARGET * 100))}%) · {summary.total_hits} geplant</span>
         ) : null}
       </div>
 
       <p className="text-sm text-slate-400">Wochenziel: 4 × 4 Hits · Montag bis Donnerstag je 4 Hits. Freitag ist Puffer – spätestens dann abschließen.</p>
 
       {error ? (
-        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>
+        <div role="alert" className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>
       ) : null}
 
       {isLoading ? (
@@ -104,6 +108,7 @@ export default function ProductionView() {
                         {item.label || item.fact || <span className="text-slate-600">— leer —</span>}
                       </span>
                       <button
+                        disabled={toggleMutation.isPending}
                         onClick={() => toggleMutation.mutate(item.id)}
                         className={`flex-shrink-0 rounded-lg p-1 ${
                           item.done ? "text-emerald-400 bg-emerald-500/10" : "text-slate-500 hover:bg-white/10"

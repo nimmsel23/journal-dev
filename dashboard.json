@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-20T13:33:03+00:00",
+  "generated_at": "2026-11-21T12:58:31+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-20T08:40:46Z",
+   "pushed_at": "2026-11-20T13:33:17Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -148,12 +148,8 @@
   ],
   "activity": [
    {
-    "day": "2026-10-31",
-    "n": 4
-   },
-   {
     "day": "2026-11-01",
-    "n": 9
+    "n": 2
    },
    {
     "day": "2026-11-02",
@@ -230,6 +226,10 @@
    {
     "day": "2026-11-20",
     "n": 6
+   },
+   {
+    "day": "2026-11-21",
+    "n": 0
    }
   ],
   "workflows": [
@@ -239,8 +239,8 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-20T13:05:27Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44741249729",
+    "created_at": "2026-11-21T11:19:35Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44898559301",
     "sha": "08bd2a4"
    },
    {
@@ -249,8 +249,18 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-20T12:02:10Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44732425829",
+    "created_at": "2026-11-21T08:48:07Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44886570235",
+    "sha": "08bd2a4"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T04:18:04Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44865420866",
     "sha": "08bd2a4"
    },
    {
@@ -272,16 +282,6 @@
     "created_at": "2026-11-20T08:40:47Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44704471705",
     "sha": "08bd2a4"
-   },
-   {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-20T08:40:35Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44704444479",
-    "sha": "44fb448"
    },
    {
     "name": "Preview (Journal dev)",
@@ -342,36 +342,6 @@
     "created_at": "2026-11-19T16:09:10Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44562835267",
     "sha": "44fb448"
-   },
-   {
-    "name": "Check (Journal)",
-    "branch": "codex/ci-fix-journal-dev-promote",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-16T09:49:10Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43843186097",
-    "sha": "750ac85"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "codex/ci-fix-journal-dev-promote",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-16T09:49:10Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43843186090",
-    "sha": "750ac85"
-   },
-   {
-    "name": "Gemini CI Agent",
-    "branch": "codex/ci-fix-journal-dev-promote",
-    "event": "pull_request_target",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-16T09:49:09Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/43843183375",
-    "sha": "750ac85"
    }
   ],
   "issues": [],
@@ -390,20 +360,12 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "dev und master synchron, Workflows erfolgreich",
-   "lage": "Der dev-Branch ist mit master synchron und steht auf Commit `08bd2a4`. Alle relevanten Workflows für diesen Commit, einschließlich \"Preview (Journal dev)\" und \"Check (Journal)\", wurden erfolgreich abgeschlossen.",
+   "headline": "dev und master synchron, Live-Deploy erfolgreich",
+   "lage": "Der dev-Branch ist weiterhin mit master synchron und steht auf Commit `08bd2a4`. Alle relevanten Workflows, einschließlich \"Preview (Journal dev)\", \"Check (Journal)\" und \"Live Deploy (Journal master)\", wurden erfolgreich abgeschlossen.",
    "auffaelligkeiten": [
     {
      "level": "info",
-     "text": "dev und master sind auf Commit `08bd2a4` synchronisiert."
-    },
-    {
-     "level": "info",
-     "text": "Alle Workflows für Commit `08bd2a4` sind erfolgreich abgeschlossen."
-    },
-    {
-     "level": "mittel",
-     "text": "Die Abnahme von Smart Journal und Habits im Live-Preview sowie die Prüfung von `syncTrackerHabits` sind laut `NEXT.md` noch offen."
+     "text": "Die `NEXT.md` enthält mehrere offene Punkte, die noch nicht bearbeitet wurden."
     }
    ],
    "naechste_schritte": [
@@ -411,12 +373,13 @@
     "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto (gemäß `NEXT.md`).",
     "Angleichen der aos-door Firebase an manuelle Wochenplanung (gemäß `NEXT.md`)."
    ],
-   "veraendert": "Der dev-Branch ist nicht mehr 6 Commits vor master, sondern beide Branches sind auf Commit `08bd2a4` synchronisiert, und die zuvor laufenden Workflows sind abgeschlossen.",
+   "veraendert": "Der synchronisierte Stand `08bd2a4` wurde erfolgreich via Workflow \"Live Deploy (Journal master)\" veröffentlicht.",
    "fragen": [
-    "Soll die Daily-Four-Auswertung eine Frist (`requiredBeforeHour`) erhalten?"
+    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
+    "Entscheiden, ob die Daily-Four-Auswertung eine Frist benötigt (gemäß `NEXT.md`)."
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-20T13:33:05+00:00"
+  "ai_at": "2026-11-21T12:58:33+00:00"
  }
 }

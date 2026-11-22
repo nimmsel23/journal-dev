@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-21T20:08:24+00:00",
+  "generated_at": "2026-11-22T12:50:11+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-21T12:58:46Z",
+   "pushed_at": "2026-11-21T20:08:47Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -148,10 +148,6 @@
   ],
   "activity": [
    {
-    "day": "2026-11-01",
-    "n": 0
-   },
-   {
     "day": "2026-11-02",
     "n": 4
    },
@@ -230,17 +226,31 @@
    {
     "day": "2026-11-21",
     "n": 0
+   },
+   {
+    "day": "2026-11-22",
+    "n": 0
    }
   ],
   "workflows": [
+   {
+    "name": "Merge-Agent",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-22T09:40:01Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45008643226",
+    "sha": "08bd2a4"
+   },
    {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-21T20:07:34Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44944589472",
+    "created_at": "2026-11-22T07:29:42Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44998472926",
     "sha": "08bd2a4"
    },
    {
@@ -249,18 +259,8 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-21T18:03:52Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44933439143",
-    "sha": "08bd2a4"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-21T16:39:44Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44925786096",
+    "created_at": "2026-11-22T07:01:50Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/44996352271",
     "sha": "08bd2a4"
    },
    {
@@ -360,30 +360,34 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Branches synchron, Workflows erfolgreich, keine neue Entwicklung",
-   "lage": "Der dev-Branch ist weiterhin mit master synchron und steht auf Commit `08bd2a4`. Alle relevanten Workflows, einschließlich \"Preview (Journal dev)\", \"Check (Journal)\" und \"Live Deploy (Journal master)\", wurden erfolgreich abgeschlossen.",
+   "headline": "Branches synchron, Workflows erfolgreich, neue Entwicklung integriert",
+   "lage": "Der dev-Branch ist weiterhin mit master synchron und steht auf Commit `08bd2a4`. Es gab mehrere `fix`- und `feat`-Commits am 20. November, die in diesen Stand integriert wurden. Alle relevanten Workflows, darunter \"Preview (Journal dev)\" und \"Live Deploy (Journal master)\", wurden erfolgreich abgeschlossen.",
    "auffaelligkeiten": [
     {
-     "level": "info",
-     "text": "Die in `NEXT.md` gelisteten Abnahmeschritte für Smart Journal und Habits sowie die Prüfung von `syncTrackerHabits` sind weiterhin offen."
+     "level": "hoch",
+     "text": "Mehrere `fix`- und `feat`-Commits von \"Alpha\" am 20. November (z.B. `575850e`, `35a9d41`) wurden in den aktuellen Stand `08bd2a4` integriert."
     },
     {
      "level": "info",
-     "text": "Die Angleichung der aos-door Firebase an die manuelle Wochenplanung gemäß `NEXT.md` ist noch nicht erfolgt."
+     "text": "Der `Merge-Agent` und `Auto-Promote dev -> master` Workflow liefen am 22. November erfolgreich."
+    },
+    {
+     "level": "info",
+     "text": "Der `NEXT.md` Eintrag \"aos-door Firebase an manuelle Wochenplanung angleichen\" ist weiterhin offen."
     }
    ],
    "naechste_schritte": [
+    "Angleichen der aos-door Firebase an manuelle Wochenplanung (gemäß `NEXT.md`).",
     "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto (gemäß `NEXT.md`).",
-    "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto (gemäß `NEXT.md`).",
-    "Angleichen der aos-door Firebase an manuelle Wochenplanung (gemäß `NEXT.md`)."
+    "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto (gemäß `NEXT.md`)."
    ],
-   "veraendert": "",
+   "veraendert": "Es gab neue `fix`- und `feat`-Commits am 20. November, die in den aktuellen Stand `08bd2a4` integriert wurden, was die Aussage der letzten Einschätzung über fehlende Entwicklung korrigiert.",
    "fragen": [
-    "Entscheiden, ob die Daily-Four-Auswertung eine Frist benötigt (gemäß `NEXT.md`).",
-    "Entscheiden, ob die OAuth-URIs auf `vos-journal` gestrafft werden sollen (gemäß `NEXT.md`)."
+    "Sollen die OAuth-URIs auf nur noch `vos-journal` gestrafft werden (Console)?",
+    "Benötigt die Daily-Four-Auswertung eine `requiredBeforeHour`-Frist?"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-21T20:08:26+00:00"
+  "ai_at": "2026-11-22T12:50:13+00:00"
  }
 }

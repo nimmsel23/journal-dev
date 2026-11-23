@@ -28,7 +28,7 @@ jobs:
     if: github.event_name == 'push' && vars.ORG_BOT_APP_ID != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v3
         id: app
         with:
           app-id: ${{ vars.ORG_BOT_APP_ID }}
@@ -63,7 +63,7 @@ jobs:
        startsWith(github.event.pull_request.head.ref, 'dependabot/'))
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v3
         id: app
         with:
           app-id: ${{ vars.ORG_BOT_APP_ID }}

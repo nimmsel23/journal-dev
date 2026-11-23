@@ -1,0 +1,29 @@
+{
+  "schema": "vos-grok-paket/1",
+  "id": "grok-journal-dev",
+  "titel": "Journal-dev Bestandsaufnahme",
+  "bereich": "journal",
+  "ownerBot": "unbekannt (nicht in der Org-Registry)",
+  "quelle": "cursor-canvas",
+  "canvasId": "b566f779-55df-4330-a770-6cf4672c614b",
+  "canvasUrl": "https://cursor.com/canvas/store-54236058-5833-43d4-b2a6-ee55da1a2dc0/b566f779-55df-4330-a770-6cf4672c614b",
+  "stand": "2026-11-12T11:28+01:00",
+  "pflege": "keine Pflege seit 12.11.",
+  "zusammenfassung": "Bestandsaufnahme journal-dev (Stand master c22c061).",
+  "dateien": {
+    "quelle": "page.tsx"
+  },
+  "sichtbarkeit": "privat",
+  "inhalt": "intern",
+  "heikel": [],
+  "veroeffentlichen": {
+    "pages": false,
+    "firebase": false,
+    "grund": "Firebase-Hosting von vitalos-prod ist öffentlich; Freigabe durch Daniel fehlt."
+  },
+  "spiegel": {
+    "repo": "nimmsel23/journal-dev",
+    "branch": "master",
+    "pfad": "docs/grok/journal-dev/"
+  }
+}

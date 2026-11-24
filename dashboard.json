@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-24T05:10:02+00:00",
+  "generated_at": "2026-11-24T15:14:23+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-23T18:44:48Z",
+   "pushed_at": "2026-11-24T09:40:49Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -21,14 +21,62 @@
    "dev_behind": 0,
    "dev_ahead": 0,
    "oldest_unpromoted": null,
-   "dev_head": "6ae8a94 2026-11-23T19:44:00+01:00",
-   "master_head": "6ae8a94 2026-11-23T19:44:00+01:00"
+   "dev_head": "f17fbdf 2026-11-24T10:39:39+01:00",
+   "master_head": "f17fbdf 2026-11-24T10:39:39+01:00"
   },
   "work": {
    "branch": "master",
-   "sha": "6ae8a946b55f1773de1696708a922b42492e76d1"
+   "sha": "f17fbdffbd0b98ec06f4500864c76e2ddc655912"
   },
   "commits": [
+   {
+    "sha": "f17fbdf",
+    "date": "2026-11-24T10:39:39+01:00",
+    "author": "nimmsel23",
+    "subject": "ci: Merge nur mit --match-head-commit des geprüften Heads"
+   },
+   {
+    "sha": "0c87eb0",
+    "date": "2026-11-24T10:38:31+01:00",
+    "author": "nimmsel23",
+    "subject": "ci: keine Zweitfreigabe mehr, Merge sobald Checks grün (Owner Daniel 24.11.2026 10:33)"
+   },
+   {
+    "sha": "379e058",
+    "date": "2026-11-24T10:26:15+01:00",
+    "author": "nimmsel23",
+    "subject": "fix(ci): Approval zählt nicht bei offenem Security-Befund HIGH/CRITICAL"
+   },
+   {
+    "sha": "e2e25eb",
+    "date": "2026-11-24T10:19:03+01:00",
+    "author": "nimmsel23",
+    "subject": "fix(ci): Org-Bot fail-closed, Merge-Logik ist Klasse B (Security Review vos#125)"
+   },
+   {
+    "sha": "5ac4544",
+    "date": "2026-11-24T10:11:32+01:00",
+    "author": "nimmsel23",
+    "subject": "ci: Approval-Agent-Freigabe zählt als peer-ok (Daniel 24.11.2026 10:08)"
+   },
+   {
+    "sha": "fc26d7d",
+    "date": "2026-11-24T08:46:32+01:00",
+    "author": "nimmsel23",
+    "subject": "ci: Org-Bot/ci-heal mit zwei Zeitplan-Slots abseits der vollen Stunde + repository_dispatch"
+   },
+   {
+    "sha": "f9227b0",
+    "date": "2026-11-24T08:41:09+01:00",
+    "author": "nimmsel23",
+    "subject": "ci(org-bot): v2 wartet auf PR-Events auf angemeldete Checks"
+   },
+   {
+    "sha": "e383682",
+    "date": "2026-11-24T08:39:48+01:00",
+    "author": "nimmsel23",
+    "subject": "ci: Org-Bot v2 und CI-Heilung aus Vorlage (vos cto/tools)"
+   },
    {
     "sha": "6ae8a94",
     "date": "2026-11-23T19:44:00+01:00",
@@ -100,60 +148,12 @@
     "date": "2026-11-19T16:08:52Z",
     "author": "Cursor Agent",
     "subject": "docs: Solo-Builds, Hash und App-Dashboard an den Client angleichen"
-   },
-   {
-    "sha": "1ec178f",
-    "date": "2026-11-17T17:04:45+01:00",
-    "author": "nimmsel23",
-    "subject": "org-bot: Workflow installieren (Org-Autonomie 16.11.2026)"
-   },
-   {
-    "sha": "0ef9932",
-    "date": "2026-11-17T07:43:23Z",
-    "author": "Cursor Agent",
-    "subject": "Merge origin/master into dev (#54, a3e4d88)"
-   },
-   {
-    "sha": "90195b9",
-    "date": "2026-11-16T11:35:40Z",
-    "author": "Cursor Agent",
-    "subject": "dashboard: Check und Dashboard starten"
-   },
-   {
-    "sha": "bedea1d",
-    "date": "2026-11-16T11:33:31Z",
-    "author": "Cursor Agent",
-    "subject": "dashboard: Check und Dashboard auf dev starten"
-   },
-   {
-    "sha": "e097aa7",
-    "date": "2026-11-16T11:26:41Z",
-    "author": "Cursor Agent",
-    "subject": "dashboard: master-Push baut ebenfalls dev"
-   },
-   {
-    "sha": "a3e4d88",
-    "date": "2026-11-16T10:58:31+01:00",
-    "author": "nimmsel23",
-    "subject": "fix(ci): Promote trotz Required Check „check“ auf master (#54)"
-   },
-   {
-    "sha": "cf9fed9",
-    "date": "2026-11-16T06:48:11Z",
-    "author": "dependabot[bot]",
-    "subject": "deps: bump @vitejs/plugin-react (#53)"
-   },
-   {
-    "sha": "04836dc",
-    "date": "2026-11-14T18:58:28+01:00",
-    "author": "Alpha",
-    "subject": "chore: AL-LOG.md entfernt"
    }
   ],
   "activity": [
    {
     "day": "2026-11-04",
-    "n": 25
+    "n": 8
    },
    {
     "day": "2026-11-05",
@@ -233,7 +233,7 @@
    },
    {
     "day": "2026-11-24",
-    "n": 0
+    "n": 8
    }
   ],
   "workflows": [
@@ -243,9 +243,9 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-24T00:59:31Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45301563355",
-    "sha": "6ae8a94"
+    "created_at": "2026-11-24T11:04:12Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45380722936",
+    "sha": "f17fbdf"
    },
    {
     "name": "Merge-Agent",
@@ -253,19 +253,9 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-24T00:43:44Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45299501782",
-    "sha": "6ae8a94"
-   },
-   {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T22:40:25Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45281904567",
-    "sha": "6ae8a94"
+    "created_at": "2026-11-24T10:28:38Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45375146644",
+    "sha": "f17fbdf"
    },
    {
     "name": "Live Deploy (Journal master)",
@@ -273,9 +263,19 @@
     "event": "workflow_dispatch",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-23T18:44:50Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45241634960",
-    "sha": "6ae8a94"
+    "created_at": "2026-11-24T09:40:51Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45367483988",
+    "sha": "f17fbdf"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-24T09:40:26Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45367418808",
+    "sha": "0c87eb0"
    },
    {
     "name": "Gemini CI Agent",
@@ -283,9 +283,9 @@
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-23T18:44:40Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45241606692",
-    "sha": "7e89ca2"
+    "created_at": "2026-11-24T09:40:26Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45367418703",
+    "sha": "0c87eb0"
    },
    {
     "name": "Check (Journal)",
@@ -293,9 +293,9 @@
     "event": "push",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-23T18:44:03Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45241500057",
-    "sha": "6ae8a94"
+    "created_at": "2026-11-24T09:39:43Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45367305995",
+    "sha": "f17fbdf"
    },
    {
     "name": "Org-Bot (PR anlegen & mergen)",
@@ -416,31 +416,9 @@
     "created_at": "2026-11-23T06:45:28Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126270052",
     "sha": "0aa12f0"
-   },
-   {
-    "name": "Gemini CI Agent",
-    "branch": "dependabot/github_actions/dev/actions-1730de5550",
-    "event": "pull_request_target",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T06:45:26Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126267263",
-    "sha": "0aa12f0"
    }
   ],
-  "issues": [
-   {
-    "number": 62,
-    "title": "Dashboard-Lage: rot",
-    "created_at": "2026-11-23T18:04:10Z",
-    "updated_at": "2026-11-23T19:02:00Z",
-    "labels": [
-     "dashboard"
-    ],
-    "url": "https://github.com/nimmsel23/journal-dev/issues/62",
-    "author": "github-actions[bot]"
-   }
-  ],
+  "issues": [],
   "pulls": [],
   "live_sites": [
    "https://habit-vos.web.app",
@@ -456,16 +434,20 @@
   "status": "green",
   "signals": [],
   "ai": {
-   "headline": "Master-Branch stabil, Deploy erfolgreich, Issue #62 offen",
-   "lage": "Der `master`-Branch wurde auf Commit `6ae8a94` aktualisiert. Die Workflows „Auto-Promote dev -> master (Check (Journal))“ und „Live Deploy (Journal master)“ sind für diesen Commit erfolgreich abgeschlossen. Issue #62 „Dashboard-Lage: rot“ ist weiterhin offen.",
+   "headline": "Master-Branch auf f17fbdf aktualisiert, CI/CD-Logik verfeinert",
+   "lage": "Der `master`-Branch wurde auf Commit `f17fbdf` aktualisiert und ist nun mit dem `dev`-Branch synchron. Die Workflows „Live Deploy (Journal master)“ und „Auto-Promote dev -> master (Check (Journal))“ sind für diesen Commit erfolgreich abgeschlossen. Seit der letzten Einschätzung wurden zahlreiche Commits zur Verfeinerung der CI/CD-Logik integriert.",
    "auffaelligkeiten": [
     {
-     "level": "hoch",
-     "text": "Issue #62 „Dashboard-Lage: rot“ ist trotz erfolgreicher Master-Deployments weiterhin offen."
+     "level": "info",
+     "text": "Der `master`-Branch wurde auf Commit `f17fbdf` aktualisiert, wodurch `dev` und `master` synchron sind."
     },
     {
      "level": "info",
-     "text": "Die Branches `dev` und `master` sind auf dem gleichen Commit `6ae8a94`."
+     "text": "Mehrere Commits (z.B. `f17fbdf`, `0c87eb0`, `379e058`) zur CI/CD-Logik wurden seit dem letzten Stand (`6ae8a94`) in den `master`-Branch integriert."
+    },
+    {
+     "level": "info",
+     "text": "Die Dokumentation `NEXT.md` listet weiterhin offene Aufgaben wie die Angleichung der `aos-door` Firebase und die Abnahme von Smart Journal/Habits."
     }
    ],
    "naechste_schritte": [
@@ -473,13 +455,13 @@
     "Abnehmen von Smart Journal und Habits im Live-Preview gegen echtes Konto.",
     "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto."
    ],
-   "veraendert": "Die zuvor fehlgeschlagenen und laufenden Workflows auf dem `master`-Branch sind nun erfolgreich abgeschlossen.",
+   "veraendert": "Der `master`-Branch wurde auf den neueren Commit `f17fbdf` aktualisiert, wodurch er nun mit `dev` synchron ist und Issue #62 nicht mehr in der Evidenz erscheint.",
    "fragen": [
-    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
-    "Entscheidung Daniel: Ob die Daily-Four-Auswertung eine Frist braucht."
+    "Sollen die OAuth-URIs in der Console auf nur noch `vos-journal` gestrafft werden?",
+    "Benötigt die Daily-Four-Auswertung eine Frist (`requiredBeforeHour`)?"
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-24T05:10:04+00:00"
+  "ai_at": "2026-11-24T15:14:25+00:00"
  }
 }

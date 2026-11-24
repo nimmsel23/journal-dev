@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-23T18:11:55+00:00",
+  "generated_at": "2026-11-24T05:10:02+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-23T18:11:37Z",
+   "pushed_at": "2026-11-23T18:44:48Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -17,14 +17,24 @@
   },
   "branches": {
    "main": "master",
-   "has_dev": false,
-   "master_head": "7e89ca2 2026-11-23T19:11:36+01:00"
+   "has_dev": true,
+   "dev_behind": 0,
+   "dev_ahead": 0,
+   "oldest_unpromoted": null,
+   "dev_head": "6ae8a94 2026-11-23T19:44:00+01:00",
+   "master_head": "6ae8a94 2026-11-23T19:44:00+01:00"
   },
   "work": {
    "branch": "master",
-   "sha": "7e89ca2220689ce9f685c2092bb0a80a84d50481"
+   "sha": "6ae8a946b55f1773de1696708a922b42492e76d1"
   },
   "commits": [
+   {
+    "sha": "6ae8a94",
+    "date": "2026-11-23T19:44:00+01:00",
+    "author": "nimmsel23",
+    "subject": "docs(grok): Journal-dev Bestandsaufnahme als Canvas-Kopie nach docs/grok/"
+   },
    {
     "sha": "7e89ca2",
     "date": "2026-11-23T19:11:36+01:00",
@@ -138,22 +148,12 @@
     "date": "2026-11-14T18:58:28+01:00",
     "author": "Alpha",
     "subject": "chore: AL-LOG.md entfernt"
-   },
-   {
-    "sha": "e7b09ea",
-    "date": "2026-11-14T02:13:18+01:00",
-    "author": "Alpha",
-    "subject": "fix(habits): versteckte Tracker-Spiegel-Habits in v2, Tent und Door ausblenden"
    }
   ],
   "activity": [
    {
-    "day": "2026-11-03",
-    "n": 3
-   },
-   {
     "day": "2026-11-04",
-    "n": 29
+    "n": 25
    },
    {
     "day": "2026-11-05",
@@ -229,39 +229,23 @@
    },
    {
     "day": "2026-11-23",
-    "n": 4
+    "n": 5
+   },
+   {
+    "day": "2026-11-24",
+    "n": 0
    }
   ],
   "workflows": [
-   {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "failure",
-    "created_at": "2026-11-23T18:11:39Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45235740109",
-    "sha": "7e89ca2"
-   },
-   {
-    "name": "Live Deploy (Journal master)",
-    "branch": "master",
-    "event": "push",
-    "status": "in_progress",
-    "conclusion": null,
-    "created_at": "2026-11-23T18:11:39Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45235740088",
-    "sha": "7e89ca2"
-   },
    {
     "name": "PR-AutoMerge (Dependabot -> dev)",
     "branch": "master",
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-23T13:05:52Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45180528940",
-    "sha": "c3f9aa8"
+    "created_at": "2026-11-24T00:59:31Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45301563355",
+    "sha": "6ae8a94"
    },
    {
     "name": "Merge-Agent",
@@ -269,9 +253,29 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-23T12:57:35Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45179203617",
-    "sha": "c3f9aa8"
+    "created_at": "2026-11-24T00:43:44Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45299501782",
+    "sha": "6ae8a94"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-23T22:40:25Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45281904567",
+    "sha": "6ae8a94"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-23T18:44:50Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45241634960",
+    "sha": "6ae8a94"
    },
    {
     "name": "Gemini CI Agent",
@@ -279,9 +283,19 @@
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-23T10:52:42Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45160052003",
-    "sha": "c3f9aa8"
+    "created_at": "2026-11-23T18:44:40Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45241606692",
+    "sha": "7e89ca2"
+   },
+   {
+    "name": "Check (Journal)",
+    "branch": "dev",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-23T18:44:03Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45241500057",
+    "sha": "6ae8a94"
    },
    {
     "name": "Org-Bot (PR anlegen & mergen)",
@@ -301,16 +315,6 @@
     "conclusion": "success",
     "created_at": "2026-11-23T10:49:58Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45159653336",
-    "sha": "7013d1c"
-   },
-   {
-    "name": "Check (Journal)",
-    "branch": "dev",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T10:49:58Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45159653333",
     "sha": "7013d1c"
    },
    {
@@ -429,7 +433,7 @@
     "number": 62,
     "title": "Dashboard-Lage: rot",
     "created_at": "2026-11-23T18:04:10Z",
-    "updated_at": "2026-11-23T18:04:10Z",
+    "updated_at": "2026-11-23T19:02:00Z",
     "labels": [
      "dashboard"
     ],
@@ -449,44 +453,33 @@
   ]
  },
  "assessment": {
-  "status": "red",
-  "signals": [
-   {
-    "level": "red",
-    "key": "ci:Auto-Promote dev -> master (Check (Journal)):master",
-    "text": "„Auto-Promote dev -> master (Check (Journal))“ auf master ist rot (failure, 7e89ca2)",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45235740109"
-   }
-  ],
+  "status": "green",
+  "signals": [],
   "ai": {
-   "headline": "Master-Branch mit fehlgeschlagenem Check und laufendem Deploy",
-   "lage": "Der `master`-Branch wurde mit Commit `7e89ca2` aktualisiert. Der Workflow „Auto-Promote dev -> master (Check (Journal))“ ist für diesen Commit fehlgeschlagen, während das „Live Deploy (Journal master)“ noch läuft. Ein Bot hat Issue #62 „Dashboard-Lage: rot“ erstellt.",
+   "headline": "Master-Branch stabil, Deploy erfolgreich, Issue #62 offen",
+   "lage": "Der `master`-Branch wurde auf Commit `6ae8a94` aktualisiert. Die Workflows „Auto-Promote dev -> master (Check (Journal))“ und „Live Deploy (Journal master)“ sind für diesen Commit erfolgreich abgeschlossen. Issue #62 „Dashboard-Lage: rot“ ist weiterhin offen.",
    "auffaelligkeiten": [
     {
      "level": "hoch",
-     "text": "Der Workflow „Auto-Promote dev -> master (Check (Journal))“ auf `master` ist für Commit `7e89ca2` fehlgeschlagen (failure, https://github.com/nimmsel23/journal-dev/actions/runs/45235740109)."
-    },
-    {
-     "level": "mittel",
-     "text": "Das „Live Deploy (Journal master)“ läuft für Commit `7e89ca2`, obwohl der vorgeschaltete Check fehlgeschlagen ist."
+     "text": "Issue #62 „Dashboard-Lage: rot“ ist trotz erfolgreicher Master-Deployments weiterhin offen."
     },
     {
      "level": "info",
-     "text": "Der `dev`-Branch ist im Repository nicht mehr vorhanden, obwohl `README.md` ihn als Entwicklungszweig nennt."
+     "text": "Die Branches `dev` und `master` sind auf dem gleichen Commit `6ae8a94`."
     }
    ],
    "naechste_schritte": [
     "Angleichen der aos-door Firebase an manuelle Wochenplanung.",
-    "Abnehmen von Smart Journal und Habits im Live-Preview gegen ein echtes Konto.",
+    "Abnehmen von Smart Journal und Habits im Live-Preview gegen echtes Konto.",
     "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto."
    ],
-   "veraendert": "Gegenüber der letzten Einschätzung wurde der `master`-Branch mit Commit `7e89ca2` erneut aktualisiert, wobei der „Live Deploy“-Workflow nun `in_progress` ist und der `dev`-Branch nicht mehr existiert.",
+   "veraendert": "Die zuvor fehlgeschlagenen und laufenden Workflows auf dem `master`-Branch sind nun erfolgreich abgeschlossen.",
    "fragen": [
-    "OAuth-URIs auf nur noch `vos-journal` straffen (Console)?",
-    "Benötigt die Daily-Four-Auswertung eine Frist?"
+    "Owner: OAuth-URIs auf nur noch `vos-journal` straffen (Console).",
+    "Entscheidung Daniel: Ob die Daily-Four-Auswertung eine Frist braucht."
    ],
    "model": "gemini-2.5-flash"
   },
-  "ai_at": "2026-11-23T18:11:57+00:00"
+  "ai_at": "2026-11-24T05:10:04+00:00"
  }
 }

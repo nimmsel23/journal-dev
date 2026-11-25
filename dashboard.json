@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-24T15:14:23+00:00",
+  "generated_at": "2026-11-25T14:54:17+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-24T09:40:49Z",
+   "pushed_at": "2026-11-24T15:14:43Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -152,12 +152,8 @@
   ],
   "activity": [
    {
-    "day": "2026-11-04",
-    "n": 8
-   },
-   {
     "day": "2026-11-05",
-    "n": 28
+    "n": 20
    },
    {
     "day": "2026-11-06",
@@ -234,6 +230,10 @@
    {
     "day": "2026-11-24",
     "n": 8
+   },
+   {
+    "day": "2026-11-25",
+    "n": 0
    }
   ],
   "workflows": [
@@ -243,8 +243,8 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-24T11:04:12Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45380722936",
+    "created_at": "2026-11-25T14:37:44Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45636146878",
     "sha": "f17fbdf"
    },
    {
@@ -253,8 +253,38 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-24T10:28:38Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45375146644",
+    "created_at": "2026-11-25T14:10:55Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45631252891",
+    "sha": "f17fbdf"
+   },
+   {
+    "name": "CI-Heilung (rote Läufe wiederholen)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-25T13:24:55Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45623333538",
+    "sha": "f17fbdf"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-25T12:59:41Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45619090012",
+    "sha": "f17fbdf"
+   },
+   {
+    "name": "Org-Bot (PR anlegen & mergen)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-25T12:54:25Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45618266968",
     "sha": "f17fbdf"
    },
    {
@@ -266,16 +296,6 @@
     "created_at": "2026-11-24T09:40:51Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45367483988",
     "sha": "f17fbdf"
-   },
-   {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-24T09:40:26Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45367418808",
-    "sha": "0c87eb0"
    },
    {
     "name": "Gemini CI Agent",
@@ -336,86 +356,6 @@
     "created_at": "2026-11-23T10:49:55Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45159647185",
     "sha": "7013d1c"
-   },
-   {
-    "name": "Org-Bot (PR anlegen & mergen)",
-    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-099a9d6ede",
-    "event": "pull_request_target",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T06:49:21Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126720465",
-    "sha": "06facfc"
-   },
-   {
-    "name": "Preview (Journal dev)",
-    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-099a9d6ede",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "skipped",
-    "created_at": "2026-11-23T06:49:20Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126719148",
-    "sha": "06facfc"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-099a9d6ede",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T06:49:20Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126719122",
-    "sha": "06facfc"
-   },
-   {
-    "name": "Check (Journal)",
-    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-099a9d6ede",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T06:49:20Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126719082",
-    "sha": "06facfc"
-   },
-   {
-    "name": "Gemini CI Agent",
-    "branch": "dependabot/npm_and_yarn/dev/minor-and-patch-099a9d6ede",
-    "event": "pull_request_target",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T06:49:19Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126716436",
-    "sha": "06facfc"
-   },
-   {
-    "name": "Org-Bot (PR anlegen & mergen)",
-    "branch": "dependabot/github_actions/dev/actions-1730de5550",
-    "event": "pull_request_target",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T06:45:38Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126293331",
-    "sha": "0aa12f0"
-   },
-   {
-    "name": "Check (Journal)",
-    "branch": "dependabot/github_actions/dev/actions-1730de5550",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T06:45:28Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126270090",
-    "sha": "0aa12f0"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "dependabot/github_actions/dev/actions-1730de5550",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T06:45:28Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45126270052",
-    "sha": "0aa12f0"
    }
   ],
   "issues": [],
@@ -433,35 +373,7 @@
  "assessment": {
   "status": "green",
   "signals": [],
-  "ai": {
-   "headline": "Master-Branch auf f17fbdf aktualisiert, CI/CD-Logik verfeinert",
-   "lage": "Der `master`-Branch wurde auf Commit `f17fbdf` aktualisiert und ist nun mit dem `dev`-Branch synchron. Die Workflows „Live Deploy (Journal master)“ und „Auto-Promote dev -> master (Check (Journal))“ sind für diesen Commit erfolgreich abgeschlossen. Seit der letzten Einschätzung wurden zahlreiche Commits zur Verfeinerung der CI/CD-Logik integriert.",
-   "auffaelligkeiten": [
-    {
-     "level": "info",
-     "text": "Der `master`-Branch wurde auf Commit `f17fbdf` aktualisiert, wodurch `dev` und `master` synchron sind."
-    },
-    {
-     "level": "info",
-     "text": "Mehrere Commits (z.B. `f17fbdf`, `0c87eb0`, `379e058`) zur CI/CD-Logik wurden seit dem letzten Stand (`6ae8a94`) in den `master`-Branch integriert."
-    },
-    {
-     "level": "info",
-     "text": "Die Dokumentation `NEXT.md` listet weiterhin offene Aufgaben wie die Angleichung der `aos-door` Firebase und die Abnahme von Smart Journal/Habits."
-    }
-   ],
-   "naechste_schritte": [
-    "Angleichen der aos-door Firebase an manuelle Wochenplanung.",
-    "Abnehmen von Smart Journal und Habits im Live-Preview gegen echtes Konto.",
-    "Prüfen der Legacy `syncTrackerHabits` im Browser gegen ein echtes Konto."
-   ],
-   "veraendert": "Der `master`-Branch wurde auf den neueren Commit `f17fbdf` aktualisiert, wodurch er nun mit `dev` synchron ist und Issue #62 nicht mehr in der Evidenz erscheint.",
-   "fragen": [
-    "Sollen die OAuth-URIs in der Console auf nur noch `vos-journal` gestrafft werden?",
-    "Benötigt die Daily-Four-Auswertung eine Frist (`requiredBeforeHour`)?"
-   ],
-   "model": "gemini-2.5-flash"
-  },
-  "ai_at": "2026-11-24T15:14:25+00:00"
+  "ai": null,
+  "ai_at": null
  }
 }

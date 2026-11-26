@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-25T14:54:17+00:00",
+  "generated_at": "2026-11-26T14:22:53+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-24T15:14:43Z",
+   "pushed_at": "2026-11-26T12:41:01Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -21,14 +21,38 @@
    "dev_behind": 0,
    "dev_ahead": 0,
    "oldest_unpromoted": null,
-   "dev_head": "f17fbdf 2026-11-24T10:39:39+01:00",
-   "master_head": "f17fbdf 2026-11-24T10:39:39+01:00"
+   "dev_head": "e742021 2026-11-26T13:40:17+01:00",
+   "master_head": "e742021 2026-11-26T13:40:17+01:00"
   },
   "work": {
    "branch": "master",
-   "sha": "f17fbdffbd0b98ec06f4500864c76e2ddc655912"
+   "sha": "e7420218076d87312e757c025b9209d5f37db61b"
   },
   "commits": [
+   {
+    "sha": "e742021",
+    "date": "2026-11-26T13:40:17+01:00",
+    "author": "Alpha",
+    "subject": "fix: let product shell enable server-backed smart logging"
+   },
+   {
+    "sha": "683c971",
+    "date": "2026-11-26T12:54:20+01:00",
+    "author": "Alpha",
+    "subject": "feat(voice): versteckter Tab #voice/settings für eigenen Gemini-Key (BYOK)"
+   },
+   {
+    "sha": "45d4718",
+    "date": "2026-11-26T12:36:30+01:00",
+    "author": "Alpha",
+    "subject": "fix(voice): VOICE-GPT-Daten unter journal/{uid} statt fitness/{uid}"
+   },
+   {
+    "sha": "9e00b17",
+    "date": "2026-11-26T12:21:28+01:00",
+    "author": "Alpha",
+    "subject": "feat(voice): VOICE-GPT hinter dem Voice-Modul"
+   },
    {
     "sha": "f17fbdf",
     "date": "2026-11-24T10:39:39+01:00",
@@ -124,40 +148,12 @@
     "date": "2026-11-20T09:23:49+01:00",
     "author": "Alpha",
     "subject": "feat(journal): add domain weekly actions and manual hit scheduling"
-   },
-   {
-    "sha": "1f1fa97",
-    "date": "2026-11-20T09:15:58+01:00",
-    "author": "Alpha",
-    "subject": "fix(journal): align Door and Game guidance with AlphaOS flow"
-   },
-   {
-    "sha": "2111f7f",
-    "date": "2026-11-20T09:09:11+01:00",
-    "author": "Alpha",
-    "subject": "fix(door): report toggle errors and measure weekly goal against 16 hits"
-   },
-   {
-    "sha": "2199735",
-    "date": "2026-11-20T09:07:35+01:00",
-    "author": "Alpha",
-    "subject": "fix(door): clarify four-day production target and Friday buffer"
-   },
-   {
-    "sha": "44fb448",
-    "date": "2026-11-19T16:08:52Z",
-    "author": "Cursor Agent",
-    "subject": "docs: Solo-Builds, Hash und App-Dashboard an den Client angleichen"
    }
   ],
   "activity": [
    {
-    "day": "2026-11-05",
-    "n": 20
-   },
-   {
     "day": "2026-11-06",
-    "n": 38
+    "n": 26
    },
    {
     "day": "2026-11-07",
@@ -234,18 +230,72 @@
    {
     "day": "2026-11-25",
     "n": 0
+   },
+   {
+    "day": "2026-11-26",
+    "n": 4
    }
   ],
   "workflows": [
    {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "name": "Gemini CI Agent",
     "branch": "master",
-    "event": "schedule",
+    "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-25T14:37:44Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45636146878",
-    "sha": "f17fbdf"
+    "created_at": "2026-11-26T12:41:16Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821975127",
+    "sha": "e742021"
+   },
+   {
+    "name": "Live Deploy (Journal master)",
+    "branch": "master",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-26T12:41:03Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821942068",
+    "sha": "e742021"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-26T12:40:52Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821914853",
+    "sha": "683c971"
+   },
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "workflow_run",
+    "status": "completed",
+    "conclusion": "skipped",
+    "created_at": "2026-11-26T12:40:52Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821914844",
+    "sha": "683c971"
+   },
+   {
+    "name": "Check (Journal)",
+    "branch": "dev",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-26T12:40:22Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821835419",
+    "sha": "e742021"
+   },
+   {
+    "name": "Preview (Journal dev)",
+    "branch": "dev",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-26T12:40:22Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821835404",
+    "sha": "e742021"
    },
    {
     "name": "Merge-Agent",
@@ -253,8 +303,8 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-25T14:10:55Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45631252891",
+    "created_at": "2026-11-26T05:06:47Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45759434105",
     "sha": "f17fbdf"
    },
    {
@@ -263,18 +313,8 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-25T13:24:55Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45623333538",
-    "sha": "f17fbdf"
-   },
-   {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-25T12:59:41Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45619090012",
+    "created_at": "2026-11-26T04:54:08Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45758106413",
     "sha": "f17fbdf"
    },
    {
@@ -283,79 +323,9 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-25T12:54:25Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45618266968",
+    "created_at": "2026-11-26T04:24:38Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45755020275",
     "sha": "f17fbdf"
-   },
-   {
-    "name": "Live Deploy (Journal master)",
-    "branch": "master",
-    "event": "workflow_dispatch",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-24T09:40:51Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45367483988",
-    "sha": "f17fbdf"
-   },
-   {
-    "name": "Gemini CI Agent",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-24T09:40:26Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45367418703",
-    "sha": "0c87eb0"
-   },
-   {
-    "name": "Check (Journal)",
-    "branch": "dev",
-    "event": "push",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-24T09:39:43Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45367305995",
-    "sha": "f17fbdf"
-   },
-   {
-    "name": "Org-Bot (PR anlegen & mergen)",
-    "branch": "dev",
-    "event": "pull_request_target",
-    "status": "completed",
-    "conclusion": "skipped",
-    "created_at": "2026-11-23T10:51:07Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45159826235",
-    "sha": "7013d1c"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "dev",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T10:49:58Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45159653336",
-    "sha": "7013d1c"
-   },
-   {
-    "name": "Preview (Journal dev)",
-    "branch": "dev",
-    "event": "pull_request",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T10:49:58Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45159653272",
-    "sha": "7013d1c"
-   },
-   {
-    "name": "Gemini CI Agent",
-    "branch": "dev",
-    "event": "pull_request_target",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-23T10:49:55Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45159647185",
-    "sha": "7013d1c"
    }
   ],
   "issues": [],

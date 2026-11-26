@@ -1,6 +1,6 @@
 // VOICE-GPT (Backend: ~/dev/backend/functions/journal/voice-agent.js).
-// Interaktiv: Callable voiceReflect. Auto-Modus: Opt-in fitness/{uid}/settings/voice.auto,
-// Ergebnisse unter fitness/{uid}/voiceReflections (vom Server geschrieben).
+// Interaktiv: Callable voiceReflect. Auto-Modus: Opt-in journal/{uid}/settings/voice.auto,
+// Ergebnisse unter journal/{uid}/voiceReflections (vom Server geschrieben).
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { collection, doc, limit, onSnapshot, orderBy, query, setDoc, updateDoc } from "firebase/firestore";
 import { app, auth, db } from "./firebase.js";
@@ -16,7 +16,7 @@ export async function voiceReflect({ mode = "reflect", stage, date, context, his
   return data.reply;
 }
 
-const settingsRef = (uid) => doc(db, "fitness", uid, "settings", "voice");
+const settingsRef = (uid) => doc(db, "journal", uid, "settings", "voice");
 
 export function watchVoiceAuto(uid, onNext) {
   return onSnapshot(settingsRef(uid), (snap) => onNext(snap.data()?.auto === true), () => onNext(false));
@@ -27,12 +27,12 @@ export function setVoiceAuto(uid, auto) {
 }
 
 export function watchVoiceReflections(uid, onNext, max = 10) {
-  const q = query(collection(db, "fitness", uid, "voiceReflections"), orderBy("createdAt", "desc"), limit(max));
+  const q = query(collection(db, "journal", uid, "voiceReflections"), orderBy("createdAt", "desc"), limit(max));
   return onSnapshot(q, (snap) => onNext(snap.docs.map((d) => ({ id: d.id, ...d.data() }))), () => onNext([]));
 }
 
 export function markVoiceReflectionRead(uid, id) {
-  track(updateDoc(doc(db, "fitness", uid, "voiceReflections", id), { read: true }));
+  track(updateDoc(doc(db, "journal", uid, "voiceReflections", id), { read: true }));
 }
 
 export function voiceErrorText(error) {

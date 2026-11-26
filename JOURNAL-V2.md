@@ -439,8 +439,8 @@ Hinter dem Voice-Formular (`#voice`) sitzt der Reflexionsagent VOICE-GPT (Gemini
 - **Spiegeln**: Callable `voiceReflect` bekommt den auslösenden Journaleintrag + alle ausgefüllten Phasen der Session
   und antwortet mit genau einer zentralen Frage. Das Gespräch liegt nur lokal (`…:<sessionId>:agent`), nicht in Firestore.
 - **VOICE STACK**: strukturierte Zusammenfassung (Abschnitt 10 des Prompts), optional als Journal-Eintrag `#voice #stack`.
-- **Auto-Modus** (Opt-in `fitness/{uid}/settings/voice.auto`): Trigger `voiceQueueJournal` merkt jeden Journal-Schreibvorgang
+- **Auto-Modus** (Opt-in `journal/{uid}/settings/voice.auto`): Trigger `voiceQueueJournal` merkt jeden Journal-Schreibvorgang
   nur in `voiceQueue` vor; `scheduledVoiceReflections` (alle 30 min) spiegelt Einträge ab 250 Wörtern nach 30 min Ruhe einzeln
-  und kürzere gesammelt täglich 21:30 Wien. Ergebnis `fitness/{uid}/voiceReflections`, im Voice-Tab als Impuls mit
+  und kürzere gesammelt täglich 21:30 Wien. Ergebnis `journal/{uid}/voiceReflections`, im Voice-Tab als Impuls mit
   „Voice-Session daraus starten“. v1 bleibt unverändert, der Trigger hängt nur an der gemeinsamen Collection.
 - Alles zählt gegen das tägliche KI-Kontingent des Smart Loggers (Kanal `voice`).

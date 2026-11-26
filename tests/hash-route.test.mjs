@@ -122,3 +122,9 @@ test("localToday nutzt die lokale Zeit statt UTC", () => {
   assert.equal(localToday(new Date(2026, 9, 25, 0, 30)), "2026-10-25");
   assert.equal(localToday(new Date(2026, 9, 24, 23, 59)), "2026-10-24");
 });
+
+test("Voice: versteckter Settings-Tab #voice/settings", () => {
+  const router = makeRouter({ tabs: TABS, defaultTab: "journal" });
+  assert.deepEqual(router.parse("#voice/settings"), { tab: "voice-v2", mode: "settings", date: null });
+  assert.equal(router.build({ tab: "voice-v2", mode: "settings", date: null }), "#voice/settings");
+});

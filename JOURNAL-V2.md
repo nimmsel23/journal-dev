@@ -443,4 +443,5 @@ Hinter dem Voice-Formular (`#voice`) sitzt der Reflexionsagent VOICE-GPT (Gemini
   nur in `voiceQueue` vor; `scheduledVoiceReflections` (alle 30 min) spiegelt Einträge ab 250 Wörtern nach 30 min Ruhe einzeln
   und kürzere gesammelt täglich 21:30 Wien. Ergebnis `journal/{uid}/voiceReflections`, im Voice-Tab als Impuls mit
   „Voice-Session daraus starten“. v1 bleibt unverändert, der Trigger hängt nur an der gemeinsamen Collection.
-- Alles zählt gegen das tägliche KI-Kontingent des Smart Loggers (Kanal `voice`).
+- Alles zählt gegen das tägliche KI-Kontingent des Smart Loggers (Kanal `voice`), außer mit eigenem Key.
+- **Eigener Key (BYOK)**: versteckter Tab `#voice/settings` (`VoiceSettings.jsx`), Key in `journal/{uid}/settings/ai.geminiKey`. Der Server nutzt ihn statt des eigenen Keys und lässt das Kontingent weg, `mode: "ping"` prüft ihn.

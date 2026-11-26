@@ -64,7 +64,7 @@ if (!SOLO || SOLO === "voice-v2") {
     Icon: Mic,
     bare: true,
     View: lazy(() => import("./views/voice/VoiceV2View.jsx")),
-    getProps: (ctx) => ({ user: ctx.user }),
+    getProps: (ctx) => ({ user: ctx.user, mode: ctx.mode }),
   });
 }
 

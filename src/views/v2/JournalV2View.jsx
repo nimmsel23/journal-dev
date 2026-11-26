@@ -75,7 +75,7 @@ const tagTokenRe = (tag) => new RegExp(`(?:^|\\s)\\+${tag}\\b`, "gi");
 const FIT_KUERZEL_RE = /(^|\s)\/fit\b/g;
 const expandFitKuerzel = (text) => String(text || "").replace(FIT_KUERZEL_RE, (_, ws) => `${ws}+fitness`);
 
-export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice, startSmart = false, onSetHabitCompletion }) {
+export default function JournalV2View({ date, onDateChange, user, mode = "tag", onModeChange = () => {}, onNavigateJournal, onStartVoice, startSmart = false, allowSmartLogging = !IS_STORE_BUILD, onSetHabitCompletion }) {
   const qc = useQueryClient();
   // Vollbild: Seitenhintergrund + Statusleiste papierfarben, solange v2 offen ist
   useEffect(() => {
@@ -94,10 +94,11 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
   // Timeline-Raster (Drag auf die versteckte Timeline): 60 / 30 / 15 Minuten
   const [grain, setGrain] = useSetting("jv2:grain", 30, (v) => ([60, 30, 15].includes(Number(v)) ? Number(v) : undefined));
   // Smart Logger: Freitext → Analyse → prüfbare Tages-Deposits und Tracker-Vorschläge → Übernehmen
-  // Store-Build: kein KI-Aufruf (Datenschutzerklärung: keine KI) — Smart Log bleibt aus, auch bei gespeicherter Einstellung.
+  // Die Produkthülle aktiviert serverseitiges Smart Logging ausdrücklich.
+  // Oberfläche/Edition vergeben keine Berechtigung; Kontingente prüft die Callable.
   const [smartSetting, setSmart] = useSetting("jv2:smart", false, asBool);
-  const smart = !IS_STORE_BUILD && smartSetting;
-  useEffect(() => { if (startSmart && !IS_STORE_BUILD) setSmart(true); }, [startSmart, setSmart]);
+  const smart = allowSmartLogging && smartSetting;
+  useEffect(() => { if (startSmart && allowSmartLogging) setSmart(true); }, [startSmart, allowSmartLogging, setSmart]);
   const [analysis, setAnalysis] = useState(null);
   const [depositEdit, setDepositEdit] = useState(null);
   const [depositSaving, setDepositSaving] = useState(false);
@@ -676,7 +677,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
           ))}
         </div>
         <form className={`jv2-compose${smart ? " smart" : ""}`} onSubmit={submit}>
-          {!IS_STORE_BUILD && <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Tages-Deposits und Tracker-Einträge überführen">✦</button>}
+          {allowSmartLogging && <button type="button" className={`jv2-smarttoggle${smart ? " on" : ""}`} aria-pressed={smart} onClick={toggleSmart} title="Smart Logger: Freitext in Tages-Deposits und Tracker-Einträge überführen">✦</button>}
           {smart ? (
             <textarea
               id="jv2-input"
@@ -708,7 +709,7 @@ export default function JournalV2View({ date, onDateChange, user, mode = "tag", 
             <li><b>/fit</b> ist das Schnellerfassungs-Kürzel: es wird direkt im Text zu <b>+fitness</b> expandiert (Datum = Zeitpunkt des Loggings).</li>
             {!IS_STORE_BUILD && <li><b>+hot / +potential / +door</b> legt den Eintrag zusätzlich als Potential-Item in Door › Potential (Hot List) an — Titel ist die erste Zeile.</li>}
             <li>Tag-Chip am Eintrag anklicken oder in der Suche <b>+wort</b> tippen: filtert nach Tags (Zeitraum 30 Tage bis Alles).</li>
-            {!IS_STORE_BUILD && <li><b>✦ Smart Log</b> (1 KI-Analyse/Tag) zerlegt Freitext in bearbeitbare Vorschläge für vier Tages-Deposits und Eintrag, Mahlzeiten, Wasser, Habits, Fitness, Relax und Kalender — nichts wird ohne Bestätigung übernommen.</li>}
+            {allowSmartLogging && <li><b>✦ Smart Log</b> (Kontingent laut Konto) zerlegt Freitext in bearbeitbare Vorschläge für vier Tages-Deposits und Eintrag, Mahlzeiten, Wasser, Habits, Fitness, Relax und Kalender — nichts wird ohne Bestätigung übernommen.</li>}
             {!IS_STORE_BUILD && <li><b>+termin Titel:</b> Termin als Eintrag reviewen — Kalender verbinden (unten), dann am Termin auf „Rückblick →" klicken; das Tag wird vorbelegt.</li>}
           </ul>
         </details>

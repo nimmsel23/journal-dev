@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-26T14:22:53+00:00",
+  "generated_at": "2026-11-27T14:16:27+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-26T12:41:01Z",
+   "pushed_at": "2026-11-26T14:22:57Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -152,12 +152,8 @@
   ],
   "activity": [
    {
-    "day": "2026-11-06",
-    "n": 26
-   },
-   {
     "day": "2026-11-07",
-    "n": 28
+    "n": 14
    },
    {
     "day": "2026-11-08",
@@ -234,9 +230,63 @@
    {
     "day": "2026-11-26",
     "n": 4
+   },
+   {
+    "day": "2026-11-27",
+    "n": 0
    }
   ],
   "workflows": [
+   {
+    "name": "PR-AutoMerge (Dependabot -> dev)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-27T10:58:29Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45986561432",
+    "sha": "e742021"
+   },
+   {
+    "name": "CI-Heilung (rote Läufe wiederholen)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-27T08:04:34Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45962890762",
+    "sha": "e742021"
+   },
+   {
+    "name": "Merge-Agent",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-27T08:04:33Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45962889981",
+    "sha": "e742021"
+   },
+   {
+    "name": "Auto-Promote dev -> master (Check (Journal))",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-27T05:24:07Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45945582150",
+    "sha": "e742021"
+   },
+   {
+    "name": "Org-Bot (PR anlegen & mergen)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-27T05:22:32Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45945425207",
+    "sha": "e742021"
+   },
    {
     "name": "Gemini CI Agent",
     "branch": "master",
@@ -258,26 +308,6 @@
     "sha": "e742021"
    },
    {
-    "name": "Auto-Promote dev -> master (Check (Journal))",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-26T12:40:52Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821914853",
-    "sha": "683c971"
-   },
-   {
-    "name": "PR-AutoMerge (Dependabot -> dev)",
-    "branch": "master",
-    "event": "workflow_run",
-    "status": "completed",
-    "conclusion": "skipped",
-    "created_at": "2026-11-26T12:40:52Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821914844",
-    "sha": "683c971"
-   },
-   {
     "name": "Check (Journal)",
     "branch": "dev",
     "event": "push",
@@ -296,36 +326,6 @@
     "created_at": "2026-11-26T12:40:22Z",
     "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821835404",
     "sha": "e742021"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-26T05:06:47Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45759434105",
-    "sha": "f17fbdf"
-   },
-   {
-    "name": "CI-Heilung (rote Läufe wiederholen)",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-26T04:54:08Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45758106413",
-    "sha": "f17fbdf"
-   },
-   {
-    "name": "Org-Bot (PR anlegen & mergen)",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-26T04:24:38Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45755020275",
-    "sha": "f17fbdf"
    }
   ],
   "issues": [],

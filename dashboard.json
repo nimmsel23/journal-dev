@@ -1,12 +1,12 @@
 {
  "evidence": {
-  "generated_at": "2026-11-27T14:16:27+00:00",
+  "generated_at": "2026-11-28T13:32:27+00:00",
   "repo": "nimmsel23/journal-dev",
   "meta": {
    "name": "journal-dev",
    "description": "VOS Journal PWA",
    "html_url": "https://github.com/nimmsel23/journal-dev",
-   "pushed_at": "2026-11-26T14:22:57Z",
+   "pushed_at": "2026-11-28T10:48:33Z",
    "default_branch": "master",
    "visibility": "public",
    "pages_url": "https://nimmsel23.github.io/journal-dev/"
@@ -21,17 +21,29 @@
    "dev_behind": 0,
    "dev_ahead": 0,
    "oldest_unpromoted": null,
-   "dev_head": "e742021 2026-11-26T13:40:17+01:00",
-   "master_head": "e742021 2026-11-26T13:40:17+01:00"
+   "dev_head": "1c5d693 2026-11-28T11:47:27+01:00",
+   "master_head": "1c5d693 2026-11-28T11:47:27+01:00"
   },
   "work": {
    "branch": "master",
-   "sha": "e7420218076d87312e757c025b9209d5f37db61b"
+   "sha": "1c5d6937457c4dbcf11e3890c5572542127cb673"
   },
   "commits": [
    {
+    "sha": "1c5d693",
+    "date": "2026-11-28T11:47:27+01:00",
+    "author": "Alpha",
+    "subject": "Merge branch 'dev' of github.com:nimmsel23/journal-dev into dev"
+   },
+   {
     "sha": "e742021",
     "date": "2026-11-26T13:40:17+01:00",
+    "author": "Alpha",
+    "subject": "fix: let product shell enable server-backed smart logging"
+   },
+   {
+    "sha": "8d98ad7",
+    "date": "2026-11-26T13:13:27+01:00",
     "author": "Alpha",
     "subject": "fix: let product shell enable server-backed smart logging"
    },
@@ -132,32 +144,16 @@
     "subject": "ci: bump actions/create-github-app-token (#59)"
    },
    {
-    "sha": "08bd2a4",
-    "date": "2026-11-20T09:39:49+01:00",
+    "sha": "2ebab28",
+    "date": "2026-11-21T19:31:17+01:00",
     "author": "Alpha",
-    "subject": "Merge remote-tracking branch 'origin/dev' into dev"
-   },
-   {
-    "sha": "575850e",
-    "date": "2026-11-20T09:26:23+01:00",
-    "author": "Alpha",
-    "subject": "fix(game): include AlphaOS rock tags and project domains in Fire week"
-   },
-   {
-    "sha": "35a9d41",
-    "date": "2026-11-20T09:23:49+01:00",
-    "author": "Alpha",
-    "subject": "feat(journal): add domain weekly actions and manual hit scheduling"
+    "subject": "portal: App-Links neu erzeugt (vos-portal)"
    }
   ],
   "activity": [
    {
-    "day": "2026-11-07",
-    "n": 14
-   },
-   {
     "day": "2026-11-08",
-    "n": 3
+    "n": 0
    },
    {
     "day": "2026-11-09",
@@ -209,7 +205,7 @@
    },
    {
     "day": "2026-11-21",
-    "n": 0
+    "n": 1
    },
    {
     "day": "2026-11-22",
@@ -229,11 +225,15 @@
    },
    {
     "day": "2026-11-26",
-    "n": 4
+    "n": 5
    },
    {
     "day": "2026-11-27",
     "n": 0
+   },
+   {
+    "day": "2026-11-28",
+    "n": 1
    }
   ],
   "workflows": [
@@ -243,48 +243,28 @@
     "event": "schedule",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-27T10:58:29Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45986561432",
-    "sha": "e742021"
+    "created_at": "2026-11-28T11:57:01Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/46142259086",
+    "sha": "1c5d693"
    },
    {
-    "name": "CI-Heilung (rote Läufe wiederholen)",
+    "name": "Live Deploy (Journal master)",
     "branch": "master",
-    "event": "schedule",
+    "event": "workflow_dispatch",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-27T08:04:34Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45962890762",
-    "sha": "e742021"
-   },
-   {
-    "name": "Merge-Agent",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-27T08:04:33Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45962889981",
-    "sha": "e742021"
+    "created_at": "2026-11-28T10:48:35Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/46136907924",
+    "sha": "1c5d693"
    },
    {
     "name": "Auto-Promote dev -> master (Check (Journal))",
     "branch": "master",
-    "event": "schedule",
+    "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-27T05:24:07Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45945582150",
-    "sha": "e742021"
-   },
-   {
-    "name": "Org-Bot (PR anlegen & mergen)",
-    "branch": "master",
-    "event": "schedule",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-27T05:22:32Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45945425207",
+    "created_at": "2026-11-28T10:48:26Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/46136897251",
     "sha": "e742021"
    },
    {
@@ -293,18 +273,8 @@
     "event": "workflow_run",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-26T12:41:16Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821975127",
-    "sha": "e742021"
-   },
-   {
-    "name": "Live Deploy (Journal master)",
-    "branch": "master",
-    "event": "workflow_dispatch",
-    "status": "completed",
-    "conclusion": "success",
-    "created_at": "2026-11-26T12:41:03Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821942068",
+    "created_at": "2026-11-28T10:48:26Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/46136897117",
     "sha": "e742021"
    },
    {
@@ -313,8 +283,38 @@
     "event": "push",
     "status": "completed",
     "conclusion": "success",
-    "created_at": "2026-11-26T12:40:22Z",
-    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/45821835419",
+    "created_at": "2026-11-28T10:47:57Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/46136860083",
+    "sha": "1c5d693"
+   },
+   {
+    "name": "Merge-Agent",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-28T09:23:19Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/46130236561",
+    "sha": "e742021"
+   },
+   {
+    "name": "CI-Heilung (rote Läufe wiederholen)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-28T09:22:34Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/46130176109",
+    "sha": "e742021"
+   },
+   {
+    "name": "Org-Bot (PR anlegen & mergen)",
+    "branch": "master",
+    "event": "schedule",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-28T04:59:10Z",
+    "url": "https://github.com/nimmsel23/journal-dev/actions/runs/46110003298",
     "sha": "e742021"
    },
    {

@@ -430,3 +430,18 @@ eine **tägliche Erinnerung** statt Zeiten je Task:
 - Voraussetzung: **dauerhafte** Google-Verbindung (nicht der 1-h-Popup-Rückfall) und Functions-Deploy
   (`firebase deploy --only functions:scheduledDoorReminders`, Secret `GOOGLE_OAUTH_CLIENT_SECRET` wie bei den Google-Functions).
 - Ohne offene Hits wird nichts gesendet. Test: `tests/door-reminders.test.mjs`.
+
+## Voice · VOICE-GPT (2026-11-26)
+
+Hinter dem Voice-Formular (`#voice`) sitzt der Reflexionsagent VOICE-GPT (Gemini 2.5 Flash, Systemprompt
+`~/dev/backend/functions/journal/voice-gpt.md`). UI: `src/views/voice/VoiceAgent.jsx`, Client: `src/lib/voiceAgent.js`.
+
+- **Spiegeln**: Callable `voiceReflect` bekommt den auslösenden Journaleintrag + alle ausgefüllten Phasen der Session
+  und antwortet mit genau einer zentralen Frage. Das Gespräch liegt nur lokal (`…:<sessionId>:agent`), nicht in Firestore.
+- **VOICE STACK**: strukturierte Zusammenfassung (Abschnitt 10 des Prompts), optional als Journal-Eintrag `#voice #stack`.
+- **Auto-Modus** (Opt-in `journal/{uid}/settings/voice.auto`): Trigger `voiceQueueJournal` merkt jeden Journal-Schreibvorgang
+  nur in `voiceQueue` vor; `scheduledVoiceReflections` (alle 30 min) spiegelt Einträge ab 250 Wörtern nach 30 min Ruhe einzeln
+  und kürzere gesammelt täglich 21:30 Wien. Ergebnis `journal/{uid}/voiceReflections`, im Voice-Tab als Impuls mit
+  „Voice-Session daraus starten“. v1 bleibt unverändert, der Trigger hängt nur an der gemeinsamen Collection.
+- Alles zählt gegen das tägliche KI-Kontingent des Smart Loggers (Kanal `voice`), außer mit eigenem Key.
+- **Eigener Key (BYOK)**: versteckter Tab `#voice/settings` (`VoiceSettings.jsx`), Key in `journal/{uid}/settings/ai.geminiKey`. Der Server nutzt ihn statt des eigenen Keys und lässt das Kontingent weg, `mode: "ping"` prüft ihn.

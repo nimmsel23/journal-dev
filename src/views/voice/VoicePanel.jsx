@@ -11,6 +11,7 @@ import AuthDemoHelper from "../../components/AuthDemoHelper.jsx";
 import { createSmartCalendarEvent } from "../../lib/google/smartCalendar.js";
 import { useGoogle } from "../../lib/google/useGoogle.js";
 import { readVoiceContext, voiceStorageKey, VOICE_CONTEXT_KEY } from "./voiceContext.js";
+import { VoiceAgentThread, VoiceAutoReflections } from "./VoiceAgent.jsx";
 
 const today = () => format(new Date(), "yyyy-MM-dd");
 const read = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
@@ -192,6 +193,27 @@ export default function VoicePanel({ user }) {
     setErr("");
   };
 
+  // Kontext für VOICE-GPT: auslösender Journaleintrag + alle bisher ausgefüllten Phasen dieser Session.
+  const buildAgentContext = () => {
+    const parts = voiceContext ? [`## Auslösender Journaleintrag (${voiceContext.sourceDate})\n\n${voiceContext.sourceText}`] : [];
+    for (const s of VOICE_STAGES) {
+      const a = s.key === stage.key ? answers : read(sessionKey(s.key), {});
+      if (Object.values(a).some((v) => v !== "" && v != null && !(Array.isArray(v) && !v.length))) parts.push(stageMarkdown(s, a).trim());
+    }
+    return parts.join("\n\n").slice(0, 15000);
+  };
+
+  // Auto-Impuls → neue Session mit dem Impuls als Kontext und als erste Agent-Antwort im Gespräch.
+  const startFromReflection = (r) => {
+    const nextId = newSessionId();
+    write(key("session-id"), nextId);
+    const ctx = { version: 1, ownerUid: user?.uid || null, sessionId: nextId, sourceJournalId: r.sourceIds?.[0] || r.id,
+      sourceDate: r.sourceDates?.[0] || today(), sourceText: r.reply.slice(0, 12000) };
+    try { window.sessionStorage.setItem(VOICE_CONTEXT_KEY, JSON.stringify(ctx)); } catch {}
+    write(voiceStorageKey(user?.uid || null, today(), `${nextId}:agent`), [{ role: "model", text: r.reply }]);
+    setVoiceContext(ctx); setSessionId(nextId); setSaved({}); setAnswers({}); setIdx(0); setErr("");
+  };
+
   const save = async () => {
     setBusy(true); setErr("");
     try {
@@ -220,6 +242,7 @@ export default function VoicePanel({ user }) {
 
   return (
     <>
+      <VoiceAutoReflections user={user} onStart={startFromReflection} />
       {voiceContext && <aside className="gv2-step" aria-label="Auslösender Journaleintrag">
         <b className="gv2-q">Aus deinem Journal · {voiceContext.sourceDate}</b>
         <blockquote className="gv2-epi">{voiceContext.sourceText}</blockquote>
@@ -246,6 +269,8 @@ export default function VoicePanel({ user }) {
         </button>
         {missing.length > 0 && <span className="dv2-none">Noch offen: {missing.length}</span>}
       </div>
+      <VoiceAgentThread user={user} stage={stage.key} date={today()} sessionId={sessionId}
+        storageKey={sessionKey("agent")} buildContext={buildAgentContext} />
       {stage.key === "strike" && saved.strike && <><StrikeFollowUp key={sessionId} answers={answers} sessionId={sessionId} /><button type="button" className="dv2-pick" disabled={busy} onClick={startNewSession}>Neue Voice-Session starten</button></>}
     </>
   );

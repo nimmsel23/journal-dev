@@ -10,7 +10,7 @@ export function routeMeta({ gameDefault = "fire", journalV2Default = "tag" } = {
     "journal-v2": { alias: "v2", modes: v2Modes, defaultMode: v2Default, hasDate: true },
     "door-v2": { alias: "door2", modes: ["potential", "plan", "production", "profit"], defaultMode: "potential", hasDate: false },
     "game-v2": { alias: "game2", modes: ["fire", "focus", "freedom", "frame"], defaultMode: gameDefault, hasDate: false, shortForm: true },
-    "voice-v2": { alias: "voice", modes: [], hasDate: false },
+    "voice-v2": { alias: "voice", modes: ["settings"], hasDate: false }, // #voice/settings = versteckter BYOK-Tab
     "tent-v2": { alias: "tent2", modes: [], hasDate: true },
   };
 }
